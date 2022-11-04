@@ -15,7 +15,7 @@ async function connect(client: SignClient, setConnectedSession: (session: Sessio
             requiredNamespaces: {
                 ccd: {
                     methods: [
-                        'sign_and_send_transaction',
+                        'sign_message',
                     ],
                     chains: [CHAIN_ID],
                     events: ['chain_changed', 'accounts_changed'],
