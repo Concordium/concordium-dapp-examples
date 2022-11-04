@@ -52,10 +52,6 @@ export function resolveAccount(session: SessionTypes.Struct) {
     return fullAddress.substring(fullAddress.lastIndexOf(":") + 1);
 }
 
-interface SignAndSendTransactionResult {
-    hash: string;
-}
-
 interface SignAndSendTransactionError {
     code: number;
     message: string;
@@ -67,7 +63,7 @@ function isSignAndSendTransactionError(obj: any): obj is SignAndSendTransactionE
 
 export async function signMessage(signClient: SignClient, session: SessionTypes.Struct, rpcClient: JsonRpcClient, chainId: string, message: string) {
     try {
-        const {hash} = await signClient.request({
+        const signature = await signClient.request({
             topic: session.topic,
             request: {
                 method: "sign_message",
@@ -76,8 +72,8 @@ export async function signMessage(signClient: SignClient, session: SessionTypes.
                 },
             },
             chainId,
-        }) as SignAndSendTransactionResult;
-        return hash;
+        });
+        return JSON.stringify(signature);
     } catch (e) {
         if (isSignAndSendTransactionError(e) && e.code === 5000) {
             throw new Error('transaction rejected in wallet');
