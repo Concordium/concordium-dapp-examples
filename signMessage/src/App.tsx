@@ -32,6 +32,8 @@ export default function App() {
     const [walletconnect2ConnectedSession, setWalletconnect2ConnectedSession] = useState<SessionTypes.Struct>();
     const [walletconnect2ConnectionError, setWalletconnect2ConnectionError] = useState<string>();
 
+    const [message, setMessage] = useState<string>('');
+
     // Attempt to initialize Browser Wallet Client.
     useEffect(
         () => {
@@ -149,7 +151,7 @@ export default function App() {
                     browserwalletConnectedAccount,
                     wrapPromise(
                         (client, account) =>
-                            sign(client, account, "Random message"),
+                            sign(client, account, message),
                     ),
                 )
             } else if (wallet === "walletconnect2" && rpc) {
@@ -163,7 +165,7 @@ export default function App() {
                                 session,
                                 rpc,
                                 CHAIN_ID,
-                                "Random message",
+                                message,
                             )
                     ),
                 )
@@ -173,7 +175,7 @@ export default function App() {
                     ))
             }
         },
-        [wallet, browserwalletClient, walletconnect2Client, browserwalletConnectedAccount, walletconnect2ConnectedSession],
+        [wallet, browserwalletClient, walletconnect2Client, browserwalletConnectedAccount, walletconnect2ConnectedSession, message],
     );
     return (
         <Container>
@@ -243,6 +245,7 @@ export default function App() {
             <hr/>
             <Row>
                 <Col>
+                    <input type="text" id="message" value={message} onChange={(e) => setMessage(e.target.value)}/>
                     <button onClick={handleSubmitSign}>Sign</button>
                 </Col>
             </Row>
