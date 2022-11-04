@@ -71,7 +71,9 @@ export async function signMessage(signClient: SignClient, session: SessionTypes.
             topic: session.topic,
             request: {
                 method: "sign_message",
-                params: message,
+                params: {
+                    message
+                },
             },
             chainId,
         }) as SignAndSendTransactionResult;
