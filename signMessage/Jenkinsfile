@@ -25,6 +25,7 @@ pipeline {
                       --build-arg build_image="${build_image}" \
                       --label build_image="${build_image}" \
                       --tag="${image_name}" \
+                      -f ./signMessage/Dockerfile \
                       --pull \
                       .
                     docker push "${image_name}"
