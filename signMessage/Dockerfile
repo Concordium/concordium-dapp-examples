@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1
 
-FROM node:16-slim AS build
+ARG build_image="node:16-slim"
+FROM ${build_image} AS build
 WORKDIR /build
 COPY package.json yarn.lock ./
 RUN yarn install
