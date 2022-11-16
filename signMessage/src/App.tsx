@@ -88,6 +88,8 @@ export default function App() {
                     });
                     client.on("session_delete", () => {
                         // Session was deleted -> reset the dapp state, clean up from user session, etc.
+                        setWalletconnect2ConnectedSession(undefined);
+                        alert('Mobile walle disconnected');
                         console.debug('Wallet Connect event: session_delete');
                     });
                     return client;
