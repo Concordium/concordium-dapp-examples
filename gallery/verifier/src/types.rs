@@ -2,7 +2,8 @@ use concordium_rust_sdk::{
     common::{
         self as crypto_common,
         derive::{SerdeBase16Serialize, Serialize},
-        Buffer, Deserial, ParseResult, ReadBytesExt, SerdeDeserialize, SerdeSerialize, Serial, Versioned,
+        Buffer, Deserial, ParseResult, ReadBytesExt, SerdeDeserialize, SerdeSerialize, Serial,
+        Versioned,
     },
     endpoints::{QueryError, RPCError},
     id::{
@@ -10,19 +11,21 @@ use concordium_rust_sdk::{
         id_proof_types::Proof,
         types::GlobalContext,
     },
-    types::CredentialRegistrationID
+    types::CredentialRegistrationID,
 };
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
 };
 
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, SerdeBase16Serialize, Serialize)]
+#[derive(
+    Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, SerdeBase16Serialize, Serialize,
+)]
 pub struct Challenge(pub [u8; 32]);
 
 #[derive(serde::Deserialize, Debug, Clone)]
 pub struct InfoQuery {
-    pub auth:  Challenge,
+    pub auth: Challenge,
 }
 
 #[derive(Clone)]
@@ -33,7 +36,7 @@ pub struct ChallengeStatus {
 
 #[derive(Clone)]
 pub struct Server {
-    pub challenges:  Arc<Mutex<HashMap<String, ChallengeStatus>>>,
+    pub challenges: Arc<Mutex<HashMap<String, ChallengeStatus>>>,
     pub global_context: Arc<GlobalContext<ArCurve>>,
 }
 
@@ -56,7 +59,9 @@ pub enum InjectStatementError {
 }
 
 impl From<RPCError> for InjectStatementError {
-    fn from(err: RPCError) -> Self { Self::NodeAccess(err.into()) }
+    fn from(err: RPCError) -> Self {
+        Self::NodeAccess(err.into())
+    }
 }
 
 impl warp::reject::Reject for InjectStatementError {}
@@ -65,23 +70,23 @@ impl warp::reject::Reject for InjectStatementError {}
 /// Response in case of an error. This is going to be encoded as a JSON body
 /// with fields 'code' and 'message'.
 pub struct ErrorResponse {
-    pub code:    u16,
+    pub code: u16,
     pub message: String,
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Debug)]
 pub struct ChallengeResponse {
-    pub challenge: Challenge
+    pub challenge: Challenge,
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, Clone)]
 pub struct ChallengedProof {
-    pub challenge:  Challenge,
+    pub challenge: Challenge,
     pub proof: ProofWithContext,
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, Clone)]
-pub struct ProofWithContext{
+pub struct ProofWithContext {
     pub credential: CredentialRegistrationID,
-    pub proof:      Versioned<Proof<ArCurve, AttributeKind>>,
+    pub proof: Versioned<Proof<ArCurve, AttributeKind>>,
 }

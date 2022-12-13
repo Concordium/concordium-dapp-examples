@@ -1,13 +1,11 @@
-mod types;
 mod handlers;
-use crate::types::*;
+mod types;
 use crate::handlers::*;
+use crate::types::*;
 
 use clap::Parser;
 use concordium_rust_sdk::{
-    common::{
-        self as crypto_common,
-    },
+    common::{self as crypto_common},
     id::{
         constants::{ArCurve, AttributeKind},
         id_proof_types::Statement,
@@ -31,13 +29,13 @@ struct IdVerifierConfig {
         help = "GRPC V2 interface of the node.",
         default_value = "http://localhost:20000"
     )]
-    endpoint:  concordium_rust_sdk::v2::Endpoint,
+    endpoint: concordium_rust_sdk::v2::Endpoint,
     #[clap(
         long = "port",
         default_value = "8100",
         help = "Port on which the server will listen on."
     )]
-    port:      u16,
+    port: u16,
     #[structopt(
         long = "log-level",
         default_value = "debug",
@@ -74,7 +72,7 @@ async fn main() -> anyhow::Result<()> {
     log::debug!("Acquired data from the node.");
 
     let state = Server {
-        challenges:  Arc::new(Mutex::new(HashMap::new())),
+        challenges: Arc::new(Mutex::new(HashMap::new())),
         global_context: Arc::new(global_context),
     };
     let prove_state = state.clone();
@@ -88,7 +86,7 @@ async fn main() -> anyhow::Result<()> {
     // 1a. get challenge
     let get_challenge = warp::get()
         .and(warp::path!("challenge"))
-        .and_then(move || {handle_get_challenge(state.clone())});
+        .and_then(move || handle_get_challenge(state.clone()));
 
     // 1b. get statement
     let get_statement = warp::get()
@@ -105,7 +103,14 @@ async fn main() -> anyhow::Result<()> {
         .and(warp::filters::body::content_length_limit(50 * 1024))
         .and(warp::path!("prove"))
         .and(warp::body::json())
-        .and_then(move |request: ChallengedProof| {handle_provide_proof(client.clone(), prove_state.clone(), statement.clone(), request)});
+        .and_then(move |request: ChallengedProof| {
+            handle_provide_proof(
+                client.clone(),
+                prove_state.clone(),
+                statement.clone(),
+                request,
+            )
+        });
 
     // 3. Get Image
     let get_image = warp::path!("image" / String)
@@ -113,10 +118,17 @@ async fn main() -> anyhow::Result<()> {
         .untuple_one()
         .and(warp::query::<InfoQuery>())
         .map(move |query: InfoQuery| handle_image_access(query, info_state.clone()))
-        .map(|_| warp::redirect(warp::http::Uri::from_static("https://picsum.photos/150/200")));
+        .map(|_| {
+            warp::redirect(warp::http::Uri::from_static(
+                "https://picsum.photos/150/200",
+            ))
+        });
 
-    info!("Starting up HTTP serve
-r. Listening on port {}.", app.port);
+    info!(
+        "Starting up HTTP serve
+r. Listening on port {}.",
+        app.port
+    );
 
     let server = get_challenge
         .or(get_statement)

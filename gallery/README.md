@@ -11,8 +11,7 @@ The backend for this demo can be found in the [verifier](./verifier/) folder:
 
 ## Installing
 
--   Run `yarn` in package root.
--   Build concordium helpers by running `yarn build:all`.
+-   Run `yarn`.
 
 ## Running the example
 

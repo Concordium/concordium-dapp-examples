@@ -18,11 +18,14 @@ body {
     border-radius: 10px;
     background: black;
 }
+.connection-banner,
+.main-window {
+    width: 80%;
+    max-width: 1200px;
+}
 
 .connection-banner {
     padding: 0 10px;
-    max-width: 50%;
-    width: 50%;
     margin: 10px 0;
     text-align: center;
     word-break: break-all;
@@ -66,16 +69,12 @@ body {
 
 .main-window {
     text-align: center;
-    display: flex;
-    justify-content: space-around;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 162px);
+    justify-content: center;
     padding: 10px;
-    flex-wrap: wrap;
-    justify-content: space-evenly;
     flex-grow: 1;
     margin-bottom: auto;
-    align-items: flex-start;
-    max-width: 50%;
-    align-self: center;
 }
 
 .connect-button {

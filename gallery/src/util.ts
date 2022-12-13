@@ -36,13 +36,11 @@ export async function authorize(verifier: string, challenge: string, proof: IdPr
         headers: new Headers({ 'content-type': 'application/json' }),
         body: JSON.stringify({ challenge, proof }),
     });
-    console.log(response);
     if (!response.ok) {
         throw new Error('Unable to authorize');
     }
     const body = await response.json();
     if (body) {
-        console.log(body);
         return challenge;
     }
     throw new Error('Unable to authorize');
