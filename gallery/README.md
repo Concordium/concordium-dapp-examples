@@ -3,7 +3,7 @@
 The example project included in this repository, serves as a working example of using the concordium ids to create a webpage with authorization.
 The webpage will only display the gallery items' images if the user has provided a proof for the statement that the backend demands.
 
-The backend for this demo can be found in the verifier folder:
+The backend for this demo can be found in the [verifier](./verifier/) folder:
 
 ## Prerequisites
 
@@ -16,7 +16,7 @@ The backend for this demo can be found in the verifier folder:
 
 ## Running the example
 
--   Run the backend (Currently the webpage assumes the backend is on localhost:8100)
+-   Run the [backend](./verifier/) (Currently the webpage assumes the backend is on localhost:8100)
 
 -   Run `yarn build` in a terminal
 -   Run `yarn start`

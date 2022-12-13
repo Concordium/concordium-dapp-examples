@@ -15,7 +15,7 @@ All of the above is available by using `--help** to get usage information.
 
 An example to run the verifier with example settings and local node on would be:
 ```
-cargo run -- --node http://localhost:20000 --statement  "$(<config/statement.json)" --names "$(<config/statement.json)"
+cargo run -- --node http://localhost:20000 --statement  "$(<config/statement.json)" --names "$(<config/names.json)"
 ```
 
 The verifier is a simple server that exposes five endpoints 

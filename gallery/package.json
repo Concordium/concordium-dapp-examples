@@ -26,7 +26,7 @@
         "eslint-plugin-prettier": "^4.0.0",
         "eslint-plugin-react": "^7.29.4",
         "eslint-plugin-react-hooks": "^4.4.0",
-        "live-server": "^1.2.2",
+        "live-server": "1.2.1",
         "prettier": "^2.6.2",
         "stylelint": "^14.7.1",
         "stylelint-config-prettier": "^9.0.3",
