@@ -130,6 +130,8 @@ r. Listening on port {}.",
         app.port
     );
 
+    let serve_public_files = warp::path("public").and(warp::fs::dir("public"));
+
     tokio::spawn(handle_clean_state(state.clone()));
 
     let server = get_challenge
@@ -137,6 +139,7 @@ r. Listening on port {}.",
         .or(get_names)
         .or(provide_proof)
         .or(get_image)
+        .or(serve_public_files)
         .recover(handle_rejection)
         .with(cors)
         .with(warp::trace::request());
