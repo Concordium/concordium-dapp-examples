@@ -73,10 +73,12 @@ async fn main() -> anyhow::Result<()> {
 
     let state = Server {
         challenges: Arc::new(Mutex::new(HashMap::new())),
+        tokens: Arc::new(Mutex::new(HashMap::new())),
         global_context: Arc::new(global_context),
     };
     let prove_state = state.clone();
     let info_state = state.clone();
+    let challenge_state = state.clone();
 
     let cors = warp::cors()
         .allow_any_origin()
@@ -86,7 +88,10 @@ async fn main() -> anyhow::Result<()> {
     // 1a. get challenge
     let get_challenge = warp::get()
         .and(warp::path!("challenge"))
-        .and_then(move || handle_get_challenge(state.clone()));
+        .and(warp::query::<WithAccountAddress>())
+        .and_then(move |query: WithAccountAddress| {
+            handle_get_challenge(challenge_state.clone(), query.address)
+        });
 
     // 1b. get statement
     let get_statement = warp::get()
@@ -112,23 +117,20 @@ async fn main() -> anyhow::Result<()> {
             )
         });
 
-    // 3. Get Image
+    // 3. Get Image (Ignores the name of the item, checks that the auth token is valid and then redirects to an image)
     let get_image = warp::path!("image" / String)
         .map(|_| ())
         .untuple_one()
         .and(warp::query::<InfoQuery>())
-        .map(move |query: InfoQuery| handle_image_access(query, info_state.clone()))
-        .map(|_| {
-            warp::redirect(warp::http::Uri::from_static(
-                "https://picsum.photos/150/200",
-            ))
-        });
+        .and_then(move |query: InfoQuery| handle_image_access(query, info_state.clone()));
 
     info!(
         "Starting up HTTP serve
 r. Listening on port {}.",
         app.port
     );
+
+    tokio::spawn(handle_clean_state(state.clone()));
 
     let server = get_challenge
         .or(get_statement)

@@ -27,7 +27,7 @@ export default function Connection({ verifier, account, authToken, setAccount, s
             throw new Error('Unreachable');
         }
         const provider = await detectConcordiumProvider();
-        const challenge = await getChallenge(verifier);
+        const challenge = await getChallenge(verifier, account);
         const statement = await getStatement(verifier);
         const proof = await provider.requestIdProof(account, statement, challenge);
         const newAuthToken = await authorize(verifier, challenge, proof);

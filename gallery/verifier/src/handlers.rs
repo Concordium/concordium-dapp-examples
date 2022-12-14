@@ -1,22 +1,32 @@
 use crate::crypto_common::base16_encode_string;
 use crate::types::*;
 use concordium_rust_sdk::{
+    common::{self as crypto_common},
     id::{
         constants::{ArCurve, AttributeKind},
         id_proof_types::Statement,
-        types::AccountCredentialWithoutProofs,
+        types::{AccountAddress, AccountCredentialWithoutProofs},
     },
     v2::BlockIdentifier,
 };
 use log::warn;
 use rand::Rng;
 use std::convert::Infallible;
+use std::time::SystemTime;
+use uuid::Uuid;
 use warp::{http::StatusCode, Rejection};
 
-pub async fn handle_get_challenge(state: Server) -> Result<impl warp::Reply, Rejection> {
+static CHALLENGE_EXPIRY_SECONDS: u64 = 600;
+static TOKEN_EXPIRY_SECONDS: u64 = 1200;
+static CLEAN_INTERVAL_SECONDS: u64 = 600;
+
+pub async fn handle_get_challenge(
+    state: Server,
+    address: AccountAddress,
+) -> Result<impl warp::Reply, Rejection> {
     let state = state.clone();
     log::debug!("Parsed statement. Generating challenge");
-    match get_challenge_worker(state).await {
+    match get_challenge_worker(state, address).await {
         Ok(r) => Ok(warp::reply::json(&r)),
         Err(e) => {
             warn!("Request is invalid {:#?}.", e);
@@ -34,10 +44,8 @@ pub async fn handle_provide_proof(
     let client = client.clone();
     let state = state.clone();
     let statement = statement.clone();
-    let challenge = request.challenge;
     match check_proof_worker(client, state, request, statement).await {
-        // TODO don't use challenge as auth token?
-        Ok(_) => Ok(warp::reply::json(&challenge)),
+        Ok(r) => Ok(warp::reply::json(&r)),
         Err(e) => {
             warn!("Request is invalid {:#?}.", e);
             Err(warp::reject::custom(e))
@@ -45,12 +53,15 @@ pub async fn handle_provide_proof(
     }
 }
 
-pub fn handle_image_access(
+pub async fn handle_image_access(
     params: InfoQuery,
     state: Server,
 ) -> Result<impl warp::Reply, Rejection> {
     match get_info_worker(state, params.auth) {
-        Ok(_) => Ok(warp::reply()),
+        Ok(_) => Ok(warp::redirect(warp::http::Uri::from_static(
+            // Currently the user is just redirected to a random image
+            "https://picsum.photos/150/200",
+        ))),
         Err(e) => {
             warn!("Request is invalid {:#?}.", e);
             Err(warp::reject::custom(e))
@@ -83,6 +94,10 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl warp::Reply, Infall
         let code = StatusCode::NOT_FOUND;
         let message = "Session not found.";
         Ok(mk_reply(message.into(), code))
+    } else if let Some(InjectStatementError::Expired) = err.find() {
+        let code = StatusCode::BAD_REQUEST;
+        let message = "Given token was expired.";
+        Ok(mk_reply(message.into(), code))
     } else if err
         .find::<warp::filters::body::BodyDeserializeError>()
         .is_some()
@@ -98,18 +113,22 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl warp::Reply, Infall
 }
 
 /// A common function that checks a challenge has been proven.
-fn get_info_worker(state: Server, challenge: Challenge) -> Result<(), InjectStatementError> {
+fn get_info_worker(state: Server, token: String) -> Result<(), InjectStatementError> {
     let sm = state
-        .challenges
+        .tokens
         .lock()
         .map_err(|_| InjectStatementError::LockingError)?;
-    let status = sm
-        .get(&base16_encode_string(&challenge.0))
-        .ok_or(InjectStatementError::UnknownSession)?;
-    if status.is_proven {
+    let status = sm.get(&token).ok_or(InjectStatementError::NotAllowed)?;
+    if status
+        .created_at
+        .elapsed()
+        .map_err(|_| InjectStatementError::Expired)?
+        .as_secs()
+        < TOKEN_EXPIRY_SECONDS
+    {
         Ok(())
     } else {
-        Err(InjectStatementError::NotAllowed)
+        Err(InjectStatementError::Expired)
     }
 }
 
@@ -123,7 +142,10 @@ fn mk_reply(message: String, code: StatusCode) -> impl warp::Reply {
 }
 
 /// A common function that produces a challenge and adds it to the state.
-async fn get_challenge_worker(state: Server) -> Result<ChallengeResponse, InjectStatementError> {
+async fn get_challenge_worker(
+    state: Server,
+    address: AccountAddress,
+) -> Result<ChallengeResponse, InjectStatementError> {
     let mut challenge = [0u8; 32];
     rand::thread_rng().fill(&mut challenge[..]);
     let mut sm = state
@@ -132,9 +154,13 @@ async fn get_challenge_worker(state: Server) -> Result<ChallengeResponse, Inject
         .map_err(|_| InjectStatementError::LockingError)?;
     log::debug!("Generated challenge: {:?}", challenge);
     let challenge = Challenge(challenge);
+
     sm.insert(
         base16_encode_string(&challenge.0),
-        ChallengeStatus { is_proven: false },
+        ChallengeStatus {
+            address,
+            created_at: SystemTime::now(),
+        },
     );
     Ok(ChallengeResponse { challenge })
 }
@@ -145,23 +171,47 @@ async fn check_proof_worker(
     state: Server,
     request: ChallengedProof,
     statement: Statement<ArCurve, AttributeKind>,
-) -> Result<bool, InjectStatementError> {
+) -> Result<Uuid, InjectStatementError> {
+    let status = {
+        let challenges = state
+            .challenges
+            .lock()
+            .map_err(|_| InjectStatementError::LockingError)?;
+
+        challenges
+            .get(&base16_encode_string(&request.challenge.0))
+            .ok_or(InjectStatementError::UnknownSession)?
+            .clone()
+    };
+
     let cred_id = request.proof.credential;
     let acc_info = client
-        .get_account_info(&cred_id.into(), BlockIdentifier::LastFinal)
+        .get_account_info(&status.address.into(), BlockIdentifier::LastFinal)
         .await?;
+
+    // TODO Check remaining credentials
     let credential = acc_info
         .response
         .account_credentials
         .get(&0.into())
         .ok_or(InjectStatementError::Credential)?;
+
+    if crypto_common::to_bytes(credential.value.cred_id()) != crypto_common::to_bytes(&cred_id) {
+        return Err(InjectStatementError::Credential);
+    }
+
     let commitments = match &credential.value {
         AccountCredentialWithoutProofs::Initial { icdv: _, .. } => {
             return Err(InjectStatementError::NotAllowed);
         }
         AccountCredentialWithoutProofs::Normal { commitments, .. } => commitments,
     };
-    let mut sm = state
+    let mut tokens = state
+        .tokens
+        .lock()
+        .map_err(|_| InjectStatementError::LockingError)?;
+
+    let mut challenges = state
         .challenges
         .lock()
         .map_err(|_| InjectStatementError::LockingError)?;
@@ -173,12 +223,46 @@ async fn check_proof_worker(
         commitments,
         &request.proof.proof.value, // TODO: Check version.
     ) {
-        sm.insert(
-            base16_encode_string(&request.challenge.0),
-            ChallengeStatus { is_proven: true },
+        challenges.remove(&base16_encode_string(&request.challenge.0));
+        let token = Uuid::new_v4();
+        tokens.insert(
+            token.to_string(),
+            TokenStatus {
+                created_at: SystemTime::now(),
+            },
         );
-        Ok(true)
+        Ok(token)
     } else {
         Err(InjectStatementError::InvalidProofs)
+    }
+}
+
+pub async fn handle_clean_state(state: Server) -> anyhow::Result<()> {
+    let mut interval =
+        tokio::time::interval(tokio::time::Duration::from_secs(CLEAN_INTERVAL_SECONDS));
+
+    loop {
+        interval.tick().await;
+
+        {
+            let mut tokens = state.tokens.lock().unwrap();
+
+            tokens.retain(|_, v| {
+                v.created_at
+                    .elapsed()
+                    .map(|e| e.as_secs() < TOKEN_EXPIRY_SECONDS)
+                    .unwrap_or(false)
+            });
+        }
+        {
+            let mut challenges = state.challenges.lock().unwrap();
+
+            challenges.retain(|_, v| {
+                v.created_at
+                    .elapsed()
+                    .map(|e| e.as_secs() < CHALLENGE_EXPIRY_SECONDS)
+                    .unwrap_or(false)
+            });
+        }
     }
 }

@@ -12,8 +12,8 @@ export async function getNames(verifier: string): Promise<string[]> {
 /**
  * Fetch a challenge from the backend
  */
-export async function getChallenge(verifier: string) {
-    const response = await fetch(`${verifier}/challenge`, { method: 'get' });
+export async function getChallenge(verifier: string, accountAddress: string) {
+    const response = await fetch(`${verifier}/challenge?address=` + accountAddress, { method: 'get' });
     const body = await response.json();
     return body.challenge;
 }
@@ -41,7 +41,7 @@ export async function authorize(verifier: string, challenge: string, proof: IdPr
     }
     const body = await response.json();
     if (body) {
-        return challenge;
+        return body;
     }
     throw new Error('Unable to authorize');
 }

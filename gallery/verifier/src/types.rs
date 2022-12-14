@@ -9,13 +9,14 @@ use concordium_rust_sdk::{
     id::{
         constants::{ArCurve, AttributeKind},
         id_proof_types::Proof,
-        types::GlobalContext,
+        types::{AccountAddress, GlobalContext},
     },
     types::CredentialRegistrationID,
 };
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
+    time::SystemTime,
 };
 
 #[derive(
@@ -25,18 +26,29 @@ pub struct Challenge(pub [u8; 32]);
 
 #[derive(serde::Deserialize, Debug, Clone)]
 pub struct InfoQuery {
-    pub auth: Challenge,
+    pub auth: String,
+}
+
+#[derive(serde::Deserialize, Debug, Clone)]
+pub struct WithAccountAddress {
+    pub address: AccountAddress,
 }
 
 #[derive(Clone)]
 pub struct ChallengeStatus {
-    pub is_proven: bool,
-    // TODO expiry
+    pub address: AccountAddress,
+    pub created_at: SystemTime,
+}
+
+#[derive(Clone)]
+pub struct TokenStatus {
+    pub created_at: SystemTime,
 }
 
 #[derive(Clone)]
 pub struct Server {
     pub challenges: Arc<Mutex<HashMap<String, ChallengeStatus>>>,
+    pub tokens: Arc<Mutex<HashMap<String, TokenStatus>>>,
     pub global_context: Arc<GlobalContext<ArCurve>>,
 }
 
@@ -56,6 +68,8 @@ pub enum InjectStatementError {
     UnknownSession,
     #[error("Issue with credential.")]
     Credential,
+    #[error("Given token was expired.")]
+    Expired,
 }
 
 impl From<RPCError> for InjectStatementError {

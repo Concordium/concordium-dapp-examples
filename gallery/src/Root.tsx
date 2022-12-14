@@ -65,7 +65,7 @@ export default function Gallery() {
 
     const handleErrorOnLoad = useCallback(() => {
         setAuthToken(undefined);
-        alert('Authorization is no longer valid');
+        setTimeout(() => alert('Authorization is no longer valid'), 100);
     }, []);
 
     return (
