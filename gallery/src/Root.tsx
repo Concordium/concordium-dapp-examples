@@ -5,7 +5,7 @@ import { detectConcordiumProvider } from '@concordium/browser-wallet-api-helpers
 import Connection from './Connection';
 import { getNames } from './util';
 
-const VERIFIER_URL = 'http://localhost:8100';
+const VERIFIER_URL = '/api';
 
 interface ItemProps extends ItemData {
     authToken?: string;

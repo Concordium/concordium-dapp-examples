@@ -87,7 +87,7 @@ async fn main() -> anyhow::Result<()> {
 
     // 1a. get challenge
     let get_challenge = warp::get()
-        .and(warp::path!("challenge"))
+        .and(warp::path!("api" / "challenge"))
         .and(warp::query::<WithAccountAddress>())
         .and_then(move |query: WithAccountAddress| {
             handle_get_challenge(challenge_state.clone(), query.address)
@@ -95,18 +95,18 @@ async fn main() -> anyhow::Result<()> {
 
     // 1b. get statement
     let get_statement = warp::get()
-        .and(warp::path!("statement"))
+        .and(warp::path!("api" / "statement"))
         .map(move || warp::reply::json(&app.statement));
 
     // 1c. get names of gallery items
     let get_names = warp::get()
-        .and(warp::path!("names"))
+        .and(warp::path!("api" / "names"))
         .map(move || warp::reply::json(&app.names));
 
     // 2. Provide proof
     let provide_proof = warp::post()
         .and(warp::filters::body::content_length_limit(50 * 1024))
-        .and(warp::path!("prove"))
+        .and(warp::path!("api" / "prove"))
         .and(warp::body::json())
         .and_then(move |request: ChallengedProof| {
             handle_provide_proof(
@@ -118,7 +118,7 @@ async fn main() -> anyhow::Result<()> {
         });
 
     // 3. Get Image (Ignores the name of the item, checks that the auth token is valid and then redirects to an image)
-    let get_image = warp::path!("image" / String)
+    let get_image = warp::path!("api" / "image" / String)
         .map(|_| ())
         .untuple_one()
         .and(warp::query::<InfoQuery>())
@@ -130,7 +130,7 @@ r. Listening on port {}.",
         app.port
     );
 
-    let serve_public_files = warp::path("public").and(warp::fs::dir("public"));
+    let serve_public_files = warp::get().and(warp::fs::dir("public"));
 
     tokio::spawn(handle_clean_state(state.clone()));
 
