@@ -26,3 +26,9 @@ To have hot-reload (useful for development), do the following instead:
 -   Run `yarn watch` in a terminal
 -   Run `yarn start` in another terminal
 -   Open URL logged in console (typically http://127.0.0.1:8080)
+
+## Run as docker
+The dockerfile must be run from the project's root folder, ex:
+```
+docker build -t gallery -f gallery/Dockerfile .
+```
