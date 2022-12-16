@@ -11,3 +11,12 @@ guide in what needs to be done.
 The following examples are available.
 
 - [signMessage](./signMessage/) demonstrates how to use the endpoint to sign an arbitrary message with the browser wallet or mobile wallet through wallet connect.
+
+- [gallery](./gallery/) demonstrates a gallery which requires the user to authorize using ID proofs from the browser wallet.
+
+## Setup
+
+Some projects uses submodules, to initialize or update those, run:
+```
+git submodule update --init --recursive
+```

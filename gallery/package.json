@@ -1,0 +1,45 @@
+{
+    "name": "gallery",
+    "license": "Apache-2.0",
+    "version": "0.1.",
+    "packageManager": "yarn@3.2.0",
+    "dependencies": {
+        "@concordium/browser-wallet-api-helpers": "^2.0.0",
+        "@concordium/web-sdk": "^3.1.0-beta",
+        "react": "^18.1.0",
+        "react-dom": "^18.1.0"
+    },
+    "devDependencies": {
+        "@craftamap/esbuild-plugin-html": "^0.4.0",
+        "@types/node": "^18.11.14",
+        "@types/react": "^18.0.9",
+        "@types/react-dom": "^18.0.5",
+        "@typescript-eslint/eslint-plugin": "^5.20.0",
+        "@typescript-eslint/parser": "^5.20.0",
+        "cross-env": "^7.0.3",
+        "esbuild": "^0.14.42",
+        "esbuild-plugin-svgr": "^1.0.1",
+        "eslint": "7",
+        "eslint-config-prettier": "^8.5.0",
+        "eslint-plugin-import": "^2.26.0",
+        "eslint-plugin-jsx-a11y": "^6.5.1",
+        "eslint-plugin-prettier": "^4.0.0",
+        "eslint-plugin-react": "^7.29.4",
+        "eslint-plugin-react-hooks": "^4.4.0",
+        "live-server": "1.2.1",
+        "prettier": "^2.6.2",
+        "stylelint": "^14.7.1",
+        "stylelint-config-prettier": "^9.0.3",
+        "stylelint-config-standard-scss": "^3.0.0",
+        "stylelint-prettier": "^2.0.0",
+        "stylelint-scss": "^4.2.0",
+        "ts-node": "^10.8.0",
+        "typescript": "^4.7.2"
+    },
+    "scripts": {
+        "lint": "eslint . --cache --max-warnings 0 --ext .ts,.tsx",
+        "build": "node --loader ts-node/esm ./esbuild.config.ts; cp ./src/assets/* ./dist",
+        "watch": "cross-env WATCH=1 yarn build",
+        "start": "live-server ./dist"
+    }
+}
