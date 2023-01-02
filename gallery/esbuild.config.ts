@@ -20,7 +20,7 @@ const config: BuildOptions = {
     logLevel: 'info',
     sourcemap: 'inline',
     target: ['chrome67'],
-    outdir: 'dist',
+    outdir: 'public',
     plugins: [
         htmlPlugin({
             files: [

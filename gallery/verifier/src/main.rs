@@ -52,6 +52,12 @@ struct IdVerifierConfig {
         help = "Names of the pieces in the gallery. Should be a JSON list of strings"
     )]
     names: String,
+    #[structopt(
+        long = "public-folder",
+        default_value = "public",
+        help = "location of the folder to serve"
+    )]
+    public_folder: String
 }
 
 #[tokio::main]
@@ -130,7 +136,7 @@ r. Listening on port {}.",
         app.port
     );
 
-    let serve_public_files = warp::get().and(warp::fs::dir("public"));
+    let serve_public_files = warp::get().and(warp::fs::dir(app.public_folder));
 
     tokio::spawn(handle_clean_state(state.clone()));
 
