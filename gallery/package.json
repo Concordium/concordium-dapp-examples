@@ -1,7 +1,7 @@
 {
     "name": "gallery",
     "license": "Apache-2.0",
-    "version": "0.1.",
+    "version": "0.1.1",
     "packageManager": "yarn@3.2.0",
     "dependencies": {
         "@concordium/browser-wallet-api-helpers": "^2.0.0",
@@ -26,7 +26,6 @@
         "eslint-plugin-prettier": "^4.0.0",
         "eslint-plugin-react": "^7.29.4",
         "eslint-plugin-react-hooks": "^4.4.0",
-        "live-server": "1.2.1",
         "prettier": "^2.6.2",
         "stylelint": "^14.7.1",
         "stylelint-config-prettier": "^9.0.3",
@@ -38,8 +37,9 @@
     },
     "scripts": {
         "lint": "eslint . --cache --max-warnings 0 --ext .ts,.tsx",
-        "build": "node --loader ts-node/esm ./esbuild.config.ts; cp ./src/assets/* ./dist",
+        "build": "node --loader ts-node/esm ./esbuild.config.ts; cp ./src/assets/* ./public",
+        "build-verifier": "cargo build --manifest-path=verifier/Cargo.toml --release",
         "watch": "cross-env WATCH=1 yarn build",
-        "start": "live-server ./dist"
+        "start": "./verifier/target/release/gallery-verifier"
     }
 }

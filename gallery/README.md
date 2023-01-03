@@ -8,6 +8,8 @@ The backend for this demo can be found in the [verifier](./verifier/) folder:
 ## Prerequisites
 
 -   Browser wallet extension must be installed in google chrome and have an account, in order to connect and authorize.
+-   Access to a concordium node exposing the v2 GRPC API. (The backend expects it on localhost:20000, but this can be changed using the `node` parameter)
+-   Cargo/rustc installed (to build the rust backend).
 
 ## Installing
 
@@ -15,20 +17,21 @@ The backend for this demo can be found in the [verifier](./verifier/) folder:
 
 ## Running the example
 
--   Run the [backend](./verifier/) (Currently the webpage assumes the backend is on localhost:8100)
-
 -   Run `yarn build` in a terminal
--   Run `yarn start`
--   Open URL logged in console (typically http://127.0.0.1:8080)
+-   Run `yarn build-verifier` (This builds the [backend](./verifier/) using cargo/rustc)
 
-To have hot-reload (useful for development), do the following instead:
+-   Run `yarn start --statement "$(<verifier/config/statement.json)" --names "$(<verifier/config/names.json)"` (This will run the backend, which also host the front-end, check its [README](./verifier/README.md) for more information)
+-   Open URL logged in console (on default http://127.0.0.1:8100)
 
--   Run `yarn watch` in a terminal
--   Run `yarn start` in another terminal
--   Open URL logged in console (typically http://127.0.0.1:8080)
+To have hot-reload on the front-end (useful for development), run `yarn watch` in a separate terminal instead of `yarn build` in the first step.
 
 ## Run as docker
 The dockerfile must be run from the project's root folder, ex:
 ```
 docker build -t gallery -f gallery/Dockerfile .
 ```
+The image can then be run with:
+```
+docker -p 8100:8100 run gallery
+```
+See the [docker file](./Dockerfile) to see which environment variables can used to overwrite parameters.

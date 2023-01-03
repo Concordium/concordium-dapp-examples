@@ -39,7 +39,7 @@ ENV STATEMENT='[{"type":"AttributeInSet","attributeTag":"countryOfResidence","se
 ENV NAMES='["I Scream", "Starry Night", "Tranquility", "Quiet", "Storm", "Timeless", "Endless Rain"]'
 
 COPY --from=rust_build ./verifier/target/release/gallery-verifier ./main
-COPY --from=node_build ./app/dist ./public
+COPY --from=node_build ./app/public ./public
 RUN chmod +x ./main
 
-CMD ./main --node "${NODE}" --port "${PORT}" --log-level "${LOG_LEVEL}" --statement "${STATEMENT}" --names "${NAMES}"
+CMD ./main --node "${NODE}" --port "${PORT}" --log-level "${LOG_LEVEL}" --statement "${STATEMENT}" --names "${NAMES}" --public-folder public

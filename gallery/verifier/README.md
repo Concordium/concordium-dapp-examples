@@ -4,19 +4,22 @@ This page describes the id verifier backend for the gallery dapp example. It ens
 
 # Supported configuration options
 
-The following environment variables (command line options) are supported
-- `ENDPOINT` (`--node`) the URL of the node's GRPC V2 interface, e.g., http://localhost:20000
-- `PORT` (`--port`) the port on which the server will listen for incoming requests
-- `LOG_LEVEL` (`--log-level`) maximum log level (defaults to `debug` if not given)
-- `NAMES` (`--names`) a JSON list of strings, which are the names of the gallery items.
-- `STATEMENT` (`--statement`) a JSON representation of the the id statement that users shall use to authorize themselves.
+The following parameters are supported
+- `node` the URL of the node's GRPC V2 interface, e.g., http://localhost:20000
+- `port` the port on which the server will listen for incoming requests
+- `log-level` maximum log level (defaults to `debug` if not given)
+- `names` a JSON list of strings, which are the names of the gallery items.
+- `statement` a JSON representation of the the id statement that users shall use to authorize themselves.
+- `public-folder` the path to the folder, which should be served, defaults to the public folder in the current directory.
 
-All of the above is available by using `--help** to get usage information.
+All of the above is available by using `--help` to get usage information.
 
 An example to run the verifier with example settings and local node on would be:
 ```
 cargo run -- --node http://localhost:20000 --statement  "$(<config/statement.json)" --names "$(<config/names.json)"
 ```
+
+# Using the tool
 
 The verifier is a simple server that exposes five endpoints 
  - `GET /challenge`

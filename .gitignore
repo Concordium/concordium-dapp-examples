@@ -25,4 +25,5 @@ yarn-error.log*
 
 target
 dist
+gallery/public
 .eslintcache
