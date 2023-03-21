@@ -21,12 +21,6 @@ COPY ./gallery/verifier/src ./src
 COPY ./gallery/verifier/Cargo.lock ./Cargo.lock
 COPY ./gallery/verifier/Cargo.toml ./Cargo.toml
 
-# Install protobuf
-RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v3.15.3/protoc-3.15.3-linux-x86_64.zip \
-    && unzip protoc-3.15.3-linux-x86_64.zip \
-    && mv ./bin/protoc /usr/bin/protoc \
-    && chmod +x /usr/bin/protoc
-
 RUN cargo build --release
 
 FROM ubuntu:22.04
