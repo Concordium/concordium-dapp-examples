@@ -1,10 +1,6 @@
 use concordium_rust_sdk::{
-    common::{
-        self as crypto_common,
-        derive::{SerdeBase16Serialize, Serialize},
-        Buffer, Deserial, ParseResult, ReadBytesExt, SerdeDeserialize, SerdeSerialize, Serial,
-        Versioned,
-    },
+    base as concordium_base,
+    common::{SerdeBase16Serialize, Serial, Serialize, Versioned},
     endpoints::{QueryError, RPCError},
     id::{
         constants::{ArCurve, AttributeKind},

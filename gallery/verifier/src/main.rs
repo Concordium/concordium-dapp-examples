@@ -57,7 +57,7 @@ struct IdVerifierConfig {
         default_value = "public",
         help = "location of the folder to serve"
     )]
-    public_folder: String
+    public_folder: String,
 }
 
 #[tokio::main]
