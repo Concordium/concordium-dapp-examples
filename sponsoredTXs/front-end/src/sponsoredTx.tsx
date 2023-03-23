@@ -10,7 +10,7 @@ import {
 import { withJsonRpcClient, WalletConnectionProps, useConnection, useConnect } from '@concordium/react-components';
 import { version } from '../package.json';
 
-import { register, mint, submitUpdateOperatorSponsoredTx, submitTransferSponsoredTx } from './utils';
+import { submitUpdateOperator,submitTransfer, register, mint, submitUpdateOperatorSponsoredTx, submitTransferSponsoredTx } from './utils';
 import {
     SPONSORED_TX_CONTRACT_NAME,
     SPONSORED_TX_CONTRACT_INDEX,
@@ -23,6 +23,8 @@ import {
 } from './constants';
 
 import { WalletConnectionTypeButton } from './WalletConnectorTypeButton';
+
+const VERIFIER_URL = '/api';
 
 const blackCardStyle = {
     backgroundColor: 'black',
@@ -822,9 +824,9 @@ export default function SPONSOREDTXS(props: WalletConnectionProps) {
                                     setTxHash('');
                                     setTransactionError('');
                                     setWaitingForUser(true);
-                                    const tx = isPermitUpdateOperator
-                                        ? submitUpdateOperatorSponsoredTx(
-                                              connection,
+
+                                   const tx = isPermitUpdateOperator
+                                        ? submitUpdateOperator(VERIFIER_URL,
                                               account,
                                               signer,
                                               nonce,
@@ -832,8 +834,7 @@ export default function SPONSOREDTXS(props: WalletConnectionProps) {
                                               operator,
                                               addOperator
                                           )
-                                        : submitTransferSponsoredTx(
-                                              connection,
+                                        : submitTransfer(VERIFIER_URL,
                                               account,
                                               signer,
                                               nonce,
@@ -842,6 +843,7 @@ export default function SPONSOREDTXS(props: WalletConnectionProps) {
                                               from,
                                               to
                                           );
+
                                     tx.then((txHashReturned) => {
                                         setTxHash(txHashReturned);
                                         if (txHashReturned !== '') {
@@ -859,6 +861,7 @@ export default function SPONSOREDTXS(props: WalletConnectionProps) {
                                         .finally(() => {
                                             setWaitingForUser(false);
                                         });
+
                                 }}
                             >
                                 Submit Sponsored Transaction

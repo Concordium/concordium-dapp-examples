@@ -11,6 +11,50 @@ import {
 } from './constants';
 
 /**
+ * Send signature to backend.
+ */
+export async function submitUpdateOperator(backend: string, account: string, signer: string, nonce: string, signature: string, operator: string, addOperator: bool) {
+    const response = await fetch(`${backend}/submitUpdateOperator`, {
+        method: 'post',
+        headers: new Headers({ 'content-type': 'application/json' }),
+        body: JSON.stringify({ account, signer, nonce, signature, operator, add_operator: addOperator, timestamp: EXPIRY_TIME_SIGNATURE }),
+    });
+    if (!response.ok) {
+        throw new Error('Unable to submit');
+    }
+    const body = await response.json();
+    if (body) {
+        return body;
+    }
+    throw new Error('Unable to submit');
+}
+
+/**
+ * Send signature to backend.
+ */
+export async function submitTransfer(backend: string, account: string,
+    signer: string,
+    nonce: string,
+    signature: string,
+    tokenID: string,
+    from: string,
+    to: string) {
+    const response = await fetch(`${backend}/submitTransfer`, {
+        method: 'post',
+        headers: new Headers({ 'content-type': 'application/json' }),
+        body: JSON.stringify({ account, signer, nonce, signature, tokenID, from, to, timestamp: EXPIRY_TIME_SIGNATURE }),
+    });
+    if (!response.ok) {
+        throw new Error('Unable to submit');
+    }
+    const body = await response.json();
+    if (body) {
+        return body;
+    }
+    throw new Error('Unable to submit');
+}
+
+/**
  * Action for minting a token to the user's account.
  */
 export async function mint(connection: WalletConnection, account: string) {
@@ -238,11 +282,11 @@ export async function submitUpdateOperatorSponsoredTx(
 
     const operatorAction = addOperator
         ? {
-              Add: [],
-          }
+            Add: [],
+        }
         : {
-              Remove: [],
-          };
+            Remove: [],
+        };
 
     const message = {
         contract_address: {
