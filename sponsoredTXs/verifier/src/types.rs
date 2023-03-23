@@ -1,7 +1,7 @@
 use concordium_rust_sdk::{
     common::{
         self as crypto_common,
-        derive::{SerdeBase16Serialize, Serial, Serialize},
+        derive::{SerdeBase16Serialize, Serialize},
         types::Timestamp,
         Buffer, Deserial, ParseResult, ReadBytesExt, SerdeDeserialize, SerdeSerialize, Serial,
         Versioned,
@@ -118,86 +118,86 @@ pub struct OperatorOfParams {
     pub timestamp: String,
 }
 
-// #[derive(
-//     Copy, Clone, Debug, PartialEq, Serial, PartialOrd, Eq, Ord,
-// )]
-// #[repr(transparent)]
-// pub struct SignatureEd25519(pub [u8; 64]);
+#[derive(
+    Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, SerdeBase16Serialize, Serialize,
+)]
+#[repr(transparent)]
+pub struct SignatureEd25519(pub [u8; 64]);
 
-//
-//
-// /// serde::Deserialize,serde::Serialize,
-// #[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
-// pub struct UpdateOperator {
-//     pub update: OperatorUpdate,
-//     pub operator: Address,
-// }
-//
-// #[derive(Debug, serde::Deserialize, serde::Serialize, Clone, Copy)]
-// pub enum OperatorUpdate {
-//     Remove,
-//     Add,
-// }
 
-// type ContractTokenId = u32;
 
-// type ContractTokenAmount = u8;
+/// serde::Deserialize,serde::Serialize,
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
+pub struct UpdateOperator {
+    pub update: OperatorUpdate,
+    pub operator: Address,
+}
 
-// type TransferParameter = TransferParams;
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone, Copy)]
+pub enum OperatorUpdate {
+    Remove,
+    Add,
+}
 
-// #[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
-// pub struct TransferParams(pub Vec<Transfer>);
+type ContractTokenId = u32;
 
-// #[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
-// pub struct Transfer {
-//     pub token_id: ContractTokenId,
-//     pub amount: ContractTokenAmount,
-//     pub from: Address,
-//     pub to: Receiver,
-//     pub data: AdditionalData,
-// }
+type ContractTokenAmount = u8;
 
-// #[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
-// pub enum Receiver {
-//     Account(AccountAddress),
-//     Contract(
-//         ContractAddress,
-//         OwnedEntrypointName,
-//     ),
-// }
+type TransferParameter = TransferParams;
 
-// #[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
-// pub struct AdditionalData(Vec<u8>);
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
+pub struct TransferParams(pub Vec<Transfer>);
 
-// /// serde::Deserialize, serde::Serialize,
-// #[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
-// pub(crate) enum PermitPayload {
-//     Transfer(TransferParameter),
-//     UpdateOperator(UpdateOperatorParams),
-// }
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
+pub struct Transfer {
+    pub token_id: ContractTokenId,
+    pub amount: ContractTokenAmount,
+    pub from: Address,
+    pub to: Receiver,
+    pub data: AdditionalData,
+}
 
-// pub trait IsTokenId: serde::Serialize {}
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
+pub enum Receiver {
+    Account(AccountAddress),
+    Contract(
+        ContractAddress,
+        OwnedEntrypointName,
+    ),
+}
 
-// pub trait IsTokenAmount: serde::Serialize {}
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
+pub struct AdditionalData(Vec<u8>);
 
-// /// serde::Serialize
-// #[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
-// pub struct UpdateOperatorParams(pub Vec<UpdateOperator>);
+/// serde::Deserialize, serde::Serialize,
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
+pub enum PermitPayload {
+    Transfer(TransferParameter),
+    UpdateOperator(UpdateOperatorParams),
+}
 
-// /// serde::Deserialize,Serial,
-// #[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
-// pub struct PermitParam {
-//     pub signature: BTreeMap<u8, BTreeMap<u8, SignatureEd25519>>,
-//     pub signer: AccountAddress,
-//     pub message: PermitMessage,
-// }
+pub trait IsTokenId: serde::Serialize {}
 
-// /// serde::Deserialize, serde::Serialize,
-// #[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
-// pub struct PermitMessage {
-//     pub contract_address: ContractAddress,
-//     pub entry_point: OwnedEntrypointName,
-//     pub nonce: u64,
-//     pub timestamp: Timestamp,
-//     pub payload: PermitPayload,
-// }
+pub trait IsTokenAmount: serde::Serialize {}
+
+/// serde::Serialize
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
+pub struct UpdateOperatorParams(pub Vec<UpdateOperator>);
+
+/// serde::Deserialize,Serial,
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
+pub struct PermitParam {
+    pub signature: BTreeMap<u8, BTreeMap<u8, SignatureEd25519>>,
+    pub signer: AccountAddress,
+    pub message: PermitMessage,
+}
+
+/// serde::Deserialize, serde::Serialize,
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
+pub struct PermitMessage {
+    pub contract_address: ContractAddress,
+    pub entry_point: OwnedEntrypointName,
+    pub nonce: u64,
+    pub timestamp: Timestamp,
+    pub payload: PermitPayload,
+}

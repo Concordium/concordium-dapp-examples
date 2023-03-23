@@ -3,14 +3,14 @@ mod types;
 use crate::handlers::*;
 use crate::types::*;
 
-
 use anyhow::Context;
 use clap::Parser;
 use concordium_rust_sdk::common::to_bytes;
+use concordium_rust_sdk::common::types::Timestamp;
 use concordium_rust_sdk::id::types::AccountKeys;
-use concordium_rust_sdk::smart_contracts::common::{AccountAddress,Address};
 use concordium_rust_sdk::smart_contracts::common::Amount;
 use concordium_rust_sdk::smart_contracts::common::OwnedEntrypointName;
+use concordium_rust_sdk::smart_contracts::common::{AccountAddress, Address};
 use concordium_rust_sdk::types::Energy;
 
 use concordium_rust_sdk::common::{SerdeDeserialize, SerdeSerialize};
@@ -48,7 +48,6 @@ struct AccountData {
     account_keys: AccountKeys,
     address: AccountAddress,
 }
-
 
 /// Structure used to receive the correct command line arguments.
 #[derive(clap::Parser, Debug)]
@@ -176,51 +175,62 @@ async fn main() -> anyhow::Result<()> {
             log::debug!("request");
             log::debug!("{:?}", request);
 
-            // let operator_update = match request.add_operator {
-            //     true => types::OperatorUpdate::Add,
-            //     false => types::OperatorUpdate::Remove,
-            // };
+            let operator_update = match request.add_operator {
+                true => types::OperatorUpdate::Add,
+                false => types::OperatorUpdate::Remove,
+            };
 
-            // let update_operator = types::UpdateOperator {
-            //     update: operator_update,
-            //     operator: Address::Account(AccountAddress::from_str(&request.operator).unwrap()),
-            // };
-            // let payload = types::UpdateOperatorParams(vec![update_operator]);
+            let update_operator = types::UpdateOperator {
+                update: operator_update,
+                operator: Address::Account(AccountAddress::from_str(&request.operator).unwrap()),
+            };
+            let payload = types::UpdateOperatorParams(vec![update_operator]);
 
-            // let nonce = match request.nonce.parse::<u64>() {
-            //     Ok(nonce) => nonce,
-            //     Err(_e) => 0,
-            //   };
+            let nonce = match request.nonce.parse::<u64>() {
+                Ok(nonce) => nonce,
+                Err(_e) => 0,
+            };
 
-            // let message: PermitMessage = PermitMessage {
-            //     timestamp: request.timestamp,
-            //     contract_address: ContractAddress {
-            //         index: 3936,
-            //         subindex: 0,
-            //     },
-            //     entry_point: OwnedEntrypointName::new_unchecked("updateOperator".into()),
-            //     nonce,
-            //     payload: types::PermitPayload::UpdateOperator(payload),
-            // };
+            let timestamp = match request.timestamp.parse::<u64>() {
+                Ok(timestamp) => timestamp,
+                Err(_e) => 0,
+            };
 
-            // let signature = request.signature.as_bytes();
-            // let signature2 = signature[0..64].try_into().unwrap();
+            let message: PermitMessage = PermitMessage {
+                timestamp: Timestamp { millis: timestamp },
+                contract_address: ContractAddress {
+                    index: 3936,
+                    subindex: 0,
+                },
+                entry_point: OwnedEntrypointName::new_unchecked("updateOperator".into()),
+                nonce,
+                payload: types::PermitPayload::UpdateOperator(payload),
+            };
 
-            // let mut inner_signature_map:BTreeMap<u8, SignatureEd25519> = BTreeMap::new();
-            // inner_signature_map.insert(0, types::SignatureEd25519(signature2));
+            log::debug!("message");
+            log::debug!("{:?}", message);
 
-            // let mut signature_map:BTreeMap<u8, BTreeMap<u8, SignatureEd25519>> = BTreeMap::new();
-            // signature_map.insert(0, inner_signature_map);
+            let signature = request.signature.as_bytes();
+            let signature2 = signature[0..64].try_into().unwrap();
 
-            // let param: PermitParam = PermitParam {
-            //     message,
-            //     signature: signature_map,
-            //     signer: AccountAddress::from_str(&request.signer).unwrap(),
-            // };
+            let mut inner_signature_map: BTreeMap<u8, SignatureEd25519> = BTreeMap::new();
+            inner_signature_map.insert(0, types::SignatureEd25519(signature2));
 
-            // let bytes = to_bytes(&param);
+            let mut signature_map: BTreeMap<u8, BTreeMap<u8, SignatureEd25519>> = BTreeMap::new();
+            signature_map.insert(0, inner_signature_map);
 
-           let bytes: Vec<u8> = vec![];
+            let param: PermitParam = PermitParam {
+                message,
+                signature: signature_map,
+                signer: AccountAddress::from_str(&request.signer).unwrap(),
+            };
+
+            log::debug!("param");
+            log::debug!("{:?}", param);
+
+            let bytes = to_bytes(&param);
+
+            //  let bytes: Vec<u8> = vec![];
 
             let contract_name = "cis3_nft";
 
@@ -247,7 +257,7 @@ async fn main() -> anyhow::Result<()> {
             let tx = transactions::send::make_and_sign_transaction(
                 &keys2.keys,
                 keys2.address.clone(),
-                Nonce { nonce: 15u64 },
+                Nonce { nonce: 16u64 },
                 TransactionTime {
                     seconds: 888888888888888,
                 },
