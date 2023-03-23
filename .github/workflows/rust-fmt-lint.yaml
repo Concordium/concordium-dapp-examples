@@ -3,70 +3,73 @@ name: Fmt and Clippy
 # This job runs rustfmt and clippy linting,
 
 on:
-  push:
-    branches: main
+    push:
+        branches: main
 
-  pull_request:
-    branches: main
+    pull_request:
+        branches: main
 
-  workflow_dispatch: # allows manual trigger
+    workflow_dispatch: # allows manual trigger
 
 env:
-  RUST_FMT: nightly-2022-06-09-x86_64-unknown-linux-gnu
-  RUST_CLIPPY: 1.64
+    RUST_FMT: nightly-2022-06-09-x86_64-unknown-linux-gnu
+    RUST_CLIPPY: 1.64
 
 jobs:
-  "lint_fmt":
-    name: lint:fmt
-    # Don't run on draft pull requests
-    if: ${{ !github.event.pull_request.draft }}
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        crates:
-          - gallery/verifier/Cargo.toml
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: ${{ env.RUST_FMT }}
-          override: true
-          components: rustfmt
-      - name: Format
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --manifest-path=${{ matrix.crates }} -- --check
+    'lint_fmt':
+        name: lint:fmt
+        # Don't run on draft pull requests
+        if: ${{ !github.event.pull_request.draft }}
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                crates:
+                    - gallery/verifier/Cargo.toml
+                    - low-code-nft-marketplace/cis2-market/Cargo.toml
+                    - low-code-nft-marketplace/cis2-multi/Cargo.toml
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v2
+            - name: Install Rust
+              uses: actions-rs/toolchain@v1
+              with:
+                  profile: minimal
+                  toolchain: ${{ env.RUST_FMT }}
+                  override: true
+                  components: rustfmt
+            - name: Format
+              uses: actions-rs/cargo@v1
+              with:
+                  command: fmt
+                  args: --manifest-path=${{ matrix.crates }} -- --check
 
-  "lint_clippy":
-    name: lint:clippy
-    needs: "lint_fmt"
-    # Don't run on draft pull requests
-    if: ${{ !github.event.pull_request.draft }}
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        crates:
-          - gallery/verifier/Cargo.toml
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          submodules: recursive
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: ${{ env.RUST_CLIPPY }}
-          override: true
-          target: ${{ env.TARGET }}
-          components: rustfmt, clippy
-      - name: Clippy
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --manifest-path ${{ matrix.crates }} -- -D warnings
-
+    'lint_clippy':
+        name: lint:clippy
+        needs: 'lint_fmt'
+        # Don't run on draft pull requests
+        if: ${{ !github.event.pull_request.draft }}
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                crates:
+                    - gallery/verifier/Cargo.toml
+                    - low-code-nft-marketplace/cis2-market/Cargo.toml
+                    - low-code-nft-marketplace/cis2-multi/Cargo.toml
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v2
+              with:
+                  submodules: recursive
+            - name: Install Rust
+              uses: actions-rs/toolchain@v1
+              with:
+                  profile: minimal
+                  toolchain: ${{ env.RUST_CLIPPY }}
+                  override: true
+                  target: ${{ env.TARGET }}
+                  components: rustfmt, clippy
+            - name: Clippy
+              uses: actions-rs/cargo@v1
+              with:
+                  command: clippy
+                  args: --manifest-path ${{ matrix.crates }} -- -D warnings

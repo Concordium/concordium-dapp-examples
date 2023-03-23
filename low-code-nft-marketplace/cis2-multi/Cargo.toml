@@ -1,0 +1,22 @@
+[package]
+name = "cis2-multi"
+version = "0.1.0"
+authors = ["Concordium <developers@concordium.com>"]
+edition = "2018"
+license = "MPL-2.0"
+
+[features]
+default = ["std"]
+std = ["concordium-std/std", "concordium-cis2/std"]
+
+[dependencies]
+concordium-std = { version = "*", default-features = false }
+concordium-cis2 = { version = "*", default-features = false }
+hex = "*"
+
+[lib]
+crate-type=["cdylib", "rlib"]
+
+[profile.release]
+codegen-units = 1
+opt-level = "s"
