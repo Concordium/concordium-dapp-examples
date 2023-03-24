@@ -8,8 +8,6 @@ The following parameters are supported
 - `node` the URL of the node's GRPC V2 interface, e.g., http://localhost:20000
 - `port` the port on which the server will listen for incoming requests
 - `log-level` maximum log level (defaults to `debug` if not given)
-- `names` a JSON list of strings, which are the names of the gallery items.
-- `statement` a JSON representation of the the id statement that users shall use to authorize themselves.
 - `public-folder` the path to the folder, which should be served, defaults to the public folder in the current directory.
 - `account` the path to the folder, which key credentials.
 
@@ -17,17 +15,14 @@ All of the above is available by using `--help` to get usage information.
 
 An example to run the verifier with example settings and local node on would be:
 ```
-cargo run -- --node http://node.testnet.concordium.com:20000 --statement  "$(<config/statement.json)" --names "$(<config/names.json)" --port 8080 --account <YourAccountPathToYourKeys>
+cargo run -- --node http://node.testnet.concordium.com:20000 --port 8080 --account <YourAccountPathToYourKeys>
 ```
 
 # Using the tool
 
 The verifier is a simple server that exposes five endpoints
  - `GET /submitUpdateOperator`
- - `GET /statement`
- - `GET /names`
- - `POST /prove`.
- - `GET /image/:name?auth=:authToken`.
+ - `GET /submitTransfer`
 
 The overall flow is that the user gets a challenge (with /challenge) and the statement  (with /statement).
 Then `prove` endpoint can be called with a proof of the statement, and the challenge that was used.
@@ -39,7 +34,7 @@ All of the server state is kept in memory and thus does not survive a restart.
 See [src/main.rs](./src/main.rs) for the formats of requests and responses. Both
 requests and responses are JSON encoded. The `/prove` endpoint responds with
 status `200 OK` and the authToken if the proof is acceptable, and with invalid request otherwise.
-The requests are handled by handlers in [src/handlers.rs](./src/handlers.rs). 
+The requests are handled by handlers in [src/handlers.rs](./src/handlers.rs).
 
 The server needs access to the node so that it can get the requested credential
 from the node during proof validation.

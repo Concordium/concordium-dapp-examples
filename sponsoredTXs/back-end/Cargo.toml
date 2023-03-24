@@ -1,10 +1,10 @@
 [package]
-name = "gallery-verifier"
+name = "sponsored-transaction-backend"
 version = "0.1.0"
 authors = ["Concordium AG <developers@concordium.com>"]
 edition = "2021"
 license-file = "../../LICENSE"
- 
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
