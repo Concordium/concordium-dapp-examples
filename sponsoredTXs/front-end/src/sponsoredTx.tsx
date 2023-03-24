@@ -10,7 +10,7 @@ import {
 import { withJsonRpcClient, WalletConnectionProps, useConnection, useConnect } from '@concordium/react-components';
 import { version } from '../package.json';
 
-import { submitUpdateOperator,submitTransfer, register, mint, submitUpdateOperatorSponsoredTx, submitTransferSponsoredTx } from './utils';
+import { submitUpdateOperator,submitTransfer, register, mint } from './utils';
 import {
     SPONSORED_TX_CONTRACT_NAME,
     SPONSORED_TX_CONTRACT_INDEX,
@@ -827,7 +827,6 @@ export default function SPONSOREDTXS(props: WalletConnectionProps) {
 
                                    const tx = isPermitUpdateOperator
                                         ? submitUpdateOperator(VERIFIER_URL,
-                                              account,
                                               signer,
                                               nonce,
                                               signature,
@@ -835,7 +834,6 @@ export default function SPONSOREDTXS(props: WalletConnectionProps) {
                                               addOperator
                                           )
                                         : submitTransfer(VERIFIER_URL,
-                                              account,
                                               signer,
                                               nonce,
                                               signature,

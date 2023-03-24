@@ -1041,25 +1041,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "gallery-verifier"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "chrono",
- "clap",
- "concordium-rust-sdk",
- "env_logger",
- "log",
- "rand 0.8.5",
- "serde",
- "serde_json",
- "thiserror",
- "tokio",
- "uuid",
- "warp",
-]
-
-[[package]]
 name = "generic-array"
 version = "0.14.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2445,6 +2426,25 @@ checksum = "02e2d2db9033d13a1567121ddd7a095ee144db4e1ca1b1bda3419bc0da294ebd"
 dependencies = [
  "libc",
  "winapi",
+]
+
+[[package]]
+name = "sponsored-transaction-backend"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "clap",
+ "concordium-rust-sdk",
+ "env_logger",
+ "log",
+ "rand 0.8.5",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tokio",
+ "uuid",
+ "warp",
 ]
 
 [[package]]

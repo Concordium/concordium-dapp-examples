@@ -13,14 +13,14 @@ import {
 /**
  * Send signature to backend.
  */
-export async function submitUpdateOperator(backend: string, account: string, signer: string, nonce: string, signature: string, operator: string, addOperator: boolean) {
+export async function submitUpdateOperator(backend: string, signer: string, nonce: string, signature: string, operator: string, addOperator: boolean) {
 
     const expiryTimeSignature = new Date(Date.parse(EXPIRY_TIME_SIGNATURE));
 
     const response = await fetch(`${backend}/submitUpdateOperator`, {
         method: 'post',
         headers: new Headers({ 'content-type': 'application/json' }),
-        body: JSON.stringify({ account, signer, nonce, signature, operator, add_operator: addOperator, timestamp: expiryTimeSignature.getTime().toString() }),
+        body: JSON.stringify({ signer, nonce, signature, operator, add_operator: addOperator, timestamp: expiryTimeSignature.getTime().toString() }),
     });
     if (!response.ok) {
         throw new Error('Unable to submit');
@@ -35,7 +35,7 @@ export async function submitUpdateOperator(backend: string, account: string, sig
 /**
  * Send signature to backend.
  */
-export async function submitTransfer(backend: string, account: string,
+export async function submitTransfer(backend: string,
     signer: string,
     nonce: string,
     signature: string,
@@ -48,7 +48,7 @@ export async function submitTransfer(backend: string, account: string,
     const response = await fetch(`${backend}/submitTransfer`, {
         method: 'post',
         headers: new Headers({ 'content-type': 'application/json' }),
-        body: JSON.stringify({ account, signer, nonce, signature, tokenID, from, to, timestamp: expiryTimeSignature.getTime().toString() }),
+        body: JSON.stringify({ signer, nonce, signature, token_id: tokenID, from, to, timestamp: expiryTimeSignature.getTime().toString() }),
     });
     if (!response.ok) {
         throw new Error('Unable to submit');
