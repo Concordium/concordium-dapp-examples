@@ -1,90 +1,262 @@
-use crate::crypto_common::base16_encode_string;
+use crate::types;
 use crate::types::*;
-use concordium_rust_sdk::{
-    common::{self as crypto_common},
-    id::{
-        constants::{ArCurve, AttributeKind},
-        id_proof_types::Statement,
-        types::{AccountAddress, AccountCredentialWithoutProofs},
-    },
-    types::transactions::{BlockItem, EncodedPayload},
-    v2::BlockIdentifier,
-};
-use log::warn;
-use rand::Rng;
+use std::collections::BTreeMap;
 use std::convert::Infallible;
-use std::time::SystemTime;
-use uuid::Uuid;
+use std::str::FromStr;
+use std::sync::Arc;
 use warp::{http::StatusCode, Rejection};
 
-static CHALLENGE_EXPIRY_SECONDS: u64 = 600;
-static TOKEN_EXPIRY_SECONDS: u64 = 1200;
-static CLEAN_INTERVAL_SECONDS: u64 = 600;
+use concordium_rust_sdk::smart_contracts::common::{
+    AccountAddress, Address, Amount, ContractAddress, OwnedEntrypointName, Timestamp,
+};
+use concordium_rust_sdk::types::Energy;
 
-// pub async fn handle_get_challenge(
-//     state: Server,
-//     address: AccountAddress,
-// ) -> Result<impl warp::Reply, Rejection> {
-//     let state = state.clone();
-//     log::debug!("Parsed statement. Generating challenge");
-//     match get_challenge_worker(state, address).await {
-//         Ok(r) => Ok(warp::reply::json(&r)),
-//         Err(e) => {
-//             warn!("Request is invalid {:#?}.", e);
-//             Err(warp::reject::custom(e))
-//         }
-//     }
-// }
+use concordium_rust_sdk::v2;
 
-pub async fn handle_signature(
+use crate::crypto_common::types::TransactionTime;
+use concordium_rust_sdk::types::smart_contracts;
+use concordium_rust_sdk::types::transactions;
+use concordium_rust_sdk::types::WalletAccount;
+
+pub async fn handle_signature_update_operator(
     client: concordium_rust_sdk::v2::Client,
-    // state: Server,
-    //   statement: Statement<ArCurve, AttributeKind>,
-    bi: BlockItem<EncodedPayload>,
-    //   request: OperatorOfParams,
+    key_update_operator: Arc<WalletAccount>,
+    request: UpdateOperatorInputParams,
 ) -> Result<impl warp::Reply, Rejection> {
     let mut client = client.clone();
-    //  let state = state.clone();
-    //  let statement = statement.clone();
+
+    let ai = client
+        .get_account_info(
+            &key_update_operator.address.into(),
+            &v2::BlockIdentifier::Best,
+        )
+        .await
+        .unwrap();
+
+    let nonce = ai.response.account_nonce;
+
+    log::debug!("nonce");
+    log::debug!("{:?}", nonce);
+
+    let operator_update = match request.add_operator {
+        true => types::OperatorUpdate::Add,
+        false => types::OperatorUpdate::Remove,
+    };
+
+    let update_operator = types::UpdateOperator {
+        update: operator_update,
+        operator: Address::Account(AccountAddress::from_str(&request.operator).unwrap()),
+    };
+    let payload = types::UpdateOperatorParams(vec![update_operator]);
+
+    let nonce_payload = match request.nonce.parse::<u64>() {
+        Ok(nonce_payload) => nonce_payload,
+        Err(_e) => 0,
+    };
+
+    let timestamp = match request.timestamp.parse::<u64>() {
+        Ok(timestamp) => timestamp,
+        Err(_e) => 0,
+    };
+
+    let message: PermitMessage = PermitMessage {
+        timestamp: Timestamp::from_timestamp_millis(timestamp),
+        contract_address: ContractAddress {
+            index: 3903,
+            subindex: 0,
+        },
+        entry_point: OwnedEntrypointName::new_unchecked("updateOperator".into()),
+        nonce: nonce_payload,
+        payload: types::PermitPayload::UpdateOperator(payload),
+    };
+
+    log::debug!("message");
+    log::debug!("{:?}", message);
+
+    let signature = request.signature.as_bytes();
+    let signature2 = signature[0..64].try_into().unwrap();
+
+    let mut inner_signature_map: BTreeMap<u8, SignatureEd25519> = BTreeMap::new();
+    inner_signature_map.insert(0, types::SignatureEd25519(signature2));
+
+    let mut signature_map: BTreeMap<u8, BTreeMap<u8, SignatureEd25519>> = BTreeMap::new();
+    signature_map.insert(0, inner_signature_map);
+
+    let param: PermitParam = PermitParam {
+        message,
+        signature: signature_map,
+        signer: AccountAddress::from_str(&request.signer).unwrap(),
+    };
+
+    log::debug!("param");
+    log::debug!("{:?}", param);
+
+    let bytes = concordium_rust_sdk::smart_contracts::common::to_bytes(&param);
+
+    let contract_name = "cis3_nft";
+
+    let receive_name =
+        smart_contracts::OwnedReceiveName::try_from(format!("{}.permit", contract_name)).unwrap();
+
+    let payload = transactions::Payload::Update {
+        payload: transactions::UpdateContractPayload {
+            amount: Amount::from_micro_ccd(0),
+            address: ContractAddress {
+                index: 3903,
+                subindex: 0,
+            },
+            receive_name,
+            message: smart_contracts::Parameter::try_from(bytes).unwrap(),
+        },
+    };
+    log::debug!("{:?}", payload);
+
+    log::debug!("keys");
+    log::debug!("{:?}", key_update_operator);
+
+    let tx = transactions::send::make_and_sign_transaction(
+        &key_update_operator.keys,
+        key_update_operator.address,
+        nonce,
+        TransactionTime {
+            seconds: 888888888888888,
+        },
+        concordium_rust_sdk::types::transactions::send::GivenEnergy::Absolute(Energy {
+            energy: 234235,
+        }),
+        payload,
+    );
+
+    log::debug!("transaction: {:?}", tx);
+    let bi = transactions::BlockItem::AccountTransaction(tx);
 
     let hash = client.send_block_item(&bi).await.unwrap();
 
     Ok(warp::reply::json(&hash))
 }
 
-// pub async fn handle_provide_proof(
-//     client: concordium_rust_sdk::v2::Client,
-//     state: Server,
-//     statement: Statement<ArCurve, AttributeKind>,
-//     request: ChallengedProof,
-// ) -> Result<impl warp::Reply, Rejection> {
-//     let client = client.clone();
-//     let state = state.clone();
-//     let statement = statement.clone();
-//     match check_proof_worker(client, state, request, statement).await {
-//         Ok(r) => Ok(warp::reply::json(&r)),
-//         Err(e) => {
-//             warn!("Request is invalid {:#?}.", e);
-//             Err(warp::reject::custom(e))
-//         }
-//     }
-// }
+pub async fn handle_signature_transfer(
+    client: concordium_rust_sdk::v2::Client,
+    key_update_operator: Arc<WalletAccount>,
+    request: TransferInputParams,
+) -> Result<impl warp::Reply, Rejection> {
+    let mut client = client.clone();
 
-// pub async fn handle_image_access(
-//     params: InfoQuery,
-//     state: Server,
-// ) -> Result<impl warp::Reply, Rejection> {
-//     match get_info_worker(state, params.auth) {
-//         Ok(_) => Ok(warp::redirect(warp::http::Uri::from_static(
-//             // Currently the user is just redirected to a random image
-//             "https://picsum.photos/150/200",
-//         ))),
-//         Err(e) => {
-//             warn!("Request is invalid {:#?}.", e);
-//             Err(warp::reject::custom(e))
-//         }
-//     }
-// }
+    let ai = client
+        .get_account_info(
+            &key_update_operator.address.into(),
+            &v2::BlockIdentifier::Best,
+        )
+        .await
+        .unwrap();
+
+    let nonce = ai.response.account_nonce;
+
+    log::debug!("nonce");
+    log::debug!("{:?}", nonce);
+
+    let token_id = match request.token_id.parse::<u32>() {
+        Ok(token_id) => token_id,
+        Err(_e) => 0,
+    };
+
+    let transfer = types::Transfer {
+        from: Address::Account(AccountAddress::from_str(&request.from).unwrap()),
+        to: types::Receiver::Account(AccountAddress::from_str(&request.to).unwrap()),
+        token_id,
+        amount: 1,
+        data: types::AdditionalData(vec![]),
+    };
+
+    let payload = types::TransferParams(vec![transfer]);
+
+    let nonce_payload = match request.nonce.parse::<u64>() {
+        Ok(nonce_payload) => nonce_payload,
+        Err(_e) => 0,
+    };
+
+    let timestamp = match request.timestamp.parse::<u64>() {
+        Ok(timestamp) => timestamp,
+        Err(_e) => 0,
+    };
+
+    let message: PermitMessage = PermitMessage {
+        timestamp: Timestamp::from_timestamp_millis(timestamp),
+        contract_address: ContractAddress {
+            index: 3903,
+            subindex: 0,
+        },
+        entry_point: OwnedEntrypointName::new_unchecked("transfer".into()),
+        nonce: nonce_payload,
+        payload: types::PermitPayload::Transfer(payload),
+    };
+
+    log::debug!("message");
+    log::debug!("{:?}", message);
+
+    let signature = request.signature.as_bytes();
+    let signature2 = signature[0..64].try_into().unwrap();
+
+    let mut inner_signature_map: BTreeMap<u8, SignatureEd25519> = BTreeMap::new();
+    inner_signature_map.insert(0, types::SignatureEd25519(signature2));
+
+    let mut signature_map: BTreeMap<u8, BTreeMap<u8, SignatureEd25519>> = BTreeMap::new();
+    signature_map.insert(0, inner_signature_map);
+
+    let param: PermitParam = PermitParam {
+        message,
+        signature: signature_map,
+        signer: AccountAddress::from_str(&request.signer).unwrap(),
+    };
+
+    log::debug!("param");
+    log::debug!("{:?}", param);
+
+    let bytes = concordium_rust_sdk::smart_contracts::common::to_bytes(&param);
+
+    //  let bytes: Vec<u8> = vec![];
+
+    let contract_name = "cis3_nft";
+
+    let receive_name =
+        smart_contracts::OwnedReceiveName::try_from(format!("{}.permit", contract_name)).unwrap();
+
+    let payload = transactions::Payload::Update {
+        payload: transactions::UpdateContractPayload {
+            amount: Amount::from_micro_ccd(0),
+            address: ContractAddress {
+                index: 3903,
+                subindex: 0,
+            },
+            receive_name,
+            message: smart_contracts::Parameter::try_from(bytes).unwrap(),
+        },
+    };
+    log::debug!("{:?}", payload);
+
+    log::debug!("keys");
+    log::debug!("{:?}", key_update_operator);
+
+    let tx = transactions::send::make_and_sign_transaction(
+        &key_update_operator.keys,
+        key_update_operator.address,
+        nonce,
+        TransactionTime {
+            seconds: 888888888888888,
+        },
+        concordium_rust_sdk::types::transactions::send::GivenEnergy::Absolute(Energy {
+            energy: 234235,
+        }),
+        payload,
+    );
+
+    log::debug!("transaction: {:?}", tx);
+    let bi = transactions::BlockItem::AccountTransaction(tx);
+
+    let hash = client.send_block_item(&bi).await.unwrap();
+
+    Ok(warp::reply::json(&hash))
+}
 
 pub async fn handle_rejection(err: Rejection) -> Result<impl warp::Reply, Infallible> {
     if err.is_not_found() {
@@ -129,26 +301,6 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl warp::Reply, Infall
     }
 }
 
-/// A common function that checks a challenge has been proven.
-// fn get_info_worker(state: Server, token: String) -> Result<(), InjectStatementError> {
-//     let sm = state
-//         .tokens
-//         .lock()
-//         .map_err(|_| InjectStatementError::LockingError)?;
-//     let status = sm.get(&token).ok_or(InjectStatementError::NotAllowed)?;
-//     if status
-//         .created_at
-//         .elapsed()
-//         .map_err(|_| InjectStatementError::Expired)?
-//         .as_secs()
-//         < TOKEN_EXPIRY_SECONDS
-//     {
-//         Ok(())
-//     } else {
-//         Err(InjectStatementError::Expired)
-//     }
-// }
-
 /// Helper function to make the reply.
 fn mk_reply(message: String, code: StatusCode) -> impl warp::Reply {
     let msg = ErrorResponse {
@@ -157,129 +309,3 @@ fn mk_reply(message: String, code: StatusCode) -> impl warp::Reply {
     };
     warp::reply::with_status(warp::reply::json(&msg), code)
 }
-
-// A common function that produces a challenge and adds it to the state.
-// async fn get_challenge_worker(
-//     state: Server,
-//     address: AccountAddress,
-// ) -> Result<ChallengeResponse, InjectStatementError> {
-//     let mut challenge = [0u8; 32];
-//     rand::thread_rng().fill(&mut challenge[..]);
-//     let mut sm = state
-//         .challenges
-//         .lock()
-//         .map_err(|_| InjectStatementError::LockingError)?;
-//     log::debug!("Generated challenge: {:?}", challenge);
-//     let challenge = Challenge(challenge);
-
-//     sm.insert(
-//         base16_encode_string(&challenge.0),
-//         ChallengeStatus {
-//             address,
-//             created_at: SystemTime::now(),
-//         },
-//     );
-//     Ok(ChallengeResponse { challenge })
-// }
-
-// A common function that validates the cryptographic proofs in the request.
-// async fn check_proof_worker(
-//     mut client: concordium_rust_sdk::v2::Client,
-//     state: Server,
-//     request: ChallengedProof,
-//     statement: Statement<ArCurve, AttributeKind>,
-// ) -> Result<Uuid, InjectStatementError> {
-//     let status = {
-//         let challenges = state
-//             .challenges
-//             .lock()
-//             .map_err(|_| InjectStatementError::LockingError)?;
-
-//         challenges
-//             .get(&base16_encode_string(&request.challenge.0))
-//             .ok_or(InjectStatementError::UnknownSession)?
-//             .clone()
-//     };
-
-//     let cred_id = request.proof.credential;
-//     let acc_info = client
-//         .get_account_info(&status.address.into(), BlockIdentifier::LastFinal)
-//         .await?;
-
-//     // TODO Check remaining credentials
-//     let credential = acc_info
-//         .response
-//         .account_credentials
-//         .get(&0.into())
-//         .ok_or(InjectStatementError::Credential)?;
-
-//     if crypto_common::to_bytes(credential.value.cred_id()) != crypto_common::to_bytes(&cred_id) {
-//         return Err(InjectStatementError::Credential);
-//     }
-
-//     let commitments = match &credential.value {
-//         AccountCredentialWithoutProofs::Initial { icdv: _, .. } => {
-//             return Err(InjectStatementError::NotAllowed);
-//         }
-//         AccountCredentialWithoutProofs::Normal { commitments, .. } => commitments,
-//     };
-//     let mut tokens = state
-//         .tokens
-//         .lock()
-//         .map_err(|_| InjectStatementError::LockingError)?;
-
-//     let mut challenges = state
-//         .challenges
-//         .lock()
-//         .map_err(|_| InjectStatementError::LockingError)?;
-
-//     if statement.verify(
-//         &request.challenge.0,
-//         &state.global_context,
-//         cred_id.as_ref(),
-//         commitments,
-//         &request.proof.proof.value, // TODO: Check version.
-//     ) {
-//         challenges.remove(&base16_encode_string(&request.challenge.0));
-//         let token = Uuid::new_v4();
-//         tokens.insert(
-//             token.to_string(),
-//             TokenStatus {
-//                 created_at: SystemTime::now(),
-//             },
-//         );
-//         Ok(token)
-//     } else {
-//         Err(InjectStatementError::InvalidProofs)
-//     }
-// }
-
-// pub async fn handle_clean_state(state: Server) -> anyhow::Result<()> {
-//     let mut interval =
-//         tokio::time::interval(tokio::time::Duration::from_secs(CLEAN_INTERVAL_SECONDS));
-
-//     loop {
-//         interval.tick().await;
-
-//         {
-//             let mut tokens = state.tokens.lock().unwrap();
-
-//             tokens.retain(|_, v| {
-//                 v.created_at
-//                     .elapsed()
-//                     .map(|e| e.as_secs() < TOKEN_EXPIRY_SECONDS)
-//                     .unwrap_or(false)
-//             });
-//         }
-//         {
-//             let mut challenges = state.challenges.lock().unwrap();
-
-//             challenges.retain(|_, v| {
-//                 v.created_at
-//                     .elapsed()
-//                     .map(|e| e.as_secs() < CHALLENGE_EXPIRY_SECONDS)
-//                     .unwrap_or(false)
-//             });
-//         }
-//     }
-// }
