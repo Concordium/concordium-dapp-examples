@@ -2437,6 +2437,7 @@ dependencies = [
  "clap",
  "concordium-rust-sdk",
  "env_logger",
+ "hex",
  "log",
  "rand 0.8.5",
  "serde",
