@@ -20,6 +20,7 @@ chrono = "0.4.19"
 thiserror = "1"
 rand = "0.8"
 uuid = { version = "1.2.2", features = ["v4", "serde"] }
+hex = "0.4.3"
 
 [dependencies.concordium-rust-sdk]
 path = "../../deps/concordium-rust-sdk/"

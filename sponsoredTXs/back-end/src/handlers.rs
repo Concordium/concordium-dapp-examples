@@ -3,13 +3,21 @@ use crate::types::*;
 use std::collections::BTreeMap;
 use std::convert::Infallible;
 use std::str::FromStr;
+use hex;
 use std::sync::Arc;
 use warp::{http::StatusCode, Rejection};
+
+use concordium_rust_sdk::cis2::TokenId;
+use concordium_rust_sdk::cis2::TokenAmount;
 
 use concordium_rust_sdk::smart_contracts::common::{
     AccountAddress, Address, Amount, ContractAddress, OwnedEntrypointName, Timestamp,
 };
 use concordium_rust_sdk::types::Energy;
+use concordium_rust_sdk::cis2::UpdateOperator;
+use concordium_rust_sdk::cis2::OperatorUpdate;
+use concordium_rust_sdk::cis2::Transfer;
+use concordium_rust_sdk::cis2::{Receiver, AdditionalData};
 
 use concordium_rust_sdk::v2;
 
@@ -39,15 +47,15 @@ pub async fn handle_signature_update_operator(
     log::debug!("{:?}", nonce);
 
     let operator_update = match request.add_operator {
-        true => types::OperatorUpdate::Add,
-        false => types::OperatorUpdate::Remove,
+        true => OperatorUpdate::Add,
+        false => OperatorUpdate::Remove,
     };
 
-    let update_operator = types::UpdateOperator {
+    let update_operator = UpdateOperator {
         update: operator_update,
         operator: Address::Account(AccountAddress::from_str(&request.operator).unwrap()),
     };
-    let payload = types::UpdateOperatorParams(vec![update_operator]);
+    let payload = UpdateOperatorParams(vec![update_operator]);
 
     let nonce_payload = match request.nonce.parse::<u64>() {
         Ok(nonce_payload) => nonce_payload,
@@ -73,11 +81,14 @@ pub async fn handle_signature_update_operator(
     log::debug!("message");
     log::debug!("{:?}", message);
 
-    let signature = request.signature.as_bytes();
-    let signature2 = signature[0..64].try_into().unwrap();
+    log::debug!("{:?}", "signature");
+    log::debug!("{:?}", request.signature);
+
+    let mut signature = [0; 64];
+    hex::decode_to_slice( request.signature, &mut signature);
 
     let mut inner_signature_map: BTreeMap<u8, SignatureEd25519> = BTreeMap::new();
-    inner_signature_map.insert(0, types::SignatureEd25519(signature2));
+    inner_signature_map.insert(0, types::SignatureEd25519(signature));
 
     let mut signature_map: BTreeMap<u8, BTreeMap<u8, SignatureEd25519>> = BTreeMap::new();
     signature_map.insert(0, inner_signature_map);
@@ -155,20 +166,20 @@ pub async fn handle_signature_transfer(
     log::debug!("nonce");
     log::debug!("{:?}", nonce);
 
-    let token_id = match request.token_id.parse::<u32>() {
+    let token_id:u32 = match request.token_id.parse::<u32>() {
         Ok(token_id) => token_id,
         Err(_e) => 0,
     };
 
-    let transfer = types::Transfer {
+    let transfer = Transfer {
         from: Address::Account(AccountAddress::from_str(&request.from).unwrap()),
-        to: types::Receiver::Account(AccountAddress::from_str(&request.to).unwrap()),
-        token_id,
-        amount: 1,
-        data: types::AdditionalData(vec![]),
+        to: Receiver::Account(AccountAddress::from_str(&request.to).unwrap()),
+        token_id:TokenId::new_unchecked(token_id.to_le_bytes().to_vec()),
+        amount: TokenAmount::from_str("1").unwrap(),
+        data: AdditionalData{data:vec![]},
     };
 
-    let payload = types::TransferParams(vec![transfer]);
+    let payload = TransferParams(vec![transfer]);
 
     let nonce_payload = match request.nonce.parse::<u64>() {
         Ok(nonce_payload) => nonce_payload,
@@ -194,11 +205,14 @@ pub async fn handle_signature_transfer(
     log::debug!("message");
     log::debug!("{:?}", message);
 
-    let signature = request.signature.as_bytes();
-    let signature2 = signature[0..64].try_into().unwrap();
+    log::debug!("{:?}", "signature");
+    log::debug!("{:?}", request.signature);
+
+    let mut signature = [0; 64];
+    hex::decode_to_slice( request.signature, &mut signature);
 
     let mut inner_signature_map: BTreeMap<u8, SignatureEd25519> = BTreeMap::new();
-    inner_signature_map.insert(0, types::SignatureEd25519(signature2));
+    inner_signature_map.insert(0, types::SignatureEd25519(signature));
 
     let mut signature_map: BTreeMap<u8, BTreeMap<u8, SignatureEd25519>> = BTreeMap::new();
     signature_map.insert(0, inner_signature_map);
