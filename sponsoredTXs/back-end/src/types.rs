@@ -1,20 +1,11 @@
 use concordium_rust_sdk::{
-    common::{
-        self as crypto_common, derive::SerdeBase16Serialize, Buffer, ParseResult, ReadBytesExt,
-        SerdeDeserialize, SerdeSerialize, Versioned,
-    },
     endpoints::{QueryError, RPCError},
-    id::{
-        constants::{ArCurve, AttributeKind},
-        id_proof_types::Proof,
-        types::GlobalContext,
-    },
     smart_contracts::common::{
-        AccountAddress, Address, ContractAddress, Deserial, OwnedEntrypointName, Serial, Serialize,
-        Timestamp,
+        AccountAddress, Address, ContractAddress, OwnedEntrypointName, Serialize, Timestamp,
     },
-    types::CredentialRegistrationID,
 };
+
+use std::collections::BTreeMap;
 
 #[derive(Debug, thiserror::Error)]
 pub enum InjectStatementError {
@@ -49,13 +40,6 @@ pub struct ErrorResponse {
     pub code: u16,
     pub message: String,
 }
-
-use concordium_rust_sdk;
-use std::{
-    collections::{BTreeMap, HashMap},
-    sync::{Arc, Mutex},
-    time::SystemTime,
-};
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, Clone)]
 pub struct UpdateOperatorInputParams {
@@ -95,8 +79,12 @@ pub enum OperatorUpdate {
 }
 
 pub type ContractTokenId = u32;
+//TokenIdU32;
+//u32;
 
 pub type ContractTokenAmount = u8;
+//TokenAmountU8;
+//u8;
 
 pub type TransferParameter = TransferParams;
 
