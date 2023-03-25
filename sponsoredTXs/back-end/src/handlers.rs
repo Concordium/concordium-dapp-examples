@@ -43,9 +43,6 @@ pub async fn handle_signature_update_operator(
 
     let nonce = ai.response.account_nonce;
 
-    log::debug!("nonce");
-    log::debug!("{:?}", nonce);
-
     let operator_update = match request.add_operator {
         true => OperatorUpdate::Add,
         false => OperatorUpdate::Remove,
@@ -70,7 +67,7 @@ pub async fn handle_signature_update_operator(
     let message: PermitMessage = PermitMessage {
         timestamp: Timestamp::from_timestamp_millis(timestamp),
         contract_address: ContractAddress {
-            index: 3903,
+            index: 4129,
             subindex: 0,
         },
         entry_point: OwnedEntrypointName::new_unchecked("updateOperator".into()),
@@ -78,19 +75,13 @@ pub async fn handle_signature_update_operator(
         payload: types::PermitPayload::UpdateOperator(payload),
     };
 
-    log::debug!("message");
-    log::debug!("{:?}", message);
-
-    log::debug!("{:?}", "signature");
-    log::debug!("{:?}", request.signature);
-
     let mut signature = [0; 64];
     hex::decode_to_slice( request.signature, &mut signature);
 
-    let mut inner_signature_map: BTreeMap<u8, SignatureEd25519> = BTreeMap::new();
+    let mut inner_signature_map: BTreeMap<u8, types::SignatureEd25519> = BTreeMap::new();
     inner_signature_map.insert(0, types::SignatureEd25519(signature));
 
-    let mut signature_map: BTreeMap<u8, BTreeMap<u8, SignatureEd25519>> = BTreeMap::new();
+    let mut signature_map: BTreeMap<u8, BTreeMap<u8, types::SignatureEd25519>> = BTreeMap::new();
     signature_map.insert(0, inner_signature_map);
 
     let param: PermitParam = PermitParam {
@@ -98,9 +89,6 @@ pub async fn handle_signature_update_operator(
         signature: signature_map,
         signer: AccountAddress::from_str(&request.signer).unwrap(),
     };
-
-    log::debug!("param");
-    log::debug!("{:?}", param);
 
     let bytes = concordium_rust_sdk::smart_contracts::common::to_bytes(&param);
 
@@ -113,17 +101,13 @@ pub async fn handle_signature_update_operator(
         payload: transactions::UpdateContractPayload {
             amount: Amount::from_micro_ccd(0),
             address: ContractAddress {
-                index: 3903,
+                index: 4129,
                 subindex: 0,
             },
             receive_name,
             message: smart_contracts::Parameter::try_from(bytes).unwrap(),
         },
     };
-    log::debug!("{:?}", payload);
-
-    log::debug!("keys");
-    log::debug!("{:?}", key_update_operator);
 
     let tx = transactions::send::make_and_sign_transaction(
         &key_update_operator.keys,
@@ -138,7 +122,6 @@ pub async fn handle_signature_update_operator(
         payload,
     );
 
-    log::debug!("transaction: {:?}", tx);
     let bi = transactions::BlockItem::AccountTransaction(tx);
 
     let hash = client.send_block_item(&bi).await.unwrap();
@@ -163,9 +146,6 @@ pub async fn handle_signature_transfer(
 
     let nonce = ai.response.account_nonce;
 
-    log::debug!("nonce");
-    log::debug!("{:?}", nonce);
-
     let token_id:u32 = match request.token_id.parse::<u32>() {
         Ok(token_id) => token_id,
         Err(_e) => 0,
@@ -174,7 +154,7 @@ pub async fn handle_signature_transfer(
     let transfer = Transfer {
         from: Address::Account(AccountAddress::from_str(&request.from).unwrap()),
         to: Receiver::Account(AccountAddress::from_str(&request.to).unwrap()),
-        token_id:TokenId::new_unchecked(token_id.to_le_bytes().to_vec()),
+        token_id:TokenId::new_unchecked(hex::decode(request.token_id).unwrap()),
         amount: TokenAmount::from_str("1").unwrap(),
         data: AdditionalData{data:vec![]},
     };
@@ -194,7 +174,7 @@ pub async fn handle_signature_transfer(
     let message: PermitMessage = PermitMessage {
         timestamp: Timestamp::from_timestamp_millis(timestamp),
         contract_address: ContractAddress {
-            index: 3903,
+            index: 4129,
             subindex: 0,
         },
         entry_point: OwnedEntrypointName::new_unchecked("transfer".into()),
@@ -202,19 +182,13 @@ pub async fn handle_signature_transfer(
         payload: types::PermitPayload::Transfer(payload),
     };
 
-    log::debug!("message");
-    log::debug!("{:?}", message);
-
-    log::debug!("{:?}", "signature");
-    log::debug!("{:?}", request.signature);
-
     let mut signature = [0; 64];
     hex::decode_to_slice( request.signature, &mut signature);
 
-    let mut inner_signature_map: BTreeMap<u8, SignatureEd25519> = BTreeMap::new();
+    let mut inner_signature_map: BTreeMap<u8, types::SignatureEd25519> = BTreeMap::new();
     inner_signature_map.insert(0, types::SignatureEd25519(signature));
 
-    let mut signature_map: BTreeMap<u8, BTreeMap<u8, SignatureEd25519>> = BTreeMap::new();
+    let mut signature_map: BTreeMap<u8, BTreeMap<u8,types:: SignatureEd25519>> = BTreeMap::new();
     signature_map.insert(0, inner_signature_map);
 
     let param: PermitParam = PermitParam {
@@ -222,9 +196,6 @@ pub async fn handle_signature_transfer(
         signature: signature_map,
         signer: AccountAddress::from_str(&request.signer).unwrap(),
     };
-
-    log::debug!("param");
-    log::debug!("{:?}", param);
 
     let bytes = concordium_rust_sdk::smart_contracts::common::to_bytes(&param);
 
@@ -239,17 +210,13 @@ pub async fn handle_signature_transfer(
         payload: transactions::UpdateContractPayload {
             amount: Amount::from_micro_ccd(0),
             address: ContractAddress {
-                index: 3903,
+                index: 4129,
                 subindex: 0,
             },
             receive_name,
             message: smart_contracts::Parameter::try_from(bytes).unwrap(),
         },
     };
-    log::debug!("{:?}", payload);
-
-    log::debug!("keys");
-    log::debug!("{:?}", key_update_operator);
 
     let tx = transactions::send::make_and_sign_transaction(
         &key_update_operator.keys,
@@ -264,7 +231,6 @@ pub async fn handle_signature_transfer(
         payload,
     );
 
-    log::debug!("transaction: {:?}", tx);
     let bi = transactions::BlockItem::AccountTransaction(tx);
 
     let hash = client.send_block_item(&bi).await.unwrap();
