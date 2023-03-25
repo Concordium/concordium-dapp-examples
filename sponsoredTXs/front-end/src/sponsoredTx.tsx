@@ -153,7 +153,7 @@ async function calculateTransferMessage(nonce: string, tokenID: string, from: st
             index: Number(SPONSORED_TX_CONTRACT_INDEX),
             subindex: 0,
         },
-        entry_point: 'contract_transfer',
+        entry_point: 'transfer',
         nonce: Number(nonce),
         payload: {
             Transfer: [
@@ -229,7 +229,7 @@ async function calculateUpdateOperatorMessage(nonce: string, operator: string, a
             index: Number(SPONSORED_TX_CONTRACT_INDEX),
             subindex: 0,
         },
-        entry_point: 'contract_update_operator',
+        entry_point: 'updateOperator',
         nonce: Number(nonce),
         payload: {
             UpdateOperator: [
