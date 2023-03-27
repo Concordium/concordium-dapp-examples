@@ -124,18 +124,6 @@ async function calculateTransferMessage(nonce: string, tokenID: string, from: st
         return '';
     }
 
-    if (to === undefined || to === '') {
-        // eslint-disable-next-line no-alert
-        alert('Insert an `to` address.');
-        return '';
-    }
-
-    if (to.length !== 50) {
-        // eslint-disable-next-line no-alert
-        alert('`To` address needs to have 50 digits.');
-        return '';
-    }
-
     if (from === undefined || from === '') {
         // eslint-disable-next-line no-alert
         alert('Insert an `from` address.');
@@ -145,6 +133,18 @@ async function calculateTransferMessage(nonce: string, tokenID: string, from: st
     if (from.length !== 50) {
         // eslint-disable-next-line no-alert
         alert('`From` address needs to have 50 digits.');
+        return '';
+    }
+
+    if (to === undefined || to === '') {
+        // eslint-disable-next-line no-alert
+        alert('Insert an `to` address.');
+        return '';
+    }
+
+    if (to.length !== 50) {
+        // eslint-disable-next-line no-alert
+        alert('`To` address needs to have 50 digits.');
         return '';
     }
 
@@ -843,8 +843,8 @@ export default function SPONSOREDTXS(props: WalletConnectionProps) {
                                           );
 
                                     tx.then((txHashReturned) => {
-                                        setTxHash(txHashReturned);
-                                        if (txHashReturned !== '') {
+                                        setTxHash(txHashReturned.tx_hash);
+                                        if (txHashReturned.tx_hash !== '') {
                                             setSignature('');
                                             setTokenID('');
                                             setFrom('');

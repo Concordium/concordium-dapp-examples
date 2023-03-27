@@ -82,8 +82,6 @@ async fn main() -> anyhow::Result<()> {
         .and(warp::path!("api" / "submitUpdateOperator"))
         .and(warp::body::json())
         .and_then(move |request: UpdateOperatorInputParams| {
-            log::debug!("request");
-            log::debug!("{:?}", request);
 
             handle_signature_update_operator(client.clone(), key_update_operator.clone(), request)
         });
@@ -94,8 +92,6 @@ async fn main() -> anyhow::Result<()> {
         .and(warp::path!("api" / "submitTransfer"))
         .and(warp::body::json())
         .and_then(move |request: TransferInputParams| {
-            log::debug!("request");
-            log::debug!("{:?}", request);
 
             handle_signature_transfer(client2.clone(), key_transfer.clone(), request)
         });

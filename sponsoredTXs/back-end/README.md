@@ -1,11 +1,11 @@
-# The Sponsored Transactions Verifier
+# The Sponsored Transactions Backend
 
-This page describes the sponsored transactions verifier backend for this dapp example.
+This page describes the sponsored transactions backend for this dapp example.
 
 # Supported configuration options
 
 The following parameters are supported
-- `node` the URL of the node's GRPC V2 interface, e.g., http://localhost:20000
+- `node` the URL of the node's GRPC V2 interface, e.g., http://node.testnet.concordium.com:20000
 - `port` the port on which the server will listen for incoming requests
 - `log-level` maximum log level (defaults to `debug` if not given)
 - `public-folder` the path to the folder, which should be served, defaults to the public folder in the current directory.
@@ -13,31 +13,34 @@ The following parameters are supported
 
 All of the above is available by using `--help` to get usage information.
 
-An example to run the verifier with example settings and local node on would be:
+An example to run the backend with basic settings and testnet node would be:
 ```
-cargo run -- --node http://node.testnet.concordium.com:20000 --port 8080 --account <YourAccountPathToYourKeys>
+cargo run -- --node http://node.testnet.concordium.com:20000 --account <YourAccountPathToYourKeys>
 ```
+
+An example to run the backend with some filled in example settings would be:
+```
+cargo run -- --node http://node.testnet.concordium.com:20000 --port 8080 --account ./3PXwJYYPf6fyVb4GJquxSZU8puxrHfzc4XogdMVot8MUQK53tW.export --public-folder ../front-end/dist
+```
+
+To get your account file (the `3PXwJYYPf6fyVb4GJquxSZU8puxrHfzc4XogdMVot8MUQK53tW.export` file in the above example), export it from the Concordium Browser wallet for web.
+
+<img src="./pic/pic1.png"  width="200" />
+<img src="./pic/pic2.png"  width="200" />
+<img src="./pic/pic3.png"  width="200" />
 
 # Using the tool
 
-The verifier is a simple server that exposes five endpoints
+The backend is a simple server that exposes two endpoints
  - `GET /submitUpdateOperator`
  - `GET /submitTransfer`
 
-The overall flow is that the user gets a challenge (with /challenge) and the statement  (with /statement).
-Then `prove` endpoint can be called with a proof of the statement, and the challenge that was used.
-The challenge is used to match the proof to the statement to be proved. The prove endpoints responds with a token string, which must be provided as a query parameter auth, when accessing the images.
-The names endpoint can be used to get the names if the items that the gallery contains, and can be accessed with the image endpoint.
-
-All of the server state is kept in memory and thus does not survive a restart.
+The overall flow is that the user signs a sponsored updateOperator/transfer message in the browser wallet (or mobile wallet via walletConnect) and sends the signature together with some input parameters to this backend server via one of the above endpoints. The backend creates a sponsored transaction and submits it to the `permit` function in the smart contract {index: 3903, subindex: 0} that has a similar logic to [this contract](https://github.com/Concordium/concordium-rust-smart-contracts/tree/main/examples/cis3-nft-sponsored-txs). The backend returns the transaction hash to the front-end. This backend server has to have access to an account (with its associated private key) that is funded with some CCD to submit the sponsored transaction to the chain. The backend wallet will pay for the transaction fees.
 
 See [src/main.rs](./src/main.rs) for the formats of requests and responses. Both
-requests and responses are JSON encoded. The `/prove` endpoint responds with
-status `200 OK` and the authToken if the proof is acceptable, and with invalid request otherwise.
-The requests are handled by handlers in [src/handlers.rs](./src/handlers.rs).
+requests and responses are JSON encoded. The requests are handled by handlers in [src/handlers.rs](./src/handlers.rs).
 
-The server needs access to the node so that it can get the requested credential
-from the node during proof validation.
+The server needs access to a node so that it can invoke the `permit` function in the smart contract.
 
 # Contributing
 
@@ -71,10 +74,5 @@ The project is a pure Rust project, and can be build by running
 cargo build --release
 ```
 
-This produces a single binary `target/release/gallery-verifier`.
+This produces a single binary `target/release/sponsored-transaction-backend`.
 
-
-## TODO
-
-- Do not use challenges directly as challenges
-- Have authTokens/challenges expire

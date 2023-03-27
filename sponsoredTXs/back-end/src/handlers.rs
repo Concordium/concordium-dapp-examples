@@ -3,21 +3,20 @@ use crate::types::*;
 use std::collections::BTreeMap;
 use std::convert::Infallible;
 use std::str::FromStr;
-use hex;
 use std::sync::Arc;
 use warp::{http::StatusCode, Rejection};
 
-use concordium_rust_sdk::cis2::TokenId;
 use concordium_rust_sdk::cis2::TokenAmount;
+use concordium_rust_sdk::cis2::TokenId;
 
+use concordium_rust_sdk::cis2::OperatorUpdate;
+use concordium_rust_sdk::cis2::Transfer;
+use concordium_rust_sdk::cis2::UpdateOperator;
+use concordium_rust_sdk::cis2::{AdditionalData, Receiver};
 use concordium_rust_sdk::smart_contracts::common::{
     AccountAddress, Address, Amount, ContractAddress, OwnedEntrypointName, Timestamp,
 };
 use concordium_rust_sdk::types::Energy;
-use concordium_rust_sdk::cis2::UpdateOperator;
-use concordium_rust_sdk::cis2::OperatorUpdate;
-use concordium_rust_sdk::cis2::Transfer;
-use concordium_rust_sdk::cis2::{Receiver, AdditionalData};
 
 use concordium_rust_sdk::v2;
 
@@ -25,6 +24,8 @@ use crate::crypto_common::types::TransactionTime;
 use concordium_rust_sdk::types::smart_contracts;
 use concordium_rust_sdk::types::transactions;
 use concordium_rust_sdk::types::WalletAccount;
+
+// const SMART_CONTRACT_INDEX = 
 
 pub async fn handle_signature_update_operator(
     client: concordium_rust_sdk::v2::Client,
@@ -39,7 +40,7 @@ pub async fn handle_signature_update_operator(
             &v2::BlockIdentifier::Best,
         )
         .await
-        .unwrap();
+        .map_err(|_| InjectStatementError::AccountInfoQueryError)?;
 
     let nonce = ai.response.account_nonce;
 
@@ -50,7 +51,10 @@ pub async fn handle_signature_update_operator(
 
     let update_operator = UpdateOperator {
         update: operator_update,
-        operator: Address::Account(AccountAddress::from_str(&request.operator).unwrap()),
+        operator: Address::Account(
+            AccountAddress::from_str(&request.operator)
+                .map_err(|_| InjectStatementError::AccountFromStringError)?,
+        ),
     };
     let payload = UpdateOperatorParams(vec![update_operator]);
 
@@ -76,7 +80,8 @@ pub async fn handle_signature_update_operator(
     };
 
     let mut signature = [0; 64];
-    hex::decode_to_slice( request.signature, &mut signature);
+    hex::decode_to_slice(request.signature, &mut signature)
+        .map_err(|_| InjectStatementError::SignatureError)?;
 
     let mut inner_signature_map: BTreeMap<u8, types::SignatureEd25519> = BTreeMap::new();
     inner_signature_map.insert(0, types::SignatureEd25519(signature));
@@ -87,7 +92,8 @@ pub async fn handle_signature_update_operator(
     let param: PermitParam = PermitParam {
         message,
         signature: signature_map,
-        signer: AccountAddress::from_str(&request.signer).unwrap(),
+        signer: AccountAddress::from_str(&request.signer)
+            .map_err(|_| InjectStatementError::AccountFromStringError)?,
     };
 
     let bytes = concordium_rust_sdk::smart_contracts::common::to_bytes(&param);
@@ -95,7 +101,8 @@ pub async fn handle_signature_update_operator(
     let contract_name = "cis3_nft";
 
     let receive_name =
-        smart_contracts::OwnedReceiveName::try_from(format!("{}.permit", contract_name)).unwrap();
+        smart_contracts::OwnedReceiveName::try_from(format!("{}.permit", contract_name))
+            .map_err(|_| InjectStatementError::OwnedReceiveNameError)?;
 
     let payload = transactions::Payload::Update {
         payload: transactions::UpdateContractPayload {
@@ -105,7 +112,8 @@ pub async fn handle_signature_update_operator(
                 subindex: 0,
             },
             receive_name,
-            message: smart_contracts::Parameter::try_from(bytes).unwrap(),
+            message: smart_contracts::Parameter::try_from(bytes)
+                .map_err(|_| InjectStatementError::ParameterError)?,
         },
     };
 
@@ -124,9 +132,12 @@ pub async fn handle_signature_update_operator(
 
     let bi = transactions::BlockItem::AccountTransaction(tx);
 
-    let hash = client.send_block_item(&bi).await.unwrap();
+    let hash = client
+        .send_block_item(&bi)
+        .await
+        .map_err(|_| InjectStatementError::SumbitSponsoredTransactionError)?;
 
-    Ok(warp::reply::json(&hash))
+    Ok(warp::reply::json(&TxHash { tx_hash: hash }))
 }
 
 pub async fn handle_signature_transfer(
@@ -142,21 +153,24 @@ pub async fn handle_signature_transfer(
             &v2::BlockIdentifier::Best,
         )
         .await
-        .unwrap();
+        .map_err(|_| InjectStatementError::AccountInfoQueryError)?;
 
     let nonce = ai.response.account_nonce;
 
-    let token_id:u32 = match request.token_id.parse::<u32>() {
-        Ok(token_id) => token_id,
-        Err(_e) => 0,
-    };
-
     let transfer = Transfer {
-        from: Address::Account(AccountAddress::from_str(&request.from).unwrap()),
-        to: Receiver::Account(AccountAddress::from_str(&request.to).unwrap()),
-        token_id:TokenId::new_unchecked(hex::decode(request.token_id).unwrap()),
-        amount: TokenAmount::from_str("1").unwrap(),
-        data: AdditionalData{data:vec![]},
+        from: Address::Account(
+            AccountAddress::from_str(&request.from)
+                .map_err(|_| InjectStatementError::AccountFromStringError)?,
+        ),
+        to: Receiver::Account(
+            AccountAddress::from_str(&request.to)
+                .map_err(|_| InjectStatementError::AccountFromStringError)?,
+        ),
+        token_id: TokenId::new_unchecked(
+            hex::decode(request.token_id).map_err(|_| InjectStatementError::TokenIdError)?,
+        ),
+        amount: TokenAmount::from_str("1").map_err(|_| InjectStatementError::TokenAmountError)?,
+        data: AdditionalData { data: vec![] },
     };
 
     let payload = TransferParams(vec![transfer]);
@@ -183,28 +197,29 @@ pub async fn handle_signature_transfer(
     };
 
     let mut signature = [0; 64];
-    hex::decode_to_slice( request.signature, &mut signature);
+    hex::decode_to_slice(request.signature, &mut signature)
+        .map_err(|_| InjectStatementError::SignatureError)?;
 
     let mut inner_signature_map: BTreeMap<u8, types::SignatureEd25519> = BTreeMap::new();
     inner_signature_map.insert(0, types::SignatureEd25519(signature));
 
-    let mut signature_map: BTreeMap<u8, BTreeMap<u8,types:: SignatureEd25519>> = BTreeMap::new();
+    let mut signature_map: BTreeMap<u8, BTreeMap<u8, types::SignatureEd25519>> = BTreeMap::new();
     signature_map.insert(0, inner_signature_map);
 
     let param: PermitParam = PermitParam {
         message,
         signature: signature_map,
-        signer: AccountAddress::from_str(&request.signer).unwrap(),
+        signer: AccountAddress::from_str(&request.signer)
+            .map_err(|_| InjectStatementError::AccountFromStringError)?,
     };
 
     let bytes = concordium_rust_sdk::smart_contracts::common::to_bytes(&param);
 
-    //  let bytes: Vec<u8> = vec![];
-
     let contract_name = "cis3_nft";
 
     let receive_name =
-        smart_contracts::OwnedReceiveName::try_from(format!("{}.permit", contract_name)).unwrap();
+        smart_contracts::OwnedReceiveName::try_from(format!("{}.permit", contract_name))
+            .map_err(|_| InjectStatementError::OwnedReceiveNameError)?;
 
     let payload = transactions::Payload::Update {
         payload: transactions::UpdateContractPayload {
@@ -214,7 +229,8 @@ pub async fn handle_signature_transfer(
                 subindex: 0,
             },
             receive_name,
-            message: smart_contracts::Parameter::try_from(bytes).unwrap(),
+            message: smart_contracts::Parameter::try_from(bytes)
+                .map_err(|_| InjectStatementError::ParameterError)?,
         },
     };
 
@@ -233,9 +249,12 @@ pub async fn handle_signature_transfer(
 
     let bi = transactions::BlockItem::AccountTransaction(tx);
 
-    let hash = client.send_block_item(&bi).await.unwrap();
+    let hash = client
+        .send_block_item(&bi)
+        .await
+        .map_err(|_| InjectStatementError::SumbitSponsoredTransactionError)?;
 
-    Ok(warp::reply::json(&hash))
+    Ok(warp::reply::json(&TxHash { tx_hash: hash }))
 }
 
 pub async fn handle_rejection(err: Rejection) -> Result<impl warp::Reply, Infallible> {
@@ -243,31 +262,43 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl warp::Reply, Infall
         let code = StatusCode::NOT_FOUND;
         let message = "Not found.";
         Ok(mk_reply(message.into(), code))
-    } else if let Some(InjectStatementError::NotAllowed) = err.find() {
-        let code = StatusCode::BAD_REQUEST;
-        let message = "Needs proof.";
-        Ok(mk_reply(message.into(), code))
-    } else if let Some(InjectStatementError::InvalidProofs) = err.find() {
-        let code = StatusCode::BAD_REQUEST;
-        let message = "Invalid proofs.";
-        Ok(mk_reply(message.into(), code))
     } else if let Some(InjectStatementError::NodeAccess(e)) = err.find() {
         let code = StatusCode::INTERNAL_SERVER_ERROR;
         let message = format!("Cannot access the node: {}", e);
         Ok(mk_reply(message, code))
-    } else if let Some(InjectStatementError::LockingError) = err.find() {
-        let code = StatusCode::INTERNAL_SERVER_ERROR;
-        let message = "Could not acquire lock.";
-        Ok(mk_reply(message.into(), code))
-    } else if let Some(InjectStatementError::UnknownSession) = err.find() {
-        let code = StatusCode::NOT_FOUND;
-        let message = "Session not found.";
-        Ok(mk_reply(message.into(), code))
-    } else if let Some(InjectStatementError::Expired) = err.find() {
+    } else if let Some(InjectStatementError::AccountFromStringError) = err.find() {
         let code = StatusCode::BAD_REQUEST;
-        let message = "Given token was expired.";
+        let message = "Account from_str error.";
         Ok(mk_reply(message.into(), code))
-    } else if err
+    } else if let Some(InjectStatementError::SumbitSponsoredTransactionError) = err.find() {
+        let code = StatusCode::INTERNAL_SERVER_ERROR;
+        let message = "Sumbit sponsored transaction error.";
+        Ok(mk_reply(message.into(), code))
+    } else if let Some(InjectStatementError::OwnedReceiveNameError) = err.find() {
+        let code = StatusCode::BAD_REQUEST;
+        let message = "Owned received name error.";
+        Ok(mk_reply(message.into(), code))
+    } else if let Some(InjectStatementError::TokenIdError) = err.find() {
+        let code = StatusCode::BAD_REQUEST;
+        let message = "TokenId error.";
+        Ok(mk_reply(message.into(), code))
+    } else if let Some(InjectStatementError::TokenAmountError) = err.find() {
+        let code = StatusCode::BAD_REQUEST;
+        let message = "TokenAmount error.";
+        Ok(mk_reply(message.into(), code))
+    }  else if let Some(InjectStatementError::SignatureError) = err.find() {
+        let code = StatusCode::BAD_REQUEST;
+        let message = "Signature error.";
+        Ok(mk_reply(message.into(), code))
+    }else if let Some(InjectStatementError::ParameterError) = err.find() {
+        let code = StatusCode::BAD_REQUEST;
+        let message = "Parameter error.";
+        Ok(mk_reply(message.into(), code))
+    }     else if let Some(InjectStatementError::AccountInfoQueryError) = err.find() {
+        let code = StatusCode::BAD_REQUEST;
+        let message = "Account info query error.";
+        Ok(mk_reply(message.into(), code))
+    }else if err
         .find::<warp::filters::body::BodyDeserializeError>()
         .is_some()
     {
