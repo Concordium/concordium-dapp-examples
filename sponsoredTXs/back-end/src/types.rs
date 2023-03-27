@@ -1,31 +1,36 @@
 use concordium_rust_sdk::{
     endpoints::{QueryError, RPCError},
     smart_contracts::common::{
-        AccountAddress, ContractAddress, OwnedEntrypointName, Serialize, Timestamp, Serial,
+        AccountAddress, ContractAddress, OwnedEntrypointName, Serial, Serialize, Timestamp,
     },
+    types::hashes::{HashBytes, TransactionMarker},
 };
 
-use concordium_rust_sdk::cis2::UpdateOperator;
 use concordium_rust_sdk::cis2::Transfer;
+use concordium_rust_sdk::cis2::UpdateOperator;
 
 use std::collections::BTreeMap;
 
 #[derive(Debug, thiserror::Error)]
 pub enum InjectStatementError {
-    #[error("Not allowed")]
-    NotAllowed,
-    #[error("Invalid proof")]
-    InvalidProofs,
+    #[error("Account info query error.")]
+    AccountInfoQueryError,
+    #[error("Sumbit sponsored transaction error.")]
+    SumbitSponsoredTransactionError,
+    #[error("Account from_str error.")]
+    AccountFromStringError,
+    #[error("Owned received name error.")]
+    OwnedReceiveNameError,
+    #[error("TokenId error.")]
+    TokenIdError,
+    #[error("TokenAmount error.")]
+    TokenAmountError,
+    #[error("Parameter error.")]
+    ParameterError,
+    #[error("Signature error.")]
+    SignatureError,
     #[error("Node access error: {0}")]
     NodeAccess(#[from] QueryError),
-    #[error("Error acquiring internal lock.")]
-    LockingError,
-    #[error("Proof provided for an unknown session.")]
-    UnknownSession,
-    #[error("Issue with credential.")]
-    Credential,
-    #[error("Given token was expired.")]
-    Expired,
 }
 
 impl From<RPCError> for InjectStatementError {
@@ -87,6 +92,11 @@ pub struct PermitParam {
     pub signature: BTreeMap<u8, BTreeMap<u8, SignatureEd25519>>,
     pub signer: AccountAddress,
     pub message: PermitMessage,
+}
+
+#[derive(serde::Deserialize, serde::Serialize, Debug, Clone)]
+pub struct TxHash {
+    pub tx_hash: HashBytes<TransactionMarker>,
 }
 
 #[derive(Debug, Serial, Clone)]
