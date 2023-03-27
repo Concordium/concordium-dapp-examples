@@ -6,7 +6,7 @@ The example project included in this repository serves as a working example of h
 -   Compute the message of a sponsored updateOperator transaction => Sign it with the wallet => Submit the signature and some input parameters to the `/submitUpdateOperator` backend endpoint.
 -   Mint an NFT to your wallet => Compute the message of a sponsored transfer transaction => Sign it with the wallet => Submit the signature and some input parameters to the `/submitTransfer` backend endpoint.
 
-The backend creates a sponsored transaction and submits it to the `permit` function in the smart contract {index: 3903, subindex: 0} that has a similar logic to [this contract](https://github.com/Concordium/concordium-rust-smart-contracts/tree/main/examples/cis3-nft-sponsored-txs). The backend returns the transaction hash to the front-end.
+The backend creates a sponsored transaction and submits it to the `permit` function in the smart contract {index: 4129, subindex: 0} that has a similar logic to [this contract](https://github.com/Concordium/concordium-rust-smart-contracts/tree/main/examples/cis3-nft-sponsored-txs). The backend returns the transaction hash to the front-end.
 
 ## Prerequisites
 
