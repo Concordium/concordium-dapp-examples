@@ -25,6 +25,8 @@ jobs:
       matrix:
         crates:
           - gallery/verifier/Cargo.toml
+          - sponsoredTXs/back-end/Cargo.toml
+
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -51,6 +53,8 @@ jobs:
       matrix:
         crates:
           - gallery/verifier/Cargo.toml
+          - sponsoredTXs/back-end/Cargo.toml
+
     steps:
       - name: Checkout
         uses: actions/checkout@v2

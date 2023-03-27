@@ -6,8 +6,7 @@ use concordium_rust_sdk::{
     types::hashes::{HashBytes, TransactionMarker},
 };
 
-use concordium_rust_sdk::cis2::Transfer;
-use concordium_rust_sdk::cis2::UpdateOperator;
+use concordium_rust_sdk::cis2::{Transfer, UpdateOperator};
 
 use std::collections::BTreeMap;
 
@@ -29,6 +28,8 @@ pub enum InjectStatementError {
     ParameterError,
     #[error("Signature error.")]
     SignatureError,
+    #[error("AdditionalData error.")]
+    AdditionalDataError,
     #[error("Node access error: {0}")]
     NodeAccess(#[from] QueryError),
 }

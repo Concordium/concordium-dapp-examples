@@ -57,12 +57,12 @@ async fn main() -> anyhow::Result<()> {
 
     let client2 = client.clone();
 
-    log::debug!("Acquired data from the node.");
-
     let cors = warp::cors()
         .allow_any_origin()
         .allow_header("Content-Type")
         .allow_method("POST");
+
+    log::debug!("Acquire keys.");
 
     // load account keys and sender address from a file
     let keys: WalletAccount =
@@ -82,6 +82,7 @@ async fn main() -> anyhow::Result<()> {
         .and(warp::path!("api" / "submitUpdateOperator"))
         .and(warp::body::json())
         .and_then(move |request: UpdateOperatorInputParams| {
+            log::debug!("Process update operator transaction.");
 
             handle_signature_update_operator(client.clone(), key_update_operator.clone(), request)
         });
@@ -92,11 +93,16 @@ async fn main() -> anyhow::Result<()> {
         .and(warp::path!("api" / "submitTransfer"))
         .and(warp::body::json())
         .and_then(move |request: TransferInputParams| {
+            log::debug!("Process transfer transaction.");
 
             handle_signature_transfer(client2.clone(), key_transfer.clone(), request)
         });
 
+    log::debug!("Get public files to serve.");
+
     let serve_public_files = warp::get().and(warp::fs::dir(app.public_folder));
+
+    log::debug!("Serve response back to front-end.");
 
     let server = provide_submit_update_operator
         .or(provide_submit_transfer)
