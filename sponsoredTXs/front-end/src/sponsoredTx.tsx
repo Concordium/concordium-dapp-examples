@@ -10,7 +10,7 @@ import {
 import { withJsonRpcClient, WalletConnectionProps, useConnection, useConnect } from '@concordium/react-components';
 import { version } from '../package.json';
 
-import { submitUpdateOperator,submitTransfer, register, mint } from './utils';
+import { submitUpdateOperator, submitTransfer, register, mint } from './utils';
 import {
     SPONSORED_TX_CONTRACT_NAME,
     SPONSORED_TX_CONTRACT_INDEX,
@@ -218,11 +218,11 @@ async function calculateUpdateOperatorMessage(nonce: string, operator: string, a
 
     const operatorAction = addOperator
         ? {
-              Add: [],
-          }
+            Add: [],
+        }
         : {
-              Remove: [],
-          };
+            Remove: [],
+        };
 
     const message = {
         contract_address: {
@@ -259,6 +259,13 @@ async function calculateUpdateOperatorMessage(nonce: string, operator: string, a
     }).join('');
 
     return hexMessage;
+}
+
+async function getPublicKey(rpcClient: JsonRpcClient, account: string) {
+    const res = await rpcClient.getAccountInfo(account);
+    const publicKey = res?.accountCredentials[0].value.contents.credentialPublicKeys.keys[0].verifyKey;
+
+    return publicKey;
 }
 
 async function viewPublicKey(rpcClient: JsonRpcClient, account: string) {
@@ -338,11 +345,6 @@ function clearInputFields() {
     if (signer !== null) {
         signer.value = '';
     }
-
-    const userInputPublicKey = document.getElementById('userInputPublicKey') as HTMLTextAreaElement;
-    if (userInputPublicKey !== null) {
-        userInputPublicKey.value = '';
-    }
 }
 
 export default function SPONSOREDTXS(props: WalletConnectionProps) {
@@ -359,7 +361,7 @@ export default function SPONSOREDTXS(props: WalletConnectionProps) {
     const [publicKey, setPublicKey] = useState('');
     const [nextNonce, setNextNonce] = useState<number>(0);
 
-    const [userInputPublicKey, setUserInputPublicKey] = useState('');
+    const [accountInfoPublicKey, setAccountInfoPublicKey] = useState('');
     const [operator, setOperator] = useState('');
     const [addOperator, setAddOperator] = useState<boolean>(true);
     const [tokenID, setTokenID] = useState('');
@@ -370,11 +372,6 @@ export default function SPONSOREDTXS(props: WalletConnectionProps) {
 
     const [signature, setSignature] = useState('');
     const [signingError, setSigningError] = useState('');
-
-    const changeUserInputPublicKeyHandler = (event: ChangeEvent) => {
-        const target = event.target as HTMLTextAreaElement;
-        setUserInputPublicKey(target.value);
-    };
 
     const changeOperatorHandler = (event: ChangeEvent) => {
         const target = event.target as HTMLTextAreaElement;
@@ -431,7 +428,7 @@ export default function SPONSOREDTXS(props: WalletConnectionProps) {
     }, [connection, account, viewPublicKey]);
 
     useEffect(() => {
-        // View publicKey record.
+        // View publicKey record from smart contract.
         if (connection && account) {
             withJsonRpcClient(connection, (rpcClient) => viewPublicKey(rpcClient, account))
                 .then((record) => {
@@ -445,6 +442,23 @@ export default function SPONSOREDTXS(props: WalletConnectionProps) {
                     setPublicKeyError((e as Error).message);
                     setPublicKey('');
                     setNextNonce(0);
+                });
+        }
+    }, [connection, account]);
+
+    useEffect(() => {
+        // Get publicKey record from chain.
+        if (connection && account) {
+            withJsonRpcClient(connection, (rpcClient) => getPublicKey(rpcClient, account))
+                .then((publicKey) => {
+                    if (publicKey !== undefined) {
+                        setAccountInfoPublicKey(publicKey);
+                    }
+                    setPublicKeyError('');
+                })
+                .catch((e) => {
+                    setPublicKeyError((e as Error).message);
+                    setAccountInfoPublicKey('');
                 });
         }
     }, [connection, account]);
@@ -528,7 +542,6 @@ export default function SPONSOREDTXS(props: WalletConnectionProps) {
                                     setSigner('');
                                     setTransactionError('');
                                     setTxHash('');
-                                    setUserInputPublicKey('');
                                     clearInputFields();
                                 }}
                             >
@@ -547,7 +560,6 @@ export default function SPONSOREDTXS(props: WalletConnectionProps) {
                                     setSigner('');
                                     setTransactionError('');
                                     setTxHash('');
-                                    setUserInputPublicKey('');
                                     clearInputFields();
                                 }}
                                 onColor="#308274"
@@ -573,7 +585,6 @@ export default function SPONSOREDTXS(props: WalletConnectionProps) {
                                     setSigner('');
                                     setTransactionError('');
                                     setTxHash('');
-                                    setUserInputPublicKey('');
                                     clearInputFields();
                                 }}
                             >
@@ -593,17 +604,6 @@ export default function SPONSOREDTXS(props: WalletConnectionProps) {
                 <>
                     {!publicKey && (
                         <>
-                            <label>
-                                <p style={{ marginBottom: 0 }}>Insert your public key:</p>
-                                <input
-                                    className="input"
-                                    style={InputFieldStyle}
-                                    id="userInputPublicKey"
-                                    type="text"
-                                    placeholder="14fe0aed941aa0a0be1119d7b7dd70bfca475310c531f1b5a179b336c075db65"
-                                    onChange={changeUserInputPublicKeyHandler}
-                                />
-                            </label>
                             <button
                                 style={ButtonStyle}
                                 type="button"
@@ -611,20 +611,14 @@ export default function SPONSOREDTXS(props: WalletConnectionProps) {
                                     setTxHash('');
                                     setTransactionError('');
                                     setWaitingForUser(true);
-                                    const tx = register(connection, account, userInputPublicKey);
+                                    const tx = register(connection, account, accountInfoPublicKey);
                                     tx.then(setTxHash)
                                         .catch((err: Error) => setTransactionError((err as Error).message))
                                         .finally(() => setWaitingForUser(false));
                                 }}
                             >
-                                Insert a public key
+                                Register Your Public Key
                             </button>
-                            <p>
-                                {' '}
-                                For testing, go to the `export private key` tab in the Concordium browser wallet and
-                                click the `Export` button to download your keyfile. You find a `verifyKey` (your public
-                                key) in the exported file. Insert the public key above.
-                            </p>
                         </>
                     )}
                     <br />
@@ -825,22 +819,22 @@ export default function SPONSOREDTXS(props: WalletConnectionProps) {
                                     setTransactionError('');
                                     setWaitingForUser(true);
 
-                                   const tx = isPermitUpdateOperator
+                                    const tx = isPermitUpdateOperator
                                         ? submitUpdateOperator(VERIFIER_URL,
-                                              signer,
-                                              nonce,
-                                              signature,
-                                              operator,
-                                              addOperator
-                                          )
+                                            signer,
+                                            nonce,
+                                            signature,
+                                            operator,
+                                            addOperator
+                                        )
                                         : submitTransfer(VERIFIER_URL,
-                                              signer,
-                                              nonce,
-                                              signature,
-                                              tokenID,
-                                              from,
-                                              to
-                                          );
+                                            signer,
+                                            nonce,
+                                            signature,
+                                            tokenID,
+                                            from,
+                                            to
+                                        );
 
                                     tx.then((txHashReturned) => {
                                         setTxHash(txHashReturned.tx_hash);
