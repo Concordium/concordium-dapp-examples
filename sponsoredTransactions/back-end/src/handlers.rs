@@ -17,7 +17,7 @@ use concordium_rust_sdk::types::{smart_contracts, transactions, Energy, WalletAc
 
 use concordium_rust_sdk::v2;
 
-const SMART_CONTRACT_INDEX: u64 = 4129;
+const SMART_CONTRACT_INDEX: u64 = 4184;
 const CONTRACT_NAME: &str = "cis3_nft";
 const TRANSACTION_TIME: u64 = 9999999999999;
 const ENERGY: u64 = 99999;
@@ -108,10 +108,8 @@ pub async fn handle_signature_update_operator(
 
     let bytes = concordium_rust_sdk::smart_contracts::common::to_bytes(&param);
 
-    let contract_name = CONTRACT_NAME;
-
     let receive_name =
-        smart_contracts::OwnedReceiveName::try_from(format!("{}.permit", contract_name))
+        smart_contracts::OwnedReceiveName::try_from(format!("{}.permit", CONTRACT_NAME))
             .map_err(|_| InjectStatementError::OwnedReceiveNameError)?;
 
     log::debug!("Create transaction.");
@@ -248,10 +246,8 @@ pub async fn handle_signature_transfer(
 
     let bytes = concordium_rust_sdk::smart_contracts::common::to_bytes(&param);
 
-    let contract_name = CONTRACT_NAME;
-
     let receive_name =
-        smart_contracts::OwnedReceiveName::try_from(format!("{}.permit", contract_name))
+        smart_contracts::OwnedReceiveName::try_from(format!("{}.permit", CONTRACT_NAME))
             .map_err(|_| InjectStatementError::OwnedReceiveNameError)?;
 
     log::debug!("Create transaction.");

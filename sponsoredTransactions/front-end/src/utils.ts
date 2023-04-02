@@ -1,4 +1,5 @@
 /* eslint-disable consistent-return */
+/* eslint-disable no-alert */
 import { createContext } from 'react';
 import { AccountTransactionType, CcdAmount, UpdateContractPayload } from '@concordium/web-sdk';
 import { WalletConnection } from '@concordium/react-components';
@@ -16,50 +17,42 @@ import {
 export async function submitUpdateOperator(backend: string, signer: string, nonce: string, signature: string, operator: string, addOperator: boolean) {
 
     if (signer === undefined || signer === '') {
-        // eslint-disable-next-line no-alert
         alert('Insert an signer address.');
         return '';
     }
 
     if (signer.length !== 50) {
-        // eslint-disable-next-line no-alert
         alert('Signer address needs to have 50 digits.');
         return '';
     }
 
     if (nonce === undefined || nonce === '') {
-        // eslint-disable-next-line no-alert
         alert('Insert a nonce.');
         return '';
     }
 
     // eslint-disable-next-line no-restricted-globals
     if (isNaN(Number(nonce))) {
-        // eslint-disable-next-line no-alert
         alert('Your nonce needs to be a number.');
         return '';
     }
 
     if (signature === undefined || signature === '') {
-        // eslint-disable-next-line no-alert
         alert('Insert a signature.');
         return '';
     }
 
     if (signature.length !== 128) {
-        // eslint-disable-next-line no-alert
         alert('Signature needs to have 128 digits.');
         return '';
     }
 
     if (operator === undefined || operator === '') {
-        // eslint-disable-next-line no-alert
         alert('Insert an operator address.');
         return '';
     }
 
     if (operator.length !== 50) {
-        // eslint-disable-next-line no-alert
         alert('Operator address needs to have 50 digits.');
         return '';
     }
@@ -93,74 +86,62 @@ export async function submitTransfer(backend: string,
     to: string) {
 
     if (signer === undefined || signer === '') {
-        // eslint-disable-next-line no-alert
         alert('Insert an signer address.');
         return '';
     }
 
     if (signer.length !== 50) {
-        // eslint-disable-next-line no-alert
         alert('Signer address needs to have 50 digits.');
         return '';
     }
 
     if (nonce === undefined || nonce === '') {
-        // eslint-disable-next-line no-alert
         alert('Insert a nonce.');
         return '';
     }
 
     // eslint-disable-next-line no-restricted-globals
     if (isNaN(Number(nonce))) {
-        // eslint-disable-next-line no-alert
         alert('Your nonce needs to be a number.');
         return '';
     }
 
     if (signature === undefined || signature === '') {
-        // eslint-disable-next-line no-alert
         alert('Insert a signature.');
         return '';
     }
 
     if (signature.length !== 128) {
-        // eslint-disable-next-line no-alert
         alert('Signature needs to have 128 digits.');
         return '';
     }
 
     if (tokenID === undefined || tokenID === '') {
-        // eslint-disable-next-line no-alert
         alert('Insert a tokenID.');
         return '';
     }
 
     if (tokenID.length !== 8) {
-        // eslint-disable-next-line no-alert
         alert('TokenID needs to have 8 digits.');
         return '';
     }
 
     if (from === undefined || from === '') {
-        // eslint-disable-next-line no-alert
         alert('Insert an `from` address.');
         return '';
     }
 
     if (from.length !== 50) {
-        // eslint-disable-next-line no-alert
         alert('`From` address needs to have 50 digits.');
         return '';
     }
 
     if (to === undefined || to === '') {
-        // eslint-disable-next-line no-alert
         alert('Insert an `to` address.');
         return '';
     }
 
     if (to.length !== 50) {
-        // eslint-disable-next-line no-alert
         alert('`To` address needs to have 50 digits.');
         return '';
     }
@@ -213,13 +194,11 @@ export async function mint(connection: WalletConnection, account: string) {
 export async function register(connection: WalletConnection, account: string, publicKey: string) {
 
     if (publicKey === undefined || publicKey === '') {
-        // eslint-disable-next-line no-alert
         alert('Insert a public key.');
         return '';
     }
 
     if (publicKey.length !== 64) {
-        // eslint-disable-next-line no-alert
         alert('Public key needs to have 64 digits.');
         return '';
     }

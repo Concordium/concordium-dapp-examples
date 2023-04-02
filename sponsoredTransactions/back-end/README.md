@@ -32,10 +32,10 @@ To get your account file (the `3PXwJYYPf6fyVb4GJquxSZU8puxrHfzc4XogdMVot8MUQK53t
 # Using the tool
 
 The backend is a simple server that exposes two endpoints
- - `GET /submitUpdateOperator`
- - `GET /submitTransfer`
+ - `POST /submitUpdateOperator`
+ - `POST /submitTransfer`
 
-The overall flow is that the user signs a sponsored updateOperator/transfer message in the browser wallet (or mobile wallet via walletConnect) and sends the signature together with some input parameters to this backend server via one of the above endpoints. The backend creates a sponsored transaction and submits it to the `permit` function in the smart contract {index: 4129, subindex: 0} that has a similar logic to [this contract](https://github.com/Concordium/concordium-rust-smart-contracts/tree/main/examples/cis3-nft-sponsored-txs). The backend returns the transaction hash to the front-end. This backend server has to have access to an account (with its associated private key) that is funded with some CCD to submit the sponsored transaction to the chain. The backend wallet will pay for the transaction fees.
+The overall flow is that the user signs a sponsored updateOperator/transfer message in the browser wallet (or mobile wallet via walletConnect) and sends the signature together with some input parameters to this backend server via one of the above endpoints. The backend creates a sponsored transaction and submits it to the `permit` function in the smart contract {index: 4129, subindex: 0} that has a similar logic to [this contract](https://github.com/Concordium/concordium-rust-smart-contracts/tree/main/examples/cis3-nft-sponsored-txs). The backend returns the transaction hash to the front-end. This backend server has to have access to a blockchain node and an account (with its associated private key) that is funded with some CCD to submit the sponsored transaction to the chain. The backend wallet will pay for the transaction fees.
 
 See [src/main.rs](./src/main.rs) for the formats of requests and responses. Both
 requests and responses are JSON encoded. The requests are handled by handlers in [src/handlers.rs](./src/handlers.rs).
