@@ -2,14 +2,13 @@ mod handlers;
 mod types;
 use crate::handlers::*;
 use crate::types::*;
-
 use anyhow::Context;
 use clap::Parser;
-use concordium_rust_sdk::types::WalletAccount;
-
 use concordium_rust_sdk::common::{self as crypto_common};
+use concordium_rust_sdk::types::WalletAccount;
 use std::path::PathBuf;
 use std::sync::Arc;
+use tokio::sync::Mutex;
 use warp::Filter;
 
 /// Structure used to receive the correct command line arguments.
@@ -53,9 +52,9 @@ async fn main() -> anyhow::Result<()> {
     log_builder.filter_level(app.log_level); // filter filter_module(module_path!(), app.log_level);
     log_builder.init();
 
-    let client = concordium_rust_sdk::v2::Client::new(app.endpoint).await?;
+    let mut client_update_operator = concordium_rust_sdk::v2::Client::new(app.endpoint).await?;
 
-    let client2 = client.clone();
+    let client_transfer = client_update_operator.clone();
 
     let cors = warp::cors()
         .allow_any_origin()
@@ -65,16 +64,30 @@ async fn main() -> anyhow::Result<()> {
     log::debug!("Acquire keys.");
 
     // load account keys and sender address from a file
-    let keys: WalletAccount =
-        serde_json::from_str(&std::fs::read_to_string(app.keys_path).context(
-            "Could not read the keys
-    file.",
-        )?)
-        .context("Could not parse the keys file.")?;
+    let keys: WalletAccount = serde_json::from_str(
+        &std::fs::read_to_string(app.keys_path).context("Could not read the keys file.")?,
+    )
+    .context("Could not parse the keys file.")?;
 
     let key_update_operator = Arc::new(keys);
 
     let key_transfer = key_update_operator.clone();
+
+    log::debug!("Acquire nonce of wallet account.");
+
+    let nonce_response = client_update_operator
+        .get_next_account_sequence_number(&key_update_operator.address)
+        .await
+        .map_err(|e| {
+            log::warn!("NonceQueryError {:#?}.", e);
+            LogError::NonceQueryError
+        })?;
+
+    let state_update_operator = Server {
+        nonce: Arc::new(Mutex::new(nonce_response.nonce)),
+    };
+
+    let state_transfer = state_update_operator.clone();
 
     // 1. Provide submit update operator
     let provide_submit_update_operator = warp::post()
@@ -84,7 +97,12 @@ async fn main() -> anyhow::Result<()> {
         .and_then(move |request: UpdateOperatorInputParams| {
             log::debug!("Process update operator transaction.");
 
-            handle_signature_update_operator(client.clone(), key_update_operator.clone(), request)
+            handle_signature_update_operator(
+                client_update_operator.clone(),
+                key_update_operator.clone(),
+                request,
+                state_update_operator.clone(),
+            )
         });
 
     // 2. Provide submit transfer
@@ -95,7 +113,12 @@ async fn main() -> anyhow::Result<()> {
         .and_then(move |request: TransferInputParams| {
             log::debug!("Process transfer transaction.");
 
-            handle_signature_transfer(client2.clone(), key_transfer.clone(), request)
+            handle_signature_transfer(
+                client_transfer.clone(),
+                key_transfer.clone(),
+                request,
+                state_transfer.clone(),
+            )
         });
 
     log::debug!("Get public files to serve.");

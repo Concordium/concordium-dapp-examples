@@ -9,7 +9,7 @@ The following parameters are supported
 - `port` the port on which the server will listen for incoming requests
 - `log-level` maximum log level (defaults to `debug` if not given)
 - `public-folder` the path to the folder, which should be served, defaults to the public folder in the current directory.
-- `account` the path to the folder, which key credentials.
+- `account` the path to a file which contains the key credentials.
 
 All of the above is available by using `--help` to get usage information.
 
