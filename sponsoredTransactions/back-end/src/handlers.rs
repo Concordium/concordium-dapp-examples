@@ -1,12 +1,6 @@
+use crate::crypto_common::types::TransactionTime;
 use crate::types;
 use crate::types::*;
-use std::collections::BTreeMap;
-use std::convert::Infallible;
-use std::str::FromStr;
-use std::sync::Arc;
-use warp::{http::StatusCode, Rejection};
-
-use crate::crypto_common::types::TransactionTime;
 use concordium_rust_sdk::cis2::{
     AdditionalData, OperatorUpdate, Receiver, TokenAmount, TokenId, Transfer, UpdateOperator,
 };
@@ -14,37 +8,23 @@ use concordium_rust_sdk::smart_contracts::common::{
     AccountAddress, Address, Amount, ContractAddress, OwnedEntrypointName, Timestamp,
 };
 use concordium_rust_sdk::types::{smart_contracts, transactions, Energy, WalletAccount};
-
-use concordium_rust_sdk::v2;
+use std::collections::BTreeMap;
+use std::convert::Infallible;
+use std::str::FromStr;
+use std::sync::Arc;
+use warp::{http::StatusCode, Rejection};
 
 const SMART_CONTRACT_INDEX: u64 = 4184;
 const CONTRACT_NAME: &str = "cis3_nft";
-const TRANSACTION_TIME: u64 = 9999999999999;
-const ENERGY: u64 = 99999;
+const ENERGY: u64 = 6000;
 
 pub async fn handle_signature_update_operator(
     client: concordium_rust_sdk::v2::Client,
     key_update_operator: Arc<WalletAccount>,
     request: UpdateOperatorInputParams,
+    state: Server,
 ) -> Result<impl warp::Reply, Rejection> {
     let mut client = client.clone();
-
-    log::debug!("Acquire account info.");
-
-    let ai = client
-        .get_account_info(
-            &key_update_operator.address.into(),
-            &v2::BlockIdentifier::Best,
-        )
-        .await
-        .map_err(|e| {
-            log::warn!("AccountInfoQueryError {:#?}.", e);
-            InjectStatementError::AccountInfoQueryError
-        })?;
-
-    log::debug!("Acquire nonce of wallet account.");
-
-    let nonce = ai.response.account_nonce;
 
     log::debug!("Create payload.");
 
@@ -57,7 +37,7 @@ pub async fn handle_signature_update_operator(
         update: operator_update,
         operator: Address::Account(
             AccountAddress::from_str(&request.operator)
-                .map_err(|_| InjectStatementError::AccountFromStringError)?,
+                .map_err(|_| LogError::AccountFromStringError)?,
         ),
     };
     let payload = UpdateOperatorParams(vec![update_operator]);
@@ -89,7 +69,7 @@ pub async fn handle_signature_update_operator(
 
     let mut signature = [0; 64];
     hex::decode_to_slice(request.signature, &mut signature)
-        .map_err(|_| InjectStatementError::SignatureError)?;
+        .map_err(|_| LogError::SignatureError)?;
 
     let mut inner_signature_map: BTreeMap<u8, types::SignatureEd25519> = BTreeMap::new();
     inner_signature_map.insert(0, types::SignatureEd25519(signature));
@@ -103,14 +83,14 @@ pub async fn handle_signature_update_operator(
         message,
         signature: signature_map,
         signer: AccountAddress::from_str(&request.signer)
-            .map_err(|_| InjectStatementError::AccountFromStringError)?,
+            .map_err(|_| LogError::AccountFromStringError)?,
     };
 
     let bytes = concordium_rust_sdk::smart_contracts::common::to_bytes(&param);
 
     let receive_name =
         smart_contracts::OwnedReceiveName::try_from(format!("{}.permit", CONTRACT_NAME))
-            .map_err(|_| InjectStatementError::OwnedReceiveNameError)?;
+            .map_err(|_| LogError::OwnedReceiveNameError)?;
 
     log::debug!("Create transaction.");
 
@@ -123,22 +103,29 @@ pub async fn handle_signature_update_operator(
             },
             receive_name,
             message: smart_contracts::OwnedParameter::try_from(bytes)
-                .map_err(|_| InjectStatementError::ParameterError)?,
+                .map_err(|_| LogError::ParameterError)?,
         },
     };
+
+    let mut nonce = state.nonce.lock().await;
+
+    // Transaction should expiry after one hour.
+    let transaction_expiry_seconds = chrono::Utc::now().timestamp() as u64 + 3600;
 
     let tx = transactions::send::make_and_sign_transaction(
         &key_update_operator.keys,
         key_update_operator.address,
-        nonce,
+        *nonce,
         TransactionTime {
-            seconds: TRANSACTION_TIME,
+            seconds: transaction_expiry_seconds,
         },
         concordium_rust_sdk::types::transactions::send::GivenEnergy::Absolute(Energy {
             energy: ENERGY,
         }),
         payload,
     );
+
+    *nonce = nonce.next();
 
     let bi = transactions::BlockItem::AccountTransaction(tx);
 
@@ -150,7 +137,7 @@ pub async fn handle_signature_update_operator(
             log::warn!("SumbitSponsoredTransactionError {:#?}.", e);
 
             Err(warp::reject::custom(
-                InjectStatementError::SumbitSponsoredTransactionError,
+                LogError::SumbitSponsoredTransactionError,
             ))
         }
     }
@@ -160,42 +147,25 @@ pub async fn handle_signature_transfer(
     client: concordium_rust_sdk::v2::Client,
     key_update_operator: Arc<WalletAccount>,
     request: TransferInputParams,
+    state: Server,
 ) -> Result<impl warp::Reply, Rejection> {
     let mut client = client.clone();
-
-    log::debug!("Acquire account info.");
-
-    let ai = client
-        .get_account_info(
-            &key_update_operator.address.into(),
-            &v2::BlockIdentifier::Best,
-        )
-        .await
-        .map_err(|e| {
-            log::warn!("AccountInfoQueryError {:#?}.", e);
-            InjectStatementError::AccountInfoQueryError
-        })?;
-
-    log::debug!("Acquire nonce of wallet account.");
-
-    let nonce = ai.response.account_nonce;
 
     log::debug!("Create payload.");
 
     let transfer = Transfer {
         from: Address::Account(
             AccountAddress::from_str(&request.from)
-                .map_err(|_| InjectStatementError::AccountFromStringError)?,
+                .map_err(|_| LogError::AccountFromStringError)?,
         ),
         to: Receiver::Account(
-            AccountAddress::from_str(&request.to)
-                .map_err(|_| InjectStatementError::AccountFromStringError)?,
+            AccountAddress::from_str(&request.to).map_err(|_| LogError::AccountFromStringError)?,
         ),
         token_id: TokenId::new_unchecked(
-            hex::decode(request.token_id).map_err(|_| InjectStatementError::TokenIdError)?,
+            hex::decode(request.token_id).map_err(|_| LogError::TokenIdError)?,
         ),
-        amount: TokenAmount::from_str("1").map_err(|_| InjectStatementError::TokenAmountError)?,
-        data: AdditionalData::new(vec![]).map_err(|_| InjectStatementError::AdditionalDataError)?,
+        amount: TokenAmount::from_str("1").map_err(|_| LogError::TokenAmountError)?,
+        data: AdditionalData::new(vec![]).map_err(|_| LogError::AdditionalDataError)?,
     };
 
     let payload = TransferParams(vec![transfer]);
@@ -227,7 +197,7 @@ pub async fn handle_signature_transfer(
 
     let mut signature = [0; 64];
     hex::decode_to_slice(request.signature, &mut signature)
-        .map_err(|_| InjectStatementError::SignatureError)?;
+        .map_err(|_| LogError::SignatureError)?;
 
     let mut inner_signature_map: BTreeMap<u8, types::SignatureEd25519> = BTreeMap::new();
     inner_signature_map.insert(0, types::SignatureEd25519(signature));
@@ -241,14 +211,14 @@ pub async fn handle_signature_transfer(
         message,
         signature: signature_map,
         signer: AccountAddress::from_str(&request.signer)
-            .map_err(|_| InjectStatementError::AccountFromStringError)?,
+            .map_err(|_| LogError::AccountFromStringError)?,
     };
 
     let bytes = concordium_rust_sdk::smart_contracts::common::to_bytes(&param);
 
     let receive_name =
         smart_contracts::OwnedReceiveName::try_from(format!("{}.permit", CONTRACT_NAME))
-            .map_err(|_| InjectStatementError::OwnedReceiveNameError)?;
+            .map_err(|_| LogError::OwnedReceiveNameError)?;
 
     log::debug!("Create transaction.");
 
@@ -261,22 +231,29 @@ pub async fn handle_signature_transfer(
             },
             receive_name,
             message: smart_contracts::OwnedParameter::try_from(bytes)
-                .map_err(|_| InjectStatementError::ParameterError)?,
+                .map_err(|_| LogError::ParameterError)?,
         },
     };
+
+    let mut nonce = state.nonce.lock().await;
+
+    // Transaction should expiry after one hour.
+    let transaction_expiry_seconds = chrono::Utc::now().timestamp() as u64 + 3600;
 
     let tx = transactions::send::make_and_sign_transaction(
         &key_update_operator.keys,
         key_update_operator.address,
-        nonce,
+        *nonce,
         TransactionTime {
-            seconds: TRANSACTION_TIME,
+            seconds: transaction_expiry_seconds,
         },
         concordium_rust_sdk::types::transactions::send::GivenEnergy::Absolute(Energy {
             energy: ENERGY,
         }),
         payload,
     );
+
+    *nonce = nonce.next();
 
     let bi = transactions::BlockItem::AccountTransaction(tx);
 
@@ -288,7 +265,7 @@ pub async fn handle_signature_transfer(
             log::warn!("SumbitSponsoredTransactionError {:#?}.", e);
 
             Err(warp::reject::custom(
-                InjectStatementError::SumbitSponsoredTransactionError,
+                LogError::SumbitSponsoredTransactionError,
             ))
         }
     }
@@ -299,43 +276,43 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl warp::Reply, Infall
         let code = StatusCode::NOT_FOUND;
         let message = "Not found.";
         Ok(mk_reply(message.into(), code))
-    } else if let Some(InjectStatementError::NodeAccess(e)) = err.find() {
+    } else if let Some(LogError::NodeAccess(e)) = err.find() {
         let code = StatusCode::INTERNAL_SERVER_ERROR;
         let message = format!("Cannot access the node: {}", e);
         Ok(mk_reply(message, code))
-    } else if let Some(InjectStatementError::AccountFromStringError) = err.find() {
+    } else if let Some(LogError::AccountFromStringError) = err.find() {
         let code = StatusCode::BAD_REQUEST;
         let message = "Account from_str error.";
         Ok(mk_reply(message.into(), code))
-    } else if let Some(InjectStatementError::SumbitSponsoredTransactionError) = err.find() {
+    } else if let Some(LogError::SumbitSponsoredTransactionError) = err.find() {
         let code = StatusCode::INTERNAL_SERVER_ERROR;
         let message = "Sumbit sponsored transaction error.";
         Ok(mk_reply(message.into(), code))
-    } else if let Some(InjectStatementError::OwnedReceiveNameError) = err.find() {
+    } else if let Some(LogError::OwnedReceiveNameError) = err.find() {
         let code = StatusCode::BAD_REQUEST;
         let message = "Owned received name error.";
         Ok(mk_reply(message.into(), code))
-    } else if let Some(InjectStatementError::TokenIdError) = err.find() {
+    } else if let Some(LogError::TokenIdError) = err.find() {
         let code = StatusCode::BAD_REQUEST;
         let message = "TokenId error.";
         Ok(mk_reply(message.into(), code))
-    } else if let Some(InjectStatementError::TokenAmountError) = err.find() {
+    } else if let Some(LogError::TokenAmountError) = err.find() {
         let code = StatusCode::BAD_REQUEST;
         let message = "TokenAmount error.";
         Ok(mk_reply(message.into(), code))
-    } else if let Some(InjectStatementError::SignatureError) = err.find() {
+    } else if let Some(LogError::SignatureError) = err.find() {
         let code = StatusCode::BAD_REQUEST;
         let message = "Signature error.";
         Ok(mk_reply(message.into(), code))
-    } else if let Some(InjectStatementError::ParameterError) = err.find() {
+    } else if let Some(LogError::ParameterError) = err.find() {
         let code = StatusCode::BAD_REQUEST;
         let message = "Parameter error.";
         Ok(mk_reply(message.into(), code))
-    } else if let Some(InjectStatementError::AdditionalDataError) = err.find() {
+    } else if let Some(LogError::AdditionalDataError) = err.find() {
         let code = StatusCode::BAD_REQUEST;
         let message = "AdditionalData error.";
         Ok(mk_reply(message.into(), code))
-    } else if let Some(InjectStatementError::AccountInfoQueryError) = err.find() {
+    } else if let Some(LogError::NonceQueryError) = err.find() {
         let code = StatusCode::BAD_REQUEST;
         let message = "Account info query error.";
         Ok(mk_reply(message.into(), code))

@@ -1,19 +1,22 @@
+use concordium_rust_sdk::cis2::{Transfer, UpdateOperator};
 use concordium_rust_sdk::{
     endpoints::{QueryError, RPCError},
     smart_contracts::common::{
         AccountAddress, ContractAddress, OwnedEntrypointName, Serial, Serialize, Timestamp,
     },
-    types::hashes::{HashBytes, TransactionMarker},
+    types::{
+        hashes::{HashBytes, TransactionMarker},
+        Nonce,
+    },
 };
-
-use concordium_rust_sdk::cis2::{Transfer, UpdateOperator};
-
 use std::collections::BTreeMap;
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
 #[derive(Debug, thiserror::Error)]
-pub enum InjectStatementError {
-    #[error("Account info query error.")]
-    AccountInfoQueryError,
+pub enum LogError {
+    #[error("Nonce query error.")]
+    NonceQueryError,
     #[error("Sumbit sponsored transaction error.")]
     SumbitSponsoredTransactionError,
     #[error("Account from_str error.")]
@@ -34,13 +37,13 @@ pub enum InjectStatementError {
     NodeAccess(#[from] QueryError),
 }
 
-impl From<RPCError> for InjectStatementError {
+impl From<RPCError> for LogError {
     fn from(err: RPCError) -> Self {
         Self::NodeAccess(err.into())
     }
 }
 
-impl warp::reject::Reject for InjectStatementError {}
+impl warp::reject::Reject for LogError {}
 
 #[derive(serde::Serialize)]
 /// Response in case of an error. This is going to be encoded as a JSON body
@@ -107,4 +110,9 @@ pub struct PermitMessage {
     pub nonce: u64,
     pub timestamp: Timestamp,
     pub payload: PermitPayload,
+}
+
+#[derive(Clone)]
+pub struct Server {
+    pub nonce: Arc<Mutex<Nonce>>,
 }
