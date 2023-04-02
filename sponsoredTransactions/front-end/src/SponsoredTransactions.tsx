@@ -1,11 +1,13 @@
 /* eslint-disable no-console */
+/* eslint-disable no-alert */
+
 import React, { useEffect, useState, ChangeEvent } from 'react';
 import Switch from 'react-switch';
 import {
     toBuffer,
-    deserializeReceiveReturnValue,
-    serializeUpdateContractParameters,
     JsonRpcClient,
+    serializeTypeValue,
+    deserializeTypeValue
 } from '@concordium/web-sdk';
 import { withJsonRpcClient, WalletConnectionProps, useConnection, useConnect } from '@concordium/react-components';
 import { version } from '../package.json';
@@ -14,7 +16,9 @@ import { submitUpdateOperator, submitTransfer, register, mint } from './utils';
 import {
     SPONSORED_TX_CONTRACT_NAME,
     SPONSORED_TX_CONTRACT_INDEX,
-    SPONSORED_TX_RAW_SCHEMA,
+    PUBLIC_KEY_OF_PARAMETER_SCHEMA,
+    PUBLIC_KEY_OF_RETURN_VALUE_SCHEMA,
+    SERIALIZATION_HELPER_SCHEMA,
     CONTRACT_SUB_INDEX,
     BROWSER_WALLET,
     WALLET_CONNECT,
@@ -100,50 +104,42 @@ const InputFieldStyle = {
 
 async function calculateTransferMessage(nonce: string, tokenID: string, from: string, to: string) {
     if (nonce === undefined || nonce === '') {
-        // eslint-disable-next-line no-alert
         alert('Insert a nonce.');
         return '';
     }
 
     // eslint-disable-next-line no-restricted-globals
     if (isNaN(Number(nonce))) {
-        // eslint-disable-next-line no-alert
         alert('Your nonce needs to be a number.');
         return '';
     }
 
     if (tokenID === undefined || tokenID === '') {
-        // eslint-disable-next-line no-alert
         alert('Insert a tokenID.');
         return '';
     }
 
     if (tokenID.length !== 8) {
-        // eslint-disable-next-line no-alert
         alert('TokenID needs to have 8 digits.');
         return '';
     }
 
     if (from === undefined || from === '') {
-        // eslint-disable-next-line no-alert
         alert('Insert an `from` address.');
         return '';
     }
 
     if (from.length !== 50) {
-        // eslint-disable-next-line no-alert
         alert('`From` address needs to have 50 digits.');
         return '';
     }
 
     if (to === undefined || to === '') {
-        // eslint-disable-next-line no-alert
         alert('Insert an `to` address.');
         return '';
     }
 
     if (to.length !== 50) {
-        // eslint-disable-next-line no-alert
         alert('`To` address needs to have 50 digits.');
         return '';
     }
@@ -175,43 +171,33 @@ async function calculateTransferMessage(nonce: string, tokenID: string, from: st
         timestamp: EXPIRY_TIME_SIGNATURE,
     };
 
-    const param = serializeUpdateContractParameters(
-        SPONSORED_TX_CONTRACT_NAME,
-        'serializationHelper',
+    const serializedMessage = serializeTypeValue(
         message,
-        toBuffer(SPONSORED_TX_RAW_SCHEMA, 'base64')
+        toBuffer(SERIALIZATION_HELPER_SCHEMA, 'base64')
     );
 
-    const hexMessage = Array.from(param, function convertToHex(byte) {
-        /* eslint-disable no-bitwise */
-        return `0${(byte & 0xff).toString(16)}`.slice(-2);
-    }).join('');
 
-    return hexMessage;
+    return serializedMessage;
 }
 
 async function calculateUpdateOperatorMessage(nonce: string, operator: string, addOperator: boolean) {
     if (nonce === undefined || nonce === '') {
-        // eslint-disable-next-line no-alert
         alert('Insert a nonce.');
         return '';
     }
 
     // eslint-disable-next-line no-restricted-globals
     if (isNaN(Number(nonce))) {
-        // eslint-disable-next-line no-alert
         alert('Your nonce needs to be a number.');
         return '';
     }
 
     if (operator === undefined || operator === '') {
-        // eslint-disable-next-line no-alert
         alert('Insert an operator address.');
         return '';
     }
 
     if (operator.length !== 50) {
-        // eslint-disable-next-line no-alert
         alert('Operator address needs to have 50 digits.');
         return '';
     }
@@ -246,19 +232,13 @@ async function calculateUpdateOperatorMessage(nonce: string, operator: string, a
         timestamp: EXPIRY_TIME_SIGNATURE,
     };
 
-    const param = serializeUpdateContractParameters(
-        SPONSORED_TX_CONTRACT_NAME,
-        'serializationHelper',
+    const serializedMessage = serializeTypeValue(
         message,
-        toBuffer(SPONSORED_TX_RAW_SCHEMA, 'base64')
+        toBuffer(SERIALIZATION_HELPER_SCHEMA, 'base64')
     );
 
-    const hexMessage = Array.from(param, function convertToHex(byte) {
-        /* eslint-disable no-bitwise */
-        return `0${(byte & 0xff).toString(16)}`.slice(-2);
-    }).join('');
 
-    return hexMessage;
+    return serializedMessage;
 }
 
 async function getPublicKey(rpcClient: JsonRpcClient, account: string) {
@@ -269,9 +249,8 @@ async function getPublicKey(rpcClient: JsonRpcClient, account: string) {
 }
 
 async function viewPublicKey(rpcClient: JsonRpcClient, account: string) {
-    const param = serializeUpdateContractParameters(
-        SPONSORED_TX_CONTRACT_NAME,
-        'publicKeyOf',
+
+    const param = serializeTypeValue(
         {
             queries: [
                 {
@@ -279,7 +258,7 @@ async function viewPublicKey(rpcClient: JsonRpcClient, account: string) {
                 },
             ],
         },
-        toBuffer(SPONSORED_TX_RAW_SCHEMA, 'base64')
+        toBuffer(PUBLIC_KEY_OF_PARAMETER_SCHEMA, 'base64')
     );
 
     const res = await rpcClient.invokeContract({
@@ -294,13 +273,13 @@ async function viewPublicKey(rpcClient: JsonRpcClient, account: string) {
         );
     }
 
-    const returnValues = deserializeReceiveReturnValue(
-        toBuffer(res.returnValue, 'hex'),
-        toBuffer(SPONSORED_TX_RAW_SCHEMA, 'base64'),
-        SPONSORED_TX_CONTRACT_NAME,
-        'publicKeyOf',
-        2
-    );
+    // @ts-ignore
+    const returnValues: {
+        None: undefined; Some: any[][];
+    }[][] | undefined = deserializeTypeValue
+            (toBuffer(res.returnValue, 'hex'),
+                toBuffer(PUBLIC_KEY_OF_RETURN_VALUE_SCHEMA, 'base64')
+            );
 
     if (returnValues === undefined || returnValues[0][0]?.None !== undefined) {
         // [public key, nonce]
@@ -347,7 +326,7 @@ function clearInputFields() {
     }
 }
 
-export default function SPONSOREDTXS(props: WalletConnectionProps) {
+export default function SponsoredTransactions(props: WalletConnectionProps) {
     const { network, activeConnectorType, activeConnector, activeConnectorError, connectedAccounts, genesisHashes } =
         props;
 
@@ -406,6 +385,7 @@ export default function SPONSOREDTXS(props: WalletConnectionProps) {
     // Refresh publicKey/nonce periodically.
     // eslint-disable-next-line consistent-return
     useEffect(() => {
+
         if (connection && account) {
             const interval = setInterval(() => {
                 console.log('refreshing');
@@ -481,7 +461,9 @@ export default function SPONSOREDTXS(props: WalletConnectionProps) {
                     connection={connection}
                     {...props}
                 />
-                <WalletConnectionTypeButton
+                {/* TODO: Enable walletConnect again once mobile wallets are updated to sign Objects/Bytes
+                with a schema with the `signMessage` function without the hex encoding.
+                 <WalletConnectionTypeButton
                     buttonStyle={ButtonStyle}
                     disabledButtonStyle={ButtonStyleDisabled}
                     connectorType={WALLET_CONNECT}
@@ -489,7 +471,7 @@ export default function SPONSOREDTXS(props: WalletConnectionProps) {
                     setWaitingForUser={setWaitingForUser}
                     connection={connection}
                     {...props}
-                />
+                /> */}
             </div>
             <div>
                 {activeConnectorError && <p style={{ color: 'red' }}>Connector Error: {activeConnectorError}.</p>}
@@ -709,7 +691,7 @@ export default function SPONSOREDTXS(props: WalletConnectionProps) {
                                         .finally(() => setWaitingForUser(false));
                                 }}
                             >
-                                Mint a NFT token
+                                Mint an NFT token
                             </button>
                             <label>
                                 <p style={{ marginBottom: 0 }}>Token ID:</p>
@@ -765,11 +747,15 @@ export default function SPONSOREDTXS(props: WalletConnectionProps) {
                                 onClick={async () => {
                                     setSigningError('');
                                     setSignature('');
-                                    const message = isPermitUpdateOperator
+                                    const serializedMessage = isPermitUpdateOperator
                                         ? await calculateUpdateOperatorMessage(nonce, operator, addOperator)
                                         : await calculateTransferMessage(nonce, tokenID, from, to);
-                                    if (message !== '') {
-                                        const promise = connection.signMessage(account, message);
+
+                                    if (serializedMessage !== '') {
+                                        const promise = connection.signMessage(account, {
+                                            data: serializedMessage.toString('hex'),
+                                            schema: SERIALIZATION_HELPER_SCHEMA,
+                                        })
                                         promise
                                             .then((permitSignature) => {
                                                 setSignature(permitSignature[0][0]);
