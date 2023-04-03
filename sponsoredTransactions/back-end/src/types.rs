@@ -21,6 +21,8 @@ pub enum LogError {
     SumbitSponsoredTransactionError,
     #[error("Account from_str error.")]
     AccountFromStringError,
+    #[error("Simulation invoke error.")]
+    SimulationInvokeError,
     #[error("Owned received name error.")]
     OwnedReceiveNameError,
     #[error("TokenId error.")]
@@ -30,6 +32,10 @@ pub enum LogError {
     #[error("Parameter error.")]
     ParameterError,
     #[error("Signature error.")]
+    NonceError,
+    #[error("Nonce error.")]
+    TimestampError,
+    #[error("Timestamp error.")]
     SignatureError,
     #[error("AdditionalData error.")]
     AdditionalDataError,
