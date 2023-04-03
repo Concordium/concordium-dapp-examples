@@ -2,14 +2,12 @@ use crate::crypto_common::types::TransactionTime;
 use crate::types;
 use crate::types::*;
 use concordium_rust_sdk::cis2::{
-    AdditionalData, OperatorUpdate, Receiver, TokenAmount, TokenId, Transfer, UpdateOperator,
+    AdditionalData, OperatorUpdate, Receiver, TokenAmount, Transfer, UpdateOperator,
 };
 use concordium_rust_sdk::smart_contracts::common::{
-    AccountAddress, Address, Amount, ContractAddress, OwnedEntrypointName, Timestamp,
+    AccountAddress, Address, Amount, ContractAddress, OwnedEntrypointName,
 };
-use concordium_rust_sdk::types::smart_contracts::{
-    ContractContext, InvokeContractResult, OwnedReceiveName,
-};
+use concordium_rust_sdk::types::smart_contracts::{ContractContext, InvokeContractResult};
 use concordium_rust_sdk::types::{smart_contracts, transactions, Energy, WalletAccount};
 use concordium_rust_sdk::v2::BlockIdentifier;
 use std::collections::BTreeMap;
@@ -37,33 +35,20 @@ pub async fn handle_signature_update_operator(
 
     let update_operator = UpdateOperator {
         update: operator_update,
-        operator: Address::Account(
-            AccountAddress::from_str(&request.operator)
-                .map_err(|_| LogError::AccountFromStringError)?,
-        ),
+        operator: Address::Account(request.operator),
     };
     let payload = UpdateOperatorParams(vec![update_operator]);
-
-    let nonce = request
-        .nonce
-        .parse::<u64>()
-        .map_err(|_| LogError::NonceError)?;
-
-    let timestamp = request
-        .timestamp
-        .parse::<u64>()
-        .map_err(|_| LogError::TimestampError)?;
 
     log::debug!("Create PermitMessage.");
 
     let message: PermitMessage = PermitMessage {
-        timestamp: Timestamp::from_timestamp_millis(timestamp),
+        timestamp: request.timestamp,
         contract_address: ContractAddress {
             index: SMART_CONTRACT_INDEX,
             subindex: 0,
         },
         entry_point: OwnedEntrypointName::new_unchecked("updateOperator".into()),
-        nonce,
+        nonce: request.nonce,
         payload: types::PermitPayload::UpdateOperator(payload),
     };
 
@@ -87,42 +72,25 @@ pub async fn handle_signature_transfer(
     log::debug!("Create payload.");
 
     let transfer = Transfer {
-        from: Address::Account(
-            AccountAddress::from_str(&request.from)
-                .map_err(|_| LogError::AccountFromStringError)?,
-        ),
-        to: Receiver::Account(
-            AccountAddress::from_str(&request.to).map_err(|_| LogError::AccountFromStringError)?,
-        ),
-        token_id: TokenId::new_unchecked(
-            hex::decode(request.token_id).map_err(|_| LogError::TokenIdError)?,
-        ),
+        from: Address::Account(request.from),
+        to: Receiver::Account(request.to),
+        token_id: request.token_id,
         amount: TokenAmount::from_str("1").map_err(|_| LogError::TokenAmountError)?,
         data: AdditionalData::new(vec![]).map_err(|_| LogError::AdditionalDataError)?,
     };
 
     let payload = TransferParams(vec![transfer]);
 
-    let nonce = request
-        .nonce
-        .parse::<u64>()
-        .map_err(|_| LogError::NonceError)?;
-
-    let timestamp = request
-        .timestamp
-        .parse::<u64>()
-        .map_err(|_| LogError::TimestampError)?;
-
     log::debug!("Create PermitMessage.");
 
     let message: PermitMessage = PermitMessage {
-        timestamp: Timestamp::from_timestamp_millis(timestamp),
+        timestamp: request.timestamp,
         contract_address: ContractAddress {
             index: SMART_CONTRACT_INDEX,
             subindex: 0,
         },
         entry_point: OwnedEntrypointName::new_unchecked("transfer".into()),
-        nonce,
+        nonce: request.nonce,
         payload: types::PermitPayload::Transfer(payload),
     };
 
@@ -143,7 +111,7 @@ pub async fn submit_transaction(
     state: Server,
     message: PermitMessage,
     request_signature: String,
-    signer: String,
+    signer: AccountAddress,
 ) -> Result<impl warp::Reply, Rejection> {
     log::debug!("Create signature map.");
 
@@ -157,15 +125,22 @@ pub async fn submit_transaction(
     let mut signature_map: BTreeMap<u8, BTreeMap<u8, types::SignatureEd25519>> = BTreeMap::new();
     signature_map.insert(0, inner_signature_map);
 
-    log::debug!("Create PermitParam.");
+    log::debug!("Create Parameter.");
 
     let param: PermitParam = PermitParam {
         message,
         signature: signature_map,
-        signer: AccountAddress::from_str(&signer).map_err(|_| LogError::AccountFromStringError)?,
+        signer,
     };
 
     let bytes = concordium_rust_sdk::smart_contracts::common::to_bytes(&param);
+
+    let parameter =
+        smart_contracts::OwnedParameter::try_from(bytes).map_err(|_| LogError::ParameterError)?;
+
+    let receive_name =
+        smart_contracts::OwnedReceiveName::try_from(format!("{}.permit", CONTRACT_NAME))
+            .map_err(|_| LogError::OwnedReceiveNameError)?;
 
     log::debug!("Simulate transaction to check its validity.");
 
@@ -176,10 +151,8 @@ pub async fn submit_transaction(
             subindex: 0,
         },
         amount: Amount::zero(),
-        method: OwnedReceiveName::try_from(format!("{}.permit", CONTRACT_NAME))
-            .map_err(|_| LogError::OwnedReceiveNameError)?,
-        parameter: smart_contracts::OwnedParameter::try_from(bytes.clone())
-            .map_err(|_| LogError::ParameterError)?,
+        method: receive_name.clone(),
+        parameter: parameter.clone(),
         energy: Energy { energy: ENERGY },
     };
 
@@ -187,28 +160,28 @@ pub async fn submit_transaction(
         .invoke_instance(&BlockIdentifier::Best, &context)
         .await;
 
-    //   log::debug!("{:?}", info.is_ok());
+    if info.is_err() {
+        log::error!("SimulationInvokeError {:#?}.", info);
+
+        return Err(warp::reject::custom(LogError::SimulationInvokeError));
+    }
 
     match &info.as_ref().unwrap().response {
         InvokeContractResult::Success {
             return_value: _,
             events: _,
             used_energy: _,
-        } => log::debug!("SimulationInvokeSuccess"),
+        } => log::debug!("TransactionSimulationSuccess"),
         InvokeContractResult::Failure {
             return_value: _,
             reason: _,
             used_energy: _,
         } => {
-            log::error!("SimulationInvokeError {:#?}.", info);
+            log::error!("TransactionSimulationError {:#?}.", info);
 
-            return Err(warp::reject::custom(LogError::SimulationInvokeError));
+            return Err(warp::reject::custom(LogError::TransactionSimulationError));
         }
     }
-
-    let receive_name =
-        smart_contracts::OwnedReceiveName::try_from(format!("{}.permit", CONTRACT_NAME))
-            .map_err(|_| LogError::OwnedReceiveNameError)?;
 
     log::debug!("Create transaction.");
 
@@ -220,8 +193,7 @@ pub async fn submit_transaction(
                 subindex: 0,
             },
             receive_name,
-            message: smart_contracts::OwnedParameter::try_from(bytes.clone())
-                .map_err(|_| LogError::ParameterError)?,
+            message: parameter,
         },
     };
 
@@ -254,7 +226,7 @@ pub async fn submit_transaction(
             Ok(warp::reply::json(&TxHash { tx_hash: hash }))
         }
         Err(e) => {
-            log::warn!("SumbitSponsoredTransactionError {:#?}.", e);
+            log::error!("SumbitSponsoredTransactionError {:#?}.", e);
 
             Err(warp::reject::custom(
                 LogError::SumbitSponsoredTransactionError,
@@ -272,13 +244,13 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl warp::Reply, Infall
         let code = StatusCode::INTERNAL_SERVER_ERROR;
         let message = format!("Cannot access the node: {}", e);
         Ok(mk_reply(message, code))
-    } else if let Some(LogError::AccountFromStringError) = err.find() {
-        let code = StatusCode::BAD_REQUEST;
-        let message = "Account from_str error.";
-        Ok(mk_reply(message.into(), code))
     } else if let Some(LogError::SimulationInvokeError) = err.find() {
         let code = StatusCode::INTERNAL_SERVER_ERROR;
         let message = "Simulation invoke error.";
+        Ok(mk_reply(message.into(), code))
+    } else if let Some(LogError::TransactionSimulationError) = err.find() {
+        let code = StatusCode::INTERNAL_SERVER_ERROR;
+        let message = "Transaction simulation error.";
         Ok(mk_reply(message.into(), code))
     } else if let Some(LogError::SumbitSponsoredTransactionError) = err.find() {
         let code = StatusCode::INTERNAL_SERVER_ERROR;
@@ -288,10 +260,6 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl warp::Reply, Infall
         let code = StatusCode::BAD_REQUEST;
         let message = "Owned received name error.";
         Ok(mk_reply(message.into(), code))
-    } else if let Some(LogError::TokenIdError) = err.find() {
-        let code = StatusCode::BAD_REQUEST;
-        let message = "TokenId error.";
-        Ok(mk_reply(message.into(), code))
     } else if let Some(LogError::TokenAmountError) = err.find() {
         let code = StatusCode::BAD_REQUEST;
         let message = "TokenAmount error.";
@@ -299,14 +267,6 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl warp::Reply, Infall
     } else if let Some(LogError::SignatureError) = err.find() {
         let code = StatusCode::BAD_REQUEST;
         let message = "Signature error.";
-        Ok(mk_reply(message.into(), code))
-    } else if let Some(LogError::NonceError) = err.find() {
-        let code = StatusCode::BAD_REQUEST;
-        let message = "Nonce error.";
-        Ok(mk_reply(message.into(), code))
-    } else if let Some(LogError::TimestampError) = err.find() {
-        let code = StatusCode::BAD_REQUEST;
-        let message = "Timestamp error.";
         Ok(mk_reply(message.into(), code))
     } else if let Some(LogError::ParameterError) = err.find() {
         let code = StatusCode::BAD_REQUEST;
