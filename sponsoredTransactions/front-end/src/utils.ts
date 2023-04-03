@@ -57,12 +57,10 @@ export async function submitUpdateOperator(backend: string, signer: string, nonc
         return '';
     }
 
-    const expiryTimeSignature = new Date(Date.parse(EXPIRY_TIME_SIGNATURE));
-
     const response = await fetch(`${backend}/submitUpdateOperator`, {
         method: 'post',
         headers: new Headers({ 'content-type': 'application/json' }),
-        body: JSON.stringify({ signer, nonce, signature, operator, add_operator: addOperator, timestamp: expiryTimeSignature.getTime().toString() }),
+        body: JSON.stringify({ signer, nonce: Number(nonce), signature, operator, add_operator: addOperator, timestamp: EXPIRY_TIME_SIGNATURE }),
     });
     if (!response.ok) {
         throw new Error('Unable to submit');
@@ -146,12 +144,10 @@ export async function submitTransfer(backend: string,
         return '';
     }
 
-    const expiryTimeSignature = new Date(Date.parse(EXPIRY_TIME_SIGNATURE));
-
     const response = await fetch(`${backend}/submitTransfer`, {
         method: 'post',
         headers: new Headers({ 'content-type': 'application/json' }),
-        body: JSON.stringify({ signer, nonce, signature, token_id: tokenID, from, to, timestamp: expiryTimeSignature.getTime().toString() }),
+        body: JSON.stringify({ signer, nonce: Number(nonce), signature, token_id: tokenID, from, to, timestamp: EXPIRY_TIME_SIGNATURE }),
     });
     if (!response.ok) {
         throw new Error('Unable to submit');

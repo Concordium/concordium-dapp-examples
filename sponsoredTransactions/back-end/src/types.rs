@@ -1,4 +1,4 @@
-use concordium_rust_sdk::cis2::{Transfer, UpdateOperator};
+use concordium_rust_sdk::cis2::{TokenId, Transfer, UpdateOperator};
 use concordium_rust_sdk::{
     endpoints::{QueryError, RPCError},
     smart_contracts::common::{
@@ -19,23 +19,17 @@ pub enum LogError {
     NonceQueryError,
     #[error("Sumbit sponsored transaction error.")]
     SumbitSponsoredTransactionError,
-    #[error("Account from_str error.")]
-    AccountFromStringError,
     #[error("Simulation invoke error.")]
     SimulationInvokeError,
+    #[error("Transaction simulation error.")]
+    TransactionSimulationError,
     #[error("Owned received name error.")]
     OwnedReceiveNameError,
-    #[error("TokenId error.")]
-    TokenIdError,
     #[error("TokenAmount error.")]
     TokenAmountError,
     #[error("Parameter error.")]
     ParameterError,
     #[error("Signature error.")]
-    NonceError,
-    #[error("Nonce error.")]
-    TimestampError,
-    #[error("Timestamp error.")]
     SignatureError,
     #[error("AdditionalData error.")]
     AdditionalDataError,
@@ -61,23 +55,23 @@ pub struct ErrorResponse {
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, Clone)]
 pub struct UpdateOperatorInputParams {
-    pub signer: String,
-    pub nonce: String,
+    pub signer: AccountAddress,
+    pub nonce: u64,
     pub signature: String,
-    pub operator: String,
+    pub operator: AccountAddress,
     pub add_operator: bool,
-    pub timestamp: String,
+    pub timestamp: Timestamp,
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, Clone)]
 pub struct TransferInputParams {
-    pub signer: String,
-    pub nonce: String,
+    pub signer: AccountAddress,
+    pub nonce: u64,
     pub signature: String,
-    pub token_id: String,
-    pub from: String,
-    pub to: String,
-    pub timestamp: String,
+    pub token_id: TokenId,
+    pub from: AccountAddress,
+    pub to: AccountAddress,
+    pub timestamp: Timestamp,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Serialize, Ord, PartialOrd, Hash, Debug)]
