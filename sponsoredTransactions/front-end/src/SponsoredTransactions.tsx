@@ -394,6 +394,11 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                         if (record !== undefined) {
                             setPublicKey(record[0]);
                             setNextNonce(record[1] + 1);
+                            setNonce(record[1] + 1);
+                            const nonce = document.getElementById('nonce') as HTMLTextAreaElement;
+                            if (nonce !== null) {
+                                nonce.value = record[1] + 1;
+                            }
                         }
                         setPublicKeyError('');
                     })
@@ -401,6 +406,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                         setPublicKeyError((e as Error).message);
                         setPublicKey('');
                         setNextNonce(0);
+                        setNonce('');
                     });
             }, REFRESH_INTERVAL.asMilliseconds());
             return () => clearInterval(interval);
@@ -415,6 +421,11 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                     if (record !== undefined) {
                         setPublicKey(record[0]);
                         setNextNonce(record[1] + 1);
+                        setNonce(record[1] + 1);
+                        const nonce = document.getElementById('nonce') as HTMLTextAreaElement;
+                        if (nonce !== null) {
+                            nonce.value = record[1] + 1;
+                        }
                     }
                     setPublicKeyError('');
                 })
@@ -422,6 +433,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                     setPublicKeyError((e as Error).message);
                     setPublicKey('');
                     setNextNonce(0);
+                    setNonce('');
                 });
         }
     }, [connection, account]);
@@ -737,7 +749,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                                     style={InputFieldStyle}
                                     id="nonce"
                                     type="text"
-                                    placeholder="5"
+                                    placeholder={nextNonce.toString()}
                                     onChange={changeNonceHandler}
                                 />
                             </label>

@@ -28,6 +28,12 @@ struct IdVerifierConfig {
         help = "Port on which the server will listen on."
     )]
     port: u16,
+    #[clap(
+        long = "smart-contract-index",
+        default_value = "4184",
+        help = "The smart contract index which the sponsored transaction is submitted to."
+    )]
+    smart_contract_index: u64,
     #[structopt(
         long = "log-level",
         default_value = "debug",
@@ -101,6 +107,7 @@ async fn main() -> anyhow::Result<()> {
                 client_update_operator.clone(),
                 key_update_operator.clone(),
                 request,
+                app.smart_contract_index,
                 state_update_operator.clone(),
             )
         });
@@ -117,6 +124,7 @@ async fn main() -> anyhow::Result<()> {
                 client_transfer.clone(),
                 key_transfer.clone(),
                 request,
+                app.smart_contract_index,
                 state_transfer.clone(),
             )
         });

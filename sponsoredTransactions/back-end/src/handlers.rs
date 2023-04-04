@@ -16,7 +16,6 @@ use std::str::FromStr;
 use std::sync::Arc;
 use warp::{http::StatusCode, Rejection};
 
-const SMART_CONTRACT_INDEX: u64 = 4184;
 const CONTRACT_NAME: &str = "cis3_nft";
 const ENERGY: u64 = 6000;
 
@@ -24,6 +23,7 @@ pub async fn handle_signature_update_operator(
     client: concordium_rust_sdk::v2::Client,
     key_update_operator: Arc<WalletAccount>,
     request: UpdateOperatorInputParams,
+    smart_contract_index: u64,
     state: Server,
 ) -> Result<impl warp::Reply, Rejection> {
     log::debug!("Create payload.");
@@ -44,7 +44,7 @@ pub async fn handle_signature_update_operator(
     let message: PermitMessage = PermitMessage {
         timestamp: request.timestamp,
         contract_address: ContractAddress {
-            index: SMART_CONTRACT_INDEX,
+            index: smart_contract_index,
             subindex: 0,
         },
         entry_point: OwnedEntrypointName::new_unchecked("updateOperator".into()),
@@ -59,6 +59,7 @@ pub async fn handle_signature_update_operator(
         message,
         request.signature,
         request.signer,
+        smart_contract_index,
     )
     .await
 }
@@ -67,6 +68,7 @@ pub async fn handle_signature_transfer(
     client: concordium_rust_sdk::v2::Client,
     key_update_operator: Arc<WalletAccount>,
     request: TransferInputParams,
+    smart_contract_index: u64,
     state: Server,
 ) -> Result<impl warp::Reply, Rejection> {
     log::debug!("Create payload.");
@@ -86,7 +88,7 @@ pub async fn handle_signature_transfer(
     let message: PermitMessage = PermitMessage {
         timestamp: request.timestamp,
         contract_address: ContractAddress {
-            index: SMART_CONTRACT_INDEX,
+            index: smart_contract_index,
             subindex: 0,
         },
         entry_point: OwnedEntrypointName::new_unchecked("transfer".into()),
@@ -101,6 +103,7 @@ pub async fn handle_signature_transfer(
         message,
         request.signature,
         request.signer,
+        smart_contract_index,
     )
     .await
 }
@@ -112,6 +115,7 @@ pub async fn submit_transaction(
     message: PermitMessage,
     request_signature: String,
     signer: AccountAddress,
+    smart_contract_index: u64,
 ) -> Result<impl warp::Reply, Rejection> {
     log::debug!("Create signature map.");
 
@@ -147,7 +151,7 @@ pub async fn submit_transaction(
     let context = ContractContext {
         invoker: Some(concordium_rust_sdk::types::Address::Account(key.address)),
         contract: ContractAddress {
-            index: SMART_CONTRACT_INDEX,
+            index: smart_contract_index,
             subindex: 0,
         },
         amount: Amount::zero(),
@@ -189,7 +193,7 @@ pub async fn submit_transaction(
         payload: transactions::UpdateContractPayload {
             amount: Amount::from_micro_ccd(0),
             address: ContractAddress {
-                index: SMART_CONTRACT_INDEX,
+                index: smart_contract_index,
                 subindex: 0,
             },
             receive_name,

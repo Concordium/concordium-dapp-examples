@@ -10,17 +10,18 @@ The following parameters are supported
 - `log-level` maximum log level (defaults to `debug` if not given)
 - `public-folder` the path to the folder, which should be served, defaults to the public folder in the current directory.
 - `account` the path to a file which contains the key credentials.
+- `smart-contract-index` the smart contract index which the sponsored transaction is submitted to.
 
 All of the above is available by using `--help` to get usage information.
 
 An example to run the backend with basic settings and testnet node would be:
 ```
-cargo run -- --node http://node.testnet.concordium.com:20000 --account <YourAccountPathToYourKeys>
+cargo run -- --node http://node.testnet.concordium.com:20000 --account <YourAccountPathToYourKeys> --smart-contract-index 4184
 ```
 
 An example to run the backend with some filled in example settings would be:
 ```
-cargo run -- --node http://node.testnet.concordium.com:20000 --port 8080 --account ./3PXwJYYPf6fyVb4GJquxSZU8puxrHfzc4XogdMVot8MUQK53tW.export --public-folder ../front-end/dist
+cargo run -- --node http://node.testnet.concordium.com:20000 --port 8080 --account ./3PXwJYYPf6fyVb4GJquxSZU8puxrHfzc4XogdMVot8MUQK53tW.export --public-folder ../front-end/dist --smart-contract-index 4184
 ```
 
 To get your account file (the `3PXwJYYPf6fyVb4GJquxSZU8puxrHfzc4XogdMVot8MUQK53tW.export` file in the above example), export it from the Concordium Browser wallet for web.
@@ -28,6 +29,8 @@ To get your account file (the `3PXwJYYPf6fyVb4GJquxSZU8puxrHfzc4XogdMVot8MUQK53t
 <img src="./pic/pic1.png"  width="200" />
 <img src="./pic/pic2.png"  width="200" />
 <img src="./pic/pic3.png"  width="200" />
+
+Note: Use the same smart contract index for the front-end and back-end. In other words, use the smart contract index from the `constants.ts` file (front-end folder) when starting the back-end server.
 
 # Using the tool
 

@@ -32,6 +32,8 @@ To have hot-reload (useful for development), do the following instead:
 
 This creates a `dist` folder which can be served via the backend. Start the backend server by following the [README.md](../back-end/README.md)
 
+Note: Use the same smart contract index for the front-end and back-end. In other words, use the smart contract index from the `constants.ts` file (front-end folder) when starting the back-end server.
+
 ## Using yarn (on unix/macOS systems)
 Some of the node modules we use have Windows-type line endings (\r\n), instead of unix line endings (\n), which causes problems when using the yarn package manager.
 
