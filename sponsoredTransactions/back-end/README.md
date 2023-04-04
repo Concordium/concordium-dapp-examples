@@ -30,7 +30,7 @@ To get your account file (the `3PXwJYYPf6fyVb4GJquxSZU8puxrHfzc4XogdMVot8MUQK53t
 <img src="./pic/pic2.png"  width="200" />
 <img src="./pic/pic3.png"  width="200" />
 
-Note: Use the same smart contract index for the front-end and back-end. In other words, use the smart contract index from the `constants.ts` file (front-end folder) when starting the back-end server.
+Note: Use the same smart contract index for the front-end and back-end. In other words, use the smart contract index from the `../front-end/src/constants.ts` file (front-end folder) when starting the back-end server.
 
 # Using the tool
 
