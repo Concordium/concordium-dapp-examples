@@ -46,7 +46,7 @@ Use `npm install` instead of `yarn install` in the above command. `npm` will cor
 
 Additional information can be found [here](https://techtalkbook.com/env-noder-no-such-file-or-directory/).
 
-## Build and run the Docker image
+## Build and run the Docker image (without backend -> submitting the sponsored transaction to chain will fail)
 
 To build the docker image run the following command:
 
