@@ -7,7 +7,8 @@ import {
     SPONSORED_TX_CONTRACT_NAME,
     SPONSORED_TX_CONTRACT_INDEX,
     CONTRACT_SUB_INDEX,
-    SPONSORED_TX_RAW_SCHEMA,
+    MINT_PARAMETER_SCHEMA,
+    REGISTER_PUBLIC_KEYS_PARAMETER_SCHEMA,
     EXPIRY_TIME_SIGNATURE,
 } from './constants';
 
@@ -180,7 +181,10 @@ export async function mint(connection: WalletConnection, account: string) {
         {
             owner: { Account: [account] },
         },
-        SPONSORED_TX_RAW_SCHEMA
+        {
+            type: 'parameter',
+            value: MINT_PARAMETER_SCHEMA
+        }
     );
 }
 
@@ -223,7 +227,10 @@ export async function register(connection: WalletConnection, account: string, pu
                 },
             ],
         ],
-        SPONSORED_TX_RAW_SCHEMA
+        {
+            type: 'parameter',
+            value: REGISTER_PUBLIC_KEYS_PARAMETER_SCHEMA
+        }
     );
 }
 
