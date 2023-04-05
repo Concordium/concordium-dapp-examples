@@ -26,7 +26,7 @@ docker run -p 8080:8080 sponsored_transactions
 ```
 See the [docker file](./Dockerfile) to see which environment variables can be used to overwrite parameters.
 
-Note: Use the same smart contract index for the front-end and back-end. In other words, use the smart contract index from the `/src/constants.ts` file (front-end folder) in the dockerfile.
+Note: Use the same smart contract index for the front-end and back-end. In other words, use the smart contract index from the `./front-end/src/constants.ts` file in the dockerfile.
 
 Note: Add your key file to the root of this repository and adjust the dockerfile to use it instead of the `./3PXwJYYPf6fyVb4GJquxSZU8puxrHfzc4XogdMVot8MUQK53tW.export` value.
 
