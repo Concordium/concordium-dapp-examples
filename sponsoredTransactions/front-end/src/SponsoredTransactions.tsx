@@ -281,17 +281,25 @@ async function viewPublicKey(rpcClient: JsonRpcClient, account: string) {
                 toBuffer(PUBLIC_KEY_OF_RETURN_VALUE_SCHEMA, 'base64')
             );
 
-    if (returnValues === undefined || returnValues[0][0]?.None !== undefined) {
-        // [public key, nonce]
+    if (returnValues === undefined) {
+        throw new Error(
+            `Deserializing the returnValue from the '${SPONSORED_TX_CONTRACT_NAME}.publicKeyOf' method of contract '${SPONSORED_TX_CONTRACT_INDEX}' failed`
+        );
+    }
+
+    if (returnValues[0][0]?.None !== undefined) {
+        // [public key, nonce] of a user that has not registered a public key yet
         return ['', 0];
     }
 
     if (returnValues[0][0]?.Some[0][0] !== undefined) {
-        // [public key, nonce]
+        // [public key, nonce] of a user that has registered a public key already
         return [`0x${returnValues[0][0].Some[0][0]}`, returnValues[0][0].Some[0][1]];
     }
 
-    return ['PublicKeyError', 0];
+    throw new Error(
+        `Deserializing the returnValue from the '${SPONSORED_TX_CONTRACT_NAME}.publicKeyOf' method of contract '${SPONSORED_TX_CONTRACT_INDEX}' failed`
+    );
 }
 
 function clearInputFields() {
