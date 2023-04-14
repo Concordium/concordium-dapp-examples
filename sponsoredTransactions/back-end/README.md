@@ -41,7 +41,7 @@ The backend is a simple server that exposes two endpoints
 The overall flow is that the user signs a sponsored updateOperator/transfer message in the browser wallet (or mobile wallet via walletConnect) and sends the signature together with some input parameters to this backend server via one of the above endpoints. The backend creates a sponsored transaction and submits it to the `permit` function in the smart contract {index: SPONSORED_TX_CONTRACT_INDEX, subindex: 0}. You can look up the SPONSORED_TX_CONTRACT_INDEX in the `../front-end/src/constants.ts` file. The backend returns the transaction hash to the front-end. This backend server has to have access to a blockchain node and an account (with its associated private key) that is funded with some CCD to submit the sponsored transaction to the chain. The backend wallet will pay for the transaction fees.
 
 Note:
-The smart contract {index: SPONSORED_TX_CONTRACT_INDEX, subindex: 0} has a similar logic to [this contract](https://github.com/Concordium/concordium-rust-smart-contracts/tree/main/examples/cis3-nft-sponsored-txs).
+The smart contract {index: SPONSORED_TX_CONTRACT_INDEX, subindex: 0} can be found [here](https://github.com/Concordium/concordium-rust-smart-contracts/tree/main/examples/cis3-nft-sponsored-txs).
 
 See [src/main.rs](./src/main.rs) for the formats of requests and responses. Both
 requests and responses are JSON encoded. The requests are handled by handlers in [src/handlers.rs](./src/handlers.rs).

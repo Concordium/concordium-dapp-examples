@@ -10,6 +10,7 @@ use concordium_rust_sdk::{
     },
 };
 use std::collections::BTreeMap;
+use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -27,6 +28,8 @@ pub enum LogError {
     OwnedReceiveNameError,
     #[error("TokenAmount error.")]
     TokenAmountError,
+    #[error("Rate limit error.")]
+    RateLimitError,
     #[error("Parameter error.")]
     ParameterError,
     #[error("Signature error.")]
@@ -115,4 +118,5 @@ pub struct PermitMessage {
 #[derive(Clone)]
 pub struct Server {
     pub nonce: Arc<Mutex<Nonce>>,
+    pub rate_limits: Arc<Mutex<HashMap<AccountAddress, u8>>>,
 }
