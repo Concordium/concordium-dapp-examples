@@ -11,7 +11,7 @@ The backend creates a sponsored transaction and submits it to the `permit` funct
 Note: Use the same smart contract index for the front-end and back-end. In other words, use the SPONSORED_TX_CONTRACT_INDEX from the `./src/constants.ts` file (front-end folder) when starting the back-end server.
 
 Note:
-The smart contract {index: SPONSORED_TX_CONTRACT_INDEX, subindex: 0} has a similar logic to [this contract](https://github.com/Concordium/concordium-rust-smart-contracts/tree/main/examples/cis3-nft-sponsored-txs).
+The smart contract {index: SPONSORED_TX_CONTRACT_INDEX, subindex: 0} can be found [here](https://github.com/Concordium/concordium-rust-smart-contracts/tree/main/examples/cis3-nft-sponsored-txs).
 
 ## Prerequisites
 

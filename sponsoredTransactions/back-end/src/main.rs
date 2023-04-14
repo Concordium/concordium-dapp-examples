@@ -6,6 +6,7 @@ use anyhow::Context;
 use clap::Parser;
 use concordium_rust_sdk::common::{self as crypto_common};
 use concordium_rust_sdk::types::WalletAccount;
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -91,6 +92,7 @@ async fn main() -> anyhow::Result<()> {
 
     let state_update_operator = Server {
         nonce: Arc::new(Mutex::new(nonce_response.nonce)),
+        rate_limits: Arc::new(Mutex::new(HashMap::new())),
     };
 
     let state_transfer = state_update_operator.clone();
