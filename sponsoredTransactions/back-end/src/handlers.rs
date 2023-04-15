@@ -18,7 +18,7 @@ use warp::{http::StatusCode, Rejection};
 
 const CONTRACT_NAME: &str = "cis3_nft";
 const ENERGY: u64 = 6000;
-const RATE_LIMIT: u8 = 30;
+const RATE_LIMIT_PER_ACCOUNT: u8 = 30;
 
 pub async fn handle_signature_update_operator(
     client: concordium_rust_sdk::v2::Client,
@@ -118,7 +118,7 @@ pub async fn submit_transaction(
     signer: AccountAddress,
     smart_contract_index: u64,
 ) -> Result<impl warp::Reply, Rejection> {
-    // There should be rate limiting in place to prevent the sponsor wallet for being drained.
+    // There should be rate limiting in place to prevent the sponsor wallet from being drained.
     // We only allow up to RATE_LIMIT API calls to this back-end per account address.
     // On mainnet, a user can only create around 25 accounts per identity.
     // In production, a user registration/authentication at the front-end can be added.
@@ -128,7 +128,7 @@ pub async fn submit_transaction(
 
     let limit = rate_limits.entry(signer).or_insert_with(|| 0u8);
 
-    if *limit >= RATE_LIMIT {
+    if *limit >= RATE_LIMIT_PER_ACCOUNT {
         log::error!("Rate limit for account {:#?} reached.", signer);
 
         return Err(warp::reject::custom(LogError::RateLimitError));
@@ -273,7 +273,7 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl warp::Reply, Infall
         Ok(mk_reply(message.into(), code))
     } else if let Some(LogError::TransactionSimulationError) = err.find() {
         let code = StatusCode::INTERNAL_SERVER_ERROR;
-        let message = "Transaction simulation error.";
+        let message = "Transaction simulation error. Your transaction would revert with the given input parameters.";
         Ok(mk_reply(message.into(), code))
     } else if let Some(LogError::SumbitSponsoredTransactionError) = err.find() {
         let code = StatusCode::INTERNAL_SERVER_ERROR;

@@ -59,12 +59,13 @@ export async function submitUpdateOperator(backend: string, signer: string, nonc
     }
 
     const response = await fetch(`${backend}/submitUpdateOperator`, {
-        method: 'post',
+        method: 'POST',
         headers: new Headers({ 'content-type': 'application/json' }),
         body: JSON.stringify({ signer, nonce: Number(nonce), signature, operator, add_operator: addOperator, timestamp: EXPIRY_TIME_SIGNATURE }),
     });
     if (!response.ok) {
-        throw new Error('Unable to submit');
+        const error = await response.json();
+        throw new Error('Unable to submit update operator: ' + JSON.stringify(error));
     }
     const body = await response.json();
     if (body) {
@@ -146,12 +147,13 @@ export async function submitTransfer(backend: string,
     }
 
     const response = await fetch(`${backend}/submitTransfer`, {
-        method: 'post',
+        method: 'POST',
         headers: new Headers({ 'content-type': 'application/json' }),
         body: JSON.stringify({ signer, nonce: Number(nonce), signature, token_id: tokenID, from, to, timestamp: EXPIRY_TIME_SIGNATURE }),
     });
     if (!response.ok) {
-        throw new Error('Unable to submit');
+        const error = await response.json();
+        throw new Error('Unable to submit transfer: ' + JSON.stringify(error));
     }
     const body = await response.json();
     if (body) {
