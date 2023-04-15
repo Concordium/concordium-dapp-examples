@@ -66,7 +66,7 @@ async fn main() -> anyhow::Result<()> {
     let cors = warp::cors()
         .allow_any_origin()
         .allow_header("Content-Type")
-        .allow_method("POST");
+        .allow_methods(vec!["POST", "GET"]);
 
     log::debug!("Acquire keys.");
 
