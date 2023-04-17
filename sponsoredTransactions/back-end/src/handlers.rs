@@ -50,7 +50,7 @@ pub async fn handle_signature_update_operator(
         },
         entry_point: OwnedEntrypointName::new_unchecked("updateOperator".into()),
         nonce: request.nonce,
-        payload: types::PermitPayload::UpdateOperator(payload),
+        payload: concordium_rust_sdk::smart_contracts::common::to_bytes(&payload),
     };
 
     submit_transaction(
@@ -94,7 +94,7 @@ pub async fn handle_signature_transfer(
         },
         entry_point: OwnedEntrypointName::new_unchecked("transfer".into()),
         nonce: request.nonce,
-        payload: types::PermitPayload::Transfer(payload),
+        payload: concordium_rust_sdk::smart_contracts::common::to_bytes(&payload),
     };
 
     submit_transaction(
