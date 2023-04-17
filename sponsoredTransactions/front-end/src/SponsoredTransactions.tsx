@@ -401,11 +401,11 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                     .then((record) => {
                         if (record !== undefined) {
                             setPublicKey(record[0]);
-                            setNextNonce(record[1] + 1);
-                            setNonce(record[1] + 1);
+                            setNextNonce(record[1]);
+                            setNonce(record[1]);
                             const nonce = document.getElementById('nonce') as HTMLTextAreaElement;
                             if (nonce !== null) {
-                                nonce.value = record[1] + 1;
+                                nonce.value = record[1];
                             }
                         }
                         setPublicKeyError('');
@@ -428,11 +428,11 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                 .then((record) => {
                     if (record !== undefined) {
                         setPublicKey(record[0]);
-                        setNextNonce(record[1] + 1);
-                        setNonce(record[1] + 1);
+                        setNextNonce(record[1]);
+                        setNonce(record[1]);
                         const nonce = document.getElementById('nonce') as HTMLTextAreaElement;
                         if (nonce !== null) {
-                            nonce.value = record[1] + 1;
+                            nonce.value = record[1];
                         }
                     }
                     setPublicKeyError('');
