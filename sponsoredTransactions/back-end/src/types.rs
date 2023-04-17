@@ -85,12 +85,6 @@ pub struct SignatureEd25519(pub [u8; 64]);
 pub struct TransferParams(#[concordium(size_length = 2)] pub Vec<Transfer>);
 
 #[derive(Debug, Serial, Clone)]
-pub enum PermitPayload {
-    Transfer(TransferParams),
-    UpdateOperator(UpdateOperatorParams),
-}
-
-#[derive(Debug, Serial, Clone)]
 pub struct UpdateOperatorParams(#[concordium(size_length = 2)] pub Vec<UpdateOperator>);
 
 #[derive(Debug, Serial, Clone)]
@@ -112,7 +106,7 @@ pub struct PermitMessage {
     pub entry_point: OwnedEntrypointName,
     pub nonce: u64,
     pub timestamp: Timestamp,
-    pub payload: PermitPayload,
+    pub payload: Vec<u8>,
 }
 
 #[derive(Clone)]

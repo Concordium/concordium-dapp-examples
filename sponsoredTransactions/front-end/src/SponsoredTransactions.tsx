@@ -22,6 +22,8 @@ import {
     CONTRACT_SUB_INDEX,
     BROWSER_WALLET,
     WALLET_CONNECT,
+    UPDATE_OPERATOR_SCHEMA,
+    TRANSFER_SCHEMA,
     EXPIRY_TIME_SIGNATURE,
     REFRESH_INTERVAL,
 } from './constants';
@@ -144,6 +146,26 @@ async function calculateTransferMessage(nonce: string, tokenID: string, from: st
         return '';
     }
 
+    const transfer =
+        [
+            {
+                amount: '1',
+                data: '',
+                from: {
+                    Account: [from],
+                },
+                to: {
+                    Account: [to],
+                },
+                token_id: tokenID,
+            },
+        ]
+
+    const payload = serializeTypeValue(
+        transfer,
+        toBuffer(TRANSFER_SCHEMA, 'base64')
+    );
+
     const message = {
         contract_address: {
             index: Number(SPONSORED_TX_CONTRACT_INDEX),
@@ -151,23 +173,7 @@ async function calculateTransferMessage(nonce: string, tokenID: string, from: st
         },
         entry_point: 'transfer',
         nonce: Number(nonce),
-        payload: {
-            Transfer: [
-                [
-                    {
-                        amount: '1',
-                        data: '',
-                        from: {
-                            Account: [from],
-                        },
-                        to: {
-                            Account: [to],
-                        },
-                        token_id: tokenID,
-                    },
-                ],
-            ],
-        },
+        payload: Array.from(payload),
         timestamp: EXPIRY_TIME_SIGNATURE,
     };
 
@@ -175,7 +181,6 @@ async function calculateTransferMessage(nonce: string, tokenID: string, from: st
         message,
         toBuffer(SERIALIZATION_HELPER_SCHEMA, 'base64')
     );
-
 
     return serializedMessage;
 }
@@ -210,6 +215,21 @@ async function calculateUpdateOperatorMessage(nonce: string, operator: string, a
             Remove: [],
         };
 
+    const updateOperator =
+        [
+            {
+                operator: {
+                    Account: [operator],
+                },
+                update: operatorAction,
+            }
+        ]
+
+    const payload = serializeTypeValue(
+        updateOperator,
+        toBuffer(UPDATE_OPERATOR_SCHEMA, 'base64')
+    );
+
     const message = {
         contract_address: {
             index: Number(SPONSORED_TX_CONTRACT_INDEX),
@@ -217,18 +237,7 @@ async function calculateUpdateOperatorMessage(nonce: string, operator: string, a
         },
         entry_point: 'updateOperator',
         nonce: Number(nonce),
-        payload: {
-            UpdateOperator: [
-                [
-                    {
-                        operator: {
-                            Account: [operator],
-                        },
-                        update: operatorAction,
-                    },
-                ],
-            ],
-        },
+        payload: Array.from(payload),
         timestamp: EXPIRY_TIME_SIGNATURE,
     };
 
