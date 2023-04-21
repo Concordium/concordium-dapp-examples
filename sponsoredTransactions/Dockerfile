@@ -30,7 +30,7 @@ WORKDIR /build
 ENV PORT=8080
 ENV NODE=http://node.testnet.concordium.com:20000
 ENV LOG_LEVEL=info
-ENV SMART_CONTRACT_INDEX=4329
+ENV SMART_CONTRACT_INDEX=4376
 ENV ACCOUNT=./3PXwJYYPf6fyVb4GJquxSZU8puxrHfzc4XogdMVot8MUQK53tW.export
 
 COPY --from=rust_build ./back-end/target/release/sponsored-transaction-backend ./main
