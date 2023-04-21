@@ -171,10 +171,10 @@ async function calculateTransferMessage(nonce: string, tokenID: string, from: st
             index: Number(SPONSORED_TX_CONTRACT_INDEX),
             subindex: 0,
         },
-        entry_point: 'transfer',
         nonce: Number(nonce),
-        payload: Array.from(payload),
         timestamp: EXPIRY_TIME_SIGNATURE,
+        entry_point: 'transfer',
+        payload: Array.from(payload),
     };
 
     const serializedMessage = serializeTypeValue(
@@ -235,17 +235,16 @@ async function calculateUpdateOperatorMessage(nonce: string, operator: string, a
             index: Number(SPONSORED_TX_CONTRACT_INDEX),
             subindex: 0,
         },
-        entry_point: 'updateOperator',
         nonce: Number(nonce),
-        payload: Array.from(payload),
         timestamp: EXPIRY_TIME_SIGNATURE,
+        entry_point: 'updateOperator',
+        payload: Array.from(payload),
     };
 
     const serializedMessage = serializeTypeValue(
         message,
         toBuffer(SERIALIZATION_HELPER_SCHEMA, 'base64')
     );
-
 
     return serializedMessage;
 }

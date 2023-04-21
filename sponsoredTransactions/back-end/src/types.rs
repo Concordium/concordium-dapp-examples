@@ -103,9 +103,10 @@ pub struct TxHash {
 #[derive(Debug, Serial, Clone)]
 pub struct PermitMessage {
     pub contract_address: ContractAddress,
-    pub entry_point: OwnedEntrypointName,
     pub nonce: u64,
     pub timestamp: Timestamp,
+    pub entry_point: OwnedEntrypointName,
+    #[concordium(size_length = 2)]
     pub payload: Vec<u8>,
 }
 
