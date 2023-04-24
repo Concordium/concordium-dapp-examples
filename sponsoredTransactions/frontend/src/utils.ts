@@ -17,7 +17,7 @@ import {
  */
 export async function submitUpdateOperator(backend: string, signer: string, nonce: string, signature: string, operator: string, addOperator: boolean) {
 
-    if (signer === undefined || signer === '') {
+    if (signer === '') {
         alert('Insert an signer address.');
         return '';
     }
@@ -27,7 +27,7 @@ export async function submitUpdateOperator(backend: string, signer: string, nonc
         return '';
     }
 
-    if (nonce === undefined || nonce === '') {
+    if (nonce === '') {
         alert('Insert a nonce.');
         return '';
     }
@@ -38,7 +38,7 @@ export async function submitUpdateOperator(backend: string, signer: string, nonc
         return '';
     }
 
-    if (signature === undefined || signature === '') {
+    if (signature === '') {
         alert('Insert a signature.');
         return '';
     }
@@ -48,7 +48,7 @@ export async function submitUpdateOperator(backend: string, signer: string, nonc
         return '';
     }
 
-    if (operator === undefined || operator === '') {
+    if (operator === '') {
         alert('Insert an operator address.');
         return '';
     }
@@ -85,7 +85,7 @@ export async function submitTransfer(backend: string,
     from: string,
     to: string) {
 
-    if (signer === undefined || signer === '') {
+    if (signer === '') {
         alert('Insert an signer address.');
         return '';
     }
@@ -95,7 +95,7 @@ export async function submitTransfer(backend: string,
         return '';
     }
 
-    if (nonce === undefined || nonce === '') {
+    if (nonce === '') {
         alert('Insert a nonce.');
         return '';
     }
@@ -106,7 +106,7 @@ export async function submitTransfer(backend: string,
         return '';
     }
 
-    if (signature === undefined || signature === '') {
+    if (signature === '') {
         alert('Insert a signature.');
         return '';
     }
@@ -116,7 +116,7 @@ export async function submitTransfer(backend: string,
         return '';
     }
 
-    if (tokenID === undefined || tokenID === '') {
+    if (tokenID === '') {
         alert('Insert a tokenID.');
         return '';
     }
@@ -126,7 +126,7 @@ export async function submitTransfer(backend: string,
         return '';
     }
 
-    if (from === undefined || from === '') {
+    if (from === '') {
         alert('Insert an `from` address.');
         return '';
     }
@@ -136,7 +136,7 @@ export async function submitTransfer(backend: string,
         return '';
     }
 
-    if (to === undefined || to === '') {
+    if (to === '') {
         alert('Insert an `to` address.');
         return '';
     }
@@ -195,7 +195,7 @@ export async function mint(connection: WalletConnection, account: string) {
  */
 export async function register(connection: WalletConnection, account: string, publicKey: string) {
 
-    if (publicKey === undefined || publicKey === '') {
+    if (publicKey === '') {
         alert('Insert a public key.');
         return '';
     }

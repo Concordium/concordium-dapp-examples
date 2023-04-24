@@ -105,7 +105,7 @@ const InputFieldStyle = {
 };
 
 async function calculateTransferMessage(nonce: string, tokenID: string, from: string, to: string) {
-    if (nonce === undefined || nonce === '') {
+    if (nonce === '') {
         alert('Insert a nonce.');
         return '';
     }
@@ -116,7 +116,7 @@ async function calculateTransferMessage(nonce: string, tokenID: string, from: st
         return '';
     }
 
-    if (tokenID === undefined || tokenID === '') {
+    if (tokenID === '') {
         alert('Insert a tokenID.');
         return '';
     }
@@ -126,7 +126,7 @@ async function calculateTransferMessage(nonce: string, tokenID: string, from: st
         return '';
     }
 
-    if (from === undefined || from === '') {
+    if ( from === '') {
         alert('Insert an `from` address.');
         return '';
     }
@@ -136,7 +136,7 @@ async function calculateTransferMessage(nonce: string, tokenID: string, from: st
         return '';
     }
 
-    if (to === undefined || to === '') {
+    if ( to === '') {
         alert('Insert an `to` address.');
         return '';
     }
@@ -186,7 +186,7 @@ async function calculateTransferMessage(nonce: string, tokenID: string, from: st
 }
 
 async function calculateUpdateOperatorMessage(nonce: string, operator: string, addOperator: boolean) {
-    if (nonce === undefined || nonce === '') {
+    if (nonce === '') {
         alert('Insert a nonce.');
         return '';
     }
@@ -197,7 +197,7 @@ async function calculateUpdateOperatorMessage(nonce: string, operator: string, a
         return '';
     }
 
-    if (operator === undefined || operator === '') {
+    if ( operator === '') {
         alert('Insert an operator address.');
         return '';
     }

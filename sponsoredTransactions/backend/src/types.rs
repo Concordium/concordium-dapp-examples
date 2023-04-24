@@ -18,8 +18,8 @@ use tokio::sync::Mutex;
 pub enum LogError {
     #[error("Nonce query error.")]
     NonceQueryError,
-    #[error("Sumbit sponsored transaction error.")]
-    SumbitSponsoredTransactionError,
+    #[error("Submit sponsored transaction error.")]
+    SubmitSponsoredTransactionError,
     #[error("Simulation invoke error.")]
     SimulationInvokeError,
     #[error("Transaction simulation error.")]
@@ -113,5 +113,6 @@ pub struct PermitMessage {
 #[derive(Clone)]
 pub struct Server {
     pub nonce: Arc<Mutex<Nonce>>,
+    // The rate_limits are transient and are reset on server restart.
     pub rate_limits: Arc<Mutex<HashMap<AccountAddress, u8>>>,
 }

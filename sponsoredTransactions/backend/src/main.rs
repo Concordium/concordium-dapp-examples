@@ -135,7 +135,7 @@ async fn main() -> anyhow::Result<()> {
 
     let serve_public_files = warp::get().and(warp::fs::dir(app.public_folder));
 
-    log::debug!("Serve response back to front-end.");
+    log::debug!("Serve response back to frontend.");
 
     let server = provide_submit_update_operator
         .or(provide_submit_transfer)
