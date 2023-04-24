@@ -8,7 +8,7 @@ The following parameters are supported
 - `node` the URL of the node's GRPC V2 interface, e.g., http://node.testnet.concordium.com:20000
 - `port` the port on which the server will listen for incoming requests
 - `log-level` maximum log level (defaults to `debug` if not given)
-- `public-folder` the path to the folder, which should be served, defaults to the public folder in the current directory.
+- `public-folder` the path to the folder, which should be served, defaults to the `public` folder in the current directory.
 - `account` the path to a file which contains the key credentials.
 - `smart-contract-index` the smart contract index which the sponsored transaction is submitted to.
 
@@ -21,7 +21,7 @@ cargo run -- --node http://node.testnet.concordium.com:20000 --account <YourAcco
 
 An example to run the backend with some filled in example settings would be:
 ```
-cargo run -- --node http://node.testnet.concordium.com:20000 --port 8080 --account ./3PXwJYYPf6fyVb4GJquxSZU8puxrHfzc4XogdMVot8MUQK53tW.export --public-folder ../front-end/dist --smart-contract-index 4184
+cargo run -- --node http://node.testnet.concordium.com:20000 --port 8080 --account ./3PXwJYYPf6fyVb4GJquxSZU8puxrHfzc4XogdMVot8MUQK53tW.export --public-folder ../frontend/dist --smart-contract-index 4184
 ```
 
 To get your account file (the `3PXwJYYPf6fyVb4GJquxSZU8puxrHfzc4XogdMVot8MUQK53tW.export` file in the above example), export it from the Concordium Browser wallet for web.
@@ -30,7 +30,7 @@ To get your account file (the `3PXwJYYPf6fyVb4GJquxSZU8puxrHfzc4XogdMVot8MUQK53t
 <img src="./pic/pic2.png"  width="200" />
 <img src="./pic/pic3.png"  width="200" />
 
-Note: Use the same smart contract index for the front-end and back-end. In other words, use the SPONSORED_TX_CONTRACT_INDEX from the `../front-end/src/constants.ts` file when starting the back-end server.
+Note: Use the same smart contract index for the frontend and backend. In other words, use the SPONSORED_TX_CONTRACT_INDEX from the `../frontend/src/constants.ts` file when starting the backend server.
 
 # Using the tool
 
@@ -38,7 +38,7 @@ The backend is a simple server that exposes two endpoints
  - `POST /submitUpdateOperator`
  - `POST /submitTransfer`
 
-The overall flow is that the user signs a sponsored updateOperator/transfer message in the browser wallet (or mobile wallet via walletConnect) and sends the signature together with some input parameters to this backend server via one of the above endpoints. The backend creates a sponsored transaction and submits it to the `permit` function in the smart contract {index: SPONSORED_TX_CONTRACT_INDEX, subindex: 0}. You can look up the SPONSORED_TX_CONTRACT_INDEX in the `../front-end/src/constants.ts` file. The backend returns the transaction hash to the front-end. This backend server has to have access to a blockchain node and an account (with its associated private key) that is funded with some CCD to submit the sponsored transaction to the chain. The backend wallet will pay for the transaction fees.
+The overall flow is that the user signs a sponsored updateOperator/transfer message in the browser wallet (or mobile wallet via walletConnect) and sends the signature together with some input parameters to this backend server via one of the above endpoints. The backend creates a sponsored transaction and submits it to the `permit` function in the smart contract {index: SPONSORED_TX_CONTRACT_INDEX, subindex: 0}. You can look up the SPONSORED_TX_CONTRACT_INDEX in the `../frontend/src/constants.ts` file. The backend returns the transaction hash to the frontend. This backend server has to have access to a blockchain node and an account (with its associated private key) that is funded with some CCD to submit the sponsored transaction to the chain. The backend wallet will pay for the transaction fees.
 
 Note:
 The smart contract {index: SPONSORED_TX_CONTRACT_INDEX, subindex: 0} can be found [here](https://github.com/Concordium/concordium-rust-smart-contracts/tree/main/examples/cis3-nft-sponsored-txs).
@@ -72,7 +72,7 @@ In order to contribute you should make a pull request and ask a person familiar 
 
 ## Building
 
-The project is a pure Rust project, and can be build by running
+The project is a pure Rust project, and can be built by running
 
 ```shell
 cargo build --release

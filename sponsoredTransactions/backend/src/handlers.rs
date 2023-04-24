@@ -118,24 +118,6 @@ pub async fn submit_transaction(
     signer: AccountAddress,
     smart_contract_index: u64,
 ) -> Result<impl warp::Reply, Rejection> {
-    // There should be rate limiting in place to prevent the sponsor wallet from being drained.
-    // We only allow up to RATE_LIMIT API calls to this back-end per account address.
-    // On mainnet, a user can only create around 25 accounts per identity.
-    // In production, a user registration/authentication at the front-end can be added.
-    log::debug!("Check rate limit.");
-
-    let mut rate_limits = state.rate_limits.lock().await;
-
-    let limit = rate_limits.entry(signer).or_insert_with(|| 0u8);
-
-    if *limit >= RATE_LIMIT_PER_ACCOUNT {
-        log::error!("Rate limit for account {:#?} reached.", signer);
-
-        return Err(warp::reject::custom(LogError::RateLimitError));
-    }
-
-    *limit += 1;
-
     log::debug!("Create signature map.");
 
     let mut signature = [0; 64];
@@ -220,10 +202,36 @@ pub async fn submit_transaction(
         },
     };
 
-    let mut nonce = state.nonce.lock().await;
-
     // Transaction should expiry after one hour.
     let transaction_expiry_seconds = chrono::Utc::now().timestamp() as u64 + 3600;
+
+    // Get the current nonce for the backend wallet and lock it. This is necessary since it is possible that API requests come in parallel.
+    // The nonce is increased by 1 and its lock is released after the transaction is submitted to the blockchain.
+    let mut nonce = state.nonce.lock().await;
+
+    // There should be rate limiting in place to prevent the sponsor wallet from being drained.
+    // We only allow up to RATE_LIMIT_PER_ACCOUNT API calls to this backend.
+    // The rate_limits are transient and are reset on server restart.
+
+    // We only check the rate_limits after acquiring the nonce lock. If we do it before we don't
+    // have guarantees due to possible parallel API requests.
+
+    // On mainnet, a user can only create around 25 accounts per identity.
+    // In production, a user registration/authentication at the frontend can be added or a database that permanently
+    // keeps track of the rate_limits so that the server can be restarted and reload the rate_limit values from the database.
+    log::debug!("Check rate limit.");
+
+    let mut rate_limits = state.rate_limits.lock().await;
+
+    let limit = rate_limits.entry(signer).or_insert_with(|| 0u8);
+
+    if *limit >= RATE_LIMIT_PER_ACCOUNT {
+        log::error!("Rate limit for account {:#?} reached.", signer);
+
+        return Err(warp::reject::custom(LogError::RateLimitError));
+    }
+
+    *limit += 1;
 
     let tx = transactions::send::make_and_sign_transaction(
         &key.keys,
@@ -249,10 +257,10 @@ pub async fn submit_transaction(
             Ok(warp::reply::json(&TxHash { tx_hash: hash }))
         }
         Err(e) => {
-            log::error!("SumbitSponsoredTransactionError {:#?}.", e);
+            log::error!("SubmitSponsoredTransactionError {:#?}.", e);
 
             Err(warp::reject::custom(
-                LogError::SumbitSponsoredTransactionError,
+                LogError::SubmitSponsoredTransactionError,
             ))
         }
     }
@@ -275,9 +283,9 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl warp::Reply, Infall
         let code = StatusCode::INTERNAL_SERVER_ERROR;
         let message = "Transaction simulation error. Your transaction would revert with the given input parameters.";
         Ok(mk_reply(message.into(), code))
-    } else if let Some(LogError::SumbitSponsoredTransactionError) = err.find() {
+    } else if let Some(LogError::SubmitSponsoredTransactionError) = err.find() {
         let code = StatusCode::INTERNAL_SERVER_ERROR;
-        let message = "Sumbit sponsored transaction error.";
+        let message = "Submit sponsored transaction error.";
         Ok(mk_reply(message.into(), code))
     } else if let Some(LogError::OwnedReceiveNameError) = err.find() {
         let code = StatusCode::BAD_REQUEST;

@@ -1,4 +1,5 @@
 .eslintcache
+.yarn
 node_modules
 
 # OSX

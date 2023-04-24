@@ -6,9 +6,9 @@ The example project included in this repository serves as a working example of h
 -   Compute the message of a sponsored updateOperator transaction => Sign it with the wallet => Submit the signature and some input parameters to the `/submitUpdateOperator` backend endpoint.
 -   Mint an NFT to your wallet => Compute the message of a sponsored transfer transaction => Sign it with the wallet => Submit the signature and some input parameters to the `/submitTransfer` backend endpoint.
 
-The backend creates a sponsored transaction and submits it to the `permit` function in the smart contract {index: SPONSORED_TX_CONTRACT_INDEX, subindex: 0}. You can look up the SPONSORED_TX_CONTRACT_INDEX in the `./src/constants.ts` file. The backend returns the transaction hash to the front-end.
+The backend creates a sponsored transaction and submits it to the `permit` function in the smart contract {index: SPONSORED_TX_CONTRACT_INDEX, subindex: 0}. You can look up the SPONSORED_TX_CONTRACT_INDEX in the `./src/constants.ts` file. The backend returns the transaction hash to the frontend.
 
-Note: Use the same smart contract index for the front-end and back-end. In other words, use the SPONSORED_TX_CONTRACT_INDEX from the `./src/constants.ts` file (front-end folder) when starting the back-end server.
+Note: Use the same smart contract index for the frontend and backend. In other words, use the SPONSORED_TX_CONTRACT_INDEX from the `./src/constants.ts` file (frontend folder) when starting the backend server.
 
 Note:
 The smart contract {index: SPONSORED_TX_CONTRACT_INDEX, subindex: 0} can be found [here](https://github.com/Concordium/concordium-rust-smart-contracts/tree/main/examples/cis3-nft-sponsored-txs).
@@ -35,7 +35,7 @@ To have hot-reload (useful for development), do the following instead:
 -   Run `yarn install` in this folder.
 -   Run `yarn build` in a terminal in this folder.
 
-This creates a `dist` folder which can be served via the backend. Start the backend server by following the [README.md](../back-end/README.md)
+This creates a `dist` folder which can be served via the backend. Start the backend server by following the [README.md](../backend/README.md)
 
 ## Using yarn (on unix/macOS systems)
 Some of the node modules we use have Windows-type line endings (\r\n), instead of unix line endings (\n), which causes problems when using the yarn package manager.
