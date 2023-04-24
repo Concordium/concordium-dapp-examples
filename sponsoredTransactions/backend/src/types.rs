@@ -1,4 +1,5 @@
 use concordium_rust_sdk::cis2::{TokenId, Transfer, UpdateOperator};
+use concordium_rust_sdk::types::RejectReason;
 use concordium_rust_sdk::{
     endpoints::{QueryError, RPCError},
     smart_contracts::common::{
@@ -11,6 +12,7 @@ use concordium_rust_sdk::{
 };
 use std::collections::BTreeMap;
 use std::collections::HashMap;
+use std::fmt;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -23,7 +25,7 @@ pub enum LogError {
     #[error("Simulation invoke error.")]
     SimulationInvokeError,
     #[error("Transaction simulation error.")]
-    TransactionSimulationError,
+    TransactionSimulationError(RevertReason),
     #[error("Owned received name error.")]
     OwnedReceiveNameError,
     #[error("TokenAmount error.")]
@@ -43,6 +45,17 @@ pub enum LogError {
 impl From<RPCError> for LogError {
     fn from(err: RPCError) -> Self {
         Self::NodeAccess(err.into())
+    }
+}
+
+#[derive(serde::Serialize, Debug)]
+pub struct RevertReason {
+    pub reason: RejectReason,
+}
+
+impl fmt::Display for RevertReason {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "reason: {:?}", self.reason)
     }
 }
 
