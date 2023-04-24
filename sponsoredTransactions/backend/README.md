@@ -5,7 +5,7 @@ This page describes the sponsored transactions backend for this dapp example.
 # Supported configuration options
 
 The following parameters are supported
-- `node` the URL of the node's GRPC V2 interface, e.g., http://node.testnet.concordium.com:20000
+- `node` the URL of the node's GRPC V2 interface, e.g., `http://node.testnet.concordium.com:20000`
 - `port` the port on which the server will listen for incoming requests
 - `log-level` maximum log level (defaults to `debug` if not given)
 - `public-folder` the path to the folder, which should be served, defaults to the `public` folder in the current directory.
@@ -15,12 +15,13 @@ The following parameters are supported
 All of the above is available by using `--help` to get usage information.
 
 An example to run the backend with basic settings and testnet node would be:
-```
+```shell
 cargo run -- --node http://node.testnet.concordium.com:20000 --account <YourAccountPathToYourKeys> --smart-contract-index 4184
 ```
 
 An example to run the backend with some filled in example settings would be:
-```
+
+```shell
 cargo run -- --node http://node.testnet.concordium.com:20000 --port 8080 --account ./3PXwJYYPf6fyVb4GJquxSZU8puxrHfzc4XogdMVot8MUQK53tW.export --public-folder ../frontend/dist --smart-contract-index 4184
 ```
 
@@ -52,8 +53,8 @@ requests and responses are JSON encoded. The requests are handled by handlers in
 
 This repository's CI automatically checks formatting and common problems in rust.
 Changes to any of the packages must be such that
-- ```cargo clippy --all``` produces no warnings
-- ```rust fmt``` makes no changes.
+- `cargo clippy --all` produces no warnings
+- `rust fmt` makes no changes.
 
 Everything in this repository should build with stable rust at the moment (at least version 1.62 and up), however the fmt tool must be from a nightly release since some of the configuration options are not stable. One way to run the `fmt` tool is
 

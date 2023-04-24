@@ -19,6 +19,6 @@ The following examples are available.
 ## Setup
 
 Some projects uses submodules, to initialize or update those, run:
-```
+```shell
 git submodule update --init --recursive
 ```
