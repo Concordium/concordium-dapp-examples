@@ -41,7 +41,7 @@ This creates a `dist` folder which can be served via the backend. Start the back
 Some of the node modules we use have Windows-type line endings (\r\n), instead of unix line endings (\n), which causes problems when using the yarn package manager.
 
 If you see an error message similar to this when executing `yarn start`, then you've run into the problem:
-```
+```shell
 env: node\r: No such file or directory
 ```
 
@@ -49,42 +49,3 @@ Use `npm install` instead of `yarn install` in the above command. `npm` will cor
 
 Additional information can be found [here](https://techtalkbook.com/env-noder-no-such-file-or-directory/).
 
-## Build and run the Docker image (without backend -> submitting the sponsored transaction to chain will fail)
-
-To build the docker image run the following command:
-
-```
-docker build -t sponsored_tx_front_end:$PROJECT_VERSION .
-```
-
-e.g.
-
-```
-docker build -t sponsored_tx_front_end:3.0.0 .
-```
-
-To run the docker image run the following command:
-
-```
-docker run -it -d -p 8080:80 --name web sponsored_tx_front_end:$PROJECT_VERSION
-```
-
-e.g.
-
-```
-docker run -it -d -p 8080:80 --name web sponsored_tx_front_end:3.0.0
-```
-
-Open http://127.0.0.1:8080 in your browser.
-
-Note: You can get the PROJECT_VERSION from the `package.json` file or with one of the following commands:
-
-```
-npm pkg get version
-```
-
-or
-
-```
-jq -r .version package.json
-```
