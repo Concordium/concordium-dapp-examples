@@ -179,12 +179,16 @@ pub async fn submit_transaction(
         } => log::debug!("TransactionSimulationSuccess"),
         InvokeContractResult::Failure {
             return_value: _,
-            reason: _,
+            reason,
             used_energy: _,
         } => {
             log::error!("TransactionSimulationError {:#?}.", info);
 
-            return Err(warp::reject::custom(LogError::TransactionSimulationError));
+            return Err(warp::reject::custom(LogError::TransactionSimulationError(
+                RevertReason {
+                    reason: reason.clone(),
+                },
+            )));
         }
     }
 
@@ -279,10 +283,10 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl warp::Reply, Infall
         let code = StatusCode::INTERNAL_SERVER_ERROR;
         let message = "Simulation invoke error.";
         Ok(mk_reply(message.into(), code))
-    } else if let Some(LogError::TransactionSimulationError) = err.find() {
+    } else if let Some(LogError::TransactionSimulationError(e)) = err.find() {
         let code = StatusCode::INTERNAL_SERVER_ERROR;
-        let message = "Transaction simulation error. Your transaction would revert with the given input parameters.";
-        Ok(mk_reply(message.into(), code))
+        let message = format!("Transaction simulation error. Your transaction would revert with the given input parameters: {}", e);
+        Ok(mk_reply(message, code))
     } else if let Some(LogError::SubmitSponsoredTransactionError) = err.find() {
         let code = StatusCode::INTERNAL_SERVER_ERROR;
         let message = "Submit sponsored transaction error.";
