@@ -32,6 +32,6 @@ docker build -t gallery -f gallery/Dockerfile .
 ```
 The image can then be run with:
 ```
-docker -p 8100:8100 run gallery
+docker run gallery -p 8100:8100
 ```
 See the [docker file](./Dockerfile) to see which environment variables can used to overwrite parameters.

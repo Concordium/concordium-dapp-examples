@@ -1,0 +1,45 @@
+{
+    "name": "sponsored-transactions",
+    "packageManager": "yarn@3.2.0",
+    "version": "1.0.0",
+    "license": "Apache-2.0",
+    "engines": {
+        "node": ">=16.x"
+    },
+    "dependencies": {
+        "@concordium/browser-wallet-api-helpers": "2.4.0",
+        "@concordium/react-components": "^0.2.1",
+        "@concordium/web-sdk": "^3.4.0",
+        "@thi.ng/leb128": "^2.1.18",
+        "@types/sha256": "^0.2.0",
+        "@walletconnect/types": "^2.1.4",
+        "eslint": "^8.37.0",
+        "mathjs": "^11.4.0",
+        "moment": "^2.29.4",
+        "react": "^18.1.0",
+        "react-dom": "^18.1.0",
+        "react-switch": "^7.0.0",
+        "sha256": "^0.2.0"
+    },
+    "devDependencies": {
+        "@craftamap/esbuild-plugin-html": "^0.4.0",
+        "@types/node": "^18.7.23",
+        "@types/react": "^18.0.9",
+        "@types/react-dom": "^18.0.5",
+        "cross-env": "^7.0.3",
+        "esbuild": "^0.14.42",
+        "esbuild-plugin-svgr": "^1.0.1",
+        "fs": "^0.0.1-security",
+        "live-server": "^1.2.2",
+        "process": "^0.11.10",
+        "ts-node": "^10.8.0",
+        "typescript": "^4.7.2"
+    },
+    "scripts": {
+        "lint": "eslint . --cache --max-warnings 0 --ext .ts,.tsx",
+        "type:check": "yarn run tsc --noEmit",
+        "build": "node --loader ts-node/esm ./esbuild.config.ts; cp ./src/assets/* ./dist",
+        "watch": "cross-env WATCH=1 yarn build",
+        "start": "live-server ./dist"
+    }
+}
