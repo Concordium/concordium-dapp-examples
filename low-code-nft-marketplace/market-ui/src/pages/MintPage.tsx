@@ -73,7 +73,6 @@ function MintPage(props: {
 
 	function onGetCollectionAddress(
 		address: ContractAddress,
-		contractInfo: Cis2ContractInfo
 	) {
 		setState({
 			...state,
@@ -140,8 +139,8 @@ function MintPage(props: {
 						account={props.account}
 						contractInfo={props.contractInfo}
 						address={state.nftContract}
-						onDone={(address, contractInfo) =>
-							onGetCollectionAddress(address, contractInfo)
+						onDone={(address) =>
+							onGetCollectionAddress(address)
 						}
 					/>
 				);

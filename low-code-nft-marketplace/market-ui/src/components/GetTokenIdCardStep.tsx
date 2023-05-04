@@ -11,16 +11,13 @@ import {
 	Theme,
 } from "@mui/material";
 
-import { isValidTokenId } from "../models/Cis2Client";
 import DisplayError from "./ui/DisplayError";
-import { Cis2ContractInfo } from "../models/ConcordiumContractClient";
 
 const cardMediaSx: SxProps<Theme> = { maxHeight: "200px" };
 
 function GetTokenIdCardStep(props: {
 	imageUrl: string;
 	tokenId: string;
-	contractInfo: Cis2ContractInfo;
 	onDone: (data: { tokenId: string }) => void;
 }) {
 	const [state, setState] = useState({
@@ -34,7 +31,7 @@ function GetTokenIdCardStep(props: {
 		const formData = new FormData(event.currentTarget);
 		const tokenId = formData.get("tokenId")?.toString() || "";
 
-		if (!tokenId || !isValidTokenId(tokenId, props.contractInfo)) {
+		if (!tokenId) {
 			setState({ ...state, error: "Invalid Token Id" });
 			return;
 		}

@@ -1,18 +1,15 @@
 import { WalletApi } from "@concordium/browser-wallet-api-helpers";
-import { ContractAddress } from "@concordium/web-sdk";
+import { CIS2Contract } from "@concordium/web-sdk";
 import { Skeleton } from "@mui/material";
 import { useEffect, useState } from "react";
-import { getTokenMetadata } from "../models/Cis2Client";
+import { fetchJson } from "../models/Utils";
 import { Metadata } from "../models/Cis2Types";
-import { Cis2ContractInfo } from "../models/ConcordiumContractClient";
-import { fetchJson, toLocalStorageKey } from "../models/Utils";
 
 function Cis2MetadataImageLazy(props: {
 	provider: WalletApi;
 	account: string;
 	tokenId: string;
-	contractAddress: ContractAddress;
-	contractInfo: Cis2ContractInfo;
+	cis2Contract: CIS2Contract;
 }) {
 	const [state, setState] = useState<{
 		metadata?: Metadata;
@@ -20,38 +17,18 @@ function Cis2MetadataImageLazy(props: {
 		loading: boolean;
 	}>({ loading: false });
 
-	const localStorageKey = toLocalStorageKey(
-		props.tokenId,
-		props.contractAddress
-	);
-
 	useEffect(() => {
 		if (state.metadata) {
 			return;
 		}
 
 		setState({ ...state, loading: true });
-		let nftJson = localStorage.getItem(localStorageKey);
-		if (nftJson) {
-			setState({ ...state, loading: false, metadata: JSON.parse(nftJson) });
-		} else {
-			getTokenMetadata(
-				props.provider,
-				props.account,
-				props.contractInfo,
-				props.contractAddress,
-				props.tokenId
-			)
-				.then((m) => fetchJson<Metadata>(m.url))
-				.then((metadata) => {
-					setState({ ...state, loading: false, metadata });
-				});
-		}
-	}, [
-		props.tokenId,
-		props.contractAddress.index,
-		props.contractAddress.subindex,
-	]);
+		props.cis2Contract.tokenMetadata(props.tokenId)
+			.then((m) => fetchJson<Metadata>(m.url))
+			.then((metadata) => {
+				setState({ ...state, loading: false, metadata });
+			});
+	}, [props.tokenId, props.cis2Contract]);
 
 	return state.loading ? (
 		<Skeleton variant="rectangular" width={"100%"} height={"200px"} />

@@ -1,48 +1,32 @@
 import { useState, useEffect } from "react";
 import { Paper, Typography, Button } from "@mui/material";
-import { WalletApi } from "@concordium/browser-wallet-api-helpers";
-import { ContractAddress } from "@concordium/web-sdk";
-
-import { isOperator } from "../models/Cis2Client";
-import { Cis2ContractInfo } from "../models/ConcordiumContractClient";
+import { CIS2Contract, ContractAddress } from "@concordium/web-sdk";
 
 function Cis2OperatorOf(props: {
 	account: string;
-	provider: WalletApi;
 	marketContractAddress: ContractAddress;
-	nftContractAddress: ContractAddress;
-	contractInfo: Cis2ContractInfo;
+	cis2Contract: CIS2Contract;
 	onDone: (hasOwnership: boolean) => void;
 }) {
 	const [state, setState] = useState({ checking: false, error: "" });
 
 	function checkOperator() {
-		let s = { ...state };
-		isOperator(
-			props.provider,
-			props.account,
-			props.marketContractAddress,
-			props.nftContractAddress,
-			props.contractInfo
-		)
-			.then((isOperator) => props.onDone(isOperator))
-			.catch((err: Error) => {
-				s.checking = false;
-				s.error = err.message;
-				setState(s);
+		setState({ ...state, checking: true });
+		props.cis2Contract.operatorOf({ address: props.marketContractAddress, owner: props.account })
+			.then((isOperator) => {
+				setState({ checking: false, error: "" });
+				props.onDone(isOperator);
 			})
-			.finally(() => {
-				s.checking = false;
-				setState(s);
+			.catch((err: Error) => {
+				setState({ checking: false, error: err.message });
 			});
 	}
 
 	useEffect(() => {
-		setState({ ...state, checking: true });
 		if (!state.checking) {
 			checkOperator();
 		}
-	}, [props.provider, props.nftContractAddress]);
+	}, [props.cis2Contract]);
 
 	return (
 		<Paper>

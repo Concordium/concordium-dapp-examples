@@ -1,7 +1,6 @@
 import { Card, CardMedia, CardContent, Typography, TextField, CardActions, Button, SxProps, Theme } from "@mui/material";
 import { useState, FormEvent } from "react";
 
-import { Cis2ContractInfo } from "../models/ConcordiumContractClient";
 import DisplayError from "./ui/DisplayError";
 
 const cardMediaSx: SxProps<Theme> = { maxHeight: "200px" };
@@ -9,7 +8,6 @@ const cardMediaSx: SxProps<Theme> = { maxHeight: "200px" };
 export default function GetQuantityCardStep(props: {
 	imageUrl: string;
 	tokenId: string;
-	contractInfo: Cis2ContractInfo;
 	onDone: (data: { tokenId: string; quantity: string }) => void;
 }) {
 	const [state, setState] = useState({

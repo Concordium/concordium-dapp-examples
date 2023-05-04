@@ -13,7 +13,7 @@ import {
 	Navigate,
 	useNavigate,
 } from "react-router-dom";
-import { ContractAddress } from "@concordium/web-sdk";
+import { ConcordiumGRPCClient, ContractAddress, createConcordiumClient } from "@concordium/web-sdk";
 
 import BuyPage from "./pages/BuyPage";
 import SellPage from "./pages/SellPage";
@@ -21,6 +21,8 @@ import ContractFindInstanceOrInit from "./pages/ContractFindInstanceOrInit";
 import MintPage from "./pages/MintPage";
 import {
 	CIS2_MULTI_CONTRACT_INFO,
+	CONCORDIUM_NODE_PORT,
+	CONNCORDIUM_NODE_ENDPOINT,
 	CREATE_NEW_MARKETPLACE,
 	MARKETPLACE_CONTRACT_INFO,
 	MARKET_CONTRACT_ADDRESS,
@@ -46,11 +48,13 @@ function App() {
 	}
 
 	const [state, setState] = useState<{
+		grpcClient: ConcordiumGRPCClient;
 		provider?: WalletApi;
 		account?: string;
 		marketplaceContractAddress?: ContractAddress;
 	}>({
 		marketplaceContractAddress,
+		grpcClient: createConcordiumClient(CONNCORDIUM_NODE_ENDPOINT, Number(CONCORDIUM_NODE_PORT)),
 	});
 
 	function connect() {
@@ -123,7 +127,7 @@ function App() {
 					provider={state.provider!}
 					account={state.account!}
 					marketContractAddress={state.marketplaceContractAddress!}
-					contractInfo={CIS2_MULTI_CONTRACT_INFO}
+					grpcClient={state.grpcClient!}
 				/>
 			),
 			display: "primary",
@@ -136,6 +140,7 @@ function App() {
 			component: (
 				<SellPage
 					provider={state.provider!}
+					grpcClient={state.grpcClient!}
 					account={state.account!}
 					marketContractAddress={state.marketplaceContractAddress!}
 					contractInfo={CIS2_MULTI_CONTRACT_INFO}

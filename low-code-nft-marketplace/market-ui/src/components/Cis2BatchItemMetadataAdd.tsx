@@ -212,7 +212,6 @@ function Cis2BatchItemMetadataAdd(props: {
 				<GetTokenIdCardStep
 					tokenId={props.tokenId}
 					key={props.index}
-					contractInfo={props.contractInfo}
 					imageUrl={state.metadata?.display.url!}
 					onDone={(data) => tokenIdUpdated(data.tokenId)}
 				/>
@@ -220,7 +219,6 @@ function Cis2BatchItemMetadataAdd(props: {
 		case Steps.GetQuantity:
 			return (
 				<GetQuantityCardStep
-					contractInfo={props.contractInfo}
 					imageUrl={state.metadata?.display.url!}
 					tokenId={state.tokenId}
 					key={state.tokenId}

@@ -13,7 +13,7 @@ function Cis2FindInstance(props: {
 	provider: WalletApi;
 	contractInfo: Cis2ContractInfo;
 	address?: ContractAddress;
-	onDone: (address: ContractAddress, contractInfo: Cis2ContractInfo) => void;
+	onDone: (address: ContractAddress) => void;
 }) {
 	const [state, setState] = useState({
 		error: "",
@@ -52,7 +52,7 @@ function Cis2FindInstance(props: {
 			)
 			.then(() => {
 				setState({ ...state, checking: false, error: "" });
-				props.onDone(address, props.contractInfo);
+				props.onDone(address);
 			})
 			.catch((e: Error) => {
 				setState({ ...state, checking: false, error: e.message });

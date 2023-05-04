@@ -5,28 +5,26 @@ import IconButton from "@mui/material/IconButton";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import CheckIcon from "@mui/icons-material/Check";
 import { WalletApi } from "@concordium/browser-wallet-api-helpers";
-import { ContractAddress } from "@concordium/web-sdk";
+import { CIS2Contract, ContractAddress } from "@concordium/web-sdk";
 import { Typography } from "@mui/material";
 
 import { fetchJson, toLocalStorageKey } from "../models/Utils";
 import { TokenListItem } from "../models/MarketplaceTypes";
-import { getTokenMetadata } from "../models/Cis2Client";
 import { Metadata } from "../models/Cis2Types";
 import Cis2MetadataImageLazy from "./Cis2MetadataImageLazy";
-import { Cis2ContractInfo } from "../models/ConcordiumContractClient";
 
 /**
  * Displays a single token from the list of all the tokens listed on Marketplace.
  */
 function MarketplaceTokensListItem(props: {
 	item: TokenListItem;
+	itemCis2Contract: CIS2Contract;
 	provider: WalletApi;
 	account: string;
 	marketContractAddress: ContractAddress;
-	contractInfo: Cis2ContractInfo;
 	onBuyClicked: (token: TokenListItem) => void;
 }) {
-	const { item, provider, account, contractInfo: cis2ContractInfo } = props;
+	const { item } = props;
 
 	let [state, setState] = useState({
 		isLoading: true,
@@ -54,13 +52,7 @@ function MarketplaceTokensListItem(props: {
 		if (metadataJson) {
 			setStateMetadata(JSON.parse(metadataJson));
 		} else {
-			getTokenMetadata(
-				provider,
-				account,
-				cis2ContractInfo,
-				item.contract,
-				item.tokenId
-			)
+			props.itemCis2Contract.tokenMetadata(props.item.tokenId)
 				.then((m) => fetchJson<Metadata>(m.url))
 				.then((metadata) => {
 					setStateMetadata(metadata);
@@ -76,8 +68,7 @@ function MarketplaceTokensListItem(props: {
 			<Cis2MetadataImageLazy
 				provider={props.provider}
 				account={props.account}
-				contractInfo={props.contractInfo}
-				contractAddress={item.contract}
+				cis2Contract={props.itemCis2Contract}
 				tokenId={item.tokenId}
 			/>
 			<ImageListItemBar

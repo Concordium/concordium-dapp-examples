@@ -1,8 +1,7 @@
-import { WalletApi } from "@concordium/browser-wallet-api-helpers";
-import { ContractAddress, TransactionSummary } from "@concordium/web-sdk";
+import { SmartContractParameters, WalletApi } from "@concordium/browser-wallet-api-helpers";
+import { ContractAddress, TransactionSummary, deserializeReceiveReturnValue } from "@concordium/web-sdk";
 
-import { MarketplaceDeserializer } from "./MarketplaceDeserializer";
-import { AddParams, TokenList, TransferParams } from "./MarketplaceTypes";
+import { AddParams, TokenList, TokenListItem, TransferParams } from "./MarketplaceTypes";
 import { MARKETPLACE_CONTRACT_INFO } from "../Constants";
 import {
 	invokeContract,
@@ -33,7 +32,17 @@ export async function list(
 		MethodNames.list
 	);
 
-	return new MarketplaceDeserializer(retValue).readTokenList();
+	const retValueDe = deserializeReceiveReturnValue(retValue, MARKETPLACE_CONTRACT_INFO.schemaBuffer, MARKETPLACE_CONTRACT_INFO.contractName, MethodNames.list);
+	const tokens = retValueDe[0].map((t: any) => ({
+		contract: t.contract,
+		owner: t.owner,
+		price: BigInt(t.price),
+		primaryOwner: t.primary_owner,
+		quantity: BigInt(t.quantity),
+		royalty: t.royalty,
+		tokenId: t.token_id,
+	} as TokenListItem));
+	return tokens;
 }
 
 /**
@@ -55,7 +64,7 @@ export async function add(
 	return updateContract(
 		provider,
 		MARKETPLACE_CONTRACT_INFO,
-		paramJson,
+		paramJson as unknown as SmartContractParameters,
 		account,
 		marketContractAddress,
 		MethodNames.add,
@@ -96,7 +105,7 @@ export async function transfer(
 	return updateContract(
 		provider,
 		MARKETPLACE_CONTRACT_INFO,
-		paramJson,
+		paramJson as unknown as SmartContractParameters,
 		account,
 		marketContractAddress,
 		MethodNames.transfer,

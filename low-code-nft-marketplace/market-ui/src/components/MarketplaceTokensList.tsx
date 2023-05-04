@@ -2,32 +2,39 @@ import { useState, useEffect } from "react";
 import { WalletApi } from "@concordium/browser-wallet-api-helpers";
 import ImageList from "@mui/material/ImageList";
 import Container from "@mui/material/Container";
-import { ContractAddress } from "@concordium/web-sdk";
+import { CIS2Contract, ConcordiumGRPCClient, ContractAddress } from "@concordium/web-sdk";
 
 import MarketplaceTokensListItem from "./MarketplaceTokensListItem";
 import { TokenListItem } from "../models/MarketplaceTypes";
 import { list } from "../models/MarketplaceClient";
-import { Cis2ContractInfo } from "../models/ConcordiumContractClient";
 import MarketplaceTransferDialog from "./MarketplaceTransferDialog";
 
 /**
  * Gets the List of buyable tokens from Marketplace contract and displays them.
  */
 function MarketplaceTokensList(props: {
+	grpcClient: ConcordiumGRPCClient;
 	marketContractAddress: ContractAddress;
 	provider: WalletApi;
-	contractInfo: Cis2ContractInfo;
 	account: string;
 }) {
 	let [state, setState] = useState<{
 		selectedToken?: TokenListItem;
-		tokens: TokenListItem[];
+		tokens: Array<TokenListItem & { cis2Contract: CIS2Contract }>;
 	}>({ tokens: [] });
 
 	useEffect(() => {
-		list(props.provider, props.marketContractAddress).then((tokens) =>
-			setState({ ...state, tokens })
-		);
+		(async () => {
+			const tokens = await list(props.provider, props.marketContractAddress);
+			const tokensWContract = await Promise.all(tokens.map(async (t) => {
+				return {
+					...t,
+					cis2Contract: await CIS2Contract.create(props.grpcClient, t.contract)
+				}
+			}));
+
+			setState({ ...state, tokens: tokensWContract });
+		})()
 	}, [props.account, state.selectedToken]);
 
 	const setSelectedToken = (token?: TokenListItem) =>
@@ -40,9 +47,9 @@ function MarketplaceTokensList(props: {
 					<MarketplaceTokensListItem
 						provider={props.provider}
 						account={props.account}
-						contractInfo={props.contractInfo}
 						marketContractAddress={props.marketContractAddress}
 						item={t}
+						itemCis2Contract={t.cis2Contract}
 						key={t.tokenId + t.contract.index + t.contract.subindex + t.owner}
 						onBuyClicked={setSelectedToken}
 					/>

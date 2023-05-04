@@ -1,4 +1,4 @@
-import { WalletApi } from "@concordium/browser-wallet-api-helpers";
+import { SmartContractParameters, WalletApi } from "@concordium/browser-wallet-api-helpers";
 import { Buffer } from "buffer/";
 
 import {
@@ -63,7 +63,6 @@ export async function initContract<T>(
 		} as InitContractPayload,
 		params || {},
 		schemaBuffer.toString("base64"),
-		2
 	);
 
 	let outcomes = await waitForTransaction(provider, txnHash);
@@ -132,10 +131,10 @@ export async function invokeContract<T>(
  * @param amount CCD Amount to update the contract with.
  * @returns Update contract Outcomes.
  */
-export async function updateContract<T>(
+export async function updateContract(
 	provider: WalletApi,
 	contractInfo: ContractInfo,
-	paramJson: T,
+	paramJson: SmartContractParameters,
 	account: string,
 	contractAddress: ContractAddress,
 	methodName: string,
@@ -143,29 +142,24 @@ export async function updateContract<T>(
 	amount: bigint = BigInt(0)
 ): Promise<Record<string, TransactionSummary>> {
 	const { schemaBuffer, contractName } = contractInfo;
-	const parameter = serializeParams(
-		contractName,
-		schemaBuffer,
-		methodName,
-		paramJson
-	);
 	let txnHash = await provider.sendTransaction(
 		account,
 		AccountTransactionType.Update,
 		{
 			maxContractExecutionEnergy,
 			address: contractAddress,
-			message: parameter,
 			amount: toCcd(amount),
 			receiveName: `${contractName}.${methodName}`,
 		} as UpdateContractPayload,
 		paramJson as any,
 		schemaBuffer.toString("base64"),
-		2 //Schema Version
 	);
 
-	let outcomes = await waitForTransaction(provider, txnHash);
+	return await waitAndThrowError(provider, txnHash);
+}
 
+export async function waitAndThrowError(provider: WalletApi, txnHash: string) {
+	let outcomes = await waitForTransaction(provider, txnHash);
 	return ensureValidOutcome(outcomes);
 }
 

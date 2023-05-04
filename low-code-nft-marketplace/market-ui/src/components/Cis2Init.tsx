@@ -3,8 +3,7 @@ import { WalletApi } from "@concordium/browser-wallet-api-helpers";
 import { ContractAddress } from "@concordium/web-sdk";
 import { Typography, Button, Stack } from "@mui/material";
 
-import { initContract } from "../models/Cis2Client";
-import { Cis2ContractInfo } from "../models/ConcordiumContractClient";
+import { Cis2ContractInfo, initContract } from "../models/ConcordiumContractClient";
 
 function Cis2Init(props: {
 	provider: WalletApi;

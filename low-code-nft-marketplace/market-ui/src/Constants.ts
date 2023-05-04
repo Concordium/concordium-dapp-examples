@@ -61,3 +61,6 @@ export const tokenIdToNftImageFileName = (
 export const tokenIdToNftMetadataFileName = (tokenId: string) => {
 	return `nft_${tokenId}_metadata.json`;
 };
+
+export const CONNCORDIUM_NODE_ENDPOINT = "https://grpc.testnet.concordium.com";
+export const CONCORDIUM_NODE_PORT = 20000;

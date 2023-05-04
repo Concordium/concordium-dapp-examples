@@ -11,7 +11,7 @@ function Cis2FindInstanceOrInit(props: {
 	account: string;
 	contractInfo: Cis2ContractInfo;
 	address?: ContractAddress; 
-	onDone: (address: ContractAddress, contractInfo: Cis2ContractInfo) => void;
+	onDone: (address: ContractAddress) => void;
 }) {
 	return (
 		<Stack spacing={2}>

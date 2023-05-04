@@ -1,50 +1,51 @@
 import { useState, useEffect } from "react";
 import { Typography, Button } from "@mui/material";
 import { WalletApi } from "@concordium/browser-wallet-api-helpers";
-import { ContractAddress } from "@concordium/web-sdk";
+import { CIS2Contract, ContractAddress } from "@concordium/web-sdk";
 
-import { updateOperator } from "../models/Cis2Client";
-import { Cis2ContractInfo } from "../models/ConcordiumContractClient";
+import { Cis2ContractInfo, waitAndThrowError } from "../models/ConcordiumContractClient";
 
 function Cis2UpdateOperator(props: {
 	provider: WalletApi;
 	account: string;
 	marketContractAddress: ContractAddress;
-	nftContractAddress: ContractAddress;
+	cis2Contract: CIS2Contract;
 	contractInfo: Cis2ContractInfo;
 	onDone: () => void;
 }) {
 	const [state, setState] = useState({ updating: false, error: "" });
 
 	function update() {
-		let s = { ...state };
-		updateOperator(
-			props.provider,
+		setState({ ...state, updating: true, error: "" });
+		const { type, payload, parameter: { json } } = props.cis2Contract.createUpdateOperator(
+			{ energy: BigInt(6000) },
+			{
+				address: props.marketContractAddress,
+				type: 'add'
+			});
+
+		props.provider.sendTransaction(
 			props.account,
-			props.marketContractAddress,
-			props.nftContractAddress,
-			props.contractInfo
+			type,
+			payload,
+			json,
+			props.contractInfo.schemaBuffer.toString("base64")
 		)
+			.then(txnHash => waitAndThrowError(props.provider, txnHash))
 			.then((_) => {
+				setState({ ...state, updating: false, error: "" });
 				props.onDone();
 			})
 			.catch((err: Error) => {
-				s.updating = false;
-				s.error = err.message;
-				setState(s);
-			})
-			.finally(() => {
-				s.updating = false;
-				setState(s);
+				setState({ ...state, updating: false, error: err.message });
 			});
 	}
 
 	useEffect(() => {
-		setState({ ...state, updating: true });
 		if (!state.updating) {
 			update();
 		}
-	}, [props.provider, props.nftContractAddress]);
+	}, [props.provider, props.cis2Contract]);
 
 	return (
 		<>

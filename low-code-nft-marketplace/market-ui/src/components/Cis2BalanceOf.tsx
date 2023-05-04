@@ -8,19 +8,15 @@ import {
 } from "@mui/material";
 import { WalletApi } from "@concordium/browser-wallet-api-helpers";
 import {
-	ContractAddress,
+	CIS2Contract,
 	InvokeContractFailedResult,
 	RejectReasonTag,
 } from "@concordium/web-sdk";
 
-import { balanceOf, isValidTokenId } from "../models/Cis2Client";
-import { Cis2ContractInfo } from "../models/ConcordiumContractClient";
-
 function Cis2BalanceOf(props: {
 	provider: WalletApi;
 	account: string;
-	cis2ContractAddress: ContractAddress;
-	contractInfo: Cis2ContractInfo;
+	cis2Contract: CIS2Contract;
 	onDone: (tokenId: string, balance: bigint) => void;
 }) {
 	const [state, setState] = useState({
@@ -31,13 +27,8 @@ function Cis2BalanceOf(props: {
 
 	function checkBalance() {
 		setState({ ...state, checking: true, error: "" });
-		balanceOf(
-			props.provider,
-			props.account,
-			props.cis2ContractAddress,
-			props.contractInfo,
-			state.tokenId
-		)
+		props.cis2Contract
+			.balanceOf({ tokenId: state.tokenId, address: props.account })
 			.then((balance) => {
 				if (balance > 0) {
 					setState({ ...state, checking: false, error: "" });
@@ -75,13 +66,6 @@ function Cis2BalanceOf(props: {
 			});
 	}
 
-	function isValid() {
-		return (
-			!!state.tokenId &&
-			isValidTokenId(state.tokenId, props.contractInfo)
-		);
-	}
-
 	function onOkClicked() {
 		checkBalance();
 	}
@@ -105,7 +89,6 @@ function Cis2BalanceOf(props: {
 			<ButtonGroup fullWidth size="large" disabled={state.checking}>
 				<Button
 					variant="contained"
-					disabled={!isValid()}
 					onClick={() => onOkClicked()}
 				>
 					Ok

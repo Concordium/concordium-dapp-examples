@@ -9,7 +9,7 @@ import {
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { WalletApi } from "@concordium/browser-wallet-api-helpers";
-import { ContractAddress } from "@concordium/common-sdk";
+import { ContractAddress, ConcordiumGRPCClient } from "@concordium/common-sdk";
 
 import Cis2BalanceOf from "../components/Cis2BalanceOf";
 import Cis2OperatorOf from "../components/Cis2OperatorOf";
@@ -17,6 +17,7 @@ import Cis2UpdateOperator from "../components/Cis2UpdateOperator";
 import Cis2FindInstance from "../components/Cis2FindInstance";
 import MarketplaceAdd from "../components/MarketplaceAdd";
 import { Cis2ContractInfo } from "../models/ConcordiumContractClient";
+import { CIS2Contract } from "@concordium/web-sdk";
 enum Steps {
 	FindCollection,
 	CheckOperator,
@@ -27,6 +28,7 @@ enum Steps {
 type StepType = { step: Steps; title: string };
 
 function SellPage(props: {
+	grpcClient: ConcordiumGRPCClient;
 	provider: WalletApi;
 	account: string;
 	marketContractAddress: ContractAddress;
@@ -46,20 +48,19 @@ function SellPage(props: {
 	let [state, setState] = useState<{
 		activeStep: StepType;
 		nftContract?: ContractAddress;
+		cis2Contract?: CIS2Contract;
 		tokenId?: string;
 		totalBalance?: bigint;
 	}>({
 		activeStep: steps[0],
 	});
 
-	function onGetCollectionAddress(
-		address: ContractAddress,
-		_contractInfo: Cis2ContractInfo
-	) {
+	async function onGetCollectionAddress(address: ContractAddress) {
 		setState({
 			...state,
 			activeStep: steps[1],
 			nftContract: address,
+			cis2Contract: await CIS2Contract.create(props.grpcClient, address)
 		});
 
 	}
@@ -106,19 +107,15 @@ function SellPage(props: {
 					<Cis2FindInstance
 						provider={props.provider}
 						contractInfo={props.contractInfo}
-						onDone={(address, contractInfo) =>
-							onGetCollectionAddress(address, contractInfo)
-						}
+						onDone={(address) => onGetCollectionAddress(address)}
 					/>
 				);
 			case Steps.CheckOperator:
 				return (
 					<Cis2OperatorOf
-						provider={props.provider}
 						account={props.account}
 						marketContractAddress={props.marketContractAddress}
-						nftContractAddress={state.nftContract as ContractAddress}
-						contractInfo={props.contractInfo}
+						cis2Contract={state.cis2Contract!}
 						onDone={(isOperator) => onCheckOperator(isOperator)}
 					/>
 				);
@@ -128,7 +125,7 @@ function SellPage(props: {
 						provider={props.provider}
 						account={props.account}
 						marketContractAddress={props.marketContractAddress}
-						nftContractAddress={state.nftContract as ContractAddress}
+						cis2Contract={state.cis2Contract!}
 						contractInfo={props.contractInfo}
 						onDone={() => onUpdateOperator()}
 					/>
@@ -138,8 +135,7 @@ function SellPage(props: {
 					<Cis2BalanceOf
 						provider={props.provider}
 						account={props.account}
-						cis2ContractAddress={state.nftContract as ContractAddress}
-						contractInfo={props.contractInfo}
+						cis2Contract={state.cis2Contract!}
 						onDone={(id, balance) => onTokenBalance(id, balance)}
 					/>
 				);

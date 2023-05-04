@@ -77,7 +77,6 @@ function Cis2BatchMetadataPrepare(props: {
 							file={file}
 							tokenId={toTokenId(index + 1, props.contractInfo)}
 							pinataJwtKey={props.pinataJwt}
-							contractInfo={props.contractInfo}
 							onDone={(data) =>
 								onMetadataPrepared(file.name, data.tokenId, data.tokenInfo)
 							}

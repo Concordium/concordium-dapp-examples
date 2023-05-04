@@ -110,7 +110,6 @@ function UploadMetadataIpfsCardStep(props: {
 	imageUrl: string;
 	pinata: PinataClient;
 	imageIpfsUrl: string;
-	contractName: string;
 	onDone: (data: { tokenId: string; metadataUrl: MetadataUrl }) => void;
 }) {
 	const [state, setState] = useState({
@@ -129,13 +128,6 @@ function UploadMetadataIpfsCardStep(props: {
 				url: props.imageIpfsUrl,
 			},
 			unique: !!formData.get("unique")?.toString(),
-			attributes: [
-				{
-					name: "ContractName",
-					type: "string",
-					value: props.contractName,
-				},
-			],
 		};
 		let includeHash = formData.get("includeHash")?.toString();
 		setState({ ...state, isUploadingMetadata: true });
@@ -241,7 +233,6 @@ function UploadMetadataIpfsCardStep(props: {
 }
 
 function Cis2BatchItemMetadataPrepare(props: {
-	contractInfo: Cis2ContractInfo;
 	file: File;
 	pinataJwtKey: string;
 	tokenId: string;
@@ -278,7 +269,6 @@ function Cis2BatchItemMetadataPrepare(props: {
 		case Steps.GetTokenId:
 			return (
 				<GetTokenIdCardStep
-					contractInfo={props.contractInfo}
 					imageUrl={state.imageDisplayUrl}
 					tokenId={state.tokenId}
 					key={state.tokenId}
@@ -304,14 +294,12 @@ function Cis2BatchItemMetadataPrepare(props: {
 					imageUrl={state.imageDisplayUrl}
 					imageIpfsUrl={state.imageIpfsUrl}
 					key={state.tokenId}
-					contractName={props.contractInfo.contractName}
 					onDone={(data) => metadataUploaded(data.tokenId, data.metadataUrl)}
 				/>
 			);
 		case Steps.GetQuantity:
 			return (
 				<GetQuantityCardStep
-					contractInfo={props.contractInfo}
 					imageUrl={state.imageDisplayUrl}
 					tokenId={state.tokenId}
 					key={state.tokenId}
