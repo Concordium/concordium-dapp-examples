@@ -9,6 +9,8 @@ import { TokenListItem } from "../models/MarketplaceTypes";
 import { list } from "../models/MarketplaceClient";
 import MarketplaceTransferDialog from "./MarketplaceTransferDialog";
 
+type ListItem = TokenListItem & { cis2Contract: CIS2Contract };
+
 /**
  * Gets the List of buyable tokens from Marketplace contract and displays them.
  */
@@ -18,50 +20,42 @@ function MarketplaceTokensList(props: {
 	provider: WalletApi;
 	account: string;
 }) {
-	let [state, setState] = useState<{
-		selectedToken?: TokenListItem;
-		tokens: Array<TokenListItem & { cis2Contract: CIS2Contract }>;
-	}>({ tokens: [] });
+	let [selectedToken, setSelectedToken] = useState<ListItem>();
+	let [tokens, setTokens] = useState<Array<ListItem>>([]);
 
 	useEffect(() => {
 		(async () => {
 			const tokens = await list(props.provider, props.marketContractAddress);
-			const tokensWContract = await Promise.all(tokens.map(async (t) => {
+			return Promise.all(tokens.map(async (t) => {
 				return {
 					...t,
 					cis2Contract: await CIS2Contract.create(props.grpcClient, t.contract)
 				}
 			}));
-
-			setState({ ...state, tokens: tokensWContract });
-		})()
-	}, [props.account, state.selectedToken]);
-
-	const setSelectedToken = (token?: TokenListItem) =>
-		setState({ ...state, selectedToken: token });
+		})().then(setTokens)
+	}, [props.account, selectedToken]);
 
 	return (
 		<Container maxWidth={"md"}>
 			<ImageList key="nft-image-list" cols={3}>
-				{state.tokens.map((t) => (
+				{tokens.map((t) => (
 					<MarketplaceTokensListItem
 						provider={props.provider}
 						account={props.account}
 						marketContractAddress={props.marketContractAddress}
 						item={t}
-						itemCis2Contract={t.cis2Contract}
 						key={t.tokenId + t.contract.index + t.contract.subindex + t.owner}
 						onBuyClicked={setSelectedToken}
 					/>
 				))}
 			</ImageList>
-			{state.selectedToken && (
+			{selectedToken && (
 				<MarketplaceTransferDialog
 					provider={props.provider}
 					account={props.account}
 					marketContractAddress={props.marketContractAddress}
-					isOpen={!!state.selectedToken}
-					token={state.selectedToken}
+					isOpen={true}
+					token={selectedToken}
 					onClose={() => setSelectedToken(undefined)}
 				/>
 			)}

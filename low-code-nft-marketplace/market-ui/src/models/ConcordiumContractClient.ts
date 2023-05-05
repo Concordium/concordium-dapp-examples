@@ -8,7 +8,6 @@ import {
 	UpdateContractPayload,
 	serializeUpdateContractParameters,
 	ModuleReference,
-	InitContractPayload,
 	InstanceInfo,
 	TransactionStatusEnum,
 	TransactionSummary,
@@ -37,12 +36,11 @@ export interface Cis2ContractInfo extends ContractInfo {
  * @param ccdAmount CCD Amount to initialize the contract with.
  * @returns Contract Address.
  */
-export async function initContract<T>(
+export async function initContract(
 	provider: WalletApi,
 	contractInfo: ContractInfo,
 	account: string,
-	params?: T,
-	serializedParams?: Buffer,
+	params?: SmartContractParameters,
 	maxContractExecutionEnergy = BigInt(9999),
 	ccdAmount = BigInt(0)
 ): Promise<ContractAddress> {
@@ -58,9 +56,8 @@ export async function initContract<T>(
 			amount: toCcd(ccdAmount),
 			moduleRef,
 			initName: contractName,
-			param: serializedParams || Buffer.from([]),
 			maxContractExecutionEnergy,
-		} as InitContractPayload,
+		},
 		params || {},
 		schemaBuffer.toString("base64"),
 	);

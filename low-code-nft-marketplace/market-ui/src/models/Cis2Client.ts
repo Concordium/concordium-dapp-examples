@@ -6,7 +6,6 @@ import { SmartContractParameters, WalletApi } from "@concordium/browser-wallet-a
 import {
 	ContractAddress,
 	TransactionSummary,
-	deserializeReceiveReturnValue,
 } from '@concordium/web-sdk';
 
 import { ContractInfo, Cis2ContractInfo } from "./ConcordiumContractClient";
@@ -16,32 +15,6 @@ import { TokenInfo } from "./Cis2Types";
 export const enum MethodName {
 	supports = "supports",
 	mint = "mint",
-}
-
-/**
- * Throws an error if the input {@link address} does not support CIS2 format.
- * @param provider Wallet provider.
- * @param address Address of a Smart Contract.
- * @returns undefined.
- */
-export async function ensureSupportsCis2(
-	provider: WalletApi,
-	contractInfo: Cis2ContractInfo,
-	address: ContractAddress
-): Promise<undefined> {
-	const paramsJson = ["CIS-2"];
-	const retValue = await connClient.invokeContract(
-		provider,
-		contractInfo,
-		address,
-		MethodName.supports,
-		paramsJson,
-	);
-
-	const result = deserializeReceiveReturnValue(retValue, contractInfo.schemaBuffer, contractInfo.contractName, MethodName.supports);
-	if (!Object.hasOwn(result[0], "Support")) {
-		return Promise.reject("Contract does not support CIS2");
-	}
 }
 
 /**

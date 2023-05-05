@@ -159,6 +159,7 @@ function App() {
 				contractInfo={CIS2_MULTI_CONTRACT_INFO}
 				provider={state.provider!}
 				account={state.account!}
+				grpcClient={state.grpcClient}
 			/>
 		),
 		display: "primary",

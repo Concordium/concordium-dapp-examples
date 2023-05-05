@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { WalletApi } from "@concordium/browser-wallet-api-helpers";
-import { ContractAddress } from "@concordium/web-sdk";
+import { ConcordiumGRPCClient, ContractAddress } from "@concordium/web-sdk";
 import {
 	Stepper,
 	Step,
@@ -33,6 +33,7 @@ enum Steps {
 type StepType = { step: Steps; title: string };
 
 function MintPage(props: {
+	grpcClient: ConcordiumGRPCClient;
 	provider: WalletApi;
 	account: string;
 	contractInfo: Cis2ContractInfo;
@@ -136,6 +137,7 @@ function MintPage(props: {
 				return (
 					<Cis2FindInstanceOrInit
 						provider={props.provider}
+						grpcClient={props.grpcClient}
 						account={props.account}
 						contractInfo={props.contractInfo}
 						address={state.nftContract}

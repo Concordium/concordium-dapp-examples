@@ -1,5 +1,4 @@
 import { FormEvent, useState } from "react";
-import { Buffer } from "buffer/";
 import { WalletApi } from "@concordium/browser-wallet-api-helpers";
 import { ContractAddress } from "@concordium/web-sdk";
 import { Typography, Button, Stack, TextField } from "@mui/material";
@@ -24,15 +23,11 @@ function MarketplaceContractInit(props: {
 		setState({ ...state, processing: true });
 
 		const params = { commission: commission * 100 };
-		const serializedParams = Buffer.alloc(2);
-		serializedParams.writeUInt16LE(params.commission, 0);
-
 		initContract(
 			props.provider,
 			props.contractInfo,
 			props.account,
-			params,
-			serializedParams
+			params
 		)
 			.then((address) => {
 				setState({ ...state, processing: false });

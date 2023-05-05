@@ -32,7 +32,13 @@ export async function list(
 		MethodNames.list
 	);
 
-	const retValueDe = deserializeReceiveReturnValue(retValue, MARKETPLACE_CONTRACT_INFO.schemaBuffer, MARKETPLACE_CONTRACT_INFO.contractName, MethodNames.list);
+	const retValueDe = deserializeReceiveReturnValue(
+		retValue,
+		MARKETPLACE_CONTRACT_INFO.schemaBuffer,
+		MARKETPLACE_CONTRACT_INFO.contractName,
+		MethodNames.list
+	);
+	
 	const tokens = retValueDe[0].map((t: any) => ({
 		contract: t.contract,
 		owner: t.owner,

@@ -1,16 +1,11 @@
 import { FormEvent, useState } from "react";
-import { WalletApi } from "@concordium/browser-wallet-api-helpers";
-import { ContractAddress } from "@concordium/web-sdk";
+import { CIS0, ConcordiumGRPCClient, ContractAddress, cis0Supports } from "@concordium/web-sdk";
 import { TextField, Typography, Button, Stack } from "@mui/material";
 
-import { ensureSupportsCis2 } from "../models/Cis2Client";
-import {
-	Cis2ContractInfo,
-	getInstanceInfo,
-} from "../models/ConcordiumContractClient";
+import { Cis2ContractInfo } from "../models/ConcordiumContractClient";
 
 function Cis2FindInstance(props: {
-	provider: WalletApi;
+	grpcClient: ConcordiumGRPCClient;
 	contractInfo: Cis2ContractInfo;
 	address?: ContractAddress;
 	onDone: (address: ContractAddress) => void;
@@ -46,13 +41,24 @@ function Cis2FindInstance(props: {
 		}
 
 		const address = { index, subindex };
-		getInstanceInfo(props.provider, address)
-			.then((_) =>
-				ensureSupportsCis2(props.provider, props.contractInfo, address)
-			)
-			.then(() => {
-				setState({ ...state, checking: false, error: "" });
-				props.onDone(address);
+		props.grpcClient.getInstanceInfo(address)
+			.then((_) => cis0Supports(props.grpcClient, props.address!, "CIS-2"))
+			.then((supports) => {
+				if (!supports) {
+					setState({ ...state, checking: false, error: "Could not check if contract supports CIS-2" });
+					return;
+				}
+
+				switch (supports?.type) {
+					case CIS0.SupportType.Support:
+						setState({ ...state, checking: false, error: "" });
+						props.onDone(address);
+						break;
+					case CIS0.SupportType.SupportBy:
+					case CIS0.SupportType.NoSupport:
+						setState({ ...state, checking: false, error: "Contract does not support CIS-2" });
+						break;
+				}
 			})
 			.catch((e: Error) => {
 				setState({ ...state, checking: false, error: e.message });

@@ -105,7 +105,7 @@ function SellPage(props: {
 			case Steps.FindCollection:
 				return (
 					<Cis2FindInstance
-						provider={props.provider}
+						grpcClient={props.grpcClient}
 						contractInfo={props.contractInfo}
 						onDone={(address) => onGetCollectionAddress(address)}
 					/>
@@ -126,7 +126,6 @@ function SellPage(props: {
 						account={props.account}
 						marketContractAddress={props.marketContractAddress}
 						cis2Contract={state.cis2Contract!}
-						contractInfo={props.contractInfo}
 						onDone={() => onUpdateOperator()}
 					/>
 				);

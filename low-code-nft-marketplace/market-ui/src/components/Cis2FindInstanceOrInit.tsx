@@ -1,12 +1,13 @@
 import { Stack, Typography } from "@mui/material";
 import { WalletApi } from "@concordium/browser-wallet-api-helpers";
-import { ContractAddress } from "@concordium/web-sdk";
+import { ConcordiumGRPCClient, ContractAddress } from "@concordium/web-sdk";
 
 import Cis2Init from "./Cis2Init";
 import Cis2FindInstance from "./Cis2FindInstance";
 import { Cis2ContractInfo } from '../models/ConcordiumContractClient';
 
 function Cis2FindInstanceOrInit(props: {
+	grpcClient: ConcordiumGRPCClient;
 	provider: WalletApi;
 	account: string;
 	contractInfo: Cis2ContractInfo;
@@ -16,7 +17,7 @@ function Cis2FindInstanceOrInit(props: {
 	return (
 		<Stack spacing={2}>
 			<Cis2FindInstance
-				provider={props.provider}
+				grpcClient={props.grpcClient}
 				contractInfo={props.contractInfo}
 				address={props.address}
 				onDone={props.onDone}

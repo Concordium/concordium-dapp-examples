@@ -13,16 +13,17 @@ import { TokenListItem } from "../models/MarketplaceTypes";
 import { Metadata } from "../models/Cis2Types";
 import Cis2MetadataImageLazy from "./Cis2MetadataImageLazy";
 
+type ListItem = TokenListItem & { cis2Contract: CIS2Contract };
+
 /**
  * Displays a single token from the list of all the tokens listed on Marketplace.
  */
 function MarketplaceTokensListItem(props: {
-	item: TokenListItem;
-	itemCis2Contract: CIS2Contract;
+	item: ListItem;
 	provider: WalletApi;
 	account: string;
 	marketContractAddress: ContractAddress;
-	onBuyClicked: (token: TokenListItem) => void;
+	onBuyClicked: (token: ListItem) => void;
 }) {
 	const { item } = props;
 
@@ -52,7 +53,7 @@ function MarketplaceTokensListItem(props: {
 		if (metadataJson) {
 			setStateMetadata(JSON.parse(metadataJson));
 		} else {
-			props.itemCis2Contract.tokenMetadata(props.item.tokenId)
+			props.item.cis2Contract.tokenMetadata(props.item.tokenId)
 				.then((m) => fetchJson<Metadata>(m.url))
 				.then((metadata) => {
 					setStateMetadata(metadata);
@@ -68,7 +69,7 @@ function MarketplaceTokensListItem(props: {
 			<Cis2MetadataImageLazy
 				provider={props.provider}
 				account={props.account}
-				cis2Contract={props.itemCis2Contract}
+				cis2Contract={props.item.cis2Contract}
 				tokenId={item.tokenId}
 			/>
 			<ImageListItemBar

@@ -1,23 +1,22 @@
 import { useState, useEffect } from "react";
 import { Typography, Button } from "@mui/material";
-import { WalletApi } from "@concordium/browser-wallet-api-helpers";
+import { SchemaWithContext, WalletApi } from "@concordium/browser-wallet-api-helpers";
 import { CIS2Contract, ContractAddress } from "@concordium/web-sdk";
 
-import { Cis2ContractInfo, waitAndThrowError } from "../models/ConcordiumContractClient";
+import { waitAndThrowError } from "../models/ConcordiumContractClient";
 
 function Cis2UpdateOperator(props: {
 	provider: WalletApi;
 	account: string;
 	marketContractAddress: ContractAddress;
 	cis2Contract: CIS2Contract;
-	contractInfo: Cis2ContractInfo;
 	onDone: () => void;
 }) {
 	const [state, setState] = useState({ updating: false, error: "" });
 
 	function update() {
 		setState({ ...state, updating: true, error: "" });
-		const { type, payload, parameter: { json } } = props.cis2Contract.createUpdateOperator(
+		const { type, payload, parameter: { json }, schema } = props.cis2Contract.createUpdateOperator(
 			{ energy: BigInt(6000) },
 			{
 				address: props.marketContractAddress,
@@ -29,7 +28,7 @@ function Cis2UpdateOperator(props: {
 			type,
 			payload,
 			json,
-			props.contractInfo.schemaBuffer.toString("base64")
+			schema as SchemaWithContext,
 		)
 			.then(txnHash => waitAndThrowError(props.provider, txnHash))
 			.then((_) => {

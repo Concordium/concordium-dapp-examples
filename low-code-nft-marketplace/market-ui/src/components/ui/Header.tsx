@@ -56,10 +56,7 @@ function PageButton(props: {
 }
 
 function Header(props: { pages: IPage[] }) {
-	const StyledAppBar = styled(AppBar)({
-		backgroundImage:
-			'url("https://cdn-gpbbj.nitrocdn.com/eWGcFpraIsZGbNFvSyLAtmgXkWlgLXiK/assets/static/optimized/rev-c02a987/wp-content/uploads/2022/07/pexels-andrea-piacquadio-3931501-1-1.png")',
-	});
+	const StyledAppBar = styled(AppBar)({});
 
 	const [anchorElNav, setAnchorElNav] = useState<null | HTMLElement>(null);
 	const navigate = useNavigate();
