@@ -58,7 +58,7 @@ function TokenImage(props: {
 				return (
 					<CardMedia
 						component="img"
-						image={metadata.display.url}
+						image={metadata.display?.url}
 						alt="NFT"
 						sx={cardMediaSx}
 					/>
@@ -212,14 +212,14 @@ function Cis2BatchItemMetadataAdd(props: {
 				<GetTokenIdCardStep
 					tokenId={props.tokenId}
 					key={props.index}
-					imageUrl={state.metadata?.display.url!}
+					imageUrl={state.metadata?.display?.url!}
 					onDone={(data) => tokenIdUpdated(data.tokenId)}
 				/>
 			);
 		case Steps.GetQuantity:
 			return (
 				<GetQuantityCardStep
-					imageUrl={state.metadata?.display.url!}
+					imageUrl={state.metadata?.display?.url!}
 					tokenId={state.tokenId}
 					key={state.tokenId}
 					onDone={(data) => quantityUpdated(data.tokenId, data.quantity)}
@@ -228,8 +228,8 @@ function Cis2BatchItemMetadataAdd(props: {
 		case Steps.Mint:
 			return (
 				<GetMintCardStep
-					imageUrl={state.metadata?.display.url!}
-					imageIpfsUrl={state.metadata?.display.url!}
+					imageUrl={state.metadata?.display?.url!}
+					imageIpfsUrl={state.metadata?.display?.url!}
 					tokenId={state.tokenId}
 					metadataUrl={state.metadataUrl!}
 					quantity={state.quantity}

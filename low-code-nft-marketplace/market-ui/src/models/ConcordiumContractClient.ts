@@ -161,27 +161,6 @@ export async function waitAndThrowError(provider: WalletApi, txnHash: string) {
 }
 
 /**
- * Gets Information about a Smart Contract Instance.
- * @param provider Wallet Provider.
- * @param address Contract Address.
- * @returns Smart Contract instance information.
- */
-export async function getInstanceInfo(
-	provider: WalletApi,
-	address: ContractAddress
-): Promise<InstanceInfo> {
-	let instanceInfo = await provider.getJsonRpcClient().getInstanceInfo(address);
-
-	if (!instanceInfo) {
-		throw Error(
-			"Could not get Contract Information. Please confirm the address is correct"
-		);
-	}
-
-	return instanceInfo;
-}
-
-/**
  * Waits for the input transaction to Finalize.
  * @param provider Wallet Provider.
  * @param txnHash Hash of Transaction.

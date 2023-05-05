@@ -44,7 +44,7 @@ function Cis2BatchItemMint(props: {
 				loadedTemplate={(metadata) => (
 					<CardMedia
 						component="img"
-						image={metadata.display.url}
+						image={metadata.display?.url}
 						alt="NFT"
 						sx={cardMediaSx}
 					/>

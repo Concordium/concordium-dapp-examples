@@ -12,11 +12,6 @@ import { ContractInfo, Cis2ContractInfo } from "./ConcordiumContractClient";
 import * as connClient from "./ConcordiumContractClient";
 import { TokenInfo } from "./Cis2Types";
 
-export const enum MethodName {
-	supports = "supports",
-	mint = "mint",
-}
-
 /**
  * Mints multiple NFT in Contract: {@link nftContractAddress}
  * represented by {@link tokens}
@@ -48,7 +43,7 @@ export async function mint(
 		paramJson as SmartContractParameters,
 		account,
 		nftContractAddress,
-		MethodName.mint,
+		"mint",
 		maxContractExecutionEnergy,
 		BigInt(0)
 	);

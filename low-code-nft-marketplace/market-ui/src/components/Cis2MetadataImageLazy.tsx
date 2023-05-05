@@ -34,8 +34,8 @@ function Cis2MetadataImageLazy(props: {
 		<Skeleton variant="rectangular" width={"100%"} height={"200px"} />
 	) : (
 		<img
-			src={state.metadata?.display.url}
-			srcSet={state.metadata?.display.url}
+			src={state.metadata?.display?.url}
+			srcSet={state.metadata?.display?.url}
 			alt={state.metadata?.name}
 			loading="lazy"
 			width="100%"

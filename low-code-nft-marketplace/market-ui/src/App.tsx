@@ -172,6 +172,7 @@ function App() {
 			component: (
 				<ContractFindInstanceOrInit
 					provider={state.provider!}
+					grpcClient={state.grpcClient}
 					account={state.account!}
 					contractInfo={MARKETPLACE_CONTRACT_INFO}
 					onDone={(address) => onMarketplaceContractChanged(address)}
@@ -184,19 +185,19 @@ function App() {
 	function DefaultRouteElement() {
 		if (MINTING_UI_ONLY) {
 			return <Navigate replace to={"/mint-multi-batch"} />;
-		} else 
-		if (state.marketplaceContractAddress) {
-			return (
-				<Navigate
-					replace
-					to={`/buy/${state.marketplaceContractAddress.index.toString()}/${state.marketplaceContractAddress.subindex.toString()}`}
-				/>
-			);
-		} else if (CREATE_NEW_MARKETPLACE) {
-			return <Navigate replace to={"/marketplace-init-or-add"} />;
-		} else {
-			return <Navigate replace to={"/mint-multi-batch"} />;
-		}
+		} else
+			if (state.marketplaceContractAddress) {
+				return (
+					<Navigate
+						replace
+						to={`/buy/${state.marketplaceContractAddress.index.toString()}/${state.marketplaceContractAddress.subindex.toString()}`}
+					/>
+				);
+			} else if (CREATE_NEW_MARKETPLACE) {
+				return <Navigate replace to={"/marketplace-init-or-add"} />;
+			} else {
+				return <Navigate replace to={"/mint-multi-batch"} />;
+			}
 	}
 
 	return (
@@ -215,7 +216,7 @@ function App() {
 				)}
 			</Box>
 			<footer className="footer">
-				<Typography textAlign={"center"} sx={{color: "white"}}>
+				<Typography textAlign={"center"} sx={{ color: "white" }}>
 					{/* <Link sx={{color: "white"}} href="https://developer.concordium.software/en/mainnet/index.html" target={"_blank"}>Concordium Developer Documentation</Link> */}
 					<Link
 						sx={{ color: "white" }}

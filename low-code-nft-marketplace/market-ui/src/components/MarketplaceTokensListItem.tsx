@@ -8,7 +8,7 @@ import { WalletApi } from "@concordium/browser-wallet-api-helpers";
 import { CIS2Contract, ContractAddress } from "@concordium/web-sdk";
 import { Typography } from "@mui/material";
 
-import { fetchJson, toLocalStorageKey } from "../models/Utils";
+import { fetchJson } from "../models/Utils";
 import { TokenListItem } from "../models/MarketplaceTypes";
 import { Metadata } from "../models/Cis2Types";
 import Cis2MetadataImageLazy from "./Cis2MetadataImageLazy";
@@ -41,24 +41,17 @@ function MarketplaceTokensListItem(props: {
 			setState({
 				...state,
 				isLoading: false,
-				url: metadata.display.url,
-				name: metadata.name,
-				desc: metadata.description,
+				url: metadata.display?.url || "",
+				name: metadata.name || "",
+				desc: metadata.description || "",
 				price: item.price,
 			});
 
-		let metadataJson = localStorage.getItem(
-			toLocalStorageKey(item.tokenId, item.contract)
-		);
-		if (metadataJson) {
-			setStateMetadata(JSON.parse(metadataJson));
-		} else {
-			props.item.cis2Contract.tokenMetadata(props.item.tokenId)
-				.then((m) => fetchJson<Metadata>(m.url))
-				.then((metadata) => {
-					setStateMetadata(metadata);
-				});
-		}
+		props.item.cis2Contract.tokenMetadata(props.item.tokenId)
+			.then((m) => fetchJson<Metadata>(m.url))
+			.then((metadata) => {
+				setStateMetadata(metadata);
+			});
 	}, [item]);
 
 	return (

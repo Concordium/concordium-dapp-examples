@@ -1,6 +1,5 @@
 import { FormEvent, useState } from "react";
-import { WalletApi } from "@concordium/browser-wallet-api-helpers";
-import { ContractAddress } from "@concordium/web-sdk";
+import { ConcordiumGRPCClient, ContractAddress } from "@concordium/web-sdk";
 import {
 	TextField,
 	Typography,
@@ -8,10 +7,8 @@ import {
 	Stack,
 } from "@mui/material";
 
-import { getInstanceInfo } from "../models/ConcordiumContractClient";
-
 function ContractFindInstance(props: {
-	provider: WalletApi;
+	grpcClient: ConcordiumGRPCClient;
 	onDone: (address: ContractAddress) => void;
 }) {
 	const [state, setState] = useState({
@@ -40,8 +37,8 @@ function ContractFindInstance(props: {
 		}
 
 		const address = { index, subindex };
-		getInstanceInfo(props.provider, address)
-			.then((info) => {
+		props.grpcClient.getInstanceInfo(address)
+			.then((_) => {
 				setState({ ...state, checking: false, error: "" });
 				props.onDone(address);
 			})
