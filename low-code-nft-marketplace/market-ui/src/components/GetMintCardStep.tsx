@@ -1,14 +1,6 @@
-import {
-	Card,
-	CardMedia,
-	CardContent,
-	Typography,
-	Link,
-	SxProps,
-	Theme,
-} from "@mui/material";
+import { MetadataUrl } from 'common-ui';
 
-import { MetadataUrl } from "../models/Cis2Types";
+import { Card, CardContent, CardMedia, Link, SxProps, Theme, Typography } from '@mui/material';
 
 const cardMediaSx: SxProps<Theme> = { maxHeight: "200px" };
 

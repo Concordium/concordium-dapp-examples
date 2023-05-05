@@ -1,26 +1,20 @@
-import { useState } from "react";
-import { WalletApi } from "@concordium/browser-wallet-api-helpers";
-import { ConcordiumGRPCClient, ContractAddress } from "@concordium/web-sdk";
+import { Cis2ContractInfo, MetadataUrl } from 'common-ui';
+import { useState } from 'react';
+
+import { WalletApi } from '@concordium/browser-wallet-api-helpers';
+import { ConcordiumGRPCClient, ContractAddress } from '@concordium/web-sdk';
+import { ArrowBackRounded } from '@mui/icons-material';
 import {
-	Stepper,
-	Step,
-	StepLabel,
-	Typography,
-	Paper,
-	Grid,
-	IconButton,
-	AlertColor,
-} from "@mui/material";
-import { Container } from "@mui/system";
-import { TokenInfo } from "../models/Cis2Types";
-import Cis2FindInstanceOrInit from "../components/Cis2FindInstanceOrInit";
-import ConnectPinata from "../components/ConnectPinata";
-import UploadFiles from "../components/ui/UploadFiles";
-import Cis2BatchMint from "../components/Cis2BatchMint";
-import Cis2BatchMetadataPrepareOrAdd from "../components/Cis2BatchMetadataPrepareOrAdd";
-import { Cis2ContractInfo } from "../models/ConcordiumContractClient";
-import Alert from "../components/ui/Alert";
-import { ArrowBackRounded } from "@mui/icons-material";
+    AlertColor, Grid, IconButton, Paper, Step, StepLabel, Stepper, Typography
+} from '@mui/material';
+import { Container } from '@mui/system';
+
+import Cis2BatchMetadataPrepareOrAdd from '../components/Cis2BatchMetadataPrepareOrAdd';
+import Cis2BatchMint from '../components/Cis2BatchMint';
+import Cis2FindInstanceOrInit from '../components/Cis2FindInstanceOrInit';
+import ConnectPinata from '../components/ConnectPinata';
+import Alert from '../components/ui/Alert';
+import UploadFiles from '../components/ui/UploadFiles';
 
 enum Steps {
 	GetOrInitCis2,
@@ -62,7 +56,7 @@ function MintPage(props: {
 		activeStep: StepType;
 		nftContract?: ContractAddress;
 		tokenMetadataMap?: {
-			[tokenId: string]: TokenInfo;
+			[tokenId: string]: [MetadataUrl, string];
 		};
 		pinataJwt: string;
 		files: File[];
@@ -112,7 +106,7 @@ function MintPage(props: {
 	}
 
 	function onMetadataPrepared(tokenMetadataMap: {
-		[tokenId: string]: TokenInfo;
+		[tokenId: string]: [MetadataUrl, string];
 	}) {
 		setState({
 			...state,
@@ -230,7 +224,6 @@ function MintPage(props: {
 					message={alertState.message}
 					onClose={() => setAlertState({ open: false, message: "" })}
 					severity={alertState.severity}
-					// anchorOrigin={{ vertical: "top", horizontal: "center" }}
 				/>
 			</Paper>
 		</Container>

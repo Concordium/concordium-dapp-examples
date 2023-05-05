@@ -1,4 +1,4 @@
-import { Typography } from "@mui/material";
+import { Typography } from '@mui/material';
 
 function DisplayError(props: { error?: string }) {
 	const { error } = props;

@@ -1,16 +1,16 @@
-import { useState } from "react";
+import { Cis2ContractInfo, MetadataUrl } from 'common-ui';
+import { useState } from 'react';
 
-import { TokenInfo } from "../models/Cis2Types";
-import Cis2BatchMetadataAdd from "./Cis2BatchMetadataAdd";
-import Cis2BatchMetadataPrepare from "./Cis2BatchMetadataPrepare";
-import { Stack, Typography } from "@mui/material";
-import { Cis2ContractInfo } from "../models/ConcordiumContractClient";
+import { Stack, Typography } from '@mui/material';
+
+import Cis2BatchMetadataAdd from './Cis2BatchMetadataAdd';
+import Cis2BatchMetadataPrepare from './Cis2BatchMetadataPrepare';
 
 function Cis2BatchMetadataPrepareOrAdd(props: {
 	contractInfo: Cis2ContractInfo;
 	files?: File[];
 	pinataJwt?: string;
-	onDone: (tokens: { [tokenId: string]: TokenInfo }) => void;
+	onDone: (tokens: { [tokenId: string]: [MetadataUrl, string] }) => void;
 }) {
 	const [state, setState] = useState({
 		isPrepDone: props.files && props.files.length ? false : true,
@@ -18,7 +18,7 @@ function Cis2BatchMetadataPrepareOrAdd(props: {
 		tokens: {},
 	});
 
-	function onPrepDone(tokens: { [tokenId: string]: TokenInfo }) {
+	function onPrepDone(tokens: { [tokenId: string]: [MetadataUrl, string] }) {
 		const tokensCombined = { ...state.tokens, ...tokens };
 
 		setState({
@@ -32,7 +32,7 @@ function Cis2BatchMetadataPrepareOrAdd(props: {
 		}
 	}
 
-	function onAddDone(tokens: { [tokenId: string]: TokenInfo }) {
+	function onAddDone(tokens: { [tokenId: string]: [MetadataUrl, string] }) {
 		const tokensCombined = { ...state.tokens, ...tokens };
 		setState({
 			...state,

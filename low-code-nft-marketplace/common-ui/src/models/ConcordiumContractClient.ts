@@ -1,23 +1,15 @@
-import { SmartContractParameters, WalletApi } from "@concordium/browser-wallet-api-helpers";
-import { Buffer } from "buffer/";
+import { Buffer } from 'buffer/';
 
+import { SmartContractParameters, WalletApi } from '@concordium/browser-wallet-api-helpers';
 import {
-	ContractAddress,
-	AccountAddress,
-	AccountTransactionType,
-	UpdateContractPayload,
-	serializeUpdateContractParameters,
-	ModuleReference,
-	InstanceInfo,
-	TransactionStatusEnum,
-	TransactionSummary,
-	CcdAmount,
-} from "@concordium/web-sdk";
-import { ParamContractAddress } from "./ConcordiumTypes";
+    AccountAddress, AccountTransactionType, CcdAmount, ConcordiumGRPCClient, ContractAddress,
+    ModuleReference, serializeUpdateContractParameters, TransactionStatusEnum,
+    TransactionSummary, UpdateContractPayload
+} from '@concordium/web-sdk';
 
 export interface ContractInfo {
 	schemaBuffer: Buffer;
-	contractName: "CIS2-Multi" | "Market-NFT";
+	contractName: "cis2_multi" | "Market-NFT" | string;
 	moduleRef?: ModuleReference;
 }
 
@@ -58,7 +50,7 @@ export async function initContract(
 			initName: contractName,
 			maxContractExecutionEnergy,
 		},
-		params || {},
+		params as SmartContractParameters,
 		schemaBuffer.toString("base64"),
 	);
 
@@ -78,7 +70,7 @@ export async function initContract(
  * @returns Buffer of the return value.
  */
 export async function invokeContract<T>(
-	provider: WalletApi,
+	grpcClient: ConcordiumGRPCClient,
 	contractInfo: ContractInfo,
 	contract: ContractAddress,
 	methodName: string,
@@ -89,7 +81,8 @@ export async function invokeContract<T>(
 	const parameter = !!params
 		? serializeParams(contractName, schemaBuffer, methodName, params)
 		: undefined;
-	let res = await provider.getJsonRpcClient().invokeContract({
+
+	let res = await grpcClient.invokeContract({
 		parameter,
 		contract,
 		invoker,
@@ -284,3 +277,5 @@ export function toParamContractAddress(
 		subindex: parseInt(marketAddress.subindex.toString()),
 	};
 }
+
+export type ParamContractAddress = { index: number; subindex: number };

@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
-import { Typography, Button } from "@mui/material";
-import { SchemaWithContext, WalletApi } from "@concordium/browser-wallet-api-helpers";
-import { CIS2Contract, ContractAddress } from "@concordium/web-sdk";
+import { waitAndThrowError } from 'common-ui';
+import { useEffect, useState } from 'react';
 
-import { waitAndThrowError } from "../models/ConcordiumContractClient";
+import { SchemaWithContext, WalletApi } from '@concordium/browser-wallet-api-helpers';
+import { CIS2Contract, ContractAddress } from '@concordium/web-sdk';
+import { Button, Typography } from '@mui/material';
 
 function Cis2UpdateOperator(props: {
 	provider: WalletApi;

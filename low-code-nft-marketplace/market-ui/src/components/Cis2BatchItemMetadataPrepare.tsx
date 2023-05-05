@@ -1,32 +1,21 @@
+import { Buffer } from 'buffer/';
+import { Metadata, MetadataUrl, PinataClient } from 'common-ui';
+import { FormEvent, useState } from 'react';
+
+import { sha256 } from '@concordium/web-sdk';
 import {
-	Button,
-	Card,
-	CardActions,
-	CardContent,
-	CardMedia,
-	Checkbox,
-	FormControlLabel,
-	Link,
-	Stack,
-	SxProps,
-	TextField,
-	Typography,
-} from "@mui/material";
-import { FormEvent, useState } from "react";
-import { sha256 } from "@concordium/web-sdk";
-import { Buffer } from "buffer/";
-import { PinataClient } from "../models/PinataClient";
-import { Metadata, MetadataUrl, TokenInfo } from "../models/Cis2Types";
+    Button, Card, CardActions, CardContent, CardMedia, Checkbox, FormControlLabel, Link, Stack,
+    SxProps, TextField, Typography
+} from '@mui/material';
+import { Theme } from '@mui/system';
+
 import {
-	tokenIdToNftImageFileName,
-	tokenIdToNftMetadataFileName,
-} from "../Constants";
-import { Theme } from "@mui/system";
-import DisplayError from "./ui/DisplayError";
-import GetTokenIdCardStep from "./GetTokenIdCardStep";
-import GetMintCardStep from "./GetMintCardStep";
-import { Cis2ContractInfo } from "../models/ConcordiumContractClient";
-import GetQuantityCardStep from "./GetQuantityCardStep";
+    IPFS_GATEWAY_URL, tokenIdToNftImageFileName, tokenIdToNftMetadataFileName
+} from '../Constants';
+import GetMintCardStep from './GetMintCardStep';
+import GetQuantityCardStep from './GetQuantityCardStep';
+import GetTokenIdCardStep from './GetTokenIdCardStep';
+import DisplayError from './ui/DisplayError';
 
 const cardMediaSx: SxProps<Theme> = { maxHeight: "200px" };
 
@@ -57,6 +46,7 @@ function UploadImageIpfsCardStep(props: {
 		setState({ ...state, isUploadingImage: true });
 		props.pinata
 			.uploadFile(
+				IPFS_GATEWAY_URL,
 				props.file,
 				tokenIdToNftImageFileName(props.file.name, props.tokenId)
 			)
@@ -132,7 +122,7 @@ function UploadMetadataIpfsCardStep(props: {
 		let includeHash = formData.get("includeHash")?.toString();
 		setState({ ...state, isUploadingMetadata: true });
 		props.pinata
-			.uploadJson(metadata, tokenIdToNftMetadataFileName(props.tokenId))
+			.uploadJson(IPFS_GATEWAY_URL, metadata, tokenIdToNftMetadataFileName(props.tokenId))
 			.then((metadataIpfsUrl) => {
 				const metadataUrl = {
 					url: metadataIpfsUrl,
@@ -236,7 +226,7 @@ function Cis2BatchItemMetadataPrepare(props: {
 	file: File;
 	pinataJwtKey: string;
 	tokenId: string;
-	onDone: (data: { tokenId: string; tokenInfo: TokenInfo }) => void;
+	onDone: (data: { tokenId: string; tokenInfo: [MetadataUrl, string] }) => void;
 }) {
 	const pinata = new PinataClient(props.pinataJwtKey);
 	const [state, setState] = useState({

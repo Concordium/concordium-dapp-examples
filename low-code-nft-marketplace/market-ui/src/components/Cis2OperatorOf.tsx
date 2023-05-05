@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
-import { Paper, Typography, Button } from "@mui/material";
-import { CIS2Contract, ContractAddress } from "@concordium/web-sdk";
+import { useEffect, useState } from 'react';
+
+import { CIS2Contract, ContractAddress } from '@concordium/web-sdk';
+import { Button, Paper, Typography } from '@mui/material';
 
 function Cis2OperatorOf(props: {
 	account: string;

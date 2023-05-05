@@ -1,9 +1,9 @@
-import { FormEvent, useState } from "react";
-import { WalletApi } from "@concordium/browser-wallet-api-helpers";
-import { ContractAddress } from "@concordium/web-sdk";
-import { Typography, Button, Stack, TextField } from "@mui/material";
+import { ContractInfo, initContract } from 'common-ui';
+import { FormEvent, useState } from 'react';
 
-import { ContractInfo, initContract } from "../models/ConcordiumContractClient";
+import { WalletApi } from '@concordium/browser-wallet-api-helpers';
+import { ContractAddress } from '@concordium/web-sdk';
+import { Button, Stack, TextField, Typography } from '@mui/material';
 
 function MarketplaceContractInit(props: {
 	provider: WalletApi;

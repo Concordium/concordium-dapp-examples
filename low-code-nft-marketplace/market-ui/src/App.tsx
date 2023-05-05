@@ -1,35 +1,22 @@
-import "./App.css";
+import './App.css';
 
-import { useEffect, useState } from "react";
-import {
-	detectConcordiumProvider,
-	WalletApi,
-} from "@concordium/browser-wallet-api-helpers";
-import { Box, Link, Typography } from "@mui/material";
-import {
-	Route,
-	Routes,
-	useParams,
-	Navigate,
-	useNavigate,
-} from "react-router-dom";
-import { ConcordiumGRPCClient, ContractAddress, createConcordiumClient } from "@concordium/web-sdk";
+import { useEffect, useState } from 'react';
+import { Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 
-import BuyPage from "./pages/BuyPage";
-import SellPage from "./pages/SellPage";
-import ContractFindInstanceOrInit from "./pages/ContractFindInstanceOrInit";
-import MintPage from "./pages/MintPage";
+import { detectConcordiumProvider, WalletApi } from '@concordium/browser-wallet-api-helpers';
+import { ConcordiumGRPCClient, ContractAddress, createConcordiumClient } from '@concordium/web-sdk';
+import { Box, Link, Typography } from '@mui/material';
+
+import ConnectWallet from './components/ConnectWallet';
+import Header from './components/ui/Header';
 import {
-	CIS2_MULTI_CONTRACT_INFO,
-	CONCORDIUM_NODE_PORT,
-	CONNCORDIUM_NODE_ENDPOINT,
-	CREATE_NEW_MARKETPLACE,
-	MARKETPLACE_CONTRACT_INFO,
-	MARKET_CONTRACT_ADDRESS,
-} from "./Constants";
-import ConnectWallet from "./components/ConnectWallet";
-import Header from "./components/ui/Header";
-import { MINTING_UI_ONLY } from "./Constants";
+    CIS2_MULTI_CONTRACT_INFO, CONCORDIUM_NODE_PORT, CONNCORDIUM_NODE_ENDPOINT,
+    CREATE_NEW_MARKETPLACE, MARKET_CONTRACT_ADDRESS, MARKETPLACE_CONTRACT_INFO, MINTING_UI_ONLY
+} from './Constants';
+import BuyPage from './pages/BuyPage';
+import ContractFindInstanceOrInit from './pages/ContractFindInstanceOrInit';
+import MintPage from './pages/MintPage';
+import SellPage from './pages/SellPage';
 
 function App() {
 	const params = useParams();

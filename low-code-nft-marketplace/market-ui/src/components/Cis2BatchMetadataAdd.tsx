@@ -1,19 +1,18 @@
-import { Button, ButtonGroup, Grid, Typography } from "@mui/material";
-import { useState } from "react";
+import { Cis2ContractInfo, MetadataUrl, toTokenId } from 'common-ui';
+import { useState } from 'react';
 
-import { toTokenId } from "../models/Cis2Client";
-import { TokenInfo } from "../models/Cis2Types";
-import { Cis2ContractInfo } from "../models/ConcordiumContractClient";
-import Cis2BatchItemMetadataAdd from "./Cis2BatchItemMetadataAdd";
+import { Button, ButtonGroup, Grid, Typography } from '@mui/material';
+
+import Cis2BatchItemMetadataAdd from './Cis2BatchItemMetadataAdd';
 
 function Cis2BatchMetadataAdd(props: {
 	contractInfo: Cis2ContractInfo;
-	onDone: (tokens: { [tokenId: string]: TokenInfo }) => void;
+	onDone: (tokens: { [tokenId: string]: [MetadataUrl, string] }) => void;
 	startingTokenId: number;
 }) {
 	const [state, setState] = useState<{
 		error: string;
-		tokens: { tokenId: string; tokenInfo?: TokenInfo }[];
+		tokens: { tokenId: string; tokenInfo?: [MetadataUrl, string] }[];
 	}>({
 		error: "",
 		tokens: [],
@@ -22,7 +21,7 @@ function Cis2BatchMetadataAdd(props: {
 	function onMetadataPrepared(
 		index: number,
 		tokenId: string,
-		tokenInfo: TokenInfo
+		tokenInfo: [MetadataUrl, string]
 	) {
 		let tokens = [...state.tokens];
 		tokens[index] = { tokenId, tokenInfo };
@@ -59,7 +58,7 @@ function Cis2BatchMetadataAdd(props: {
 			return;
 		}
 
-		var ret: { [tokenId: string]: TokenInfo } = {};
+		var ret: { [tokenId: string]: [MetadataUrl, string] } = {};
 		state.tokens
 			.filter((t) => t.tokenInfo)
 			.forEach((t) => (ret[t.tokenId] = t.tokenInfo!));

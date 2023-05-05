@@ -1,21 +1,19 @@
-import { FormEvent, useState } from "react";
-import Button from "@mui/material/Button";
-import TextField from "@mui/material/TextField";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
-import DialogTitle from "@mui/material/DialogTitle";
-import { WalletApi } from "@concordium/browser-wallet-api-helpers";
-import { ContractAddress } from "@concordium/web-sdk";
+import { TokenListItem, transfer } from 'common-ui';
+import { FormEvent, useState } from 'react';
 
-import { TokenListItem } from "../models/MarketplaceTypes";
-import { transfer } from "../models/MarketplaceClient";
-import {AlertColor, Paper, Typography } from "@mui/material";
+import { WalletApi } from '@concordium/browser-wallet-api-helpers';
+import { ContractAddress } from '@concordium/web-sdk';
+import { AlertColor, Paper, Typography } from '@mui/material';
+import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
+import TextField from '@mui/material/TextField';
+import { Container } from '@mui/system';
 
-import Alert from "../components/ui/Alert";
-import { Container } from "@mui/system";
-
+import Alert from '../components/ui/Alert';
+import { MARKETPLACE_CONTRACT_INFO } from '../Constants';
 
 export default function MarketplaceTransferDialog(props: {
 	isOpen: boolean;
@@ -77,7 +75,8 @@ export default function MarketplaceTransferDialog(props: {
 			item.tokenId,
 			item.price,
 			item.owner,
-			quantity
+			quantity,
+			MARKETPLACE_CONTRACT_INFO
 		)
 			.then((_) => {
 				setState({
@@ -93,9 +92,9 @@ export default function MarketplaceTransferDialog(props: {
 					severity: "success"
 				});
 				// handleClose();
-			
+
 			})
-			.catch((err) => {
+			.catch((err: any) => {
 				setState({
 					...state,
 					isBought: false,
@@ -120,51 +119,51 @@ export default function MarketplaceTransferDialog(props: {
 
 	return (
 		<Container>
-		<Paper>
-			<Alert
-			open={alertState.open}
-			message={alertState.message}
-			onClose={() => handleClose}
-			severity={alertState.severity}
-			// anchorOrigin={{ vertical: "top", horizontal: "center" }}
-		/> 
-		</Paper>
-		<Dialog open={open} onClose={handleClose}>
-			<DialogTitle>Buy Token: {props.token.tokenId}</DialogTitle>
-			<form onSubmit={(e) => submit(e)}>				
-				<DialogContent>
-					<TextField
-						autoFocus
-						margin="dense"
-						id="quantity"
-						label={`Quantity (Max ${props.token.quantity})`}
-						type="number"
-						name="quantity"
-						fullWidth
-						variant="standard"
-						defaultValue={props.token.quantity.toString()}
-						onChange={(e) => handleQuantityChanged(BigInt(e.target.value))}
-					/>
-					{state.error && (
-						<Typography component="div" color="error">
-							{state.error}
-						</Typography>
-					)}
-				</DialogContent>
-				<DialogActions>
-					<Button onClick={handleClose}>
-						{state.isBought ? "Ok" : "Cancel"}
-					</Button>
-					<Button
-						type="submit"
-						disabled={state.isBought || state.isBeingBought}
-					>
-						Buy{" "}
-						{state.totalAmount ? `(${state.totalAmount?.toString()} CCD)` : ""}
-					</Button>
-				</DialogActions>
-			</form>
-		</Dialog>
+			<Paper>
+				<Alert
+					open={alertState.open}
+					message={alertState.message}
+					onClose={() => handleClose}
+					severity={alertState.severity}
+				// anchorOrigin={{ vertical: "top", horizontal: "center" }}
+				/>
+			</Paper>
+			<Dialog open={open} onClose={handleClose}>
+				<DialogTitle>Buy Token: {props.token.tokenId}</DialogTitle>
+				<form onSubmit={(e) => submit(e)}>
+					<DialogContent>
+						<TextField
+							autoFocus
+							margin="dense"
+							id="quantity"
+							label={`Quantity (Max ${props.token.quantity})`}
+							type="number"
+							name="quantity"
+							fullWidth
+							variant="standard"
+							defaultValue={props.token.quantity.toString()}
+							onChange={(e) => handleQuantityChanged(BigInt(e.target.value))}
+						/>
+						{state.error && (
+							<Typography component="div" color="error">
+								{state.error}
+							</Typography>
+						)}
+					</DialogContent>
+					<DialogActions>
+						<Button onClick={handleClose}>
+							{state.isBought ? "Ok" : "Cancel"}
+						</Button>
+						<Button
+							type="submit"
+							disabled={state.isBought || state.isBeingBought}
+						>
+							Buy{" "}
+							{state.totalAmount ? `(${state.totalAmount?.toString()} CCD)` : ""}
+						</Button>
+					</DialogActions>
+				</form>
+			</Dialog>
 		</Container>
 	);
 }

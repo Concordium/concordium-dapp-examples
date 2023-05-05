@@ -1,8 +1,8 @@
-import { FormEvent, useState } from "react";
-import { CIS0, ConcordiumGRPCClient, ContractAddress, cis0Supports } from "@concordium/web-sdk";
-import { TextField, Typography, Button, Stack } from "@mui/material";
+import { Cis2ContractInfo } from 'common-ui';
+import { FormEvent, useState } from 'react';
 
-import { Cis2ContractInfo } from "../models/ConcordiumContractClient";
+import { CIS0, cis0Supports, ConcordiumGRPCClient, ContractAddress } from '@concordium/web-sdk';
+import { Button, Stack, TextField, Typography } from '@mui/material';
 
 function Cis2FindInstance(props: {
 	grpcClient: ConcordiumGRPCClient;
@@ -42,7 +42,7 @@ function Cis2FindInstance(props: {
 
 		const address = { index, subindex };
 		props.grpcClient.getInstanceInfo(address)
-			.then((_) => cis0Supports(props.grpcClient, props.address!, "CIS-2"))
+			.then((_) => cis0Supports(props.grpcClient, address, "CIS-2"))
 			.then((supports) => {
 				if (!supports) {
 					setState({ ...state, checking: false, error: "Could not check if contract supports CIS-2" });

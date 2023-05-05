@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Metadata, MetadataUrl } from "../models/Cis2Types";
-import { fetchJsonString } from "../models/Utils";
+import { fetchJsonString, Metadata, MetadataUrl } from 'common-ui';
+import React, { useEffect, useState } from 'react';
 
 function LazyCis2Metadata(props: {
 	metadataUrl: MetadataUrl;

@@ -1,15 +1,15 @@
-import { useState } from "react";
-import { Button, Grid, Typography, Stack } from "@mui/material";
-import { WalletApi } from "@concordium/browser-wallet-api-helpers";
-import { ContractAddress } from "@concordium/web-sdk";
-import { useNavigate } from "react-router-dom";
-import { mint } from "../models/Cis2Client";
-import { TokenInfo } from "../models/Cis2Types";
-import Cis2BatchItemMint from "./Cis2BatchItemMint";
-import { ContractInfo } from "../models/ConcordiumContractClient";
+import { ContractInfo, MetadataUrl, mint } from 'common-ui';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+import { WalletApi } from '@concordium/browser-wallet-api-helpers';
+import { ContractAddress } from '@concordium/web-sdk';
+import { Button, Grid, Stack, Typography } from '@mui/material';
+
+import Cis2BatchItemMint from './Cis2BatchItemMint';
 
 interface TokenState {
-	tokenInfo: TokenInfo;
+	tokenInfo: [MetadataUrl, string];
 	minting: boolean;
 	minted: boolean;
 	error: string;
@@ -20,19 +20,19 @@ function Cis2BatchMint(props: {
 	provider: WalletApi;
 	account: string;
 	nftContractAddress: ContractAddress;
-	tokenMetadataMap: { [tokenId: string]: TokenInfo };
-	onDone: (data: { [tokenId: string]: TokenInfo }) => void;
+	tokenMetadataMap: { [tokenId: string]: [MetadataUrl, string] };
+	onDone: (data: { [tokenId: string]: [MetadataUrl, string] }) => void;
 }) {
 	var tokens: { [tokenId: string]: TokenState } = {};
 
 	Object.keys(props.tokenMetadataMap).forEach(
 		(tokenId) =>
-			(tokens[tokenId] = {
-				tokenInfo: props.tokenMetadataMap[tokenId],
-				minting: false,
-				minted: false,
-				error: "",
-			})
+		(tokens[tokenId] = {
+			tokenInfo: props.tokenMetadataMap[tokenId],
+			minting: false,
+			minted: false,
+			error: "",
+		})
 	);
 
 	const [state, setState] = useState({

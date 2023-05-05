@@ -1,13 +1,7 @@
-import {
-	Paper,
-	Typography,
-	Button,
-	TextField,
-	ButtonGroup,
-	Stack,
-} from "@mui/material";
-import { useState } from "react";
-import { PinataClient } from "../models/PinataClient";
+import { PinataClient } from 'common-ui';
+import { useState } from 'react';
+
+import { Button, ButtonGroup, Stack, TextField, Typography } from '@mui/material';
 
 function ConnectPinata(props: {
 	jwt: string;

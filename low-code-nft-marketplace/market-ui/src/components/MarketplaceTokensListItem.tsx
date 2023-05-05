@@ -1,17 +1,15 @@
-import { useEffect, useState } from "react";
-import ImageListItem from "@mui/material/ImageListItem";
-import ImageListItemBar from "@mui/material/ImageListItemBar";
-import IconButton from "@mui/material/IconButton";
-import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
-import CheckIcon from "@mui/icons-material/Check";
-import { WalletApi } from "@concordium/browser-wallet-api-helpers";
-import { CIS2Contract, ContractAddress } from "@concordium/web-sdk";
-import { Typography } from "@mui/material";
+import { fetchJson, Metadata, TokenListItem } from 'common-ui';
+import { useEffect, useState } from 'react';
 
-import { fetchJson } from "../models/Utils";
-import { TokenListItem } from "../models/MarketplaceTypes";
-import { Metadata } from "../models/Cis2Types";
-import Cis2MetadataImageLazy from "./Cis2MetadataImageLazy";
+import { CIS2Contract, ContractAddress } from '@concordium/web-sdk';
+import CheckIcon from '@mui/icons-material/Check';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import { Typography } from '@mui/material';
+import IconButton from '@mui/material/IconButton';
+import ImageListItem from '@mui/material/ImageListItem';
+import ImageListItemBar from '@mui/material/ImageListItemBar';
+
+import Cis2MetadataImageLazy from './Cis2MetadataImageLazy';
 
 type ListItem = TokenListItem & { cis2Contract: CIS2Contract };
 
@@ -20,7 +18,6 @@ type ListItem = TokenListItem & { cis2Contract: CIS2Contract };
  */
 function MarketplaceTokensListItem(props: {
 	item: ListItem;
-	provider: WalletApi;
 	account: string;
 	marketContractAddress: ContractAddress;
 	onBuyClicked: (token: ListItem) => void;
@@ -60,7 +57,6 @@ function MarketplaceTokensListItem(props: {
 			key={item.tokenId + item.contract.index + item.contract.subindex}
 		>
 			<Cis2MetadataImageLazy
-				provider={props.provider}
 				account={props.account}
 				cis2Contract={props.item.cis2Contract}
 				tokenId={item.tokenId}

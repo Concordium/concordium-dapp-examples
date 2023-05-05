@@ -1,13 +1,11 @@
-import { SmartContractParameters, WalletApi } from "@concordium/browser-wallet-api-helpers";
-import { ContractAddress, TransactionSummary, deserializeReceiveReturnValue } from "@concordium/web-sdk";
-
-import { AddParams, TokenList, TokenListItem, TransferParams } from "./MarketplaceTypes";
-import { MARKETPLACE_CONTRACT_INFO } from "../Constants";
+import { SmartContractParameters, WalletApi } from '@concordium/browser-wallet-api-helpers';
 import {
-	invokeContract,
-	toParamContractAddress,
-	updateContract,
-} from "./ConcordiumContractClient";
+    ConcordiumGRPCClient, ContractAddress, deserializeReceiveReturnValue, TransactionSummary
+} from '@concordium/web-sdk';
+
+import {
+    ContractInfo, invokeContract, ParamContractAddress, toParamContractAddress, updateContract
+} from './ConcordiumContractClient';
 
 const enum MethodNames {
 	add = "add",
@@ -22,23 +20,24 @@ const enum MethodNames {
  * @returns List of buyable tokens.
  */
 export async function list(
-	provider: WalletApi,
-	marketContractAddress: ContractAddress
+	grpcClient: ConcordiumGRPCClient,
+	marketContractAddress: ContractAddress,
+	contractInfo: ContractInfo
 ): Promise<TokenList> {
 	const retValue = await invokeContract(
-		provider,
-		MARKETPLACE_CONTRACT_INFO,
+		grpcClient,
+		contractInfo,
 		marketContractAddress,
 		MethodNames.list
 	);
 
 	const retValueDe = deserializeReceiveReturnValue(
 		retValue,
-		MARKETPLACE_CONTRACT_INFO.schemaBuffer,
-		MARKETPLACE_CONTRACT_INFO.contractName,
+		contractInfo.schemaBuffer,
+		contractInfo.contractName,
 		MethodNames.list
 	);
-	
+
 	const tokens = retValueDe[0].map((t: any) => ({
 		contract: t.contract,
 		owner: t.owner,
@@ -65,11 +64,12 @@ export async function add(
 	account: string,
 	marketContractAddress: ContractAddress,
 	paramJson: AddParams,
+	contractInfo: ContractInfo,
 	maxContractExecutionEnergy = BigInt(9999)
 ): Promise<Record<string, TransactionSummary>> {
 	return updateContract(
 		provider,
-		MARKETPLACE_CONTRACT_INFO,
+		contractInfo,
 		paramJson as unknown as SmartContractParameters,
 		account,
 		marketContractAddress,
@@ -98,6 +98,7 @@ export async function transfer(
 	priceCcd: bigint,
 	owner: string,
 	quantity: bigint,
+	contractInfo: ContractInfo,
 	maxContractExecutionEnergy = BigInt(6000)
 ): Promise<Record<string, TransactionSummary>> {
 	const paramJson: TransferParams = {
@@ -110,7 +111,7 @@ export async function transfer(
 
 	return updateContract(
 		provider,
-		MARKETPLACE_CONTRACT_INFO,
+		contractInfo,
 		paramJson as unknown as SmartContractParameters,
 		account,
 		marketContractAddress,
@@ -118,4 +119,35 @@ export async function transfer(
 		maxContractExecutionEnergy,
 		priceCcd * quantity
 	);
+}
+
+export type TokenList = TokenListItem[];
+
+export interface TokenListItem {
+	/**
+	 * Hex of token Id
+	 */
+	tokenId: string;
+	contract: ContractAddress;
+	price: bigint;
+	owner: string;
+	royalty: number;
+	primaryOwner: string;
+	quantity: bigint;
+}
+
+export interface AddParams {
+	nft_contract_address: ParamContractAddress;
+	token_id: string;
+	price: string;
+	royalty: number;
+	quantity: string;
+}
+
+export interface TransferParams {
+	nft_contract_address: ParamContractAddress;
+	token_id: string;
+	to: string;
+	owner: string;
+	quantity: string;
 }

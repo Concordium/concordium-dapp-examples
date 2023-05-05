@@ -1,8 +1,8 @@
-import { WalletApi } from "@concordium/browser-wallet-api-helpers";
-import { ConcordiumGRPCClient, ContractAddress } from "@concordium/web-sdk";
-import { Paper } from "@mui/material";
+import { WalletApi } from '@concordium/browser-wallet-api-helpers';
+import { ConcordiumGRPCClient, ContractAddress } from '@concordium/web-sdk';
+import { Paper } from '@mui/material';
 
-import MarketplaceTokensList from "../components/MarketplaceTokensList";
+import MarketplaceTokensList from '../components/MarketplaceTokensList';
 
 function BuyPage(props: {
 	grpcClient: ConcordiumGRPCClient;
@@ -13,7 +13,7 @@ function BuyPage(props: {
 	return (
 		<Paper variant="outlined">
 			<MarketplaceTokensList
-				provider={props.provider as WalletApi}
+				provider={props.provider}
 				marketContractAddress={props.marketContractAddress}
 				account={props.account}
 				grpcClient={props.grpcClient}

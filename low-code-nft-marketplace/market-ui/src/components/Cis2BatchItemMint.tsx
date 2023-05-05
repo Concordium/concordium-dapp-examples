@@ -1,23 +1,17 @@
-import {
-	Card,
-	CardContent,
-	CardMedia,
-	Link,
-	Skeleton,
-	SxProps,
-	Theme,
-	Typography,
-} from "@mui/material";
+import { ContractInfo, MetadataUrl } from 'common-ui';
 
-import { MetadataUrl, TokenInfo } from "../models/Cis2Types";
-import { ContractInfo } from "../models/ConcordiumContractClient";
-import LazyCis2Metadata from "./LazyCis2Metadata";
+import {
+    Card, CardContent, CardMedia, Link, Skeleton, SxProps, Theme, Typography
+} from '@mui/material';
+
+import LazyCis2Metadata from './LazyCis2Metadata';
+
 const cardMediaSx: SxProps<Theme> = { maxHeight: "200px" };
 
 function Cis2BatchItemMint(props: {
 	contractInfo: ContractInfo;
 	tokenId: string;
-	tokenInfo: TokenInfo;
+	tokenInfo: [MetadataUrl, string];
 	minting: boolean;
 	minted: boolean;
 	error: string;

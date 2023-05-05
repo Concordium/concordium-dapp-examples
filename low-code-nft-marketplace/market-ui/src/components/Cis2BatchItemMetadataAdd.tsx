@@ -1,30 +1,20 @@
-import { Buffer } from "buffer/";
-import { Theme } from "@emotion/react";
-import {
-	Button,
-	Card,
-	CardActions,
-	CardContent,
-	CardMedia,
-	Checkbox,
-	FormControlLabel,
-	Skeleton,
-	SxProps,
-	TextField,
-	Typography,
-} from "@mui/material";
-import { FormEvent, useState } from "react";
-import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
+import { Buffer } from 'buffer/';
+import { Cis2ContractInfo, Metadata, MetadataUrl } from 'common-ui';
+import { FormEvent, useState } from 'react';
 
-import { Metadata, MetadataUrl, TokenInfo } from "../models/Cis2Types";
-import DisplayError from "./ui/DisplayError";
-import GetMintCardStep from "./GetMintCardStep";
-import GetTokenIdCardStep from "./GetTokenIdCardStep";
-import LazyCis2Metadata from "./LazyCis2Metadata";
-import { sha256 } from "@concordium/web-sdk";
-import { Stack } from "@mui/material";
-import { Cis2ContractInfo } from "../models/ConcordiumContractClient";
-import GetQuantityCardStep from "./GetQuantityCardStep";
+import { sha256 } from '@concordium/web-sdk';
+import { Theme } from '@emotion/react';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import {
+    Button, Card, CardActions, CardContent, CardMedia, Checkbox, FormControlLabel, Skeleton, Stack,
+    SxProps, TextField, Typography
+} from '@mui/material';
+
+import GetMintCardStep from './GetMintCardStep';
+import GetQuantityCardStep from './GetQuantityCardStep';
+import GetTokenIdCardStep from './GetTokenIdCardStep';
+import LazyCis2Metadata from './LazyCis2Metadata';
+import DisplayError from './ui/DisplayError';
 
 const cardMediaSx: SxProps<Theme> = { maxHeight: "200px" };
 
@@ -169,7 +159,7 @@ function Cis2BatchItemMetadataAdd(props: {
 	contractInfo: Cis2ContractInfo;
 	index: number;
 	tokenId: string;
-	onDone: (data: { tokenId: string; tokenInfo: TokenInfo }) => void;
+	onDone: (data: { tokenId: string; tokenInfo: [MetadataUrl, string] }) => void;
 	onCancel: (index: number) => void;
 }) {
 	const [state, setState] = useState<{

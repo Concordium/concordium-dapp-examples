@@ -1,9 +1,9 @@
-import { FormEvent, useState } from "react";
-import { WalletApi } from "@concordium/browser-wallet-api-helpers";
-import { ContractAddress } from "@concordium/web-sdk";
-import { Typography, Button, Stack } from "@mui/material";
+import { Cis2ContractInfo, initContract } from 'common-ui';
+import { FormEvent, useState } from 'react';
 
-import { Cis2ContractInfo, initContract } from "../models/ConcordiumContractClient";
+import { WalletApi } from '@concordium/browser-wallet-api-helpers';
+import { ContractAddress } from '@concordium/web-sdk';
+import { Button, Stack, Typography } from '@mui/material';
 
 function Cis2Init(props: {
 	provider: WalletApi;

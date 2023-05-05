@@ -1,12 +1,10 @@
-import { WalletApi } from "@concordium/browser-wallet-api-helpers";
-import { CIS2Contract } from "@concordium/web-sdk";
-import { Skeleton } from "@mui/material";
-import { useEffect, useState } from "react";
-import { fetchJson } from "../models/Utils";
-import { Metadata } from "../models/Cis2Types";
+import { fetchJson, Metadata } from 'common-ui';
+import { useEffect, useState } from 'react';
+
+import { CIS2Contract } from '@concordium/web-sdk';
+import { Skeleton } from '@mui/material';
 
 function Cis2MetadataImageLazy(props: {
-	provider: WalletApi;
 	account: string;
 	tokenId: string;
 	cis2Contract: CIS2Contract;

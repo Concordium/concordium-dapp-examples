@@ -1,17 +1,8 @@
-import { useState } from "react";
-import {
-	TextField,
-	Typography,
-	Button,
-	Stack,
-	ButtonGroup,
-} from "@mui/material";
-import { WalletApi } from "@concordium/browser-wallet-api-helpers";
-import {
-	CIS2Contract,
-	InvokeContractFailedResult,
-	RejectReasonTag,
-} from "@concordium/web-sdk";
+import { useState } from 'react';
+
+import { WalletApi } from '@concordium/browser-wallet-api-helpers';
+import { CIS2Contract, InvokeContractFailedResult, RejectReasonTag } from '@concordium/web-sdk';
+import { Button, ButtonGroup, Stack, TextField, Typography } from '@mui/material';
 
 function Cis2BalanceOf(props: {
 	provider: WalletApi;

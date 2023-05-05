@@ -1,13 +1,14 @@
-import { useState, useEffect } from "react";
-import { WalletApi } from "@concordium/browser-wallet-api-helpers";
-import ImageList from "@mui/material/ImageList";
-import Container from "@mui/material/Container";
-import { CIS2Contract, ConcordiumGRPCClient, ContractAddress } from "@concordium/web-sdk";
+import { list, TokenListItem } from 'common-ui';
+import { useEffect, useState } from 'react';
 
-import MarketplaceTokensListItem from "./MarketplaceTokensListItem";
-import { TokenListItem } from "../models/MarketplaceTypes";
-import { list } from "../models/MarketplaceClient";
-import MarketplaceTransferDialog from "./MarketplaceTransferDialog";
+import { WalletApi } from '@concordium/browser-wallet-api-helpers';
+import { CIS2Contract, ConcordiumGRPCClient, ContractAddress } from '@concordium/web-sdk';
+import Container from '@mui/material/Container';
+import ImageList from '@mui/material/ImageList';
+
+import { MARKETPLACE_CONTRACT_INFO } from '../Constants';
+import MarketplaceTokensListItem from './MarketplaceTokensListItem';
+import MarketplaceTransferDialog from './MarketplaceTransferDialog';
 
 type ListItem = TokenListItem & { cis2Contract: CIS2Contract };
 
@@ -25,7 +26,7 @@ function MarketplaceTokensList(props: {
 
 	useEffect(() => {
 		(async () => {
-			const tokens = await list(props.provider, props.marketContractAddress);
+			const tokens = await list(props.grpcClient, props.marketContractAddress, MARKETPLACE_CONTRACT_INFO);
 			return Promise.all(tokens.map(async (t) => {
 				return {
 					...t,
@@ -40,7 +41,6 @@ function MarketplaceTokensList(props: {
 			<ImageList key="nft-image-list" cols={3}>
 				{tokens.map((t) => (
 					<MarketplaceTokensListItem
-						provider={props.provider}
 						account={props.account}
 						marketContractAddress={props.marketContractAddress}
 						item={t}

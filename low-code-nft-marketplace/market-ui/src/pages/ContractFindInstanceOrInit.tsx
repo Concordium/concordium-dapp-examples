@@ -1,10 +1,11 @@
-import { Container, Paper, Stack, Typography } from "@mui/material";
-import { WalletApi } from "@concordium/browser-wallet-api-helpers";
-import { ConcordiumGRPCClient, ContractAddress } from "@concordium/web-sdk";
+import { ContractInfo } from 'common-ui';
 
-import ContractFindInstance from "../components/ContractFindInstance";
-import MarketplaceContractInit from "../components/MarketplaceContractInit";
-import { ContractInfo } from "../models/ConcordiumContractClient";
+import { WalletApi } from '@concordium/browser-wallet-api-helpers';
+import { ConcordiumGRPCClient, ContractAddress } from '@concordium/web-sdk';
+import { Container, Paper, Stack, Typography } from '@mui/material';
+
+import ContractFindInstance from '../components/ContractFindInstance';
+import MarketplaceContractInit from '../components/MarketplaceContractInit';
 
 function ContractFindInstanceOrInit(props: {
 	grpcClient: ConcordiumGRPCClient;

@@ -1,11 +1,11 @@
-import { FormEvent, useState } from "react";
-import { TextField, Typography, Button, Stack } from "@mui/material";
-import { WalletApi } from "@concordium/browser-wallet-api-helpers";
-import { ContractAddress } from "@concordium/web-sdk";
+import { add, AddParams, toParamContractAddress } from 'common-ui';
+import { FormEvent, useState } from 'react';
 
-import { add } from "../models/MarketplaceClient";
-import { toParamContractAddress } from "../models/ConcordiumContractClient";
-import { AddParams } from "../models/MarketplaceTypes";
+import { WalletApi } from '@concordium/browser-wallet-api-helpers';
+import { ContractAddress } from '@concordium/web-sdk';
+import { Button, Stack, TextField, Typography } from '@mui/material';
+
+import { MARKETPLACE_CONTRACT_INFO } from '../Constants';
 
 interface MarketplaceAddProps {
 	provider: WalletApi;
@@ -65,7 +65,7 @@ function MarketplaceAdd(props: MarketplaceAddProps) {
 			quantity,
 		};
 
-		add(props.provider, props.account, props.marketContractAddress, paramJson)
+		add(props.provider, props.account, props.marketContractAddress, paramJson, MARKETPLACE_CONTRACT_INFO)
 			.then(() => {
 				setState({ ...state, error: "", adding: false });
 				props.onDone();

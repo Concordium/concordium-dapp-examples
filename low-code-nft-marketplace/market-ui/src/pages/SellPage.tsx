@@ -1,23 +1,18 @@
-import { useState } from "react";
-import {
-	Stepper,
-	Step,
-	StepLabel,
-	Typography,
-	Paper,
-	Container
-} from "@mui/material";
-import { useNavigate } from "react-router-dom";
-import { WalletApi } from "@concordium/browser-wallet-api-helpers";
-import { ContractAddress, ConcordiumGRPCClient } from "@concordium/common-sdk";
+import { Cis2ContractInfo } from 'common-ui';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-import Cis2BalanceOf from "../components/Cis2BalanceOf";
-import Cis2OperatorOf from "../components/Cis2OperatorOf";
-import Cis2UpdateOperator from "../components/Cis2UpdateOperator";
-import Cis2FindInstance from "../components/Cis2FindInstance";
-import MarketplaceAdd from "../components/MarketplaceAdd";
-import { Cis2ContractInfo } from "../models/ConcordiumContractClient";
-import { CIS2Contract } from "@concordium/web-sdk";
+import { WalletApi } from '@concordium/browser-wallet-api-helpers';
+import { ConcordiumGRPCClient, ContractAddress } from '@concordium/common-sdk';
+import { CIS2Contract } from '@concordium/web-sdk';
+import { Container, Paper, Step, StepLabel, Stepper, Typography } from '@mui/material';
+
+import Cis2BalanceOf from '../components/Cis2BalanceOf';
+import Cis2FindInstance from '../components/Cis2FindInstance';
+import Cis2OperatorOf from '../components/Cis2OperatorOf';
+import Cis2UpdateOperator from '../components/Cis2UpdateOperator';
+import MarketplaceAdd from '../components/MarketplaceAdd';
+
 enum Steps {
 	FindCollection,
 	CheckOperator,
