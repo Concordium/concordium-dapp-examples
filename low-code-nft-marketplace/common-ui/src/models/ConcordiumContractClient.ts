@@ -1,20 +1,27 @@
-import { Buffer } from 'buffer/';
+import { Buffer } from "buffer/";
 
-import { SmartContractParameters, WalletApi } from '@concordium/browser-wallet-api-helpers';
+import { SmartContractParameters, WalletApi } from "@concordium/browser-wallet-api-helpers";
 import {
-    AccountAddress, AccountTransactionType, CcdAmount, ConcordiumGRPCClient, ContractAddress,
-    ModuleReference, serializeUpdateContractParameters, TransactionStatusEnum,
-    TransactionSummary, UpdateContractPayload
-} from '@concordium/web-sdk';
+  AccountAddress,
+  AccountTransactionType,
+  CcdAmount,
+  ConcordiumGRPCClient,
+  ContractAddress,
+  ModuleReference,
+  serializeUpdateContractParameters,
+  TransactionStatusEnum,
+  TransactionSummary,
+  UpdateContractPayload,
+} from "@concordium/web-sdk";
 
 export interface ContractInfo {
-	schemaBuffer: Buffer;
-	contractName: "cis2_multi" | "Market-NFT" | string;
-	moduleRef?: ModuleReference;
+  schemaBuffer: Buffer;
+  contractName: "cis2_multi" | "Market-NFT" | string;
+  moduleRef?: ModuleReference;
 }
 
 export interface Cis2ContractInfo extends ContractInfo {
-	tokenIdByteSize: number;
+  tokenIdByteSize: number;
 }
 
 /**
@@ -29,34 +36,34 @@ export interface Cis2ContractInfo extends ContractInfo {
  * @returns Contract Address.
  */
 export async function initContract(
-	provider: WalletApi,
-	contractInfo: ContractInfo,
-	account: string,
-	params?: SmartContractParameters,
-	maxContractExecutionEnergy = BigInt(9999),
-	ccdAmount = BigInt(0)
+  provider: WalletApi,
+  contractInfo: ContractInfo,
+  account: string,
+  params?: SmartContractParameters,
+  maxContractExecutionEnergy = BigInt(9999),
+  ccdAmount = BigInt(0),
 ): Promise<ContractAddress> {
-	const { moduleRef, schemaBuffer, contractName } = contractInfo;
-	if (!moduleRef) {
-		throw new Error("Cannot instantiate a Module without Provided Module Ref");
-	}
+  const { moduleRef, schemaBuffer, contractName } = contractInfo;
+  if (!moduleRef) {
+    throw new Error("Cannot instantiate a Module without Provided Module Ref");
+  }
 
-	let txnHash = await provider.sendTransaction(
-		account,
-		AccountTransactionType.InitContract,
-		{
-			amount: toCcd(ccdAmount),
-			moduleRef,
-			initName: contractName,
-			maxContractExecutionEnergy,
-		},
-		params as SmartContractParameters,
-		schemaBuffer.toString("base64"),
-	);
+  const txnHash = await provider.sendTransaction(
+    account,
+    AccountTransactionType.InitContract,
+    {
+      amount: toCcd(ccdAmount),
+      moduleRef,
+      initName: contractName,
+      maxContractExecutionEnergy,
+    },
+    params as SmartContractParameters,
+    schemaBuffer.toString("base64"),
+  );
 
-	let outcomes = await waitForTransaction(provider, txnHash);
-	outcomes = ensureValidOutcome(outcomes);
-	return parseContractAddress(outcomes);
+  let outcomes = await waitForTransaction(provider, txnHash);
+  outcomes = ensureValidOutcome(outcomes);
+  return parseContractAddress(outcomes);
 }
 
 /**
@@ -70,42 +77,40 @@ export async function initContract(
  * @returns Buffer of the return value.
  */
 export async function invokeContract<T>(
-	grpcClient: ConcordiumGRPCClient,
-	contractInfo: ContractInfo,
-	contract: ContractAddress,
-	methodName: string,
-	params?: T,
-	invoker?: ContractAddress | AccountAddress
+  grpcClient: ConcordiumGRPCClient,
+  contractInfo: ContractInfo,
+  contract: ContractAddress,
+  methodName: string,
+  params?: T,
+  invoker?: ContractAddress | AccountAddress,
 ): Promise<Buffer> {
-	const { schemaBuffer, contractName } = contractInfo;
-	const parameter = !!params
-		? serializeParams(contractName, schemaBuffer, methodName, params)
-		: undefined;
+  const { schemaBuffer, contractName } = contractInfo;
+  const parameter = params ? serializeParams(contractName, schemaBuffer, methodName, params) : undefined;
 
-	let res = await grpcClient.invokeContract({
-		parameter,
-		contract,
-		invoker,
-		method: `${contractName}.${methodName}`,
-	});
+  const res = await grpcClient.invokeContract({
+    parameter,
+    contract,
+    invoker,
+    method: `${contractName}.${methodName}`,
+  });
 
-	if (!res || res.tag === "failure") {
-		const msg =
-			`failed invoking contract ` +
-			`method:${methodName}, ` +
-			`contract:(index: ${contract.index.toString()}, subindex: ${contract.subindex.toString()})`;
-		return Promise.reject(new Error(msg, { cause: res }));
-	}
+  if (!res || res.tag === "failure") {
+    const msg =
+      `failed invoking contract ` +
+      `method:${methodName}, ` +
+      `contract:(index: ${contract.index.toString()}, subindex: ${contract.subindex.toString()})`;
+    return Promise.reject(new Error(msg, { cause: res }));
+  }
 
-	if (!res.returnValue) {
-		const msg =
-			`failed invoking contract, null return value` +
-			`method:${methodName}, ` +
-			`contract:(index: ${contract.index.toString()}, subindex: ${contract.subindex.toString()})`;
-		return Promise.reject(new Error(msg, { cause: res }));
-	}
+  if (!res.returnValue) {
+    const msg =
+      `failed invoking contract, null return value` +
+      `method:${methodName}, ` +
+      `contract:(index: ${contract.index.toString()}, subindex: ${contract.subindex.toString()})`;
+    return Promise.reject(new Error(msg, { cause: res }));
+  }
 
-	return Buffer.from(res.returnValue, "hex");
+  return Buffer.from(res.returnValue, "hex");
 }
 
 /**
@@ -122,35 +127,35 @@ export async function invokeContract<T>(
  * @returns Update contract Outcomes.
  */
 export async function updateContract(
-	provider: WalletApi,
-	contractInfo: ContractInfo,
-	paramJson: SmartContractParameters,
-	account: string,
-	contractAddress: ContractAddress,
-	methodName: string,
-	maxContractExecutionEnergy: bigint = BigInt(9999),
-	amount: bigint = BigInt(0)
+  provider: WalletApi,
+  contractInfo: ContractInfo,
+  paramJson: SmartContractParameters,
+  account: string,
+  contractAddress: ContractAddress,
+  methodName: string,
+  maxContractExecutionEnergy = BigInt(9999),
+  amount = BigInt(0),
 ): Promise<Record<string, TransactionSummary>> {
-	const { schemaBuffer, contractName } = contractInfo;
-	let txnHash = await provider.sendTransaction(
-		account,
-		AccountTransactionType.Update,
-		{
-			maxContractExecutionEnergy,
-			address: contractAddress,
-			amount: toCcd(amount),
-			receiveName: `${contractName}.${methodName}`,
-		} as UpdateContractPayload,
-		paramJson as any,
-		schemaBuffer.toString("base64"),
-	);
+  const { schemaBuffer, contractName } = contractInfo;
+  const txnHash = await provider.sendTransaction(
+    account,
+    AccountTransactionType.Update,
+    {
+      maxContractExecutionEnergy,
+      address: contractAddress,
+      amount: toCcd(amount),
+      receiveName: `${contractName}.${methodName}`,
+    } as UpdateContractPayload,
+    paramJson as any,
+    schemaBuffer.toString("base64"),
+  );
 
-	return await waitAndThrowError(provider, txnHash);
+  return await waitAndThrowError(provider, txnHash);
 }
 
 export async function waitAndThrowError(provider: WalletApi, txnHash: string) {
-	let outcomes = await waitForTransaction(provider, txnHash);
-	return ensureValidOutcome(outcomes);
+  const outcomes = await waitForTransaction(provider, txnHash);
+  return ensureValidOutcome(outcomes);
 }
 
 /**
@@ -160,35 +165,33 @@ export async function waitAndThrowError(provider: WalletApi, txnHash: string) {
  * @returns Transaction outcomes.
  */
 function waitForTransaction(
-	provider: WalletApi,
-	txnHash: string
+  provider: WalletApi,
+  txnHash: string,
 ): Promise<Record<string, TransactionSummary> | undefined> {
-	return new Promise((res, rej) => {
-		_wait(provider, txnHash, res, rej);
-	});
+  return new Promise((res, rej) => {
+    _wait(provider, txnHash, res, rej);
+  });
 }
 
-function ensureValidOutcome(
-	outcomes?: Record<string, TransactionSummary>
-): Record<string, TransactionSummary> {
-	if (!outcomes) {
-		throw Error("Null Outcome");
-	}
+function ensureValidOutcome(outcomes?: Record<string, TransactionSummary>): Record<string, TransactionSummary> {
+  if (!outcomes) {
+    throw Error("Null Outcome");
+  }
 
-	let successTxnSummary = Object.keys(outcomes)
-		.map((k) => outcomes[k])
-		.find((s) => s.result.outcome === "success");
+  const successTxnSummary = Object.keys(outcomes)
+    .map((k) => outcomes[k])
+    .find((s) => s.result.outcome === "success");
 
-	if (!successTxnSummary) {
-		let failures = Object.keys(outcomes)
-			.map((k) => outcomes[k])
-			.filter((s) => s.result.outcome === "reject")
-			.map((s) => (s.result as any).rejectReason.tag)
-			.join(",");
-		throw Error(`Transaction failed, reasons: ${failures}`);
-	}
+  if (!successTxnSummary) {
+    const failures = Object.keys(outcomes)
+      .map((k) => outcomes[k])
+      .filter((s) => s.result.outcome === "reject")
+      .map((s) => (s.result as any).rejectReason.tag)
+      .join(",");
+    throw Error(`Transaction failed, reasons: ${failures}`);
+  }
 
-	return outcomes;
+  return outcomes;
 }
 
 /**
@@ -199,83 +202,69 @@ function ensureValidOutcome(
  * @param params Contract Method params in JSON.
  * @returns Serialize buffer of the input params.
  */
-function serializeParams<T>(
-	contractName: string,
-	schema: Buffer,
-	methodName: string,
-	params: T
-): Buffer {
-	return serializeUpdateContractParameters(
-		contractName,
-		methodName,
-		params,
-		schema
-	);
+function serializeParams<T>(contractName: string, schema: Buffer, methodName: string, params: T): Buffer {
+  return serializeUpdateContractParameters(contractName, methodName, params, schema);
 }
 
 function _wait(
-	provider: WalletApi,
-	txnHash: string,
-	res: (p: Record<string, TransactionSummary> | undefined) => void,
-	rej: (reason: any) => void
+  provider: WalletApi,
+  txnHash: string,
+  res: (p: Record<string, TransactionSummary> | undefined) => void,
+  rej: (reason: any) => void,
 ) {
-	setTimeout(() => {
-		provider
-			.getJsonRpcClient()
-			.getTransactionStatus(txnHash)
-			.then((txnStatus) => {
-				if (!txnStatus) {
-					return rej("Transaction Status is null");
-				}
+  setTimeout(() => {
+    provider
+      .getJsonRpcClient()
+      .getTransactionStatus(txnHash)
+      .then((txnStatus) => {
+        if (!txnStatus) {
+          return rej("Transaction Status is null");
+        }
 
-				console.info(`txn : ${txnHash}, status: ${txnStatus?.status}`);
-				if (txnStatus?.status === TransactionStatusEnum.Finalized) {
-					return res(txnStatus.outcomes);
-				}
+        console.info(`txn : ${txnHash}, status: ${txnStatus?.status}`);
+        if (txnStatus?.status === TransactionStatusEnum.Finalized) {
+          return res(txnStatus.outcomes);
+        }
 
-				_wait(provider, txnHash, res, rej);
-			})
-			.catch((err) => rej(err));
-	}, 1000);
+        _wait(provider, txnHash, res, rej);
+      })
+      .catch((err) => rej(err));
+  }, 1000);
 }
 
-function parseContractAddress(
-	outcomes: Record<string, TransactionSummary>
-): ContractAddress {
-	for (const blockHash in outcomes) {
-		const res = outcomes[blockHash];
+function parseContractAddress(outcomes: Record<string, TransactionSummary>): ContractAddress {
+  for (const blockHash in outcomes) {
+    const res = outcomes[blockHash];
 
-		if (res.result.outcome === "success") {
-			for (const event of res.result.events) {
-				if (event.tag === "ContractInitialized") {
-					return {
-						index: toBigInt((event as any).address.index),
-						subindex: toBigInt((event as any).address.subindex),
-					};
-				}
-			}
-		}
-	}
+    if (res.result.outcome === "success") {
+      for (const event of res.result.events) {
+        if (event.tag === "ContractInitialized") {
+          return {
+            index: toBigInt((event as any).address.index),
+            subindex: toBigInt((event as any).address.subindex),
+          };
+        }
+      }
+    }
+  }
 
-	throw Error(`unable to parse Contract Address from input outcomes`);
+  throw Error(`unable to parse Contract Address from input outcomes`);
 }
 
-function toBigInt(num: BigInt | number): bigint {
-	return BigInt(num.toString(10));
+function toBigInt(num: bigint | number): bigint {
+  return BigInt(num.toString(10));
 }
 
 const MICRO_CCD_IN_CCD = 1000000;
 function toCcd(ccdAmount: bigint): CcdAmount {
-	return new CcdAmount(ccdAmount * BigInt(MICRO_CCD_IN_CCD));
+  return new CcdAmount(ccdAmount * BigInt(MICRO_CCD_IN_CCD));
 }
 
-export function toParamContractAddress(
-	marketAddress: ContractAddress
-): ParamContractAddress {
-	return {
-		index: parseInt(marketAddress.index.toString()),
-		subindex: parseInt(marketAddress.subindex.toString()),
-	};
+export function toParamContractAddress(marketAddress: ContractAddress): ParamContractAddress {
+  return {
+    index: parseInt(marketAddress.index.toString()),
+    subindex: parseInt(marketAddress.subindex.toString()),
+  };
 }
 
 export type ParamContractAddress = { index: number; subindex: number };
