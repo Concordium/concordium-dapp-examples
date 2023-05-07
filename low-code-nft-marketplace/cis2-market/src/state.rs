@@ -47,9 +47,9 @@ pub struct TokenRoyaltyState {
 
 /// Marketplace Commission
 #[derive(Serialize, Clone, PartialEq, Eq, Debug)]
-pub(crate) struct Commission {
+pub struct Commission {
     /// Commission basis points. equals to percent * 100
-    pub(crate) percentage_basis: u16,
+    pub percentage_basis: u16,
 }
 
 #[derive(Debug, Serialize, SchemaType, PartialEq, Eq, Clone)]
@@ -65,21 +65,23 @@ pub struct TokenListItem<T: IsTokenId, A: IsTokenAmount> {
 
 #[derive(Serial, DeserialWithState, StateClone)]
 #[concordium(state_parameter = "S")]
-pub(crate) struct State<S, T, A>
+pub struct State<S, T, A>
 where
     S: HasStateApi,
     T: IsTokenId,
     A: IsTokenAmount + Copy,
 {
-    pub(crate) commission: Commission,
-    pub(crate) token_royalties: StateMap<TokenInfo<T>, TokenRoyaltyState, S>,
-    pub(crate) token_prices: StateMap<TokenOwnerInfo<T>, TokenPriceState<A>, S>,
+    pub commission: Commission,
+    pub token_royalties: StateMap<TokenInfo<T>, TokenRoyaltyState, S>,
+    pub token_prices: StateMap<TokenOwnerInfo<T>, TokenPriceState<A>, S>,
 }
 
 impl<S: HasStateApi, T: IsTokenId + Copy, A: IsTokenAmount + Copy + ops::Sub<Output = A>>
     State<S, T, A>
 {
-    pub(crate) fn new(state_builder: &mut StateBuilder<S>, commission: u16) -> Self {
+    /// Creates a new state with the given commission.
+    /// The commission is given as a percentage basis, i.e. 10000 is 100%.
+    pub fn new(state_builder: &mut StateBuilder<S>, commission: u16) -> Self {
         State {
             commission: Commission {
                 percentage_basis: commission,
@@ -89,7 +91,8 @@ impl<S: HasStateApi, T: IsTokenId + Copy, A: IsTokenAmount + Copy + ops::Sub<Out
         }
     }
 
-    pub(crate) fn list_token(
+    /// Adds a token to Buyable Token List.
+    pub fn list_token(
         &mut self,
         token_info: &TokenInfo<T>,
         owner: &AccountAddress,
@@ -98,7 +101,9 @@ impl<S: HasStateApi, T: IsTokenId + Copy, A: IsTokenAmount + Copy + ops::Sub<Out
         quantity: A,
     ) {
         match self.token_royalties.get(token_info) {
+            // If the token is already listed, do nothing.
             Some(_) => None,
+            // If the token is not listed, add it to the list.
             None => self.token_royalties.insert(
                 token_info.clone(),
                 TokenRoyaltyState {
@@ -108,13 +113,16 @@ impl<S: HasStateApi, T: IsTokenId + Copy, A: IsTokenAmount + Copy + ops::Sub<Out
             ),
         };
 
+        // Add the token to the buyable token list.
+        // If the token is already listed, update the price.
         self.token_prices.insert(
             TokenOwnerInfo::from(token_info, owner),
             TokenPriceState { price, quantity },
         );
     }
 
-    pub(crate) fn decrease_listed_quantity(&mut self, token_info: &TokenOwnerInfo<T>, delta: A) {
+    /// Decreases the quantity of a token in the buyable token list.
+    pub fn decrease_listed_quantity(&mut self, token_info: &TokenOwnerInfo<T>, delta: A) {
         let price = match self.token_prices.get(token_info) {
             Option::None => return,
             Option::Some(price) => price,
@@ -129,7 +137,8 @@ impl<S: HasStateApi, T: IsTokenId + Copy, A: IsTokenAmount + Copy + ops::Sub<Out
         );
     }
 
-    pub(crate) fn get_listed(
+    /// Gets a token from the buyable token list.
+    pub fn get_listed(
         &self,
         token_info: &TokenInfo<T>,
         owner: &AccountAddress,
@@ -143,7 +152,8 @@ impl<S: HasStateApi, T: IsTokenId + Copy, A: IsTokenAmount + Copy + ops::Sub<Out
         }
     }
 
-    pub(crate) fn list(&self) -> Vec<TokenListItem<T, A>> {
+    /// Gets a list of all tokens in the buyable token list.
+    pub fn list(&self) -> Vec<TokenListItem<T, A>> {
         self.token_prices
             .iter()
             .filter_map(|p| -> Option<TokenListItem<T, A>> {

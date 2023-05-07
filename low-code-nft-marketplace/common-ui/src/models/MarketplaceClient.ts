@@ -104,10 +104,10 @@ export async function transfer(
   owner: string,
   quantity: bigint,
   contractInfo: ContractInfo,
-  maxContractExecutionEnergy = BigInt(6000),
+  maxContractExecutionEnergy = BigInt(9999),
 ): Promise<Record<string, TransactionSummary>> {
   const paramJson: TransferParams = {
-    nft_contract_address: toParamContractAddress(nftContractAddress),
+    cis_contract_address: toParamContractAddress(nftContractAddress),
     token_id: tokenId,
     to: account,
     owner,
@@ -142,7 +142,7 @@ export interface TokenListItem {
 }
 
 export interface AddParams {
-  nft_contract_address: ParamContractAddress;
+  cis_contract_address: ParamContractAddress;
   token_id: string;
   price: string;
   royalty: number;
@@ -150,7 +150,7 @@ export interface AddParams {
 }
 
 export interface TransferParams {
-  nft_contract_address: ParamContractAddress;
+  cis_contract_address: ParamContractAddress;
   token_id: string;
   to: string;
   owner: string;

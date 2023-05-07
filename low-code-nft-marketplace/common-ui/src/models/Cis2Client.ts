@@ -3,6 +3,9 @@ import { CIS2, ContractAddress, TransactionSummary } from "@concordium/web-sdk";
 
 import * as connClient from "./ConcordiumContractClient";
 
+/**
+ * Structure of a JSON-formatted metadata.
+ */
 export interface Metadata {
   name?: string;
   description?: string;

@@ -156,15 +156,21 @@ fn transfer<S: HasStateApi>(
         MarketplaceError::InvalidAmountPaid
     );
 
+    // Checks if the CIS2 contract supports the CIS2 interface.
+    let cis2_contract_address = match Cis2Client::supports_cis2(host, &params.cis_contract_address)?
+    {
+        None => bail!(MarketplaceError::CollectionNotCis2),
+        Some(address) => address,
+    };
+
     Cis2Client::transfer(
         host,
         params.token_id,
-        params.cis_contract_address,
+        cis2_contract_address,
         params.quantity,
         params.owner,
         concordium_cis2::Receiver::Account(params.to),
-    )
-    .map_err(MarketplaceError::Cis2ClientError)?;
+    )?;
 
     distribute_amounts(
         host,
@@ -212,7 +218,7 @@ fn ensure_supports_cis2<S: HasStateApi, T: IsTokenId + Copy, A: IsTokenAmount + 
 ) -> ContractResult<()> {
     let supports_cis2 = Cis2Client::supports_cis2(host, cis_contract_address)
         .map_err(MarketplaceError::Cis2ClientError)?;
-    ensure!(supports_cis2, MarketplaceError::CollectionNotCis2);
+    ensure!(supports_cis2.is_some(), MarketplaceError::CollectionNotCis2);
     Ok(())
 }
 
@@ -241,19 +247,19 @@ fn ensure_balance<S: HasStateApi, T: IsTokenId + Copy, A: IsTokenAmount + Ord + 
     token_id: T,
     cis_contract_address: &ContractAddress,
     owner: AccountAddress,
-    balance: A,
+    minimum_balance: A,
 ) -> ContractResult<()> {
     let contract_balance = Cis2Client::get_balance(
         host,
         token_id,
         cis_contract_address,
         Address::Account(owner),
-    )
-    .map_err(MarketplaceError::Cis2ClientError)?;
-    match contract_balance {
-        Some(bal) => ensure!(bal.cmp(&balance).is_ge(), MarketplaceError::NoBalance),
-        None => bail!(MarketplaceError::NoBalance),
-    }
+    )?;
+
+    ensure!(
+        contract_balance.cmp(&minimum_balance).is_ge(),
+        MarketplaceError::NoBalance
+    );
 
     Ok(())
 }

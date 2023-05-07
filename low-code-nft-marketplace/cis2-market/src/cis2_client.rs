@@ -14,43 +14,54 @@ use concordium_std::*;
 
 use crate::{errors::Cis2ClientError, state::State};
 
-pub const SUPPORTS_ENTRYPOINT_NAME: &str = "supports";
-pub const OPERATOR_OF_ENTRYPOINT_NAME: &str = "operatorOf";
-pub const BALANCE_OF_ENTRYPOINT_NAME: &str = "balanceOf";
-pub const TRANSFER_ENTRYPOINT_NAME: &str = "transfer";
+pub const CIS2_STANDARD_IDENTIFIER_STR: &str = "CIS-2";
+pub const SUPPORTS_ENTRYPOINT_NAME: EntrypointName = EntrypointName::new_unchecked("supports");
+pub const OPERATOR_OF_ENTRYPOINT_NAME: EntrypointName = EntrypointName::new_unchecked("operatorOf");
+pub const BALANCE_OF_ENTRYPOINT_NAME: EntrypointName = EntrypointName::new_unchecked("balanceOf");
+pub const TRANSFER_ENTRYPOINT_NAME: EntrypointName = EntrypointName::new_unchecked("transfer");
 
 pub struct Cis2Client;
 
 impl Cis2Client {
-    pub(crate) fn supports_cis2<S: HasStateApi, T: IsTokenId, A: IsTokenAmount + Copy>(
+    // calls the `supports` entrypoint of the CIS2 contract to check if the given contract supports CIS2 standard.
+    // If the contract supports CIS2 standard, it returns the contract address, else it returns None.
+    pub fn supports_cis2<S: HasStateApi, T: IsTokenId, A: IsTokenAmount + Copy>(
         host: &mut impl HasHost<State<S, T, A>, StateApiType = S>,
         cis_contract_address: &ContractAddress,
-    ) -> Result<bool, Cis2ClientError> {
+    ) -> Result<Option<ContractAddress>, Cis2ClientError> {
         let params = SupportsQueryParams {
-            queries: vec![StandardIdentifierOwned::new_unchecked("CIS-2".to_string())],
-        };
-        let parsed_res: SupportsQueryResponse = Cis2Client::invoke_contract_read_only(
-            host,
-            cis_contract_address,
-            SUPPORTS_ENTRYPOINT_NAME,
-            &params,
-        )?;
-        let supports_cis2: bool = {
-            let f = parsed_res
-                .results
-                .first()
-                .ok_or(Cis2ClientError::InvokeContractError)?;
-            match f {
-                SupportResult::NoSupport => false,
-                SupportResult::Support => true,
-                SupportResult::SupportBy(_) => false,
-            }
+            queries: vec![StandardIdentifierOwned::new_unchecked(
+                CIS2_STANDARD_IDENTIFIER_STR.to_string(),
+            )],
         };
 
-        Ok(supports_cis2)
+        let parsed_res = match host.invoke_contract_read_only(
+            cis_contract_address,
+            &params,
+            SUPPORTS_ENTRYPOINT_NAME,
+            Amount::from_ccd(0),
+        )? {
+            // Since the contract should return a response. If it doesn't, it is an error.
+            None => bail!(Cis2ClientError::InvokeContractError),
+            Some(mut res) => SupportsQueryResponse::deserial(&mut res)?,
+        };
+
+        let supports_cis2 = parsed_res
+            .results
+            .first()
+            .map(|f| match f {
+                SupportResult::NoSupport => Option::None,
+                SupportResult::Support => Option::Some(cis_contract_address),
+                SupportResult::SupportBy(contracts) => contracts.first(),
+            })
+            .ok_or(Cis2ClientError::InvokeContractError)?;
+
+        Ok(supports_cis2.copied())
     }
 
-    pub(crate) fn is_operator_of<S: HasStateApi, T: IsTokenId, A: IsTokenAmount + Copy>(
+    // calls the `operatorOf` entrypoint of the CIS2 contract to check if the given owner is an operator of the given contract.
+    // If the owner is an operator of the given contract, it returns true, else it returns false.
+    pub fn is_operator_of<S: HasStateApi, T: IsTokenId, A: IsTokenAmount + Copy>(
         host: &mut impl HasHost<State<S, T, A>, StateApiType = S>,
         owner: Address,
         current_contract_address: ContractAddress,
@@ -63,28 +74,35 @@ impl Cis2Client {
             }],
         };
 
-        let parsed_res: OperatorOfQueryResponse = Cis2Client::invoke_contract_read_only(
-            host,
+        let is_operators = match host.invoke_contract_read_only(
             cis_contract_address,
-            OPERATOR_OF_ENTRYPOINT_NAME,
             params,
-        )?;
+            OPERATOR_OF_ENTRYPOINT_NAME,
+            Amount::from_ccd(0),
+        )? {
+            // Since the contract should return a response. If it doesn't, it is an error.
+            None => bail!(Cis2ClientError::InvokeContractError),
+            Some(mut res) => OperatorOfQueryResponse::deserial(&mut res)?,
+        };
 
-        let is_operator = parsed_res
+        // If the contract returns a response, but the response is empty, it is an error. Since for a single query the response should be non-empty.
+        let is_operator = is_operators
             .0
             .first()
             .ok_or(Cis2ClientError::InvokeContractError)?
-            .to_owned();
+            .clone();
 
         Ok(is_operator)
     }
 
-    pub(crate) fn get_balance<S: HasStateApi, T: IsTokenId, A: IsTokenAmount + Copy>(
+    // calls the `balanceOf` entrypoint of the CIS2 contract to get the balance of the given owner for the given token.
+    // Returns the balance of the owner for the given token.
+    pub fn get_balance<S: HasStateApi, T: IsTokenId, A: IsTokenAmount + Copy>(
         host: &mut impl HasHost<State<S, T, A>, StateApiType = S>,
         token_id: T,
         cis_contract_address: &ContractAddress,
         owner: Address,
-    ) -> Result<Option<A>, Cis2ClientError> {
+    ) -> Result<A, Cis2ClientError> {
         let params = BalanceOfQueryParams {
             queries: vec![BalanceOfQuery {
                 token_id,
@@ -92,24 +110,37 @@ impl Cis2Client {
             }],
         };
 
-        let parsed_res: BalanceOfQueryResponse<A> = Cis2Client::invoke_contract_read_only(
-            host,
+        let balances: BalanceOfQueryResponse<A> = match host.invoke_contract_read_only(
             cis_contract_address,
-            BALANCE_OF_ENTRYPOINT_NAME,
             &params,
-        )?;
+            BALANCE_OF_ENTRYPOINT_NAME,
+            Amount::from_ccd(0),
+        )? {
+            // Since the contract should return a response. If it doesn't, it is an error.
+            None => bail!(Cis2ClientError::InvokeContractError),
+            Some(mut res) => BalanceOfQueryResponse::<A>::deserial(&mut res)?,
+        };
 
-        Ok(parsed_res.0.first().copied())
+        // If the contract returns a response, but the response is empty, it is an error. Since for a single query the response should be non-empty.
+        let balance = balances
+            .0
+            .first()
+            .ok_or(Cis2ClientError::InvokeContractError)?
+            .clone();
+
+        Ok(balance)
     }
 
-    pub(crate) fn transfer<S: HasStateApi, T: IsTokenId, A: IsTokenAmount + Copy>(
+    // calls the `transfer` entrypoint of the CIS2 contract to transfer the given amount of tokens from the given owner to the given receiver.
+    // If the transfer is successful, it returns `Ok(())`, else it returns an `Err`.
+    pub fn transfer<S: HasStateApi, T: IsTokenId, A: IsTokenAmount + Copy>(
         host: &mut impl HasHost<State<S, T, A>, StateApiType = S>,
         token_id: T,
         cis_contract_address: ContractAddress,
         amount: A,
         from: AccountAddress,
         to: Receiver,
-    ) -> Result<bool, Cis2ClientError> {
+    ) -> Result<(), Cis2ClientError> {
         let params = TransferParams(vec![Transfer {
             token_id,
             amount,
@@ -118,43 +149,13 @@ impl Cis2Client {
             to,
         }]);
 
-        Cis2Client::invoke_contract_read_only(
-            host,
+        host.invoke_contract(
             &cis_contract_address,
-            TRANSFER_ENTRYPOINT_NAME,
             &params,
+            TRANSFER_ENTRYPOINT_NAME,
+            Amount::from_ccd(0),
         )?;
 
-        Ok(true)
-    }
-
-    fn invoke_contract_read_only<
-        S: HasStateApi,
-        R: Deserial,
-        P: Serial,
-        T: IsTokenId,
-        A: IsTokenAmount + Copy,
-    >(
-        host: &mut impl HasHost<State<S, T, A>, StateApiType = S>,
-        contract_address: &ContractAddress,
-        entrypoint_name: &str,
-        params: &P,
-    ) -> Result<R, Cis2ClientError> {
-        let invoke_contract_result = host
-            .invoke_contract_read_only(
-                contract_address,
-                params,
-                EntrypointName::new(entrypoint_name).unwrap_abort(),
-                Amount::from_ccd(0),
-            )
-            .map_err(|_e| Cis2ClientError::InvokeContractError)?;
-        let mut invoke_contract_res = match invoke_contract_result {
-            Some(s) => s,
-            None => return Result::Err(Cis2ClientError::InvokeContractError),
-        };
-        let parsed_res =
-            R::deserial(&mut invoke_contract_res).map_err(|_e| Cis2ClientError::ParseResult)?;
-
-        Ok(parsed_res)
+        Ok(())
     }
 }

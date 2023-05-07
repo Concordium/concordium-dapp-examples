@@ -26,7 +26,7 @@
 
 Detailed Documentation about installation, running the dApp and other configurations can be found in the [Developer Portal](https://developer.concordium.software/en/mainnet/net/guides/low-code-nft-marketplace/introduction.html)
 
-This repository provides sample implementations of following ways in which a developer can interact with an on chain contract on Concordium.This repo includes both minting tool and the NFT Marketplace.
+This repository provides sample code implementations for interacting with on chain contracts on Concordium.This repo includes both minting tool and the NFT Marketplace.
 
 - Using Frontend React Code (using [Web SDK](https://github.com/Concordium/concordium-node-sdk-js/tree/main/packages/web) and [Concordium Browser Wallet](https://chrome.google.com/webstore/detail/concordium-wallet/mnnkpffndmickbiakofclnpoiajlegmg?hl=en-US))
 

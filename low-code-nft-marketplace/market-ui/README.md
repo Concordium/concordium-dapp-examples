@@ -30,7 +30,8 @@
 
 ## Deploy
 
-Currently the browser wallet does not allow to deploy modules to Concordium chain. However [node-cli](https://github.com/chainorders/concordium-contracts-node-cli) and [concordium client](https://github.com/chainorders/concordium-contracts/tree/main/concordium-client) can be used to deploy contracts
+Currently the [browser wallet](https://github.com/Concordium/concordium-browser-wallet) does not allow to deploy modules to Concordium chain. However [concordium client](https://github.com/chainorders/concordium-contracts/tree/main/concordium-client)
+  can be used to deploy contracts
 
 ## Interact
 

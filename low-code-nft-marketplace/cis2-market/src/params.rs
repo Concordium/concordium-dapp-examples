@@ -7,6 +7,7 @@ use concordium_std::{
 
 use crate::{state::TokenListItem, ContractTokenAmount, ContractTokenId};
 
+/// Parameters for the `add` method for Market Contract.
 #[derive(Serial, Deserial, SchemaType)]
 pub(crate) struct AddParams {
     pub cis_contract_address: ContractAddress,
@@ -25,12 +26,22 @@ pub(crate) struct AddParams {
     pub quantity: ContractTokenAmount,
 }
 
+/// Parameters for the `transfer` method for Market Contract.
 #[derive(Serial, Deserial, SchemaType)]
 pub(crate) struct TransferParams {
+    /// Address of the CIS2 Contract. Contract containing token to be transferred.
     pub cis_contract_address: ContractAddress,
+
+    /// Token ID of the token to be transferred.
     pub token_id: ContractTokenId,
+
+    /// Address of the receiver of the token.
     pub to: AccountAddress,
+
+    /// Current owner of the Token.
     pub owner: AccountAddress,
+
+    /// Quantity of the token to be transferred.
     pub quantity: ContractTokenAmount,
 }
 
@@ -39,7 +50,11 @@ pub struct TokenList(
     #[concordium(size_length = 2)] pub Vec<TokenListItem<ContractTokenId, ContractTokenAmount>>,
 );
 
+/// Parameters for the `init` method for Market Contract.
 #[derive(Serial, Deserial, SchemaType)]
 pub struct InitParams {
+    /// Commission basis points. equals to percent * 100
+    /// This can me atmost equal to 100*100 = 10000(MAX_BASIS_POINTS)
+    /// This is the commission charged by the marketplace on every sale.
     pub commission: u16,
 }

@@ -114,7 +114,7 @@ export async function invokeContract<T>(
 }
 
 /**
- * Updates a Smart Contract.
+ * Updates a Smart Contract and waits for a Finalized Transaction. Throws an error if the transaction fails.
  * @param provider Wallet Provider.
  * @param contractName Name of the Contract.
  * @param schema Buffer of Contract Schema.
