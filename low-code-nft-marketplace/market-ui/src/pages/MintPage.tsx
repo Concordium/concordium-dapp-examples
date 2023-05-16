@@ -78,11 +78,6 @@ function MintPage(props: {
       pinataJwt,
       activeStep: steps[2],
     });
-    setAlertState({
-      open: true,
-      message: "Connected to Pinata",
-      severity: "success",
-    });
   }
 
   function onPinataSkipped() {
