@@ -945,7 +945,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                 Version: {version} |{' '}
                 <a
                     style={{ color: 'white' }}
-                    href="https://developer.concordium.software/en/mainnet/smart-contracts/tutorials/"
+                    href="https://developer.concordium.software/en/mainnet/smart-contracts/tutorials/sponsoredTransactions/index.html"
                     target="_blank"
                     rel="noreferrer"
                 >
