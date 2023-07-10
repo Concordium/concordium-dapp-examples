@@ -1,6 +1,6 @@
 {
-  "name": "signMessage",
-  "version": "0.1.0",
+  "name": "sign_message",
+  "version": "0.2.0",
   "private": true,
   "dependencies": {
     "@concordium/browser-wallet-api-helpers": "^0.2.0",

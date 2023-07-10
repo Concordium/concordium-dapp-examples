@@ -15,6 +15,7 @@ import SignClient from "@walletconnect/sign-client";
 import WalletConnect2, {signMessage, trySend} from "./WalletConnect2";
 import {SessionTypes} from "@walletconnect/types";
 import BrowserWallet, {trySendTransaction, sign, wrapPromise} from "./BrowserWallet";
+import Footer from "./Footer";
 
 const rpc = new JsonRpcClient(new HttpProvider(JSON_RPC_URL));
 
@@ -251,6 +252,7 @@ export default function App() {
                     <button onClick={handleSubmitSign}>Sign</button>
                 </Col>
             </Row>
+            <Footer />
         </Container>
     );
 }
