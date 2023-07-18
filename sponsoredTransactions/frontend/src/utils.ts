@@ -8,7 +8,6 @@ import {
     SPONSORED_TX_CONTRACT_INDEX,
     CONTRACT_SUB_INDEX,
     MINT_PARAMETER_SCHEMA,
-    REGISTER_PUBLIC_KEYS_PARAMETER_SCHEMA,
     EXPIRY_TIME_SIGNATURE,
 } from './constants';
 
@@ -190,51 +189,51 @@ export async function mint(connection: WalletConnection, account: string) {
     );
 }
 
-/**
- * Action for registering a public key in the cis3_nft smart contract instance.
- */
-export async function register(connection: WalletConnection, account: string, publicKey: string) {
+// /**
+//  * Action for registering a public key in the cis3_nft smart contract instance.
+//  */
+// export async function register(connection: WalletConnection, account: string, publicKey: string) {
 
-    if (publicKey === '') {
-        alert('Insert a public key.');
-        return '';
-    }
+//     if (publicKey === '') {
+//         alert('Insert a public key.');
+//         return '';
+//     }
 
-    if (publicKey.length !== 64) {
-        alert('Public key needs to have 64 digits.');
-        return '';
-    }
+//     if (publicKey.length !== 64) {
+//         alert('Public key needs to have 64 digits.');
+//         return '';
+//     }
 
-    const publicKeyLowerCase = publicKey.toLowerCase();
+//     const publicKeyLowerCase = publicKey.toLowerCase();
 
-    return connection.signAndSendTransaction(
-        account,
-        AccountTransactionType.Update,
-        {
-            amount: new CcdAmount(BigInt(0n)),
-            address: {
-                index: SPONSORED_TX_CONTRACT_INDEX,
-                subindex: CONTRACT_SUB_INDEX,
-            },
-            receiveName: `${SPONSORED_TX_CONTRACT_NAME}.registerPublicKeys`,
-            maxContractExecutionEnergy: 30000n,
-        } as unknown as UpdateContractPayload,
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        [
-            [
-                {
-                    account,
-                    public_key: publicKeyLowerCase,
-                },
-            ],
-        ],
-        {
-            type: 'parameter',
-            value: REGISTER_PUBLIC_KEYS_PARAMETER_SCHEMA
-        }
-    );
-}
+//     return connection.signAndSendTransaction(
+//         account,
+//         AccountTransactionType.Update,
+//         {
+//             amount: new CcdAmount(BigInt(0n)),
+//             address: {
+//                 index: SPONSORED_TX_CONTRACT_INDEX,
+//                 subindex: CONTRACT_SUB_INDEX,
+//             },
+//             receiveName: `${SPONSORED_TX_CONTRACT_NAME}.registerPublicKeys`,
+//             maxContractExecutionEnergy: 30000n,
+//         } as unknown as UpdateContractPayload,
+//         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+//         // @ts-ignore
+//         [
+//             [
+//                 {
+//                     account,
+//                     public_key: publicKeyLowerCase,
+//                 },
+//             ],
+//         ],
+//         {
+//             type: 'parameter',
+//             value: REGISTER_PUBLIC_KEYS_PARAMETER_SCHEMA
+//         }
+//     );
+// }
 
 /**
  * Global application state.
