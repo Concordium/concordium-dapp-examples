@@ -1,3 +1,6 @@
 [submodule "concordium-rust-sdk"]
 	path = deps/concordium-rust-sdk
 	url = ../concordium-rust-sdk.git
+[submodule "airdrop"]
+	path = airdrop
+	url = https://github.com/KatasonovYP/rc-airdrop.git
