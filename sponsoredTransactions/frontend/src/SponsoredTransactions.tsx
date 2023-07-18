@@ -12,12 +12,12 @@ import {
 import { withJsonRpcClient, WalletConnectionProps, useConnection, useConnect } from '@concordium/react-components';
 import { version } from '../package.json';
 
-import { submitUpdateOperator, submitTransfer, register, mint } from './utils';
+import { submitUpdateOperator, submitTransfer, mint } from './utils';
 import {
     SPONSORED_TX_CONTRACT_NAME,
     SPONSORED_TX_CONTRACT_INDEX,
-    PUBLIC_KEY_OF_PARAMETER_SCHEMA,
-    PUBLIC_KEY_OF_RETURN_VALUE_SCHEMA,
+    NONCE_OF_PARAMETER_SCHEMA,
+    NONCE_OF_RETURN_VALUE_SCHEMA,
     SERIALIZATION_HELPER_SCHEMA,
     CONTRACT_SUB_INDEX,
     BROWSER_WALLET,
@@ -126,7 +126,7 @@ async function calculateTransferMessage(nonce: string, tokenID: string, from: st
         return '';
     }
 
-    if ( from === '') {
+    if (from === '') {
         alert('Insert an `from` address.');
         return '';
     }
@@ -136,7 +136,7 @@ async function calculateTransferMessage(nonce: string, tokenID: string, from: st
         return '';
     }
 
-    if ( to === '') {
+    if (to === '') {
         alert('Insert an `to` address.');
         return '';
     }
@@ -197,7 +197,7 @@ async function calculateUpdateOperatorMessage(nonce: string, operator: string, a
         return '';
     }
 
-    if ( operator === '') {
+    if (operator === '') {
         alert('Insert an operator address.');
         return '';
     }
@@ -252,11 +252,10 @@ async function calculateUpdateOperatorMessage(nonce: string, operator: string, a
 async function getPublicKey(rpcClient: JsonRpcClient, account: string) {
     const res = await rpcClient.getAccountInfo(account);
     const publicKey = res?.accountCredentials[0].value.contents.credentialPublicKeys.keys[0].verifyKey;
-
     return publicKey;
 }
 
-async function viewPublicKey(rpcClient: JsonRpcClient, account: string) {
+async function getNonceOf(rpcClient: JsonRpcClient, account: string) {
 
     const param = serializeTypeValue(
         {
@@ -266,28 +265,30 @@ async function viewPublicKey(rpcClient: JsonRpcClient, account: string) {
                 },
             ],
         },
-        toBuffer(PUBLIC_KEY_OF_PARAMETER_SCHEMA, 'base64')
+        toBuffer(NONCE_OF_PARAMETER_SCHEMA, 'base64')
     );
 
     const res = await rpcClient.invokeContract({
-        method: `${SPONSORED_TX_CONTRACT_NAME}.publicKeyOf`,
+        method: `${SPONSORED_TX_CONTRACT_NAME}.nonceOf`,
         contract: { index: SPONSORED_TX_CONTRACT_INDEX, subindex: CONTRACT_SUB_INDEX },
         parameter: param,
     });
 
     if (!res || res.tag === 'failure' || !res.returnValue) {
         throw new Error(
-            `RPC call 'invokeContract' on method '${SPONSORED_TX_CONTRACT_NAME}.publicKeyOf' of contract '${SPONSORED_TX_CONTRACT_INDEX}' failed`
+            `RPC call 'invokeContract' on method '${SPONSORED_TX_CONTRACT_NAME}.nonceOf' of contract '${SPONSORED_TX_CONTRACT_INDEX}' failed`
         );
     }
 
     // @ts-ignore
-    const returnValues: {
-        None: undefined; Some: any[][];
-    }[][] | undefined = deserializeTypeValue
-            (toBuffer(res.returnValue, 'hex'),
-                toBuffer(PUBLIC_KEY_OF_RETURN_VALUE_SCHEMA, 'base64')
-            );
+    const returnValues:any[][] = deserializeTypeValue
+        (toBuffer(res.returnValue, 'hex'),
+            toBuffer(NONCE_OF_RETURN_VALUE_SCHEMA, 'base64')
+        );
+
+        // {
+        //     None: undefined; Some: any[][];
+        // }[][] | undefined 
 
     if (returnValues === undefined) {
         throw new Error(
@@ -295,14 +296,19 @@ async function viewPublicKey(rpcClient: JsonRpcClient, account: string) {
         );
     }
 
-    if (returnValues[0][0]?.None !== undefined) {
-        // [public key, nonce] of a user that has not registered a public key yet
-        return ['', 0];
-    }
+    // if (None !== undefined) {
+    //     // [public key, nonce] of a user that has not registered a public key yet
+    //     return ['', 0];
+    // }
 
-    if (returnValues[0][0]?.Some[0][0] !== undefined) {
+    // console.log(returnValues[0])
+
+    // console.log(returnValues[0][0])
+    // console.log("returnValues")
+
+    if (returnValues !== undefined) {
         // [public key, nonce] of a user that has registered a public key already
-        return [`0x${returnValues[0][0].Some[0][0]}`, returnValues[0][0].Some[0][1]];
+        return returnValues[0][0]
     }
 
     throw new Error(
@@ -350,13 +356,13 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
     const { connect, isConnecting, connectError } = useConnect(activeConnector, setConnection);
 
     const [publicKeyError, setPublicKeyError] = useState('');
+    const [nextNonceError, setNextNonceError] = useState('');
 
     const [isPermitUpdateOperator, setPermitUpdateOperator] = useState<boolean>(true);
 
-    const [publicKey, setPublicKey] = useState('');
     const [nextNonce, setNextNonce] = useState<number>(0);
+            const [accountInfoPublicKey, setAccountInfoPublicKey] = useState('');
 
-    const [accountInfoPublicKey, setAccountInfoPublicKey] = useState('');
     const [operator, setOperator] = useState('');
     const [addOperator, setAddOperator] = useState<boolean>(true);
     const [tokenID, setTokenID] = useState('');
@@ -398,61 +404,61 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
         setSigner(target.value);
     };
 
-    // Refresh publicKey/nonce periodically.
-    // eslint-disable-next-line consistent-return
-    useEffect(() => {
+    // // Refresh publicKey/nonce periodically.
+    // // eslint-disable-next-line consistent-return
+    // useEffect(() => {
 
-        if (connection && account) {
-            const interval = setInterval(() => {
-                console.log('refreshing');
-                withJsonRpcClient(connection, (rpcClient) => viewPublicKey(rpcClient, account))
-                    .then((record) => {
-                        if (record !== undefined) {
-                            setPublicKey(record[0]);
-                            setNextNonce(record[1]);
-                            setNonce(record[1]);
-                            const nonce = document.getElementById('nonce') as HTMLTextAreaElement;
-                            if (nonce !== null) {
-                                nonce.value = record[1];
-                            }
-                        }
-                        setPublicKeyError('');
-                    })
-                    .catch((e) => {
-                        setPublicKeyError((e as Error).message);
-                        setPublicKey('');
-                        setNextNonce(0);
-                        setNonce('');
-                    });
-            }, REFRESH_INTERVAL.asMilliseconds());
-            return () => clearInterval(interval);
-        }
-    }, [connection, account, viewPublicKey]);
+    //     if (connection && account) {
+    //         const interval = setInterval(() => {
+    //             console.log('refreshing');
+    //             withJsonRpcClient(connection, (rpcClient) => viewPublicKey(rpcClient, account))
+    //                 .then((record) => {
+    //                     if (record !== undefined) {
+    //                         setPublicKey(record[0]);
+    //                         setNextNonce(record[1]);
+    //                         setNonce(record[1]);
+    //                         const nonce = document.getElementById('nonce') as HTMLTextAreaElement;
+    //                         if (nonce !== null) {
+    //                             nonce.value = record[1];
+    //                         }
+    //                     }
+    //                     setPublicKeyError('');
+    //                 })
+    //                 .catch((e) => {
+    //                     setPublicKeyError((e as Error).message);
+    //                     setPublicKey('');
+    //                     setNextNonce(0);
+    //                     setNonce('');
+    //                 });
+    //         }, REFRESH_INTERVAL.asMilliseconds());
+    //         return () => clearInterval(interval);
+    //     }
+    // }, [connection, account, viewPublicKey]);
 
-    useEffect(() => {
-        // View publicKey record from smart contract.
-        if (connection && account) {
-            withJsonRpcClient(connection, (rpcClient) => viewPublicKey(rpcClient, account))
-                .then((record) => {
-                    if (record !== undefined) {
-                        setPublicKey(record[0]);
-                        setNextNonce(record[1]);
-                        setNonce(record[1]);
-                        const nonce = document.getElementById('nonce') as HTMLTextAreaElement;
-                        if (nonce !== null) {
-                            nonce.value = record[1];
-                        }
-                    }
-                    setPublicKeyError('');
-                })
-                .catch((e) => {
-                    setPublicKeyError((e as Error).message);
-                    setPublicKey('');
-                    setNextNonce(0);
-                    setNonce('');
-                });
-        }
-    }, [connection, account]);
+    // useEffect(() => {
+    //     // View publicKey record from smart contract.
+    //     if (connection && account) {
+    //         withJsonRpcClient(connection, (rpcClient) => viewPublicKey(rpcClient, account))
+    //             .then((record) => {
+    //                 if (record !== undefined) {
+    //                     setPublicKey(record[0]);
+    //                     setNextNonce(record[1]);
+    //                     setNonce(record[1]);
+    //                     const nonce = document.getElementById('nonce') as HTMLTextAreaElement;
+    //                     if (nonce !== null) {
+    //                         nonce.value = record[1];
+    //                     }
+    //                 }
+    //                 setPublicKeyError('');
+    //             })
+    //             .catch((e) => {
+    //                 setPublicKeyError((e as Error).message);
+    //                 setPublicKey('');
+    //                 setNextNonce(0);
+    //                 setNonce('');
+    //             });
+    //     }
+    // }, [connection, account]);
 
     useEffect(() => {
         // Get publicKey record from chain.
@@ -471,7 +477,24 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
         }
     }, [connection, account]);
 
-    const [isRegisterPublicKeyPage, setIsRegisterPublicKeyPage] = useState(true);
+
+    useEffect(() => {
+        // Get next nonce record from smart contract.
+        if (connection && account) {
+            withJsonRpcClient(connection, (rpcClient) => getNonceOf(rpcClient, account))
+                .then((nonce) => {
+                    if (nonce !== undefined) {
+                        setNextNonce(nonce);
+                    }
+                    setNextNonceError('');
+                })
+                .catch((e) => {
+                    setNextNonceError((e as Error).message);
+                    setNextNonce(0);
+                });
+        }
+    }, [connection, account]);
+
     const [txHash, setTxHash] = useState('');
     const [transactionError, setTransactionError] = useState('');
 
@@ -536,6 +559,15 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                         </button>
                         <br />
                         <br />
+                        <div> Your public key is: </div>
+                        <div className="loadingText">{accountInfoPublicKey}</div>
+                        {publicKeyError && <div style={{ color: 'red' }}>Error: {publicKeyError}.</div>}
+                        <br />
+                        <div> Your next nonce is: </div>
+                        <div className="loadingText">{nextNonce}</div>
+                        {nextNonceError && <div style={{ color: 'red' }}>Error: {nextNonceError}.</div>}
+                        {/* <br />
+                        <br />
                         <div className="containerSpaceBetween">
                             <button
                                 style={!isRegisterPublicKeyPage ? ButtonStyleNotSelected : ButtonStyleSelected}
@@ -599,8 +631,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                                 }}
                             >
                                 Submit Sponsored Tx
-                            </button>
-                        </div>
+                            </button>    </div>*/}
                     </>
                 )}
                 {genesisHash && genesisHash !== network.genesisHash && (
@@ -610,39 +641,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                     </p>
                 )}
             </div>
-            {connection && isRegisterPublicKeyPage && account !== undefined && (
-                <>
-                    {!publicKey && (
-                        <>
-                            <button
-                                style={ButtonStyle}
-                                type="button"
-                                onClick={() => {
-                                    setTxHash('');
-                                    setTransactionError('');
-                                    setWaitingForUser(true);
-                                    const tx = register(connection, account, accountInfoPublicKey);
-                                    tx.then(setTxHash)
-                                        .catch((err: Error) => setTransactionError((err as Error).message))
-                                        .finally(() => setWaitingForUser(false));
-                                }}
-                            >
-                                Register Your Public Key
-                            </button>
-                        </>
-                    )}
-                    <br />
-                    {publicKey !== '' && (
-                        <>
-                            <div> Your registered public key is: </div>
-                            <div className="loadingText">{publicKey}</div>
-                            <div> Your next nonce is: </div>
-                            <div className="loadingText">{nextNonce}</div>
-                        </>
-                    )}
-                </>
-            )}
-            {connection && !isRegisterPublicKeyPage && account !== undefined && (
+            {connection && account !== undefined && (
                 <>
                     <div className="containerSpaceBetween">
                         <p>Update operator via a sponsored transaction</p>
@@ -671,8 +670,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                         />
                         <p>Transfer via a sponsored transaction</p>
                     </div>
-                    {publicKey === '' && <div style={{ color: 'red' }}>Register a public key first.</div>}
-                    {isPermitUpdateOperator && publicKey !== '' && (
+                    {isPermitUpdateOperator && (
                         <>
                             <label>
                                 <p style={{ marginBottom: 0 }}>Operator Address:</p>
@@ -703,7 +701,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                             </div>
                         </>
                     )}
-                    {!isPermitUpdateOperator && publicKey !== '' && (
+                    {!isPermitUpdateOperator && (
                         <>
                             <div>Mint a token to your account first:</div>
                             <button
@@ -756,124 +754,121 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                             </label>
                         </>
                     )}
-                    {publicKey !== '' && (
-                        <>
-                            <label>
-                                <p style={{ marginBottom: 0 }}>Nonce:</p>
-                                <input
-                                    className="input"
-                                    style={InputFieldStyle}
-                                    id="nonce"
-                                    type="text"
-                                    placeholder={nextNonce.toString()}
-                                    onChange={changeNonceHandler}
-                                />
-                            </label>
-                            <button
-                                style={ButtonStyle}
-                                type="button"
-                                onClick={async () => {
-                                    setSigningError('');
-                                    setSignature('');
-                                    const serializedMessage = isPermitUpdateOperator
-                                        ? await calculateUpdateOperatorMessage(nonce, operator, addOperator)
-                                        : await calculateTransferMessage(nonce, tokenID, from, to);
+                    <label>
+                        <p style={{ marginBottom: 0 }}>Nonce:</p>
+                        <input
+                            className="input"
+                            style={InputFieldStyle}
+                            id="nonce"
+                            type="text"
+                            placeholder={nextNonce.toString()}
+                            onChange={changeNonceHandler}
+                        />
+                    </label>
+                    <button
+                        style={ButtonStyle}
+                        type="button"
+                        onClick={async () => {
+                            setSigningError('');
+                            setSignature('');
+                            const serializedMessage = isPermitUpdateOperator
+                                ? await calculateUpdateOperatorMessage(nonce, operator, addOperator)
+                                : await calculateTransferMessage(nonce, tokenID, from, to);
 
-                                    if (serializedMessage !== '') {
-                                        const promise = connection.signMessage(account, {
-                                            data: serializedMessage.toString('hex'),
-                                            schema: SERIALIZATION_HELPER_SCHEMA,
-                                        })
-                                        promise
-                                            .then((permitSignature) => {
-                                                setSignature(permitSignature[0][0]);
-                                            })
-                                            .catch((err: Error) => setSigningError((err as Error).message));
-                                    } else {
-                                        setSigningError('Serialization Error');
-                                    }
-                                }}
-                            >
-                                Generate Signature
-                            </button>
-                            <br />
-                            {signingError && <div style={{ color: 'red' }}>Error: {signingError}.</div>}
-                            {signature !== '' && (
-                                <>
-                                    <div> Your generated signature is: </div>
-                                    <div className="loadingText">{signature}</div>
-                                </>
-                            )}
-                            <br />
-                            {publicKey !== '' && (
-                                <>
-                                    <div> Your registered public key is: </div>
-                                    <div className="loadingText">{publicKey}</div>
-                                    <div> Your next nonce is: </div>
-                                    <div className="loadingText">{nextNonce}</div>
-                                </>
-                            )}
-                            <label>
-                                <p style={{ marginBottom: 0 }}>Signer:</p>
-                                <input
-                                    className="input"
-                                    style={InputFieldStyle}
-                                    id="signer"
-                                    type="text"
-                                    placeholder="4HoVMVsj6TwJr6B5krP5fW9qM4pbo6crVyrr7N95t2UQDrv1fq"
-                                    onChange={changeSignerHandler}
-                                />
-                            </label>
-                            <button
-                                style={signature === '' ? ButtonStyleDisabled : ButtonStyle}
-                                disabled={signature === ''}
-                                type="button"
-                                onClick={async () => {
-                                    setTxHash('');
-                                    setTransactionError('');
-                                    setWaitingForUser(true);
-
-                                    const tx = isPermitUpdateOperator
-                                        ? submitUpdateOperator(VERIFIER_URL,
-                                            signer,
-                                            nonce,
-                                            signature,
-                                            operator,
-                                            addOperator
-                                        )
-                                        : submitTransfer(VERIFIER_URL,
-                                            signer,
-                                            nonce,
-                                            signature,
-                                            tokenID,
-                                            from,
-                                            to
-                                        );
-
-                                    tx.then((txHashReturned) => {
-                                        setTxHash(txHashReturned.tx_hash);
-                                        if (txHashReturned.tx_hash !== '') {
-                                            setSignature('');
-                                            setTokenID('');
-                                            setFrom('');
-                                            setTo('');
-                                            setOperator('');
-                                            setNonce('');
-                                            setSigner('');
-                                            clearInputFields();
-                                        }
+                            if (serializedMessage !== '') {
+                                const promise = connection.signMessage(account, {
+                                    data: serializedMessage.toString('hex'),
+                                    schema: SERIALIZATION_HELPER_SCHEMA,
+                                })
+                                promise
+                                    .then((permitSignature) => {
+                                        setSignature(permitSignature[0][0]);
                                     })
-                                        .catch((err: Error) => setTransactionError((err as Error).message))
-                                        .finally(() => {
-                                            setWaitingForUser(false);
-                                        });
-
-                                }}
-                            >
-                                Submit Sponsored Transaction
-                            </button>
+                                    .catch((err: Error) => setSigningError((err as Error).message));
+                            } else {
+                                setSigningError('Serialization Error');
+                            }
+                        }}
+                    >
+                        Generate Signature
+                    </button>
+                    <br />
+                    {signingError && <div style={{ color: 'red' }}>Error: {signingError}.</div>}
+                    {signature !== '' && (
+                        <>
+                            <div> Your generated signature is: </div>
+                            <div className="loadingText">{signature}</div>
                         </>
                     )}
+                    <br />
+                    {/* {publicKey !== '' && (
+                        <>
+                            <div> Your registered public key is: </div>
+                            <div className="loadingText">{accountInfoPublicKey}</div>
+                            <div> Your next nonce is: </div>
+                            <div className="loadingText">{nextNonce}</div>
+                        </>
+                    )} */}
+                    <label>
+                        <p style={{ marginBottom: 0 }}>Signer:</p>
+                        <input
+                            className="input"
+                            style={InputFieldStyle}
+                            id="signer"
+                            type="text"
+                            placeholder="4HoVMVsj6TwJr6B5krP5fW9qM4pbo6crVyrr7N95t2UQDrv1fq"
+                            onChange={changeSignerHandler}
+                        />
+                    </label>
+                    <button
+                        style={signature === '' ? ButtonStyleDisabled : ButtonStyle}
+                        disabled={signature === ''}
+                        type="button"
+                        onClick={async () => {
+                            setTxHash('');
+                            setTransactionError('');
+                            setWaitingForUser(true);
+
+                            const tx = isPermitUpdateOperator
+                                ? submitUpdateOperator(VERIFIER_URL,
+                                    signer,
+                                    nonce,
+                                    signature,
+                                    operator,
+                                    addOperator
+                                )
+                                : submitTransfer(VERIFIER_URL,
+                                    signer,
+                                    nonce,
+                                    signature,
+                                    tokenID,
+                                    from,
+                                    to
+                                );
+
+                            tx.then((txHashReturned) => {
+                                setTxHash(txHashReturned.tx_hash);
+                                if (txHashReturned.tx_hash !== '') {
+                                    setSignature('');
+                                    setTokenID('');
+                                    setFrom('');
+                                    setTo('');
+                                    setOperator('');
+                                    setNonce('');
+                                    setSigner('');
+                                    clearInputFields();
+                                }
+                            })
+                                .catch((err: Error) => setTransactionError((err as Error).message))
+                                .finally(() => {
+                                    setWaitingForUser(false);
+                                });
+
+                        }}
+                    >
+                        Submit Sponsored Transaction
+                    </button>
+
                 </>
             )}
             {!connection && (
@@ -882,8 +877,8 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                 </button>
             )}
             {connection && account && (
-                <p>
-                    {isRegisterPublicKeyPage && !publicKey && (
+                <>
+                    {accountInfoPublicKey && (
                         <>
                             <div>Transaction status{txHash === '' ? '' : ' (May take a moment to finalize)'}</div>
                             {!txHash && transactionError && (
@@ -910,35 +905,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                             )}
                         </>
                     )}
-                    {!isRegisterPublicKeyPage && publicKey && (
-                        <>
-                            <div>Transaction status{txHash === '' ? '' : ' (May take a moment to finalize)'}</div>
-                            {!txHash && transactionError && (
-                                <div style={{ color: 'red' }}>Error: {transactionError}.</div>
-                            )}
-                            {!txHash && !transactionError && <div className="loadingText">None</div>}
-                            {txHash && (
-                                <>
-                                    <button
-                                        className="link"
-                                        type="button"
-                                        onClick={() => {
-                                            window.open(
-                                                `https://testnet.ccdscan.io/?dcount=1&dentity=transaction&dhash=${txHash}`,
-                                                '_blank',
-                                                'noopener,noreferrer'
-                                            );
-                                        }}
-                                    >
-                                        {txHash}
-                                    </button>
-                                    <br />
-                                </>
-                            )}
-                        </>
-                    )}
-                    {publicKeyError && <div style={{ color: 'red' }}>Error: {publicKeyError}.</div>}
-                </p>
+                </>
             )}
             <div>
                 <br />
