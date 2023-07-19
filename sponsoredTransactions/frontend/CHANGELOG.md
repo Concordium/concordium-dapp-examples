@@ -2,7 +2,7 @@
 
 ## 2.0.0
 
-- Remove tap to register public key 
+- Remove tab to register public key 
 
 ## 1.1.0
 

@@ -124,17 +124,27 @@ pub async fn submit_transaction(
     hex::decode_to_slice(request_signature, &mut signature)
         .map_err(|_| LogError::SignatureError)?;
 
-    let mut inner_signature_map: BTreeMap<u8, types::SignatureEd25519> = BTreeMap::new();
-    inner_signature_map.insert(0, types::SignatureEd25519(signature));
+    let mut inner_signature_map = BTreeMap::new();
+    inner_signature_map.insert(
+        0,
+        types::Signature::Ed25519(types::SignatureEd25519(signature)),
+    );
 
-    let mut signature_map: BTreeMap<u8, BTreeMap<u8, types::SignatureEd25519>> = BTreeMap::new();
-    signature_map.insert(0, inner_signature_map);
+    let mut signature_map = BTreeMap::new();
+    signature_map.insert(
+        0,
+        types::CredentialSignatures {
+            sigs: inner_signature_map,
+        },
+    );
 
     log::debug!("Create Parameter.");
 
     let param: PermitParam = PermitParam {
         message,
-        signature: signature_map,
+        signature: AccountSignatures {
+            sigs: signature_map,
+        },
         signer,
     };
 

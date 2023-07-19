@@ -102,8 +102,7 @@ pub struct UpdateOperatorParams(#[concordium(size_length = 2)] pub Vec<UpdateOpe
 
 #[derive(Debug, Serial, Clone)]
 pub struct PermitParam {
-    #[concordium(size_length = 1)]
-    pub signature: BTreeMap<u8, BTreeMap<u8, SignatureEd25519>>,
+    pub signature: AccountSignatures,
     pub signer: AccountAddress,
     pub message: PermitMessage,
 }
@@ -128,4 +127,29 @@ pub struct Server {
     pub nonce: Arc<Mutex<Nonce>>,
     // The rate_limits are transient and are reset on server restart.
     pub rate_limits: Arc<Mutex<HashMap<AccountAddress, u8>>>,
+}
+
+pub(crate) type CredentialIndex = u8;
+pub(crate) type KeyIndex = u8;
+
+#[derive(Serial, Debug, Clone)]
+#[non_exhaustive]
+/// A cryptographic signature indexed by the signature scheme. Currently only a
+/// single scheme is supported, `ed25519`.
+pub enum Signature {
+    Ed25519(SignatureEd25519),
+}
+
+#[derive(Debug, Serial, Clone)]
+#[concordium(transparent)]
+pub struct AccountSignatures {
+    #[concordium(size_length = 1)]
+    pub sigs: BTreeMap<CredentialIndex, CredentialSignatures>,
+}
+
+#[derive(Debug, Serial, Clone)]
+#[concordium(transparent)]
+pub struct CredentialSignatures {
+    #[concordium(size_length = 1)]
+    pub sigs: BTreeMap<KeyIndex, Signature>,
 }

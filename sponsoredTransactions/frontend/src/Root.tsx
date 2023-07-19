@@ -11,7 +11,9 @@ export default function Root() {
     return (
         <div>
             <main className="sponsoredTransactions">
-                <WithWalletConnector network={TESTNET}>{(props) => <SponsoredTransactions {...props} />}</WithWalletConnector>
+                <WithWalletConnector network={TESTNET}>
+                    {(props) => <SponsoredTransactions {...props} />}
+                </WithWalletConnector>
             </main>
         </div>
     );
