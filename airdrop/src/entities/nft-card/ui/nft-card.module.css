@@ -1,0 +1,46 @@
+.nftCard {
+  @apply bg-cover;
+  @apply rounded-[2rem];
+  @apply h-[512px] w-[512px];
+  @apply flex flex-col justify-end;
+  @apply border-8 border-gray-700;
+}
+.info {
+  @apply font-bold text-white text-xl;
+  @apply px-4 py-2 m-4;
+  @apply flex flex-col gap-2;
+  @apply bg-black bg-opacity-20 backdrop-blur-2xl shadow-xl;
+  @apply rounded-2xl;
+  @apply flex-grow-0 flex-shrink-0;
+  @apply transition;
+}
+
+.nftCardSkeleton {
+  @apply bg-gray-500;
+}
+
+.infoSkeleton {
+}
+
+.header {
+  @apply text-2xl;
+}
+
+.description {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:hover.info .description {
+  white-space: normal;
+}
+
+.hideInfoArea {
+  flex-grow: 1;
+}
+
+:hover.hideInfoArea + .info {
+  @apply opacity-0;
+}
+

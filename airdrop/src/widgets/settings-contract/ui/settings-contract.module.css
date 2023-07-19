@@ -1,0 +1,11 @@
+.settingsContract {
+  @apply mt-8 flex flex-col min-w-[100%];
+}
+
+.header {
+  @apply text-2xl;
+}
+
+.settingsContainer {
+  @apply mt-8 flex flex-col min-w-[100%] gap-2;
+}

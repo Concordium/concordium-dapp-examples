@@ -1,0 +1,8 @@
+.notFound {
+  @apply text-3xl min-h-max;
+	display: flex;
+  flex-direction: column;
+  gap: 1rem;
+	justify-content: center;
+	align-items: center;
+}

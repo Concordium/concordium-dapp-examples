@@ -1,0 +1,11 @@
+.transactionsClaimList {
+  @apply flex flex-col gap-4;
+}
+
+.header {
+  @apply text-2xl font-bold;
+}
+
+.transactions {
+  @apply flex flex-col gap-4;
+}
