@@ -2,7 +2,7 @@
 /* eslint-disable no-alert */
 import { createContext } from 'react';
 import { AccountTransactionType, CcdAmount, UpdateContractPayload } from '@concordium/web-sdk';
-import { WalletConnection } from '@concordium/react-components';
+import { WalletConnection, typeSchemaFromBase64 } from '@concordium/react-components';
 import {
     SPONSORED_TX_CONTRACT_NAME,
     SPONSORED_TX_CONTRACT_INDEX,
@@ -14,8 +14,14 @@ import {
 /**
  * Send update operator signature to backend.
  */
-export async function submitUpdateOperator(backend: string, signer: string, nonce: string, signature: string, operator: string, addOperator: boolean) {
-
+export async function submitUpdateOperator(
+    backend: string,
+    signer: string,
+    nonce: string,
+    signature: string,
+    operator: string,
+    addOperator: boolean
+) {
     if (signer === '') {
         alert('Insert an signer address.');
         return '';
@@ -60,11 +66,19 @@ export async function submitUpdateOperator(backend: string, signer: string, nonc
     const response = await fetch(`${backend}/submitUpdateOperator`, {
         method: 'POST',
         headers: new Headers({ 'content-type': 'application/json' }),
-        body: JSON.stringify({ signer, nonce: Number(nonce), signature, operator, add_operator: addOperator, timestamp: EXPIRY_TIME_SIGNATURE }),
+
+        body: JSON.stringify({
+            signer,
+            nonce: Number(nonce),
+            signature,
+            operator,
+            add_operator: addOperator,
+            timestamp: EXPIRY_TIME_SIGNATURE,
+        }),
     });
     if (!response.ok) {
         const error = await response.json();
-        throw new Error('Unable to submit update operator: ' + JSON.stringify(error));
+        throw new Error(`Unable to submit update operator: ${JSON.stringify(error)}`);
     }
     const body = await response.json();
     if (body) {
@@ -76,14 +90,15 @@ export async function submitUpdateOperator(backend: string, signer: string, nonc
 /**
  * Send transfer signature to backend.
  */
-export async function submitTransfer(backend: string,
+export async function submitTransfer(
+    backend: string,
     signer: string,
     nonce: string,
     signature: string,
     tokenID: string,
     from: string,
-    to: string) {
-
+    to: string
+) {
     if (signer === '') {
         alert('Insert an signer address.');
         return '';
@@ -148,11 +163,19 @@ export async function submitTransfer(backend: string,
     const response = await fetch(`${backend}/submitTransfer`, {
         method: 'POST',
         headers: new Headers({ 'content-type': 'application/json' }),
-        body: JSON.stringify({ signer, nonce: Number(nonce), signature, token_id: tokenID, from, to, timestamp: EXPIRY_TIME_SIGNATURE }),
+        body: JSON.stringify({
+            signer,
+            nonce: Number(nonce),
+            signature,
+            token_id: tokenID,
+            from,
+            to,
+            timestamp: EXPIRY_TIME_SIGNATURE,
+        }),
     });
     if (!response.ok) {
         const error = await response.json();
-        throw new Error('Unable to submit transfer: ' + JSON.stringify(error));
+        throw new Error(`Unable to submit transfer: ${JSON.stringify(error)}`);
     }
     const body = await response.json();
     if (body) {
@@ -177,63 +200,15 @@ export async function mint(connection: WalletConnection, account: string) {
             receiveName: `${SPONSORED_TX_CONTRACT_NAME}.mint`,
             maxContractExecutionEnergy: 30000n,
         } as unknown as UpdateContractPayload,
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
+
         {
-            owner: { Account: [account] },
-        },
-        {
-            type: 'parameter',
-            value: MINT_PARAMETER_SCHEMA
+            parameters: {
+                owner: { Account: [account] },
+            },
+            schema: typeSchemaFromBase64(MINT_PARAMETER_SCHEMA),
         }
     );
 }
-
-// /**
-//  * Action for registering a public key in the cis3_nft smart contract instance.
-//  */
-// export async function register(connection: WalletConnection, account: string, publicKey: string) {
-
-//     if (publicKey === '') {
-//         alert('Insert a public key.');
-//         return '';
-//     }
-
-//     if (publicKey.length !== 64) {
-//         alert('Public key needs to have 64 digits.');
-//         return '';
-//     }
-
-//     const publicKeyLowerCase = publicKey.toLowerCase();
-
-//     return connection.signAndSendTransaction(
-//         account,
-//         AccountTransactionType.Update,
-//         {
-//             amount: new CcdAmount(BigInt(0n)),
-//             address: {
-//                 index: SPONSORED_TX_CONTRACT_INDEX,
-//                 subindex: CONTRACT_SUB_INDEX,
-//             },
-//             receiveName: `${SPONSORED_TX_CONTRACT_NAME}.registerPublicKeys`,
-//             maxContractExecutionEnergy: 30000n,
-//         } as unknown as UpdateContractPayload,
-//         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-//         // @ts-ignore
-//         [
-//             [
-//                 {
-//                     account,
-//                     public_key: publicKeyLowerCase,
-//                 },
-//             ],
-//         ],
-//         {
-//             type: 'parameter',
-//             value: REGISTER_PUBLIC_KEYS_PARAMETER_SCHEMA
-//         }
-//     );
-// }
 
 /**
  * Global application state.

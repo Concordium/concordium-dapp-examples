@@ -3,13 +3,14 @@
 
 import React, { useEffect, useState, ChangeEvent } from 'react';
 import Switch from 'react-switch';
+import { toBuffer, JsonRpcClient, serializeTypeValue, deserializeTypeValue } from '@concordium/web-sdk';
 import {
-    toBuffer,
-    JsonRpcClient,
-    serializeTypeValue,
-    deserializeTypeValue
-} from '@concordium/web-sdk';
-import { withJsonRpcClient, WalletConnectionProps, useConnection, useConnect } from '@concordium/react-components';
+    withJsonRpcClient,
+    WalletConnectionProps,
+    useConnection,
+    useConnect,
+    typeSchemaFromBase64,
+} from '@concordium/react-components';
 import { version } from '../package.json';
 
 import { submitUpdateOperator, submitTransfer, mint } from './utils';
@@ -68,32 +69,6 @@ const ButtonStyleDisabled = {
     fontSize: '14px',
 };
 
-const ButtonStyleSelected = {
-    color: 'white',
-    borderRadius: 10,
-    margin: '7px 0px 7px 0px',
-    padding: '10px',
-    width: '100%',
-    border: '0px solid',
-    backgroundColor: '#174039',
-    cursor: 'pointer',
-    fontWeight: 300,
-    fontSize: '14px',
-};
-
-const ButtonStyleNotSelected = {
-    color: 'white',
-    borderRadius: 10,
-    margin: '7px 0px 7px 0px',
-    padding: '10px',
-    width: '100%',
-    border: '0px solid',
-    backgroundColor: '#308274',
-    cursor: 'pointer',
-    fontWeight: 300,
-    fontSize: '14px',
-};
-
 const InputFieldStyle = {
     backgroundColor: '#181817',
     color: 'white',
@@ -146,25 +121,21 @@ async function calculateTransferMessage(nonce: string, tokenID: string, from: st
         return '';
     }
 
-    const transfer =
-        [
-            {
-                amount: '1',
-                data: '',
-                from: {
-                    Account: [from],
-                },
-                to: {
-                    Account: [to],
-                },
-                token_id: tokenID,
+    const transfer = [
+        {
+            amount: '1',
+            data: [],
+            from: {
+                Account: [from],
             },
-        ]
+            to: {
+                Account: [to],
+            },
+            token_id: tokenID,
+        },
+    ];
 
-    const payload = serializeTypeValue(
-        transfer,
-        toBuffer(TRANSFER_SCHEMA, 'base64')
-    );
+    const payload = serializeTypeValue(transfer, toBuffer(TRANSFER_SCHEMA, 'base64'));
 
     const message = {
         contract_address: {
@@ -177,10 +148,7 @@ async function calculateTransferMessage(nonce: string, tokenID: string, from: st
         payload: Array.from(payload),
     };
 
-    const serializedMessage = serializeTypeValue(
-        message,
-        toBuffer(SERIALIZATION_HELPER_SCHEMA, 'base64')
-    );
+    const serializedMessage = serializeTypeValue(message, toBuffer(SERIALIZATION_HELPER_SCHEMA, 'base64'));
 
     return serializedMessage;
 }
@@ -215,20 +183,17 @@ async function calculateUpdateOperatorMessage(nonce: string, operator: string, a
             Remove: [],
         };
 
-    const updateOperator =
-        [
-            {
-                operator: {
-                    Account: [operator],
-                },
-                update: operatorAction,
-            }
-        ]
+    const updateOperator = [
+        {
+            operator: {
+                Account: [operator],
+            },
+            update: operatorAction,
+        },
+    ];
 
-    const payload = serializeTypeValue(
-        updateOperator,
-        toBuffer(UPDATE_OPERATOR_SCHEMA, 'base64')
-    );
+    const payload = serializeTypeValue(updateOperator, toBuffer(UPDATE_OPERATOR_SCHEMA, 'base64'));
+
 
     const message = {
         contract_address: {
@@ -241,22 +206,18 @@ async function calculateUpdateOperatorMessage(nonce: string, operator: string, a
         payload: Array.from(payload),
     };
 
-    const serializedMessage = serializeTypeValue(
-        message,
-        toBuffer(SERIALIZATION_HELPER_SCHEMA, 'base64')
-    );
+    const serializedMessage = serializeTypeValue(message, toBuffer(SERIALIZATION_HELPER_SCHEMA, 'base64'));
 
     return serializedMessage;
 }
 
-async function getPublicKey(rpcClient: JsonRpcClient, account: string) {
+async function getPublicKey(rpcClient: any, account: string) {
     const res = await rpcClient.getAccountInfo(account);
     const publicKey = res?.accountCredentials[0].value.contents.credentialPublicKeys.keys[0].verifyKey;
     return publicKey;
 }
 
-async function getNonceOf(rpcClient: JsonRpcClient, account: string) {
-
+async function getNonceOf(rpcClient: any, account: string) {
     const param = serializeTypeValue(
         {
             queries: [
@@ -281,14 +242,10 @@ async function getNonceOf(rpcClient: JsonRpcClient, account: string) {
     }
 
     // @ts-ignore
-    const returnValues:any[][] = deserializeTypeValue
-        (toBuffer(res.returnValue, 'hex'),
-            toBuffer(NONCE_OF_RETURN_VALUE_SCHEMA, 'base64')
-        );
-
-        // {
-        //     None: undefined; Some: any[][];
-        // }[][] | undefined 
+    const returnValues: any[][] = deserializeTypeValue(
+        toBuffer(res.returnValue, 'hex'),
+        toBuffer(NONCE_OF_RETURN_VALUE_SCHEMA, 'base64')
+    );
 
     if (returnValues === undefined) {
         throw new Error(
@@ -296,19 +253,9 @@ async function getNonceOf(rpcClient: JsonRpcClient, account: string) {
         );
     }
 
-    // if (None !== undefined) {
-    //     // [public key, nonce] of a user that has not registered a public key yet
-    //     return ['', 0];
-    // }
-
-    // console.log(returnValues[0])
-
-    // console.log(returnValues[0][0])
-    // console.log("returnValues")
-
     if (returnValues !== undefined) {
-        // [public key, nonce] of a user that has registered a public key already
-        return returnValues[0][0]
+        // Return next nonce of a user
+        return returnValues[0][0];
     }
 
     throw new Error(
@@ -361,7 +308,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
     const [isPermitUpdateOperator, setPermitUpdateOperator] = useState<boolean>(true);
 
     const [nextNonce, setNextNonce] = useState<number>(0);
-            const [accountInfoPublicKey, setAccountInfoPublicKey] = useState('');
+    const [accountInfoPublicKey, setAccountInfoPublicKey] = useState('');
 
     const [operator, setOperator] = useState('');
     const [addOperator, setAddOperator] = useState<boolean>(true);
@@ -477,14 +424,13 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
         }
     }, [connection, account]);
 
-
     useEffect(() => {
         // Get next nonce record from smart contract.
         if (connection && account) {
             withJsonRpcClient(connection, (rpcClient) => getNonceOf(rpcClient, account))
-                .then((nonce) => {
-                    if (nonce !== undefined) {
-                        setNextNonce(nonce);
+                .then((nonceValue) => {
+                    if (nonceValue !== undefined) {
+                        setNextNonce(nonceValue);
                     }
                     setNextNonceError('');
                 })
@@ -566,72 +512,6 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                         <div> Your next nonce is: </div>
                         <div className="loadingText">{nextNonce}</div>
                         {nextNonceError && <div style={{ color: 'red' }}>Error: {nextNonceError}.</div>}
-                        {/* <br />
-                        <br />
-                        <div className="containerSpaceBetween">
-                            <button
-                                style={!isRegisterPublicKeyPage ? ButtonStyleNotSelected : ButtonStyleSelected}
-                                type="button"
-                                onClick={() => {
-                                    setIsRegisterPublicKeyPage(true);
-                                    setSignature('');
-                                    setSigningError('');
-                                    setTokenID('');
-                                    setFrom('');
-                                    setTo('');
-                                    setOperator('');
-                                    setNonce('');
-                                    setSigner('');
-                                    setTransactionError('');
-                                    setTxHash('');
-                                    clearInputFields();
-                                }}
-                            >
-                                Register Public Key
-                            </button>
-                            <Switch
-                                onChange={() => {
-                                    setIsRegisterPublicKeyPage(!isRegisterPublicKeyPage);
-                                    setSignature('');
-                                    setSigningError('');
-                                    setTokenID('');
-                                    setFrom('');
-                                    setTo('');
-                                    setOperator('');
-                                    setNonce('');
-                                    setSigner('');
-                                    setTransactionError('');
-                                    setTxHash('');
-                                    clearInputFields();
-                                }}
-                                onColor="#308274"
-                                offColor="#308274"
-                                onHandleColor="#174039"
-                                offHandleColor="#174039"
-                                checked={!isRegisterPublicKeyPage}
-                                checkedIcon={false}
-                                uncheckedIcon={false}
-                            />
-                            <button
-                                style={isRegisterPublicKeyPage ? ButtonStyleNotSelected : ButtonStyleSelected}
-                                type="button"
-                                onClick={() => {
-                                    setIsRegisterPublicKeyPage(false);
-                                    setSignature('');
-                                    setSigningError('');
-                                    setTokenID('');
-                                    setFrom('');
-                                    setTo('');
-                                    setOperator('');
-                                    setNonce('');
-                                    setSigner('');
-                                    setTransactionError('');
-                                    setTxHash('');
-                                    clearInputFields();
-                                }}
-                            >
-                                Submit Sponsored Tx
-                            </button>    </div>*/}
                     </>
                 )}
                 {genesisHash && genesisHash !== network.genesisHash && (
@@ -776,10 +656,15 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                                 : await calculateTransferMessage(nonce, tokenID, from, to);
 
                             if (serializedMessage !== '') {
-                                const promise = connection.signMessage(account, {
-                                    data: serializedMessage.toString('hex'),
-                                    schema: SERIALIZATION_HELPER_SCHEMA,
-                                })
+                                const promise = connection.signMessage(
+                                    account,
+                                    {
+                                        type: 'BinaryMessage',
+                                        value: serializedMessage,
+                                        schema: typeSchemaFromBase64(SERIALIZATION_HELPER_SCHEMA),
+                                    }
+                                );
+
                                 promise
                                     .then((permitSignature) => {
                                         setSignature(permitSignature[0][0]);
@@ -801,14 +686,6 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                         </>
                     )}
                     <br />
-                    {/* {publicKey !== '' && (
-                        <>
-                            <div> Your registered public key is: </div>
-                            <div className="loadingText">{accountInfoPublicKey}</div>
-                            <div> Your next nonce is: </div>
-                            <div className="loadingText">{nextNonce}</div>
-                        </>
-                    )} */}
                     <label>
                         <p style={{ marginBottom: 0 }}>Signer:</p>
                         <input
@@ -830,21 +707,8 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                             setWaitingForUser(true);
 
                             const tx = isPermitUpdateOperator
-                                ? submitUpdateOperator(VERIFIER_URL,
-                                    signer,
-                                    nonce,
-                                    signature,
-                                    operator,
-                                    addOperator
-                                )
-                                : submitTransfer(VERIFIER_URL,
-                                    signer,
-                                    nonce,
-                                    signature,
-                                    tokenID,
-                                    from,
-                                    to
-                                );
+                                ? submitUpdateOperator(VERIFIER_URL, signer, nonce, signature, operator, addOperator)
+                                : submitTransfer(VERIFIER_URL, signer, nonce, signature, tokenID, from, to);
 
                             tx.then((txHashReturned) => {
                                 setTxHash(txHashReturned.tx_hash);
@@ -863,12 +727,10 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                                 .finally(() => {
                                     setWaitingForUser(false);
                                 });
-
                         }}
                     >
                         Submit Sponsored Transaction
                     </button>
-
                 </>
             )}
             {!connection && (
@@ -876,33 +738,27 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                     Waiting for connection...
                 </button>
             )}
-            {connection && account && (
+            {connection && account && accountInfoPublicKey && (
                 <>
-                    {accountInfoPublicKey && (
+                    <div>Transaction status{txHash === '' ? '' : ' (May take a moment to finalize)'}</div>
+                    {!txHash && transactionError && <div style={{ color: 'red' }}>Error: {transactionError}.</div>}
+                    {!txHash && !transactionError && <div className="loadingText">None</div>}
+                    {txHash && (
                         <>
-                            <div>Transaction status{txHash === '' ? '' : ' (May take a moment to finalize)'}</div>
-                            {!txHash && transactionError && (
-                                <div style={{ color: 'red' }}>Error: {transactionError}.</div>
-                            )}
-                            {!txHash && !transactionError && <div className="loadingText">None</div>}
-                            {txHash && (
-                                <>
-                                    <button
-                                        className="link"
-                                        type="button"
-                                        onClick={() => {
-                                            window.open(
-                                                `https://testnet.ccdscan.io/?dcount=1&dentity=transaction&dhash=${txHash}`,
-                                                '_blank',
-                                                'noopener,noreferrer'
-                                            );
-                                        }}
-                                    >
-                                        {txHash}
-                                    </button>
-                                    <br />
-                                </>
-                            )}
+                            <button
+                                className="link"
+                                type="button"
+                                onClick={() => {
+                                    window.open(
+                                        `https://testnet.ccdscan.io/?dcount=1&dentity=transaction&dhash=${txHash}`,
+                                        '_blank',
+                                        'noopener,noreferrer'
+                                    );
+                                }}
+                            >
+                                {txHash}
+                            </button>
+                            <br />
                         </>
                     )}
                 </>
