@@ -1,9 +1,9 @@
 /* eslint-disable no-console */
 /* eslint-disable no-alert */
-
-import React, { useEffect, useState, ChangeEvent } from 'react';
+/* eslint-disable consistent-return */
+import React, { useEffect, useState, ChangeEvent, useCallback } from 'react';
 import Switch from 'react-switch';
-import { toBuffer, JsonRpcClient, serializeTypeValue, deserializeTypeValue } from '@concordium/web-sdk';
+import { toBuffer, serializeTypeValue, deserializeTypeValue } from '@concordium/web-sdk';
 import {
     withJsonRpcClient,
     WalletConnectionProps,
@@ -27,11 +27,10 @@ import {
     TRANSFER_SCHEMA,
     EXPIRY_TIME_SIGNATURE,
     REFRESH_INTERVAL,
+    VERIFIER_URL,
 } from './constants';
 
 import { WalletConnectionTypeButton } from './WalletConnectorTypeButton';
-
-const VERIFIER_URL = '/api';
 
 const blackCardStyle = {
     backgroundColor: 'black',
@@ -79,7 +78,7 @@ const InputFieldStyle = {
     padding: '10px 20px',
 };
 
-async function calculateTransferMessage(nonce: string, tokenID: string, from: string, to: string) {
+async function generateTransferMessage(nonce: string, tokenID: string, from: string, to: string) {
     if (nonce === '') {
         alert('Insert a nonce.');
         return '';
@@ -153,7 +152,7 @@ async function calculateTransferMessage(nonce: string, tokenID: string, from: st
     return serializedMessage;
 }
 
-async function calculateUpdateOperatorMessage(nonce: string, operator: string, addOperator: boolean) {
+async function generateUpdateOperatorMessage(nonce: string, operator: string, addOperator: boolean) {
     if (nonce === '') {
         alert('Insert a nonce.');
         return '';
@@ -177,11 +176,11 @@ async function calculateUpdateOperatorMessage(nonce: string, operator: string, a
 
     const operatorAction = addOperator
         ? {
-            Add: [],
-        }
+              Add: [],
+          }
         : {
-            Remove: [],
-        };
+              Remove: [],
+          };
 
     const updateOperator = [
         {
@@ -193,7 +192,6 @@ async function calculateUpdateOperatorMessage(nonce: string, operator: string, a
     ];
 
     const payload = serializeTypeValue(updateOperator, toBuffer(UPDATE_OPERATOR_SCHEMA, 'base64'));
-
 
     const message = {
         contract_address: {
@@ -211,12 +209,14 @@ async function calculateUpdateOperatorMessage(nonce: string, operator: string, a
     return serializedMessage;
 }
 
+// eslint-disable-next-line  @typescript-eslint/no-explicit-any
 async function getPublicKey(rpcClient: any, account: string) {
     const res = await rpcClient.getAccountInfo(account);
     const publicKey = res?.accountCredentials[0].value.contents.credentialPublicKeys.keys[0].verifyKey;
     return publicKey;
 }
 
+// eslint-disable-next-line  @typescript-eslint/no-explicit-any
 async function getNonceOf(rpcClient: any, account: string) {
     const param = serializeTypeValue(
         {
@@ -241,7 +241,9 @@ async function getNonceOf(rpcClient: any, account: string) {
         );
     }
 
+    // eslint-disable-next-line  @typescript-eslint/ban-ts-comment
     // @ts-ignore
+    // eslint-disable-next-line  @typescript-eslint/no-explicit-any
     const returnValues: any[][] = deserializeTypeValue(
         toBuffer(res.returnValue, 'hex'),
         toBuffer(NONCE_OF_RETURN_VALUE_SCHEMA, 'base64')
@@ -249,18 +251,12 @@ async function getNonceOf(rpcClient: any, account: string) {
 
     if (returnValues === undefined) {
         throw new Error(
-            `Deserializing the returnValue from the '${SPONSORED_TX_CONTRACT_NAME}.publicKeyOf' method of contract '${SPONSORED_TX_CONTRACT_INDEX}' failed`
+            `Deserializing the returnValue from the '${SPONSORED_TX_CONTRACT_NAME}.nonceOf' method of contract '${SPONSORED_TX_CONTRACT_INDEX}' failed`
         );
-    }
-
-    if (returnValues !== undefined) {
+    } else {
         // Return next nonce of a user
         return returnValues[0][0];
     }
-
-    throw new Error(
-        `Deserializing the returnValue from the '${SPONSORED_TX_CONTRACT_NAME}.publicKeyOf' method of contract '${SPONSORED_TX_CONTRACT_INDEX}' failed`
-    );
 }
 
 function clearInputFields() {
@@ -305,7 +301,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
     const [publicKeyError, setPublicKeyError] = useState('');
     const [nextNonceError, setNextNonceError] = useState('');
 
-    const [isPermitUpdateOperator, setPermitUpdateOperator] = useState<boolean>(true);
+    const [isUpdateOperatorTab, setUpdateOperatorTab] = useState<boolean>(true);
 
     const [nextNonce, setNextNonce] = useState<number>(0);
     const [accountInfoPublicKey, setAccountInfoPublicKey] = useState('');
@@ -321,106 +317,54 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
     const [signature, setSignature] = useState('');
     const [signingError, setSigningError] = useState('');
 
-    const changeOperatorHandler = (event: ChangeEvent) => {
+    const changeOperatorHandler = useCallback((event: ChangeEvent) => {
         const target = event.target as HTMLTextAreaElement;
         setOperator(target.value);
-    };
+    }, []);
 
-    const changeTokenIDHandler = (event: ChangeEvent) => {
+    const changeTokenIDHandler = useCallback((event: ChangeEvent) => {
         const target = event.target as HTMLTextAreaElement;
         setTokenID(target.value);
-    };
+    }, []);
 
-    const changeToHandler = (event: ChangeEvent) => {
+    const changeToHandler = useCallback((event: ChangeEvent) => {
         const target = event.target as HTMLTextAreaElement;
         setTo(target.value);
-    };
+    }, []);
 
-    const changeFromHandler = (event: ChangeEvent) => {
+    const changeFromHandler = useCallback((event: ChangeEvent) => {
         const target = event.target as HTMLTextAreaElement;
         setFrom(target.value);
-    };
+    }, []);
 
-    const changeNonceHandler = (event: ChangeEvent) => {
+    const changeNonceHandler = useCallback((event: ChangeEvent) => {
         const target = event.target as HTMLTextAreaElement;
         setNonce(target.value);
-    };
+    }, []);
 
-    const changeSignerHandler = (event: ChangeEvent) => {
+    const changeSignerHandler = useCallback((event: ChangeEvent) => {
         const target = event.target as HTMLTextAreaElement;
         setSigner(target.value);
-    };
-
-    // // Refresh publicKey/nonce periodically.
-    // // eslint-disable-next-line consistent-return
-    // useEffect(() => {
-
-    //     if (connection && account) {
-    //         const interval = setInterval(() => {
-    //             console.log('refreshing');
-    //             withJsonRpcClient(connection, (rpcClient) => viewPublicKey(rpcClient, account))
-    //                 .then((record) => {
-    //                     if (record !== undefined) {
-    //                         setPublicKey(record[0]);
-    //                         setNextNonce(record[1]);
-    //                         setNonce(record[1]);
-    //                         const nonce = document.getElementById('nonce') as HTMLTextAreaElement;
-    //                         if (nonce !== null) {
-    //                             nonce.value = record[1];
-    //                         }
-    //                     }
-    //                     setPublicKeyError('');
-    //                 })
-    //                 .catch((e) => {
-    //                     setPublicKeyError((e as Error).message);
-    //                     setPublicKey('');
-    //                     setNextNonce(0);
-    //                     setNonce('');
-    //                 });
-    //         }, REFRESH_INTERVAL.asMilliseconds());
-    //         return () => clearInterval(interval);
-    //     }
-    // }, [connection, account, viewPublicKey]);
-
-    // useEffect(() => {
-    //     // View publicKey record from smart contract.
-    //     if (connection && account) {
-    //         withJsonRpcClient(connection, (rpcClient) => viewPublicKey(rpcClient, account))
-    //             .then((record) => {
-    //                 if (record !== undefined) {
-    //                     setPublicKey(record[0]);
-    //                     setNextNonce(record[1]);
-    //                     setNonce(record[1]);
-    //                     const nonce = document.getElementById('nonce') as HTMLTextAreaElement;
-    //                     if (nonce !== null) {
-    //                         nonce.value = record[1];
-    //                     }
-    //                 }
-    //                 setPublicKeyError('');
-    //             })
-    //             .catch((e) => {
-    //                 setPublicKeyError((e as Error).message);
-    //                 setPublicKey('');
-    //                 setNextNonce(0);
-    //                 setNonce('');
-    //             });
-    //     }
-    // }, [connection, account]);
+    }, []);
 
     useEffect(() => {
-        // Get publicKey record from chain.
+        // Refresh next nonce periodically.
         if (connection && account) {
-            withJsonRpcClient(connection, (rpcClient) => getPublicKey(rpcClient, account))
-                .then((publicKey) => {
-                    if (publicKey !== undefined) {
-                        setAccountInfoPublicKey(publicKey);
-                    }
-                    setPublicKeyError('');
-                })
-                .catch((e) => {
-                    setPublicKeyError((e as Error).message);
-                    setAccountInfoPublicKey('');
-                });
+            const interval = setInterval(() => {
+                console.log('refreshing');
+                withJsonRpcClient(connection, (rpcClient) => getNonceOf(rpcClient, account))
+                    .then((nonceValue) => {
+                        if (nonceValue !== undefined) {
+                            setNextNonce(nonceValue);
+                        }
+                        setNextNonceError('');
+                    })
+                    .catch((e) => {
+                        setNextNonceError((e as Error).message);
+                        setNextNonce(0);
+                    });
+            }, REFRESH_INTERVAL.asMilliseconds());
+            return () => clearInterval(interval);
         }
     }, [connection, account]);
 
@@ -437,6 +381,23 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                 .catch((e) => {
                     setNextNonceError((e as Error).message);
                     setNextNonce(0);
+                });
+        }
+    }, [connection, account]);
+
+    useEffect(() => {
+        // Get publicKey record from chain.
+        if (connection && account) {
+            withJsonRpcClient(connection, (rpcClient) => getPublicKey(rpcClient, account))
+                .then((publicKey) => {
+                    if (publicKey !== undefined) {
+                        setAccountInfoPublicKey(publicKey);
+                    }
+                    setPublicKeyError('');
+                })
+                .catch((e) => {
+                    setPublicKeyError((e as Error).message);
+                    setAccountInfoPublicKey('');
                 });
         }
     }, [connection, account]);
@@ -527,7 +488,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                         <p>Update operator via a sponsored transaction</p>
                         <Switch
                             onChange={() => {
-                                setPermitUpdateOperator(!isPermitUpdateOperator);
+                                setUpdateOperatorTab(!isUpdateOperatorTab);
                                 setSignature('');
                                 setSigningError('');
                                 setTxHash('');
@@ -544,13 +505,13 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                             offColor="#308274"
                             onHandleColor="#174039"
                             offHandleColor="#174039"
-                            checked={!isPermitUpdateOperator}
+                            checked={!isUpdateOperatorTab}
                             checkedIcon={false}
                             uncheckedIcon={false}
                         />
                         <p>Transfer via a sponsored transaction</p>
                     </div>
-                    {isPermitUpdateOperator && (
+                    {isUpdateOperatorTab && (
                         <>
                             <label>
                                 <p style={{ marginBottom: 0 }}>Operator Address:</p>
@@ -581,7 +542,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                             </div>
                         </>
                     )}
-                    {!isPermitUpdateOperator && (
+                    {!isUpdateOperatorTab && (
                         <>
                             <div>Mint a token to your account first:</div>
                             <button
@@ -651,19 +612,16 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                         onClick={async () => {
                             setSigningError('');
                             setSignature('');
-                            const serializedMessage = isPermitUpdateOperator
-                                ? await calculateUpdateOperatorMessage(nonce, operator, addOperator)
-                                : await calculateTransferMessage(nonce, tokenID, from, to);
+                            const serializedMessage = isUpdateOperatorTab
+                                ? await generateUpdateOperatorMessage(nonce, operator, addOperator)
+                                : await generateTransferMessage(nonce, tokenID, from, to);
 
                             if (serializedMessage !== '') {
-                                const promise = connection.signMessage(
-                                    account,
-                                    {
-                                        type: 'BinaryMessage',
-                                        value: serializedMessage,
-                                        schema: typeSchemaFromBase64(SERIALIZATION_HELPER_SCHEMA),
-                                    }
-                                );
+                                const promise = connection.signMessage(account, {
+                                    type: 'BinaryMessage',
+                                    value: serializedMessage,
+                                    schema: typeSchemaFromBase64(SERIALIZATION_HELPER_SCHEMA),
+                                });
 
                                 promise
                                     .then((permitSignature) => {
@@ -706,7 +664,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                             setTransactionError('');
                             setWaitingForUser(true);
 
-                            const tx = isPermitUpdateOperator
+                            const tx = isUpdateOperatorTab
                                 ? submitUpdateOperator(VERIFIER_URL, signer, nonce, signature, operator, addOperator)
                                 : submitTransfer(VERIFIER_URL, signer, nonce, signature, tokenID, from, to);
 

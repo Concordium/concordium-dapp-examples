@@ -199,7 +199,7 @@ export async function mint(connection: WalletConnection, account: string) {
             },
             receiveName: `${SPONSORED_TX_CONTRACT_NAME}.mint`,
             maxContractExecutionEnergy: 30000n,
-        } as unknown as UpdateContractPayload,
+        } as UpdateContractPayload,
 
         {
             parameters: {
