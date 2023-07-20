@@ -5,6 +5,10 @@ import { htmlPlugin } from '@craftamap/esbuild-plugin-html';
 import svgrPlugin from 'esbuild-plugin-svgr';
 import fs from 'fs';
 
+if (process.env.SMART_CONTRACT_INDEX === undefined || Number.isNaN(process.env.SMART_CONTRACT_INDEX)) {
+    throw Error('Environmental variable SMART_CONTRACT_INDEX needs to be defined and set to a number');
+}
+
 const watch = Boolean(process.env.WATCH);
 
 const main = 'src/index.tsx';
@@ -37,6 +41,7 @@ const config: BuildOptions = {
     // https://github.com/evanw/esbuild/issues/73#issuecomment-1204706295
     define: {
         global: 'window',
+        'process.env.SMART_CONTRACT_INDEX': process.env.SMART_CONTRACT_INDEX,
     },
 };
 

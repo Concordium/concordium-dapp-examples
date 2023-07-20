@@ -16,7 +16,6 @@ import { version } from '../package.json';
 import { submitUpdateOperator, submitTransfer, mint } from './utils';
 import {
     SPONSORED_TX_CONTRACT_NAME,
-    SPONSORED_TX_CONTRACT_INDEX,
     NONCE_OF_PARAMETER_SCHEMA,
     NONCE_OF_RETURN_VALUE_SCHEMA,
     SERIALIZATION_HELPER_SCHEMA,
@@ -25,7 +24,6 @@ import {
     WALLET_CONNECT,
     UPDATE_OPERATOR_SCHEMA,
     TRANSFER_SCHEMA,
-    EXPIRY_TIME_SIGNATURE,
     REFRESH_INTERVAL,
     VERIFIER_URL,
 } from './constants';
@@ -78,7 +76,13 @@ const InputFieldStyle = {
     padding: '10px 20px',
 };
 
-async function generateTransferMessage(nonce: string, tokenID: string, from: string, to: string) {
+async function generateTransferMessage(
+    expiryTimeSignature: string,
+    nonce: string,
+    tokenID: string,
+    from: string,
+    to: string
+) {
     if (nonce === '') {
         alert('Insert a nonce.');
         return '';
@@ -138,11 +142,11 @@ async function generateTransferMessage(nonce: string, tokenID: string, from: str
 
     const message = {
         contract_address: {
-            index: Number(SPONSORED_TX_CONTRACT_INDEX),
+            index: Number(process.env.SMART_CONTRACT_INDEX),
             subindex: 0,
         },
         nonce: Number(nonce),
-        timestamp: EXPIRY_TIME_SIGNATURE,
+        timestamp: expiryTimeSignature,
         entry_point: 'transfer',
         payload: Array.from(payload),
     };
@@ -152,7 +156,12 @@ async function generateTransferMessage(nonce: string, tokenID: string, from: str
     return serializedMessage;
 }
 
-async function generateUpdateOperatorMessage(nonce: string, operator: string, addOperator: boolean) {
+async function generateUpdateOperatorMessage(
+    expiryTimeSignature: string,
+    nonce: string,
+    operator: string,
+    addOperator: boolean
+) {
     if (nonce === '') {
         alert('Insert a nonce.');
         return '';
@@ -195,11 +204,11 @@ async function generateUpdateOperatorMessage(nonce: string, operator: string, ad
 
     const message = {
         contract_address: {
-            index: Number(SPONSORED_TX_CONTRACT_INDEX),
+            index: Number(process.env.SMART_CONTRACT_INDEX),
             subindex: 0,
         },
         nonce: Number(nonce),
-        timestamp: EXPIRY_TIME_SIGNATURE,
+        timestamp: expiryTimeSignature,
         entry_point: 'updateOperator',
         payload: Array.from(payload),
     };
@@ -231,13 +240,13 @@ async function getNonceOf(rpcClient: any, account: string) {
 
     const res = await rpcClient.invokeContract({
         method: `${SPONSORED_TX_CONTRACT_NAME}.nonceOf`,
-        contract: { index: SPONSORED_TX_CONTRACT_INDEX, subindex: CONTRACT_SUB_INDEX },
+        contract: { index: Number(process.env.SMART_CONTRACT_INDEX), subindex: CONTRACT_SUB_INDEX },
         parameter: param,
     });
 
     if (!res || res.tag === 'failure' || !res.returnValue) {
         throw new Error(
-            `RPC call 'invokeContract' on method '${SPONSORED_TX_CONTRACT_NAME}.nonceOf' of contract '${SPONSORED_TX_CONTRACT_INDEX}' failed`
+            `RPC call 'invokeContract' on method '${SPONSORED_TX_CONTRACT_NAME}.nonceOf' of contract SMART_CONTRACT_INDEX failed`
         );
     }
 
@@ -251,7 +260,7 @@ async function getNonceOf(rpcClient: any, account: string) {
 
     if (returnValues === undefined) {
         throw new Error(
-            `Deserializing the returnValue from the '${SPONSORED_TX_CONTRACT_NAME}.nonceOf' method of contract '${SPONSORED_TX_CONTRACT_INDEX}' failed`
+            `Deserializing the returnValue from the '${SPONSORED_TX_CONTRACT_NAME}.nonceOf' method of contract SMART_CONTRACT_INDEX failed`
         );
     } else {
         // Return next nonce of a user
@@ -306,6 +315,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
     const [nextNonce, setNextNonce] = useState<number>(0);
     const [accountInfoPublicKey, setAccountInfoPublicKey] = useState('');
 
+    const [expiryTime, setExpiryTime] = useState('');
     const [operator, setOperator] = useState('');
     const [addOperator, setAddOperator] = useState<boolean>(true);
     const [tokenID, setTokenID] = useState('');
@@ -612,9 +622,18 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                         onClick={async () => {
                             setSigningError('');
                             setSignature('');
+
+                            // Signatures should expire in one day. Add 1 day to the current time.
+                            const date = new Date();
+                            date.setTime(date.getTime() + 86400 * 1000);
+
+                            // RFC 3339 format (e.g. 2030-08-08T05:15:00Z)
+                            const expiryTimeSignature = date.toISOString();
+                            setExpiryTime(expiryTimeSignature);
+
                             const serializedMessage = isUpdateOperatorTab
-                                ? await generateUpdateOperatorMessage(nonce, operator, addOperator)
-                                : await generateTransferMessage(nonce, tokenID, from, to);
+                                ? await generateUpdateOperatorMessage(expiryTimeSignature, nonce, operator, addOperator)
+                                : await generateTransferMessage(expiryTimeSignature, nonce, tokenID, from, to);
 
                             if (serializedMessage !== '') {
                                 const promise = connection.signMessage(account, {
@@ -665,8 +684,16 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                             setWaitingForUser(true);
 
                             const tx = isUpdateOperatorTab
-                                ? submitUpdateOperator(VERIFIER_URL, signer, nonce, signature, operator, addOperator)
-                                : submitTransfer(VERIFIER_URL, signer, nonce, signature, tokenID, from, to);
+                                ? submitUpdateOperator(
+                                      VERIFIER_URL,
+                                      signer,
+                                      nonce,
+                                      signature,
+                                      expiryTime,
+                                      operator,
+                                      addOperator
+                                  )
+                                : submitTransfer(VERIFIER_URL, signer, nonce, signature, expiryTime, tokenID, from, to);
 
                             tx.then((txHashReturned) => {
                                 setTxHash(txHashReturned.tx_hash);
