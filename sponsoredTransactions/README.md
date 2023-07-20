@@ -44,7 +44,7 @@ Note: To get your `ACCOUNT_KEY_FILE` (the `3PXwJYYPf6fyVb4GJquxSZU8puxrHfzc4Xogd
 
 See the [docker file](./Dockerfile) to explore the environment variables that can set.
 
-Note: Use the same smart contract index for the frontend and backend. In other words, use the smart contract index from the `./frontend/src/constants.ts` file in the dockerfile.
+Note: Use the same smart contract index for the frontend and backend. In other words, use the smart contract index from the `./frontend/package.json` file in the dockerfile.
 
 
 

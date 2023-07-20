@@ -3,13 +3,7 @@
 import { createContext } from 'react';
 import { AccountTransactionType, CcdAmount, UpdateContractPayload } from '@concordium/web-sdk';
 import { WalletConnection, typeSchemaFromBase64 } from '@concordium/react-components';
-import {
-    SPONSORED_TX_CONTRACT_NAME,
-    SPONSORED_TX_CONTRACT_INDEX,
-    CONTRACT_SUB_INDEX,
-    MINT_PARAMETER_SCHEMA,
-    EXPIRY_TIME_SIGNATURE,
-} from './constants';
+import { SPONSORED_TX_CONTRACT_NAME, CONTRACT_SUB_INDEX, MINT_PARAMETER_SCHEMA } from './constants';
 
 /**
  * Send update operator signature to backend.
@@ -19,6 +13,7 @@ export async function submitUpdateOperator(
     signer: string,
     nonce: string,
     signature: string,
+    expiryTimeSignature: string,
     operator: string,
     addOperator: boolean
 ) {
@@ -73,7 +68,7 @@ export async function submitUpdateOperator(
             signature,
             operator,
             add_operator: addOperator,
-            timestamp: EXPIRY_TIME_SIGNATURE,
+            timestamp: expiryTimeSignature,
         }),
     });
     if (!response.ok) {
@@ -95,6 +90,7 @@ export async function submitTransfer(
     signer: string,
     nonce: string,
     signature: string,
+    expiryTimeSignature: string,
     tokenID: string,
     from: string,
     to: string
@@ -170,7 +166,7 @@ export async function submitTransfer(
             token_id: tokenID,
             from,
             to,
-            timestamp: EXPIRY_TIME_SIGNATURE,
+            timestamp: expiryTimeSignature,
         }),
     });
     if (!response.ok) {
@@ -194,12 +190,12 @@ export async function mint(connection: WalletConnection, account: string) {
         {
             amount: new CcdAmount(BigInt(0n)),
             address: {
-                index: SPONSORED_TX_CONTRACT_INDEX,
+                index: BigInt(Number(process.env.SMART_CONTRACT_INDEX)),
                 subindex: CONTRACT_SUB_INDEX,
             },
             receiveName: `${SPONSORED_TX_CONTRACT_NAME}.mint`,
             maxContractExecutionEnergy: 30000n,
-        } as UpdateContractPayload,
+        } as unknown as UpdateContractPayload,
 
         {
             parameters: {

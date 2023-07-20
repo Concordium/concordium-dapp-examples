@@ -1,17 +1,18 @@
 # Sponsored Transactions Web Application
 
-The example project included in this repository serves as a working example of how to integrate sponsored transactions with smart contracts on the Concordium blockchain. This web app supports the following flows with the browser wallet (or wallet connect):
+The smart contracts, frontend, and backend works with protocol 6 which is live on stagenet. The SMART_CONTRACT_INDEX is set to 5 (stagenet) at the moment in the `package.json` file. It will be updated to testnet onece the protocol 6 is live on testnet.
 
--   Register a public key (associated with the account from your wallet) in the smart contract.
+The example project included in this repository serves as a working example of how to integrate sponsored transactions with smart contracts on the Concordium blockchain. This web app supports the following flows with the browser wallet:
+
 -   Compute the message of a sponsored updateOperator transaction => Sign it with the wallet => Submit the signature and some input parameters to the `/submitUpdateOperator` backend endpoint.
 -   Mint an NFT to your wallet => Compute the message of a sponsored transfer transaction => Sign it with the wallet => Submit the signature and some input parameters to the `/submitTransfer` backend endpoint.
 
-The backend creates a sponsored transaction and submits it to the `permit` function in the smart contract {index: SPONSORED_TX_CONTRACT_INDEX, subindex: 0}. You can look up the SPONSORED_TX_CONTRACT_INDEX in the `./src/constants.ts` file. The backend returns the transaction hash to the frontend.
+The backend creates a sponsored transaction and submits it to the `permit` function in the smart contract {index: SMART_CONTRACT_INDEX, subindex: 0}. You can look up the SMART_CONTRACT_INDEX in the `package.json` file. The backend returns the transaction hash to the frontend.
 
-Note: Use the same smart contract index for the frontend and backend. In other words, use the SPONSORED_TX_CONTRACT_INDEX from the `./src/constants.ts` file (frontend folder) when starting the backend server.
+Note: Use the same smart contract index for the frontend and backend. In other words, use the SMART_CONTRACT_INDEX from the `package.json` file (frontend folder) when starting the backend server.
 
 Note:
-The smart contract {index: SPONSORED_TX_CONTRACT_INDEX, subindex: 0} can be found [here](https://github.com/Concordium/concordium-rust-smart-contracts/tree/main/examples/cis3-nft-sponsored-txs).
+The smart contract code at {index: SMART_CONTRACT_INDEX, subindex: 0} can be found [here](https://github.com/Concordium/concordium-rust-smart-contracts/tree/main/examples/cis3-nft-sponsored-txs).
 
 ## Prerequisites
 

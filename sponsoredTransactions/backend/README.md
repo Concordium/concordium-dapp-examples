@@ -31,7 +31,7 @@ To get your account file (the `3PXwJYYPf6fyVb4GJquxSZU8puxrHfzc4XogdMVot8MUQK53t
 <img src="./pic/pic2.png"  width="200" />
 <img src="./pic/pic3.png"  width="200" />
 
-Note: Use the same smart contract index for the frontend and backend. In other words, use the SPONSORED_TX_CONTRACT_INDEX from the `../frontend/src/constants.ts` file when starting the backend server.
+Note: Use the same smart contract index for the frontend and backend. In other words, use the SMART_CONTRACT_INDEX from the `../frontend/package.json` file when starting the backend server.
 
 # Using the tool
 
@@ -39,10 +39,10 @@ The backend is a simple server that exposes two endpoints
  - `POST /submitUpdateOperator`
  - `POST /submitTransfer`
 
-The overall flow is that the user signs a sponsored updateOperator/transfer message in the browser wallet (or mobile wallet via walletConnect) and sends the signature together with some input parameters to this backend server via one of the above endpoints. The backend creates a sponsored transaction and submits it to the `permit` function in the smart contract {index: SPONSORED_TX_CONTRACT_INDEX, subindex: 0}. You can look up the SPONSORED_TX_CONTRACT_INDEX in the `../frontend/src/constants.ts` file. The backend returns the transaction hash to the frontend. This backend server has to have access to a blockchain node and an account (with its associated private key) that is funded with some CCD to submit the sponsored transaction to the chain. The backend wallet will pay for the transaction fees.
+The overall flow is that the user signs a sponsored updateOperator/transfer message in the browser wallet (or mobile wallet via walletConnect) and sends the signature together with some input parameters to this backend server via one of the above endpoints. The backend creates a sponsored transaction and submits it to the `permit` function in the smart contract {index: SMART_CONTRACT_INDEX, subindex: 0}. You can look up the SMART_CONTRACT_INDEX in the `../frontend/package.json` file. The backend returns the transaction hash to the frontend. This backend server has to have access to a blockchain node and an account (with its associated private key) that is funded with some CCD to submit the sponsored transaction to the chain. The backend wallet will pay for the transaction fees.
 
 Note:
-The smart contract {index: SPONSORED_TX_CONTRACT_INDEX, subindex: 0} can be found [here](https://github.com/Concordium/concordium-rust-smart-contracts/tree/main/examples/cis3-nft-sponsored-txs).
+The smart contract code {index: SMART_CONTRACT_INDEX, subindex: 0} can be found [here](https://github.com/Concordium/concordium-rust-smart-contracts/tree/main/examples/cis3-nft-sponsored-txs).
 
 See [src/main.rs](./src/main.rs) for the formats of requests and responses. Both
 requests and responses are JSON encoded. The requests are handled by handlers in [src/handlers.rs](./src/handlers.rs).
