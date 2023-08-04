@@ -1,11 +1,11 @@
 use crate::crypto_common::types::TransactionTime;
-use crate::types;
 use crate::types::*;
 use concordium_rust_sdk::cis2::{
     AdditionalData, OperatorUpdate, Receiver, TokenAmount, Transfer, UpdateOperator,
 };
 use concordium_rust_sdk::smart_contracts::common::{
-    AccountAddress, Address, Amount, ContractAddress, OwnedEntrypointName,
+    AccountAddress, AccountSignatures, Address, Amount, ContractAddress, CredentialSignatures,
+    OwnedEntrypointName, Signature, SignatureEd25519,
 };
 use concordium_rust_sdk::types::smart_contracts::{ContractContext, InvokeContractResult};
 use concordium_rust_sdk::types::{smart_contracts, transactions, Energy, WalletAccount};
@@ -125,15 +125,12 @@ pub async fn submit_transaction(
         .map_err(|_| LogError::SignatureError)?;
 
     let mut inner_signature_map = BTreeMap::new();
-    inner_signature_map.insert(
-        0,
-        types::Signature::Ed25519(types::SignatureEd25519(signature)),
-    );
+    inner_signature_map.insert(0, Signature::Ed25519(SignatureEd25519(signature)));
 
     let mut signature_map = BTreeMap::new();
     signature_map.insert(
         0,
-        types::CredentialSignatures {
+        CredentialSignatures {
             sigs: inner_signature_map,
         },
     );
