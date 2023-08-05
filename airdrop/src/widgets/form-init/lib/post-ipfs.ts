@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { IPFS_URL } from 'shared/config/urls.ts';
+import { PINATA_API_KEY, PINATA_SECRET_API_KEY } from "../../../shared/config/api.ts";
 
 export async function postIpfs(file: File): Promise<string> {
 	const formData = new FormData();
@@ -11,8 +12,8 @@ export async function postIpfs(file: File): Promise<string> {
 			url: 'https://api.pinata.cloud/pinning/pinFileToIPFS',
 			data: formData,
 			headers: {
-				pinata_api_key: `25961eb67d1f33c6d03a`,
-				pinata_secret_api_key: `65a555538d3a0de8bd08bfdbb1f6363743b4480f86435547de4a255fdf1d39a8`,
+				pinata_api_key: PINATA_API_KEY,
+				pinata_secret_api_key: PINATA_SECRET_API_KEY,
 				'Content-Type': 'multipart/form-data',
 			},
 		});

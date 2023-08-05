@@ -20,7 +20,6 @@ export function useFormFind() {
 	const onAction: SubmitHandler<FormFindProps> = async (
 		data,
 	): Promise<void> => {
-		// TODO: make error handler
 		setIsLoading(true);
 		setErrorMessage('');
 		if (!connection || !account) return;

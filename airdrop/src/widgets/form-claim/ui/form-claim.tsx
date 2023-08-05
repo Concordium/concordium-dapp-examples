@@ -22,14 +22,6 @@ export const FormClaim: FC = () => {
 	return (
 		<form onSubmit={handleAction}>
 			<div className='flex flex-col gap-4'>
-				{/*<InputNumber*/}
-				{/*	{...{*/}
-				{/*		register,*/}
-				{/*		errors,*/}
-				{/*		name: 'selected NFT',*/}
-				{/*		defaultValue: 0,*/}
-				{/*	}}*/}
-				{/*/>*/}
 
 				<InputNumber
 					{...{

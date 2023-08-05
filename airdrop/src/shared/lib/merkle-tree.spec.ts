@@ -11,9 +11,12 @@ const DEFAULT_WHITElIST = [
 	'3br3Fx9AvGjfqaRedgmPncQrUmSxtBqRtSZnBaWCueHaiEpxKB',
 ];
 
+const WHITELIST_ADDRESS = DEFAULT_WHITElIST[0];
+const NON_WHITELIST_ADDRESS = '4n7N78gNEXuVjmdD421H4X6tdjDQ4LdkYswV8paAJzQVsvZ4QA'
+
 describe('merkle tree', () => {
 	it('creating tree', () => {
-		const address = '4n7N78gNEXuVjmdD421H4X6tdjDQ4LdkYswV8paAJzQVsvZ4QU';
+		const address = WHITELIST_ADDRESS;
 		const tree = create_hash_tree(DEFAULT_WHITElIST);
 		expect(tree).not.eq(undefined);
 		if (tree) {
@@ -24,7 +27,7 @@ describe('merkle tree', () => {
 	});
 
 	it('hash not exist', () => {
-		const address = '4n7N78gNEXuVjmdD421H4X6tdjDQ4LdkYswV8paAJzQVsvZ4QA';
+		const address = NON_WHITELIST_ADDRESS;
 		const tree = create_hash_tree(DEFAULT_WHITElIST);
 		expect(tree).not.eq(undefined);
 		if (tree) {
@@ -35,7 +38,7 @@ describe('merkle tree', () => {
 	});
 
 	it('create proof', () => {
-		const address = '4n7N78gNEXuVjmdD421H4X6tdjDQ4LdkYswV8paAJzQVsvZ4QU';
+		const address = WHITELIST_ADDRESS;
 		const tree = create_hash_tree(DEFAULT_WHITElIST);
 		expect(tree).not.eq(undefined);
 		if (tree) {
@@ -46,7 +49,7 @@ describe('merkle tree', () => {
 	});
 
 	it('create wrong proof', () => {
-		const address = '4n7N78gNEXuVjmdD421H4X6tdjDQ4LdkYswV8paAJzQVsvZ4QA';
+		const address = NON_WHITELIST_ADDRESS;
 		const tree = create_hash_tree(DEFAULT_WHITElIST);
 		expect(tree).not.eq(undefined);
 		if (tree) {
@@ -55,35 +58,4 @@ describe('merkle tree', () => {
 			expect(proof).eq(undefined);
 		}
 	});
-
-	it('own merkle tree', () => {
-		const tree: string[] = [];
-		console.log(SHA256(DEFAULT_WHITElIST[0]));
-
-		tree.push(
-			SHA256(DEFAULT_WHITElIST[0]).toString(),
-			SHA256(DEFAULT_WHITElIST[1]).toString(),
-		);
-		tree.push(SHA256(tree[0] + tree[1]).toString());
-
-		console.log(tree);
-	});
-
-	// it('check proof', () => {
-	// 	const address = '4n7N78gNEXuVjmdD421H4X6tdjDQ4LdkYswV8paAJzQVsvZ4QU';
-	// 	const tree = create_hash_tree(DEFAULT_WHITElIST);
-	// 	expect(tree).not.eq(undefined);
-	// 	if (tree) {
-	// 		const hashed = SHA256(address).toString();
-	// 		const proof = get_hash_proof(hashed, tree);
-	// 		expect(proof).not.eq(undefined);
-	// 		if (proof) {
-	// 			const tree = create_hash_tree(DEFAULT_WHITElIST);
-	// 			expect(tree).not.eq(undefined);
-	// 			if (tree) {
-	// 				check_proof(proof, tree);
-	// 			}
-	// 		}
-	// 	}
-	// });
 });

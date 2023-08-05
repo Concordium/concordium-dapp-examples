@@ -9,7 +9,7 @@ export async function getProof(
 	account: string,
 	index: number,
 ): Promise<string[]> {
-	const contractState = await contractView(connection, +index);
+	const contractState = await contractView(connection, index);
 	const whitelistRaw = (await axios.get(contractState.whitelistUrl)).data;
 	const whitelist = whitelistRaw?.split(',');
 

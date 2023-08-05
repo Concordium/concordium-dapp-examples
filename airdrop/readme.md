@@ -30,6 +30,12 @@ This will drop an optimized and minified bundle in the build folder that is read
 
 See the section about deployment for more information.
 
+## test
+Run unit tests
+```bash
+npm run test
+```
+
 ## About Web Application
 The application provides a simple functionality to create and use airdrops.
 
