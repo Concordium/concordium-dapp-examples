@@ -78,7 +78,7 @@ On this page, you can find airdrops that interest you.
 
 On this page you can claim airdrops.
 
-- AMOUNT OF NFTs - number of NFTs at claiming
+- AMOUNT OF NFTs - number of NFTs to claim
 
 ![claim-page.png](docs/claim-page.png)
 _base claim page_
