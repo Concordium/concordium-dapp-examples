@@ -107,5 +107,5 @@ On this page you can view all created transactions
 
 ### Other
 
-The application only supports the desktop solution. 
+The application only supports the Concordium browser wallet. 
 Mobile version is not supported
