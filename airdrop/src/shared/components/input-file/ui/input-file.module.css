@@ -1,16 +1,16 @@
 .inputFile {
-  @apply flex justify-between;
-  @apply w-64 px-4 py-3;
-  @apply cursor-pointer;
-  @apply border-[1px] border-gray-700 border-dashed;
-  @apply rounded-md;
+	@apply flex justify-between;
+	@apply w-64 px-4 py-3;
+	@apply cursor-pointer;
+	@apply border-[1px] border-gray-700 border-dashed;
+	@apply rounded-md;
 }
 
 .inputFileError {
-  @apply border-[1px] border-red-700 border-dashed;
-  @apply text-red-700  dark:text-red-500;
+	@apply border-[1px] border-red-700 border-dashed;
+	@apply text-red-700  dark:text-red-500;
 }
 
 .accept {
-  @apply text-gray-500;
+	@apply text-gray-500;
 }

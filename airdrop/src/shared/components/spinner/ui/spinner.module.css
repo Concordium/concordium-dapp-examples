@@ -18,25 +18,25 @@
 }
 
 .xs {
-  border-width: 2px;
-  width: 24px;
-  height: 24px;
+	border-width: 2px;
+	width: 24px;
+	height: 24px;
 }
 
 .sm {
-  border-width: 3px;
-  width: 36px;
-  height: 36px;
+	border-width: 3px;
+	width: 36px;
+	height: 36px;
 }
 
 .md {
-  border-width: 4px;
-  width: 48px;
-  height: 48px;
+	border-width: 4px;
+	width: 48px;
+	height: 48px;
 }
 
 .lg {
-  border-width: 8px;
-  width: 96px;
-  height: 96px;
+	border-width: 8px;
+	width: 96px;
+	height: 96px;
 }

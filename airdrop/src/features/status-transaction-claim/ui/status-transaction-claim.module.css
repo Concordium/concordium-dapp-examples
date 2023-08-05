@@ -1,18 +1,18 @@
 .statusTransactionClaim {
-  @apply max-w-max;
-  @apply flex flex-col gap-2;
-  @apply px-4 py-2;
-  @apply border-[1px] border-gray-700 rounded-md;
+	@apply max-w-max;
+	@apply flex flex-col gap-2;
+	@apply px-4 py-2;
+	@apply border-[1px] border-gray-700 rounded-md;
 }
 .iconsBar {
-  @apply flex gap-2;
-  @apply justify-center items-center;
+	@apply flex gap-2;
+	@apply justify-center items-center;
 }
 .iconsBar > * {
-  @apply self-center;
+	@apply self-center;
 }
 
 .errorMessage {
-  @apply border-t-[1px] border-gray-700;
-  @apply p-2;
+	@apply border-t-[1px] border-gray-700;
+	@apply p-2;
 }

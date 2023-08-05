@@ -1,42 +1,43 @@
 .styledButton {
-  @apply px-5 py-4;
-  @apply pr-7;
-  @apply min-w-[256px];
-  @apply text-left;
-  @apply max-h-fit max-w-fit;
-  @apply rounded-lg border-2 border-transparent;
-  @apply border-gray-400 hover:bg-gray-100;
-  @apply hover:border-gray-600;
-  @apply dark:border-neutral-700 hover:dark:bg-neutral-800/30;
-  @apply transition-colors;
+	@apply px-5 py-4;
+	@apply pr-7;
+	@apply min-w-[256px];
+	@apply text-left;
+	@apply max-h-fit max-w-fit;
+	@apply rounded-lg border-2 border-transparent;
+	@apply border-gray-400 hover:bg-gray-100;
+	@apply hover:border-gray-600;
+	@apply dark:border-neutral-700 hover:dark:bg-neutral-800/30;
+	@apply transition-colors;
 }
 
 .title {
-  @apply max-h-min;
-  @apply flex gap-2;
-  @apply mb-3;
-  @apply text-2xl font-semibold;
-  @apply transition-all;
+	@apply max-h-min;
+	@apply flex gap-2;
+	@apply mb-3;
+	@apply text-2xl font-semibold;
+	@apply transition-all;
 }
 
 .center {
-  @apply justify-center;
+	@apply justify-center;
 }
 
-.children {}
+.children {
+}
 
 .styledButton:hover .title {
-  @apply gap-4;
+	@apply gap-4;
 }
 
 .icon {
-  @apply h-7 w-7;
-  @apply self-end;
-  @apply inline-block;
-  @apply transition-transform;
-  @apply motion-reduce:transform-none;
+	@apply h-7 w-7;
+	@apply self-end;
+	@apply inline-block;
+	@apply transition-transform;
+	@apply motion-reduce:transform-none;
 }
 
 .description {
-  @apply m-0 max-w-[30ch] text-sm opacity-50;
+	@apply m-0 max-w-[30ch] text-sm opacity-50;
 }

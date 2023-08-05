@@ -1,23 +1,23 @@
 .settingsTransactions {
-  @apply mt-8 flex flex-col min-w-[100%];
+	@apply mt-8 flex flex-col min-w-[100%];
 }
 
 .header {
-  @apply text-2xl text-black dark:text-white;
+	@apply text-2xl text-black dark:text-white;
 }
 
 .cleanButton {
-  @apply border-2 bg-red-700 text-white font-bold rounded-2xl px-4 py-2 hover:bg-red-500 transition-colors;
+	@apply border-2 bg-red-700 text-white font-bold rounded-2xl px-4 py-2 hover:bg-red-500 transition-colors;
 }
 
 .cleanTitle {
-  @apply self-center;
+	@apply self-center;
 }
 
 .settingsContainer {
-  @apply mt-8 flex flex-col min-w-[100%] gap-2;
+	@apply mt-8 flex flex-col min-w-[100%] gap-2;
 }
 
 .settingContainer {
-  @apply flex justify-between min-w-max border-b border-gray-400 align-middle pb-2;
+	@apply flex justify-between min-w-max border-b border-gray-400 align-middle pb-2;
 }
