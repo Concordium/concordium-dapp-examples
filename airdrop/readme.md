@@ -67,7 +67,7 @@ If the transaction failed, you will see a red cross and an error message in the 
 
 ### Find
 
-On this page, you can find airdrops that interest them.
+On this page, you can find airdrops that interest you.
 
 - INDEX - set the contract index that was reported when the airdrop was created
 - SUBINDEX - in most cases set to 0
