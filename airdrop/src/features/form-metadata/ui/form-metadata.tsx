@@ -17,7 +17,6 @@ export function FormMetadata() {
 		formState: { errors },
 	} = useForm<FormMetadataProps>();
 
-	// const setMetadata = useMetadataStore((store) => store.setMetadata);
 	const [metadata, setMetadata] = useState<string | undefined>('');
 	const [isLoading, setIsLoading] = useState(false);
 	const [filename, setFilename] = useState('');

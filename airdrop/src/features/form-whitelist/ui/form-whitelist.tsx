@@ -13,7 +13,6 @@ interface FormWhitelistProps {
 export function FormWhitelist() {
 	const { register, handleSubmit } = useForm<FormWhitelistProps>();
 
-	// const setWhitelist = useWhitelistStore((store) => store.setWhitelist);
 	const [whitelist, setWhitelist] = useState<string | undefined>('');
 	const [isLoading, setIsLoading] = useState(false);
 	const [fileError, setFileError] = useState<string>();

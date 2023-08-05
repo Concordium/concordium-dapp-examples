@@ -59,14 +59,6 @@ export const FormInit: FC = () => {
 				)}
 			</div>
 
-			{/*<div className='flex flex-row gap-4'>*/}
-			{/*	<p>selected index</p>*/}
-			{/*	<input*/}
-			{/*		type='checkbox'*/}
-			{/*		{...register('selected index')}*/}
-			{/*	/>*/}
-			{/*</div>*/}
-
 			<ButtonDrop isLoading={isLoading} />
 
 			{transactionHash && (

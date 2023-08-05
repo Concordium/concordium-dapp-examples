@@ -8,7 +8,7 @@ import {
 	LOCAL_STORAGE_KEY_RAW_SCHEMA,
 } from 'shared/config/local-storage.ts';
 import {
-	DEFAULT_LP_RAW_SCHEMA,
+	DEFAULT_RAW_SCHEMA,
 	DEFAULT_RAW_MODULE_REFERENCE,
 } from 'shared/config/smart-contract.ts';
 
@@ -37,7 +37,7 @@ export const FormSmartContract: FC<FormSmartContractWrapperProps> = ({
 		);
 		sessionStorage.setItem(
 			LOCAL_STORAGE_KEY_RAW_SCHEMA,
-			DEFAULT_LP_RAW_SCHEMA,
+			DEFAULT_RAW_SCHEMA,
 		);
 		window.location.reload();
 	}

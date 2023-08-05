@@ -81,12 +81,15 @@ On this page you can claim airdrops.
 - AMOUNT OF NFTs - number of NFTs at claiming
 
 ![claim-page.png](docs/claim-page.png)
+
 _base claim page_
 
 ![claim-page-success.png](docs/claim-page-success.png)
+
 _success claim page_
 
 ![claim-page-error.png](docs/claim-page-error.png)
+
 _error claim page_
 
 ### Transactions
@@ -94,9 +97,11 @@ _error claim page_
 On this page you can view all created transactions
 
 ![transactions-page-init.png](docs/transactions-page-init.png)
+
 _transactions init (create)_
 
 ![transactions-page-claim.png](docs/transactions-page-claim.png)
+
 _transactions claim_
 
 ### Settings

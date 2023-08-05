@@ -10,7 +10,6 @@ import cls from './input-number.module.css';
 import classNames from 'classnames';
 
 export const numberRegExp = /^\d+$/;
-// export const numberRegExp = /^([^0\D]\d+)|0$/;
 
 interface NumberInputProperties<T extends FieldValues> {
 	className?: string;
