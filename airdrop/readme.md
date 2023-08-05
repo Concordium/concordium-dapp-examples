@@ -43,7 +43,7 @@ To interact with the application you need the concordium wallet web extension
 
 On the Create page you will find everything you need to create an airdrop using fields such as:
 - METADATA - (select the metadata file (you can use the examples from the homepage)). After a successful upload, you will see information about your NFT.
-- WHITELIST - (select an account whitelist file. The file is a set of wallet addresses that can pick up airdrop. The "," is used as a delimiter. For example "4n...QA,3b...KB,5g...SL".
+- WHITELIST - (select an account whitelist file). The file is a set of wallet addresses that can pick up the airdrop. The "," is used as a delimiter. For example "4n...QA,3b...KB,5g...SL".
 - NFT LIMIT - maximum number of NFTs in this airdrop.
 - RESERVE - The number of NFTs to whitelist. Only whitelist accounts can pick up these tokens.
 - NFT LIMIT PER ADDRESS - the maximum number of NFTs that one account will be able to pick up.
