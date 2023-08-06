@@ -10,9 +10,7 @@ interface FormWhitelistProps {
 	whitelist: FileList;
 }
 
-type FileError =
-  | 'IPFS error'
-  | 'File loading error'
+type FileError = 'IPFS error' | 'File loading error';
 
 export function FormWhitelist() {
 	const { register, handleSubmit } = useForm<FormWhitelistProps>();
@@ -47,7 +45,7 @@ export function FormWhitelist() {
 			whitelistReader.onloadend = listenerFabric(setWhitelist);
 			whitelistReader.readAsText(data.whitelist[0]);
 		} catch (error) {
-      console.error(error);
+			console.error(error);
 			setFileError('File loading error');
 			setIsLoading(false);
 			return;

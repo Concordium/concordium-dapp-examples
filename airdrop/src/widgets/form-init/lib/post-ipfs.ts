@@ -1,6 +1,9 @@
 import axios from 'axios';
 import { IPFS_URL } from 'shared/config/urls.ts';
-import { PINATA_API_KEY, PINATA_SECRET_API_KEY } from "../../../shared/config/api.ts";
+import {
+	PINATA_API_KEY,
+	PINATA_SECRET_API_KEY,
+} from '../../../shared/config/api.ts';
 
 export async function postIpfs(file: File): Promise<string> {
 	const formData = new FormData();

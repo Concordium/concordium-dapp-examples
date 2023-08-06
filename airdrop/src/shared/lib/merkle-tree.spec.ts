@@ -3,7 +3,7 @@ import {
 	check_hash_value,
 	create_hash_tree,
 	get_hash_proof,
-} from './merkle-tree/merkle_tree';
+} from './merkle-tree';
 import { SHA256 } from 'crypto-js';
 
 const DEFAULT_WHITElIST = [
@@ -12,7 +12,8 @@ const DEFAULT_WHITElIST = [
 ];
 
 const WHITELIST_ADDRESS = DEFAULT_WHITElIST[0];
-const NON_WHITELIST_ADDRESS = '4n7N78gNEXuVjmdD421H4X6tdjDQ4LdkYswV8paAJzQVsvZ4QA'
+const NON_WHITELIST_ADDRESS =
+	'4n7N78gNEXuVjmdD421H4X6tdjDQ4LdkYswV8paAJzQVsvZ4QA';
 
 describe('merkle tree', () => {
 	it('creating tree', () => {
