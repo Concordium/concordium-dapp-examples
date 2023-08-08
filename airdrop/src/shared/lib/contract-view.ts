@@ -1,7 +1,8 @@
 import { CONTRACT_NAME } from '../config';
 import { WalletConnection } from '@concordium/react-components';
-import { decodeView } from 'shared/lib/buffer.ts';
 import { ContractState } from 'shared/model/contract-state.ts';
+import { deserializeReceiveReturnValue, toBuffer } from "@concordium/web-sdk";
+import { DEFAULT_RAW_SCHEMA } from "../config/smart-contract.ts";
 
 export async function contractView(
 	connection: WalletConnection,
@@ -12,5 +13,9 @@ export async function contractView(
 		method: `${CONTRACT_NAME}.view`,
 	});
 
-	return decodeView((encodedView as any).returnValue);
+  return deserializeReceiveReturnValue(        toBuffer((encodedView as any).returnValue, 'hex'),
+    toBuffer(DEFAULT_RAW_SCHEMA, 'base64'),
+    CONTRACT_NAME,
+    'view',
+    2);
 }
