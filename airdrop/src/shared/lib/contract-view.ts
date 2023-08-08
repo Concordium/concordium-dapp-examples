@@ -13,9 +13,14 @@ export async function contractView(
 		method: `${CONTRACT_NAME}.view`,
 	});
 
-  return deserializeReceiveReturnValue(        toBuffer((encodedView as any).returnValue, 'hex'),
+  const contractState =  deserializeReceiveReturnValue(        toBuffer((encodedView as any).returnValue, 'hex'),
     toBuffer(DEFAULT_RAW_SCHEMA, 'base64'),
     CONTRACT_NAME,
     'view',
     2);
+  return {
+    metadataUrl: contractState.metadata,
+    whitelistUrl: contractState.whitelist,
+    numberOfNFTs: contractState['number_of_nfts'],
+  };
 }
