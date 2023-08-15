@@ -1,7 +1,5 @@
 # Sponsored Transactions Web Application
 
-The smart contracts, frontend, and backend works with protocol 6 which is live on stagenet. The SMART_CONTRACT_INDEX is set to 5 (stagenet) at the moment in the `package.json` file. It will be updated to testnet onece the protocol 6 is live on testnet.
-
 The example project included in this repository serves as a working example of how to integrate sponsored transactions with smart contracts on the Concordium blockchain. This web app supports the following flows with the browser wallet:
 
 -   Compute the message of a sponsored updateOperator transaction => Sign it with the wallet => Submit the signature and some input parameters to the `/submitUpdateOperator` backend endpoint.
