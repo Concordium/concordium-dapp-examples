@@ -3,9 +3,15 @@
 /* eslint-disable consistent-return */
 import React, { useEffect, useState, ChangeEvent, useCallback } from 'react';
 import Switch from 'react-switch';
-import { toBuffer, serializeTypeValue, deserializeTypeValue } from '@concordium/web-sdk';
 import {
-    withJsonRpcClient,
+    toBuffer,
+    serializeTypeValue,
+    deserializeTypeValue,
+    AccountAddress,
+    ConcordiumGRPCClient,
+} from '@concordium/web-sdk';
+import {
+    useGrpcClient,
     WalletConnectionProps,
     useConnection,
     useConnect,
@@ -15,6 +21,7 @@ import { version } from '../package.json';
 
 import { submitUpdateOperator, submitTransfer, mint } from './utils';
 import {
+    STAGENET,
     SPONSORED_TX_CONTRACT_NAME,
     NONCE_OF_PARAMETER_SCHEMA,
     NONCE_OF_RETURN_VALUE_SCHEMA,
@@ -219,14 +226,14 @@ async function generateUpdateOperatorMessage(
 }
 
 // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-async function getPublicKey(rpcClient: any, account: string) {
-    const res = await rpcClient.getAccountInfo(account);
+async function getPublicKey(rpcClient: ConcordiumGRPCClient, account: string) {
+    const res = await rpcClient.getAccountInfo(new AccountAddress(account));
     const publicKey = res?.accountCredentials[0].value.contents.credentialPublicKeys.keys[0].verifyKey;
     return publicKey;
 }
 
 // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-async function getNonceOf(rpcClient: any, account: string) {
+async function getNonceOf(rpcClient: ConcordiumGRPCClient, account: string) {
     const param = serializeTypeValue(
         {
             queries: [
@@ -240,7 +247,7 @@ async function getNonceOf(rpcClient: any, account: string) {
 
     const res = await rpcClient.invokeContract({
         method: `${SPONSORED_TX_CONTRACT_NAME}.nonceOf`,
-        contract: { index: Number(process.env.SMART_CONTRACT_INDEX), subindex: CONTRACT_SUB_INDEX },
+        contract: { index: BigInt(Number(process.env.SMART_CONTRACT_INDEX)), subindex: CONTRACT_SUB_INDEX },
         parameter: param,
     });
 
@@ -306,6 +313,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
 
     const { connection, setConnection, account, genesisHash } = useConnection(connectedAccounts, genesisHashes);
     const { connect, isConnecting, connectError } = useConnect(activeConnector, setConnection);
+    const grpcClient = useGrpcClient(STAGENET);
 
     const [publicKeyError, setPublicKeyError] = useState('');
     const [nextNonceError, setNextNonceError] = useState('');
@@ -359,10 +367,11 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
 
     useEffect(() => {
         // Refresh next nonce periodically.
-        if (connection && account) {
+        if (grpcClient && account) {
             const interval = setInterval(() => {
                 console.log('refreshing');
-                withJsonRpcClient(connection, (rpcClient) => getNonceOf(rpcClient, account))
+
+                getNonceOf(grpcClient, account)
                     .then((nonceValue) => {
                         if (nonceValue !== undefined) {
                             setNextNonce(nonceValue);
@@ -376,12 +385,12 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
             }, REFRESH_INTERVAL.asMilliseconds());
             return () => clearInterval(interval);
         }
-    }, [connection, account]);
+    }, [grpcClient, account]);
 
     useEffect(() => {
         // Get next nonce record from smart contract.
-        if (connection && account) {
-            withJsonRpcClient(connection, (rpcClient) => getNonceOf(rpcClient, account))
+        if (grpcClient && account) {
+            getNonceOf(grpcClient, account)
                 .then((nonceValue) => {
                     if (nonceValue !== undefined) {
                         setNextNonce(nonceValue);
@@ -393,12 +402,12 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                     setNextNonce(0);
                 });
         }
-    }, [connection, account]);
+    }, [grpcClient, account]);
 
     useEffect(() => {
         // Get publicKey record from chain.
-        if (connection && account) {
-            withJsonRpcClient(connection, (rpcClient) => getPublicKey(rpcClient, account))
+        if (grpcClient && account) {
+            getPublicKey(grpcClient, account)
                 .then((publicKey) => {
                     if (publicKey !== undefined) {
                         setAccountInfoPublicKey(publicKey);
@@ -410,7 +419,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                     setAccountInfoPublicKey('');
                 });
         }
-    }, [connection, account]);
+    }, [grpcClient, account]);
 
     const [txHash, setTxHash] = useState('');
     const [transactionError, setTransactionError] = useState('');

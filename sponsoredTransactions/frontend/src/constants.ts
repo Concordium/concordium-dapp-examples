@@ -1,12 +1,15 @@
-import { BrowserWalletConnector, ephemeralConnectorType, WalletConnectConnector } from '@concordium/react-components';
+import {
+    BrowserWalletConnector,
+    ephemeralConnectorType,
+    Network,
+    WalletConnectConnector,
+} from '@concordium/react-components';
 import { SignClientTypes } from '@walletconnect/types';
 import moment from 'moment';
 
 export const VERIFIER_URL = '/api';
 
 export const REFRESH_INTERVAL = moment.duration(5, 'seconds');
-
-export const TESTNET_GENESIS_BLOCK_HASH = '4221332d34e1694168c2a0c0b3fd0f273809612cb13d000d5c2e00e85f50f796';
 
 export const SPONSORED_TX_CONTRACT_NAME = 'cis3_nft';
 
@@ -35,6 +38,16 @@ const WALLET_CONNECT_OPTS: SignClientTypes.Options = {
         url: '#',
         icons: ['https://walletconnect.com/walletconnect-logo.png'],
     },
+};
+
+export const STAGENET: Network = {
+    name: 'stagenet',
+    genesisHash: '38bf770b4c247f09e1b62982bb71000c516480c5a2c5214dadac6da4b1ad50e5',
+    grpcOpts: {
+        baseUrl: 'https://grpc.stagenet.concordium.com:20000',
+    },
+    jsonRpcUrl: 'https://json-rpc.stagenet.concordium.com/',
+    ccdScanBaseUrl: 'https://stagenet.ccdscan.io/',
 };
 
 export const BROWSER_WALLET = ephemeralConnectorType(BrowserWalletConnector.create);
