@@ -4,13 +4,15 @@ export async function fetchJson<T>(metadataUrl: string): Promise<T> {
 }
 
 export async function fetchJsonString(metadataUrl: string): Promise<string> {
-  const res = await fetch(metadataUrl);
-
-  if (!res.ok) {
+  try { 
+    const res = await fetch(metadataUrl);
+    if (!res.ok) {
+      return Promise.reject(new Error("Could not load Metadata"));
+    }
+    return res.text();
+  } catch (err) {
     return Promise.reject(new Error("Could not load Metadata"));
   }
-
-  return res.text();
 }
 
 export const tokenIdToNftImageFileName = (originalFileName: string, tokenId: string) => {

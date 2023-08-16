@@ -17,10 +17,12 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "declaration": true,
+    "composite": true,
+    "outDir": "dist",
   },
   "include": [
-    "src"
+    "src/**/*"
   ]
 }

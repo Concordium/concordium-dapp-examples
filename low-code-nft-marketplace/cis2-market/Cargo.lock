@@ -3,6 +3,12 @@
 version = 3
 
 [[package]]
+name = "base64"
+version = "0.21.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "604178f6c5c21f02dc555784810edfb88d34ac2c73b2eae109655649ee73ce3d"
+
+[[package]]
 name = "byteorder"
 version = "1.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -18,9 +24,7 @@ dependencies = [
 
 [[package]]
 name = "concordium-cis2"
-version = "3.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a2d6e0f1833635faa71c0712b1526fec66262451b48898f82296336da433ec41"
+version = "4.0.0"
 dependencies = [
  "concordium-std",
  "primitive-types",
@@ -28,10 +32,9 @@ dependencies = [
 
 [[package]]
 name = "concordium-contracts-common"
-version = "5.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2bd5cddd63af3a1682139d85f42aeb518dc9a0b6b4230afa9a1b716a57cae58f"
+version = "7.1.0"
 dependencies = [
+ "base64",
  "concordium-contracts-common-derive",
  "fnv",
  "hashbrown",
@@ -39,9 +42,7 @@ dependencies = [
 
 [[package]]
 name = "concordium-contracts-common-derive"
-version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "84ca43d948ffa533b5f898e4abcee1723b7b7e50536a41aa38131929b037c082"
+version = "3.0.0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -50,24 +51,9 @@ dependencies = [
 
 [[package]]
 name = "concordium-std"
-version = "6.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad9481b7d3a3c5ed9bc204a5c3a7fac88390cfdc1b3cc9b0f0f2bf4f9847a2dc"
+version = "7.0.0"
 dependencies = [
  "concordium-contracts-common",
- "concordium-std-derive",
-]
-
-[[package]]
-name = "concordium-std-derive"
-version = "5.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0a8dcf85dc8dcd70140e53fa05ae96c5a2a436f82da2ca07a8610469f2bf4ddb"
-dependencies = [
- "concordium-contracts-common",
- "proc-macro2",
- "quote",
- "syn",
 ]
 
 [[package]]
@@ -115,18 +101,18 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.56"
+version = "1.0.66"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b63bdb0cd06f1f4dedf69b254734f9b45af66e4a031e42a7480257d9898b435"
+checksum = "18fb31db3f9bddb2ea821cde30a9f70117e3f119938b5ee630b7403aa6e2ead9"
 dependencies = [
  "unicode-ident",
 ]
 
 [[package]]
 name = "quote"
-version = "1.0.26"
+version = "1.0.32"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4424af4bf778aae2051a77b60283332f386554255d722233d09fbfc7e30da2fc"
+checksum = "50f3b39ccfb720540debaa0164757101c08ecb8d326b15358ce76a62c7e85965"
 dependencies = [
  "proc-macro2",
 ]
@@ -139,9 +125,9 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
 name = "syn"
-version = "1.0.109"
+version = "2.0.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "72b64191b275b66ffe2469e8af2c1cfe3bafa67b529ead792a6d0160888b4237"
+checksum = "04361975b3f5e348b2189d8dc55bc942f278b2d482a6a0365de5bdd62d351567"
 dependencies = [
  "proc-macro2",
  "quote",

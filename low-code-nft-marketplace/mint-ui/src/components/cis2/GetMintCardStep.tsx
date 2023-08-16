@@ -25,7 +25,7 @@ function GetMintCardStep(props: {
             Quantity: {props.quantity}
           </Typography>
         )}
-        <Link href={props.imageIpfsUrl} variant="caption" component="div">
+        <Link href={props.imageIpfsUrl} variant="caption" display="block">
           Image IPFS Url
         </Link>
         <Link href={props.metadataUrl.url} variant="caption" target="_blank">

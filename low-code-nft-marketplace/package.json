@@ -1,0 +1,6 @@
+{
+    "private": true,
+    "workspaces": [
+        "./common-ui", "./market-ui", "./mint-ui"
+    ]
+}

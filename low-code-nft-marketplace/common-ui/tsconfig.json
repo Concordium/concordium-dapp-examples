@@ -6,7 +6,8 @@
     "declaration": true,
     "sourceMap": true,
     "rootDir": "./src",
-    "outDir": "./dist/esm",
+    "outDir": "dist",
+    "composite": true,
     "strict": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
@@ -16,8 +17,8 @@
     "jsx": "react",
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
   },
-  "include": ["src"],
+  "include": ["src/index.ts", "src/models/*.ts"],
   "exclude": ["dist", "node_modules"]
 }

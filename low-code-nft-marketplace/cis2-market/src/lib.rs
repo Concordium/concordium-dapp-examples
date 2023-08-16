@@ -9,13 +9,11 @@
 //!
 //! This code has not been checked for production readiness. Please use for
 //! reference purposes
-mod cis2_client;
 mod errors;
 mod params;
 mod state;
 
-use cis2_client::Cis2Client;
-use concordium_cis2::{IsTokenAmount, IsTokenId, TokenAmountU64, TokenIdU8};
+use concordium_cis2::*;
 use concordium_std::*;
 use errors::MarketplaceError;
 use params::{AddParams, InitParams, TokenList};
@@ -35,6 +33,7 @@ type ContractTokenAmount = TokenAmountU64;
 
 /// Type of state.
 type ContractState<S> = State<S, ContractTokenId, ContractTokenAmount>;
+type Cis2ClientResult<T> = Result<T, concordium_cis2::Cis2ClientError<()>>;
 
 /// Initializes a new Marketplace Contract
 ///
@@ -111,7 +110,7 @@ fn add<S: HasStateApi>(
 
 /// Allows for transferring the token specified by TransferParams.
 ///
-/// This function is the typical buuy function of a Marketplace where one
+/// This function is the typical buy function of a Marketplace where one
 /// account can transfer an Asset by paying a price. The transfer will fail of
 /// the Amount paid is < token_quantity * token_price
 #[receive(
@@ -131,14 +130,14 @@ fn transfer<S: HasStateApi>(
         .get()
         .map_err(|_e| MarketplaceError::ParseParams)?;
 
-    let token_info = &TokenInfo {
+    let token_info = TokenInfo {
         id: params.token_id,
         address: params.cis_contract_address,
     };
 
     let listed_token = host
         .state()
-        .get_listed(token_info, &params.owner)
+        .get_listed(&token_info, &params.owner)
         .ok_or(MarketplaceError::TokenNotListed)?;
 
     let listed_quantity = listed_token.1.quantity;
@@ -156,21 +155,38 @@ fn transfer<S: HasStateApi>(
         MarketplaceError::InvalidAmountPaid
     );
 
+    let cis2_client = Cis2Client::new(params.cis_contract_address);
+    let res: Cis2ClientResult<SupportResult> = cis2_client.supports_cis2(host);
+    let res = match res {
+        Ok(res) => res,
+        Err(_) => bail!(MarketplaceError::Cis2ClientError),
+    };
     // Checks if the CIS2 contract supports the CIS2 interface.
-    let cis2_contract_address = match Cis2Client::supports_cis2(host, &params.cis_contract_address)?
-    {
-        None => bail!(MarketplaceError::CollectionNotCis2),
-        Some(address) => address,
+    let cis2_contract_address = match res {
+        SupportResult::NoSupport => bail!(MarketplaceError::CollectionNotCis2),
+        SupportResult::Support => params.cis_contract_address,
+        SupportResult::SupportBy(contracts) => match contracts.first() {
+            Some(c) => c.clone(),
+            None => bail!(MarketplaceError::CollectionNotCis2),
+        },
     };
 
-    Cis2Client::transfer(
+    let cis2_client = Cis2Client::new(cis2_contract_address);
+    let res: Cis2ClientResult<bool> = cis2_client.transfer(
         host,
-        params.token_id,
-        cis2_contract_address,
-        params.quantity,
-        params.owner,
-        concordium_cis2::Receiver::Account(params.to),
-    )?;
+        Transfer {
+            amount: params.quantity,
+            from: Address::Account(params.owner),
+            to: Receiver::Account(params.to),
+            token_id: params.token_id,
+            data: AdditionalData::empty(),
+        },
+    );
+
+    match res {
+        Ok(res) => res,
+        Err(_) => bail!(MarketplaceError::Cis2ClientError),
+    };
 
     distribute_amounts(
         host,
@@ -216,10 +232,19 @@ fn ensure_supports_cis2<S: HasStateApi, T: IsTokenId + Copy, A: IsTokenAmount + 
     host: &mut impl HasHost<State<S, T, A>, StateApiType = S>,
     cis_contract_address: &ContractAddress,
 ) -> ContractResult<()> {
-    let supports_cis2 = Cis2Client::supports_cis2(host, cis_contract_address)
-        .map_err(MarketplaceError::Cis2ClientError)?;
-    ensure!(supports_cis2.is_some(), MarketplaceError::CollectionNotCis2);
-    Ok(())
+    let cis2_client = Cis2Client::new(cis_contract_address.clone());
+    let res: Cis2ClientResult<SupportResult> = cis2_client.supports_cis2(host);
+
+    let res = match res {
+        Ok(res) => res,
+        Err(_) => bail!(MarketplaceError::Cis2ClientError),
+    };
+
+    match res {
+        SupportResult::NoSupport => bail!(MarketplaceError::CollectionNotCis2),
+        SupportResult::SupportBy(_) => Ok(()),
+        SupportResult::Support => Ok(()),
+    }
 }
 
 /// Calls the [operatorOf](https://proposals.concordium.software/CIS/cis-2.html#operatorof) function of CIS contract.
@@ -230,16 +255,17 @@ fn ensure_is_operator<S: HasStateApi, T: IsTokenId + Copy, A: IsTokenAmount + Co
     ctx: &impl HasReceiveContext<()>,
     cis_contract_address: &ContractAddress,
 ) -> ContractResult<()> {
-    let is_operator = cis2_client::Cis2Client::is_operator_of(
-        host,
-        ctx.sender(),
-        ctx.self_address(),
-        cis_contract_address,
-    )
-    .map_err(MarketplaceError::Cis2ClientError)?;
-    ensure!(is_operator, MarketplaceError::NotOperator);
+    let cis2_client = Cis2Client::new(cis_contract_address.clone());
+    let res: Cis2ClientResult<bool> =
+        cis2_client.operator_of(host, ctx.sender(), Address::Contract(ctx.self_address()));
+    let res = match res {
+        Ok(res) => res,
+        Err(_) => bail!(MarketplaceError::Cis2ClientError),
+    };
+    ensure!(res, MarketplaceError::NotOperator);
     Ok(())
 }
+
 /// Calls the [balanceOf](https://proposals.concordium.software/CIS/cis-2.html#balanceof) function of the CIS2 contract.
 /// Returns error if the returned balance < input balance (balance param).
 fn ensure_balance<S: HasStateApi, T: IsTokenId + Copy, A: IsTokenAmount + Ord + Copy>(
@@ -249,15 +275,15 @@ fn ensure_balance<S: HasStateApi, T: IsTokenId + Copy, A: IsTokenAmount + Ord + 
     owner: AccountAddress,
     minimum_balance: A,
 ) -> ContractResult<()> {
-    let contract_balance = Cis2Client::get_balance(
-        host,
-        token_id,
-        cis_contract_address,
-        Address::Account(owner),
-    )?;
+    let cis2_client = Cis2Client::new(cis_contract_address.clone());
 
+    let res: Cis2ClientResult<A> = cis2_client.balance_of(host, token_id, Address::Account(owner));
+    let res = match res {
+        Ok(res) => res,
+        Err(_) => bail!(MarketplaceError::Cis2ClientError),
+    };
     ensure!(
-        contract_balance.cmp(&minimum_balance).is_ge(),
+        res.cmp(&minimum_balance).is_ge(),
         MarketplaceError::NoBalance
     );
 
@@ -265,8 +291,8 @@ fn ensure_balance<S: HasStateApi, T: IsTokenId + Copy, A: IsTokenAmount + Ord + 
 }
 
 // Distributes Selling Price, Royalty & Commission amounts.
-fn distribute_amounts<S: HasStateApi, T: IsTokenId + Copy, A: IsTokenAmount + Copy>(
-    host: &mut impl HasHost<State<S, T, A>, StateApiType = S>,
+fn distribute_amounts<S: HasStateApi, T: IsTokenId + Copy, A: IsTokenAmount + Copy, E>(
+    host: &mut impl HasHost<State<S, T, A>, StateApiType = S, ReturnValueType = E>,
     amount: Amount,
     token_owner: &AccountAddress,
     token_royalty_state: &TokenRoyaltyState,
@@ -327,11 +353,7 @@ fn calculate_amounts(
 #[concordium_cfg_test]
 mod test {
     use crate::{
-        add, calculate_amounts,
-        cis2_client::{
-            BALANCE_OF_ENTRYPOINT_NAME, OPERATOR_OF_ENTRYPOINT_NAME, SUPPORTS_ENTRYPOINT_NAME,
-        },
-        list,
+        add, calculate_amounts, list,
         params::AddParams,
         state::{Commission, State, TokenInfo, TokenListItem, TokenPriceState, TokenRoyaltyState},
         ContractState, ContractTokenAmount, ContractTokenId,
@@ -415,21 +437,21 @@ mod test {
         TestHost::setup_mock_entrypoint(
             &mut host,
             CIS_CONTRACT_ADDRESS,
-            OwnedEntrypointName::new_unchecked(SUPPORTS_ENTRYPOINT_NAME.to_string()),
+            OwnedEntrypointName::new_unchecked("supports".to_string()),
             MockFn::new_v1(mock_supports),
         );
 
         TestHost::setup_mock_entrypoint(
             &mut host,
             CIS_CONTRACT_ADDRESS,
-            OwnedEntrypointName::new_unchecked(OPERATOR_OF_ENTRYPOINT_NAME.to_string()),
+            OwnedEntrypointName::new_unchecked("operatorOf".to_string()),
             MockFn::new_v1(mock_is_operator_of),
         );
 
         TestHost::setup_mock_entrypoint(
             &mut host,
             CIS_CONTRACT_ADDRESS,
-            OwnedEntrypointName::new_unchecked(BALANCE_OF_ENTRYPOINT_NAME.to_string()),
+            OwnedEntrypointName::new_unchecked("balanceOf".to_string()),
             MockFn::new_v1(mock_balance_of),
         );
 

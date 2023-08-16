@@ -7,22 +7,19 @@
   - **node.js** version 14.17.0 or above. If you already have node.js run `node -v` to check the version. You can use nvm to manage multiple Node versions installed on a single machine.
   - **yarn** - a package manager for JavaScript; replaces the npm client.
   - A code editor of your choice, such as Visual Studio Code.
+  - Run
 
-  Run `cd low-code-nft-marketplace/market-ui && yarn install` in the terminal.
-
-  Run `yarn start`
-
-- Prerequisites for running the marketplace:
-
-  - Clone this Repository
-  - Install Concordium Browser Wallet
-  - **node.js** version 14.17.0 or above. If you already have node.js run `node -v` to check the version. You can use nvm to manage multiple Node versions installed on a single machine.
-  - **yarn** - a package manager for JavaScript; replaces the npm client.
-  - A code editor of your choice, such as Visual Studio Code.
-
-  Run `cd low-code-nft-marketplace/mint-ui && yarn install` in the terminal.
-
-  Run `yarn start`
+    ```bash
+    cd low-code-nft-marketplace
+    ## Install dependencies
+    yarn
+    ## Build the project
+    tsc -b
+    ## Run the project
+    yarn workspace market-ui start
+    ## Or
+    yarn workspace mint-ui start
+    ```
 
 Detailed Documentation about installation, running the dApp and other configurations can be found in the [Developer Portal](https://developer.concordium.software/en/mainnet/net/guides/low-code-nft-marketplace/introduction.html)
 
@@ -30,7 +27,8 @@ This repository provides sample code implementations for interacting with on cha
 
 - Using Frontend React Code (using [Web SDK](https://github.com/Concordium/concordium-node-sdk-js/tree/main/packages/web) and [Concordium Browser Wallet](https://chrome.google.com/webstore/detail/concordium-wallet/mnnkpffndmickbiakofclnpoiajlegmg?hl=en-US))
 
-Please do note that this is **not** an exhaustive list of the languages supported by Concordium. There are are SDK's present to interact with the contracts using multiple other languages. A complete list can be found [here](https://developer.concordium.software/en/mainnet/net/guides/sdks-apis.html)
+Please do note that this is **not** an exhaustive list of the languages supported by Concordium.
+There are are SDK's present to interact with the contracts using multiple other languages. A complete list can be found [here](https://developer.concordium.software/en/mainnet/net/guides/sdks-apis.html)
 
 ## Contents of Repository
 

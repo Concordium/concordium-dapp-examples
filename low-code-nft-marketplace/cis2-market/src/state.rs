@@ -6,20 +6,20 @@ use concordium_cis2::{IsTokenAmount, IsTokenId};
 use concordium_std::*;
 
 #[derive(Clone, Serialize, PartialEq, Eq, Debug)]
-pub struct TokenInfo<T: Serial + Deserial> {
+pub struct TokenInfo<T: IsTokenId> {
     pub id: T,
     pub address: ContractAddress,
 }
 
 #[derive(Clone, Serialize, PartialEq, Eq, Debug)]
-pub struct TokenOwnerInfo<T: Serial + Deserial> {
+pub struct TokenOwnerInfo<T: IsTokenId> {
     pub id: T,
     pub address: ContractAddress,
     pub owner: AccountAddress,
 }
 
-impl<T: Serial + Deserial + Copy> TokenOwnerInfo<T> {
-    pub fn from(token_info: &TokenInfo<T>, owner: &AccountAddress) -> Self {
+impl<T: IsTokenId> TokenOwnerInfo<T> {
+    pub fn from(token_info: TokenInfo<T>, owner: &AccountAddress) -> Self {
         TokenOwnerInfo {
             owner: *owner,
             id: token_info.id,
@@ -65,12 +65,7 @@ pub struct TokenListItem<T: IsTokenId, A: IsTokenAmount> {
 
 #[derive(Serial, DeserialWithState, StateClone)]
 #[concordium(state_parameter = "S")]
-pub struct State<S, T, A>
-where
-    S: HasStateApi,
-    T: IsTokenId,
-    A: IsTokenAmount + Copy,
-{
+pub struct State<S: HasStateApi, T: IsTokenId, A: IsTokenAmount + Copy> {
     pub commission: Commission,
     pub token_royalties: StateMap<TokenInfo<T>, TokenRoyaltyState, S>,
     pub token_prices: StateMap<TokenOwnerInfo<T>, TokenPriceState<A>, S>,
@@ -116,25 +111,15 @@ impl<S: HasStateApi, T: IsTokenId + Copy, A: IsTokenAmount + Copy + ops::Sub<Out
         // Add the token to the buyable token list.
         // If the token is already listed, update the price.
         self.token_prices.insert(
-            TokenOwnerInfo::from(token_info, owner),
+            TokenOwnerInfo::from(token_info.clone(), owner),
             TokenPriceState { price, quantity },
         );
     }
 
-    /// Decreases the quantity of a token in the buyable token list.
-    pub fn decrease_listed_quantity(&mut self, token_info: &TokenOwnerInfo<T>, delta: A) {
-        let price = match self.token_prices.get(token_info) {
-            Option::None => return,
-            Option::Some(price) => price,
-        };
-
-        self.token_prices.insert(
-            token_info.clone(),
-            TokenPriceState {
-                quantity: price.quantity - delta,
-                price: price.price,
-            },
-        );
+    pub(crate) fn decrease_listed_quantity(&mut self, token_info: &TokenOwnerInfo<T>, delta: A) {
+        if let Some(mut price) = self.token_prices.get_mut(token_info) {
+            price.quantity = price.quantity - delta;
+        }
     }
 
     /// Gets a token from the buyable token list.
@@ -146,7 +131,7 @@ impl<S: HasStateApi, T: IsTokenId + Copy, A: IsTokenAmount + Copy + ops::Sub<Out
         match self.token_royalties.get(token_info) {
             Some(r) => self
                 .token_prices
-                .get(&TokenOwnerInfo::from(token_info, owner))
+                .get(&TokenOwnerInfo::from(token_info.clone(), owner))
                 .map(|p| (*r, *p)),
             None => Option::None,
         }

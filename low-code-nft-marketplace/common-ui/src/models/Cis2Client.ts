@@ -1,7 +1,7 @@
 import { SmartContractParameters, WalletApi } from "@concordium/browser-wallet-api-helpers";
 import { CIS2, ContractAddress, TransactionSummary } from "@concordium/web-sdk";
 
-import * as connClient from "./ConcordiumContractClient";
+import * as conClient from "./ConcordiumContractClient";
 
 /**
  * Structure of a JSON-formatted metadata.
@@ -23,12 +23,13 @@ export interface Attribute {
 }
 
 /**
- * Mints multiple NFT in Contract: {@link nftContractAddress}
+ * Mints multiple NFT in Contract: {@link tokenContractAddress}
  * represented by {@link tokens}
  * @param provider Wallet Provider.
  * @param account Account address.
  * @param tokens Map of Token Id and Metadata Url.
- * @param nftContractAddress CIS-NFT contract address.
+ * @param tokenContractAddress Token contract address.
+ * @param contractInfo Contract info of CIS-2 contract.
  * @param maxContractExecutionEnergy Max allowed energy ot Minting.
  * @returns Transaction outcomes {@link Record<string, TransactionSummary>}
  */
@@ -36,8 +37,8 @@ export async function mint(
   provider: WalletApi,
   account: string,
   tokens: { [tokenId: string]: [CIS2.MetadataUrl, string] },
-  nftContractAddress: ContractAddress,
-  contractInfo: connClient.ContractInfo,
+  tokenContractAddress: ContractAddress,
+  contractInfo: conClient.ContractInfo,
   maxContractExecutionEnergy = BigInt(9999),
 ): Promise<Record<string, TransactionSummary>> {
   const paramJson = {
@@ -62,22 +63,29 @@ export async function mint(
     ]),
   };
 
-  return connClient.updateContract(
+  return conClient.updateContract(
     provider,
     contractInfo,
     paramJson as SmartContractParameters,
     account,
-    nftContractAddress,
+    tokenContractAddress,
     "mint",
     maxContractExecutionEnergy,
     BigInt(0),
   );
 }
 
-export const toTokenId = (integer: number, contractInfo: connClient.Cis2ContractInfo) => {
+export const toTokenId = (integer: number, contractInfo: conClient.Cis2ContractInfo) => {
   return integer.toString(16).padStart(contractInfo.tokenIdByteSize * 2, "0");
 };
 
+/**
+ * Converts input hex string to a Uint8Array.
+ * This is primarily used for converting the Metadata Hash to a Uint8Array.
+ * This is needed for the MetadataUrl SchemaType implementation.
+ * @param inputStr Input Hex string
+ * @returns Uint8Array
+ */
 const hexToUnsignedInt = (inputStr: string) => {
   const hex = inputStr.toString();
   const Uint8Array = new Array<number>();

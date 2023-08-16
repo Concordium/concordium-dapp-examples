@@ -28,10 +28,7 @@
   - `MULTI_CONTRACT_SCHEMA` : HEX string of `schema.bin` file got from compilation of rust code of cis2-multi
   - `IPFS_GATEWAY_URL`: gateway url for the IPFS gateway
 
-## Deploy
-
-Currently the [browser wallet](https://github.com/Concordium/concordium-browser-wallet) does not allow to deploy modules to Concordium chain. However [concordium client](https://github.com/chainorders/concordium-contracts/tree/main/concordium-client)
-  can be used to deploy contracts
+## [Deploy](https://developer.concordium.software/en/mainnet/smart-contracts/guides/deploy-module.html)
 
 ## Interact
 

@@ -28,11 +28,10 @@
   "peerDependencies": {
     "react": ">=16"
   },
-  "main": "./dist/cjs/index.js",
-  "module": "./dist/esm/index.js",
-  "types": "./dist/esm/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "files": [
-    "dist",
+    "./build",
     "LICENSE",
     "README.md"
   ],
