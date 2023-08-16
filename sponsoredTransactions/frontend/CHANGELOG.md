@@ -1,6 +1,6 @@
 ## Unreleased changes
 
-## 2.1.0
+## 2.0.1
 
 - Migrate dApp from using deprecated JSON-RPC client to new gRPC client.
 
