@@ -119,7 +119,7 @@ export async function invokeContract<T>(
  * @param contractName Name of the Contract.
  * @param schema Buffer of Contract Schema.
  * @param paramJson Parameters to call the Contract Method with.
- * @param account  Account to Update the contract with.
+ * @param account Account to Update the contract with.
  * @param contractAddress Contract Address.
  * @param methodName Contract Method name to Call.
  * @param maxContractExecutionEnergy Maximum energy allowed to execute.

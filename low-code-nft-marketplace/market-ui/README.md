@@ -61,7 +61,7 @@ There are two high level parts to the code base
   - [**Buy**](./src/pages/BuyPage.tsx) :
     Used to get a list of buyable tokens and buy any one of them. This page component contains the following reusable components to interact with on chain contracts.
 
-    - [MarketplaceTokensList](./src/components/MarketplaceTokensList.tsx) : Used to get a list of buy able tokens from the Marketplace Contract, It uses following components
+      - [MarketplaceTokensList](./src/components/MarketplaceTokensList.tsx) : Used to get a list of buyable tokens from the Marketplace Contract. It uses following components
       - [MarketplaceTokensListItem](./src/components/MarketplaceTokensListItem.tsx) : Displays a token with its price and other metadata.
       - [MarketplaceTransferDialog](./src/components/MarketplaceTransferDialog.tsx) : Allows a user to specify the quantity and pay to buy a listed token.
 
@@ -70,14 +70,14 @@ There are two high level parts to the code base
 
     - [Cis2FindInstance](./src/components/Cis2FindInstance.tsx) : Find a contract on chain using Index and Subindex and ensures it `supports` CIS2 standard.
     - [Cis2OperatorOf](./src/components/Cis2OperatorOf.tsx) : Checks if the Input Marketplace Contract Address is `operatorOf` input Account address in the Token Contract.
-    - [Cis2UpdateOperator](./src/components/Cis2UpdateOperator.tsx) : `updateOperator` is the above is not true.
+    - [Cis2UpdateOperator](./src/components/Cis2UpdateOperator.tsx) : `updateOperator` if the above is not true.
     - [Cis2BalanceOf](./src/components/Cis2BalanceOf.tsx) : Checks if the seller has some balance of the input token id. Using `balanceOf`
     - [MarketplaceAdd](./src/components/MarketplaceAdd.tsx) : Adds the input token to the marketplace.
 
   - [**Mint**](./src/pages/MintPage.tsx) :
     Used to interact with CIS2 standard Contract to Mint a new Token
 
-    - [Cis2FindInstanceOrInit](./src/components/Cis2FindInstanceOrInit.tsx) : Gives the user either the option to Find a CIS2 compliant instance Or Initialize a new one using config value `MULTI_CONTRACT_MODULE_REF`
+    - [Cis2FindInstanceOrInit](./src/components/Cis2FindInstanceOrInit.tsx) : Gives the user either the option to find a CIS2 compliant instance or initialize a new one using config value `MULTI_CONTRACT_MODULE_REF`to Find a CIS2 compliant instance Or Initialize a new one using config value `MULTI_CONTRACT_MODULE_REF`
     - [ConnectPinata](./src/components/ConnectPinata.tsx) : Uses the input pinata JWT token to establish and verify connection with pinata to be able to later upload image files and metadata json to IPFS.
     - [UploadFiles](./src/components/ui/UploadFiles.tsx) : Allows users to drop a group of files and upload them to pinata.
     - [Cis2BatchMetadataPrepareOrAdd](./src/components/Cis2BatchMetadataPrepareOrAdd.tsx) : Either use the uploaded files to prepare metadata JSON or use a metadataUrl of already uploaded Metadata Json file. Uses following components
