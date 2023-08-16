@@ -225,14 +225,12 @@ async function generateUpdateOperatorMessage(
     return serializedMessage;
 }
 
-// eslint-disable-next-line  @typescript-eslint/no-explicit-any
 async function getPublicKey(rpcClient: ConcordiumGRPCClient, account: string) {
     const res = await rpcClient.getAccountInfo(new AccountAddress(account));
     const publicKey = res?.accountCredentials[0].value.contents.credentialPublicKeys.keys[0].verifyKey;
     return publicKey;
 }
 
-// eslint-disable-next-line  @typescript-eslint/no-explicit-any
 async function getNonceOf(rpcClient: ConcordiumGRPCClient, account: string) {
     const param = serializeTypeValue(
         {
