@@ -1,0 +1,24 @@
+[package]
+name = "carbon-credit-module"
+version = "0.1.0"
+authors = ["Stactrace Solutions <parv@stactrace.com>"]
+edition = "2021"
+license = "MPL-2.0"
+rust-version = "1.65.0"
+
+[features]
+default = ["std", "wee_alloc"]
+std = ["concordium-std/std", "concordium-cis2/std"]
+wee_alloc = ["concordium-std/wee_alloc"]
+
+[dependencies]
+concordium-std = { path = "../../deps/concordium-rust-smart-contracts/concordium-std", default-features = false }
+concordium-cis2 = { path = "../../deps/concordium-rust-smart-contracts/concordium-cis2", default-features = false }
+hex = "*"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[profile.release]
+codegen-units = 1
+opt-level = "s"
