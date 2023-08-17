@@ -4,9 +4,6 @@ import QRCodeModal from "@walletconnect/qrcode-modal";
 import {SessionTypes} from "@walletconnect/types";
 import {Result, ResultAsync} from "neverthrow";
 import {resultFromTruthy, resultFromTruthyResult} from "./util";
-import {
-    JsonRpcClient,
-} from "@concordium/web-sdk";
 import {CHAIN_ID, WALLET_CONNECT_SESSION_NAMESPACE} from "./config";
 
 async function connect(client: SignClient, setConnectedSession: (session: SessionTypes.Struct) => void) {
@@ -61,7 +58,7 @@ function isSignAndSendTransactionError(obj: any): obj is SignAndSendTransactionE
     return 'code' in obj && 'message' in obj;
 }
 
-export async function signMessage(signClient: SignClient, session: SessionTypes.Struct, rpcClient: JsonRpcClient, chainId: string, message: string) {
+export async function signMessage(signClient: SignClient, session: SessionTypes.Struct, chainId: string, message: string) {
     try {
         const signature = await signClient.request({
             topic: session.topic,

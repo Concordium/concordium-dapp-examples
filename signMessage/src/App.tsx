@@ -1,11 +1,9 @@
-import React, {useCallback, useEffect, useState} from 'react';
+import  {useCallback, useEffect, useState} from 'react';
 
 import './App.css';
 import {Alert, Button, Col, Container, Row, Spinner} from "react-bootstrap";
-import {HttpProvider, JsonRpcClient} from "@concordium/web-sdk";
 import {
     CHAIN_ID,
-    JSON_RPC_URL,
     PING_INTERVAL_MS,
     WALLET_CONNECT_PROJECT_ID,
 } from "./config";
@@ -16,8 +14,6 @@ import WalletConnect2, {signMessage, trySend} from "./WalletConnect2";
 import {SessionTypes} from "@walletconnect/types";
 import BrowserWallet, {trySendTransaction, sign, wrapPromise} from "./BrowserWallet";
 import Footer from "./Footer";
-
-const rpc = new JsonRpcClient(new HttpProvider(JSON_RPC_URL));
 
 type Wallet = "browserwallet" | "walletconnect2";
 
@@ -157,7 +153,7 @@ export default function App() {
                             sign(client, account, message),
                     ),
                 )
-            } else if (wallet === "walletconnect2" && rpc) {
+            } else if (wallet === "walletconnect2") {
                 trySend(
                     walletconnect2Client,
                     walletconnect2ConnectedSession,
@@ -166,7 +162,6 @@ export default function App() {
                             signMessage(
                                 client,
                                 session,
-                                rpc,
                                 CHAIN_ID,
                                 message,
                             )
