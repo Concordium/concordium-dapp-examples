@@ -28,3 +28,5 @@ target
 dist
 gallery/public
 .eslintcache
+
+*.tsbuildinfo
