@@ -63,7 +63,7 @@ pub struct TokenListItem<T: IsTokenId, A: IsTokenAmount> {
     pub quantity: A,
 }
 
-#[derive(Serial, DeserialWithState, StateClone)]
+#[derive(Serial, DeserialWithState)]
 #[concordium(state_parameter = "S")]
 pub struct State<S: HasStateApi, T: IsTokenId, A: IsTokenAmount + Copy> {
     pub commission: Commission,
