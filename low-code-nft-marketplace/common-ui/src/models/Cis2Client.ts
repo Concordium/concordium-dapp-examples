@@ -52,7 +52,7 @@ export async function mint(
           url: tokens[tokenId][0].url,
           hash: tokens[tokenId][0].hash
             ? {
-                Some: [hexToUnsignedInt(tokens[tokenId][0].hash!)],
+                Some: [tokens[tokenId][0].hash!],
               }
             : {
                 None: [],
@@ -77,21 +77,4 @@ export async function mint(
 
 export const toTokenId = (integer: number, contractInfo: conClient.Cis2ContractInfo) => {
   return integer.toString(16).padStart(contractInfo.tokenIdByteSize * 2, "0");
-};
-
-/**
- * Converts input hex string to a Uint8Array.
- * This is primarily used for converting the Metadata Hash to a Uint8Array.
- * This is needed for the MetadataUrl SchemaType implementation.
- * @param inputStr Input Hex string
- * @returns Uint8Array
- */
-const hexToUnsignedInt = (inputStr: string) => {
-  const hex = inputStr.toString();
-  const Uint8Array = new Array<number>();
-  for (let n = 0; n < hex.length; n += 2) {
-    Uint8Array.push(parseInt(hex.substr(n, 2), 16));
-  }
-
-  return Uint8Array;
 };

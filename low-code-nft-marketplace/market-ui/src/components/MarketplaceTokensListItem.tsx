@@ -9,6 +9,7 @@ import IconButton from "@mui/material/IconButton";
 import ImageListItem from "@mui/material/ImageListItem";
 import ImageListItemBar from "@mui/material/ImageListItemBar";
 import Cis2MetadataImageLazy from "./cis2/Cis2MetadataImageLazy";
+import { toIpfsGatewayUrl } from "../utils";
 
 type ListItem = TokenListItem & { cis2Contract: CIS2Contract };
 
@@ -25,7 +26,6 @@ function MarketplaceTokensListItem(props: {
 
   const [state, setState] = useState({
     isLoading: true,
-    url: "",
     name: "",
     desc: "",
     price: item.price,
@@ -37,7 +37,6 @@ function MarketplaceTokensListItem(props: {
       setState({
         ...state,
         isLoading: false,
-        url: metadata.display?.url || "",
         name: metadata.name || "",
         desc: metadata.description || "",
         price: item.price,
@@ -45,7 +44,7 @@ function MarketplaceTokensListItem(props: {
 
     props.item.cis2Contract
       .tokenMetadata(props.item.tokenId)
-      .then((m) => fetchJson<Metadata>(m.url))
+      .then((m) => fetchJson<Metadata>(toIpfsGatewayUrl(m.url)))
       .then((metadata) => {
         setStateMetadata(metadata);
       })

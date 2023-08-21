@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 
 import { CIS2Contract } from '@concordium/web-sdk';
 import { Paper, Skeleton, Typography } from '@mui/material';
+import { toIpfsGatewayUrl } from '../../utils';
 
 function Cis2MetadataImageLazy(props: { account: string; tokenId: string; cis2Contract: CIS2Contract }) {
     const [state, setState] = useState<{
@@ -19,7 +20,7 @@ function Cis2MetadataImageLazy(props: { account: string; tokenId: string; cis2Co
         setState({ ...state, loading: true });
         props.cis2Contract
             .tokenMetadata(props.tokenId)
-            .then((m) => fetchJson<Metadata>(m.url))
+            .then((m) => fetchJson<Metadata>(toIpfsGatewayUrl(m.url)))
             .then((metadata) => {
                 setState({ ...state, loading: false, metadata });
             })
@@ -42,8 +43,7 @@ function Cis2MetadataImageLazy(props: { account: string; tokenId: string; cis2Co
 
     return (
         <img
-            src={state.metadata?.display?.url}
-            srcSet={state.metadata?.display?.url}
+            src={toIpfsGatewayUrl(state.metadata?.display?.url)}
             alt="Failed to load image"
             loading="lazy"
             width="100%"

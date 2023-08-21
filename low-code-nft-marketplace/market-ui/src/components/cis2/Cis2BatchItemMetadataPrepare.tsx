@@ -19,7 +19,6 @@ import {
 } from "@mui/material";
 import { Theme } from "@mui/system";
 
-import { IPFS_GATEWAY_URL } from "../../Constants";
 import DisplayError from "../ui/DisplayError";
 import GetMintCardStep from "./GetMintCardStep";
 import GetQuantityCardStep from "./GetQuantityCardStep";
@@ -53,7 +52,7 @@ function UploadImageIpfsCardStep(props: {
   function submit() {
     setState({ ...state, isUploadingImage: true });
     props.pinata
-      .uploadFile(IPFS_GATEWAY_URL, props.file, tokenIdToNftImageFileName(props.file.name, props.tokenId))
+      .uploadFile(props.file, tokenIdToNftImageFileName(props.file.name, props.tokenId))
       .then((imageIpfsUrl) => {
         setState({
           ...state,
@@ -113,7 +112,7 @@ function UploadMetadataIpfsCardStep(props: {
     const includeHash = formData.get("includeHash")?.toString();
     setState({ ...state, isUploadingMetadata: true });
     props.pinata
-      .uploadJson(IPFS_GATEWAY_URL, metadata, tokenIdToNftMetadataFileName(props.tokenId))
+      .uploadJson(metadata, tokenIdToNftMetadataFileName(props.tokenId))
       .then((metadataIpfsUrl) => {
         const metadataUrl = {
           url: metadataIpfsUrl,

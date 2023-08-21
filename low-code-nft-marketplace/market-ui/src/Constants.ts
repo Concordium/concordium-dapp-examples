@@ -7,7 +7,7 @@ import { ModuleReference } from "@concordium/web-sdk";
  * Contract Address for Marketplace. You should specify your contract's index when you initialized it.
  */
 export const MARKET_CONTRACT_ADDRESS = {
-  index: BigInt(4502),
+  index: BigInt(5987),
   subindex: BigInt(0),
 };
 
@@ -19,7 +19,7 @@ export const MARKET_CONTRACT_ADDRESS = {
 // Both module ref and the contract schema should be changed after a new contract deployed (if there are changes)
 const MARKET_CONTRACT_SCHEMA =
   "//8DAQAAAAoAAABNYXJrZXQtTkZUAQAUAAEAAAAKAAAAY29tbWlzc2lvbgMDAAAAAwAAAGFkZAAUAAUAAAAUAAAAY2lzX2NvbnRyYWN0X2FkZHJlc3MMCAAAAHRva2VuX2lkHQAFAAAAcHJpY2UKBwAAAHJveWFsdHkDCAAAAHF1YW50aXR5GyUAAAAEAAAAbGlzdAEUAQEAAAAQARQABwAAAAgAAAB0b2tlbl9pZB0ACAAAAGNvbnRyYWN0DAUAAABwcmljZQoFAAAAb3duZXILBwAAAHJveWFsdHkDDQAAAHByaW1hcnlfb3duZXILCAAAAHF1YW50aXR5GyUAAAAIAAAAdHJhbnNmZXIAFAAFAAAAFAAAAGNpc19jb250cmFjdF9hZGRyZXNzDAgAAAB0b2tlbl9pZB0AAgAAAHRvCwUAAABvd25lcgsIAAAAcXVhbnRpdHkbJQAAAAA";
-const MARKET_CONTRACT_MODULE_REF = "1b0ef0aafc4dc12edcbb17ef756dfce300bf8bb73993ec00411ad5b376dbe7aa";
+const MARKET_CONTRACT_MODULE_REF = "7e1c5055ba022d8211f15e028ac489a4e3588dc2e6ef55a42d9036fcbafaaddd";
 export const MARKETPLACE_CONTRACT_INFO: ContractInfo = {
   contractName: "Market-NFT",
   schemaBuffer: Buffer.from(MARKET_CONTRACT_SCHEMA, "base64"),

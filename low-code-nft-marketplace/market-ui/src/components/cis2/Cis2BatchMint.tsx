@@ -49,6 +49,7 @@ function Cis2BatchMint(props: {
       tokens,
       mintingCount: state.mintingCount + mintingCount,
     });
+    console.log(JSON.stringify(props.tokenMetadataMap, null, 2));
     mint(props.provider, props.account, props.tokenMetadataMap, props.nftContractAddress, props.contractInfo)
       .then(() => {
         setTokensState(tokens, false, true);
