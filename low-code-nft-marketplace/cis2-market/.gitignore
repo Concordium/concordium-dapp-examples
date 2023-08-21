@@ -1,4 +1,3 @@
 target
 module.wasm
-schema.bin
-schema.hex
+schema_base64.txt

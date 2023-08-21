@@ -15,6 +15,10 @@ crate-type = ["cdylib", "rlib"]
 [profile.release]
 codegen-units = 1
 opt-level = "s"
+panic = "abort"
+
+[profile.dev]
+panic = "abort"
 
 [features]
 default = ["std"]

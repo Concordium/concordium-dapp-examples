@@ -7,18 +7,37 @@
   - **node.js** version 14.17.0 or above. If you already have node.js run `node -v` to check the version. You can use nvm to manage multiple Node versions installed on a single machine.
   - **yarn** - a package manager for JavaScript; replaces the npm client.
   - A code editor of your choice, such as Visual Studio Code.
-  - Run
+  - [`cargo-concordium`](https://developer.concordium.software/en/mainnet/smart-contracts/guides/setup-tools.html) : Used to build smart contracts
+  - [`concordium-client`](https://developer.concordium.software/en/mainnet/net/references/concordium-client.html) : Used to deploy smart contracts
+  
+- Run
 
     ```bash
-    cd low-code-nft-marketplace
-    ## Install dependencies
-    yarn
-    ## Build the project
-    tsc -b
-    ## Run the project
-    yarn workspace market-ui start
-    ## Or
-    yarn workspace mint-ui start
+    yarn && yarn build:all
+    ```
+
+- Deploy Contracts: **Make sure to setup `concordium-client` with a account before executing this**
+
+    ```bash
+    yarn deploy:smart-contract wallet-account
+    ```
+
+    **Here `wallet-account` reffers to the account which you have setup in [`concordium-client`](https://developer.concordium.software/en/mainnet/net/references/concordium-client.html)**
+
+- Copy deployed contracts schema and module ref in the frontend constants file [Constants.ts (market-ui)](./market-ui/src/Constants.ts)
+  - Replace value of `MARKET_CONTRACT_SCHEMA` with the contents of the [schema file](./cis2-market/schema_base64.txt)
+  - Replace value of `MARKET_CONTRACT_MODULE_REF` with the value of `ModuleRef` from the output of `yarn deploy:smart-contract`
+
+- Run the frontend
+
+    ```bash
+    yarn debug:market-ui
+    ```
+
+    Or
+
+    ```bash
+    yarn debug:mint-ui
     ```
 
 Detailed Documentation about installation, running the dApp and other configurations can be found in the [Developer Portal](https://developer.concordium.software/en/mainnet/net/guides/low-code-nft-marketplace/introduction.html)
