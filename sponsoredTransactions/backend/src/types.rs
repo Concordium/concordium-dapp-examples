@@ -1,16 +1,16 @@
 use concordium_rust_sdk::cis2::{TokenId, Transfer, UpdateOperator};
+use concordium_rust_sdk::smart_contracts::common as concordium_std;
 use concordium_rust_sdk::types::RejectReason;
 use concordium_rust_sdk::{
     endpoints::{QueryError, RPCError},
     smart_contracts::common::{
-        AccountAddress, ContractAddress, OwnedEntrypointName, Serial, Serialize, Timestamp,
+        AccountAddress, AccountSignatures, ContractAddress, OwnedEntrypointName, Serial, Timestamp,
     },
     types::{
         hashes::{HashBytes, TransactionMarker},
         Nonce,
     },
 };
-use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::fmt;
 use std::sync::Arc;
@@ -90,20 +90,15 @@ pub struct TransferInputParams {
     pub timestamp: Timestamp,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq, Serialize, Ord, PartialOrd, Hash, Debug)]
-#[repr(transparent)]
-pub struct SignatureEd25519(pub [u8; 64]);
-
 #[derive(Debug, Serial, Clone)]
 pub struct TransferParams(#[concordium(size_length = 2)] pub Vec<Transfer>);
 
 #[derive(Debug, Serial, Clone)]
 pub struct UpdateOperatorParams(#[concordium(size_length = 2)] pub Vec<UpdateOperator>);
 
-#[derive(Debug, Serial, Clone)]
+#[derive(Debug, Serial)]
 pub struct PermitParam {
-    #[concordium(size_length = 1)]
-    pub signature: BTreeMap<u8, BTreeMap<u8, SignatureEd25519>>,
+    pub signature: AccountSignatures,
     pub signer: AccountAddress,
     pub message: PermitMessage,
 }

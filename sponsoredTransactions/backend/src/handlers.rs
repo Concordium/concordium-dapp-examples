@@ -1,11 +1,11 @@
 use crate::crypto_common::types::TransactionTime;
-use crate::types;
 use crate::types::*;
 use concordium_rust_sdk::cis2::{
     AdditionalData, OperatorUpdate, Receiver, TokenAmount, Transfer, UpdateOperator,
 };
 use concordium_rust_sdk::smart_contracts::common::{
-    AccountAddress, Address, Amount, ContractAddress, OwnedEntrypointName,
+    AccountAddress, AccountSignatures, Address, Amount, ContractAddress, CredentialSignatures,
+    OwnedEntrypointName, Signature, SignatureEd25519,
 };
 use concordium_rust_sdk::types::smart_contracts::{ContractContext, InvokeContractResult};
 use concordium_rust_sdk::types::{smart_contracts, transactions, Energy, WalletAccount};
@@ -124,17 +124,24 @@ pub async fn submit_transaction(
     hex::decode_to_slice(request_signature, &mut signature)
         .map_err(|_| LogError::SignatureError)?;
 
-    let mut inner_signature_map: BTreeMap<u8, types::SignatureEd25519> = BTreeMap::new();
-    inner_signature_map.insert(0, types::SignatureEd25519(signature));
+    let mut inner_signature_map = BTreeMap::new();
+    inner_signature_map.insert(0, Signature::Ed25519(SignatureEd25519(signature)));
 
-    let mut signature_map: BTreeMap<u8, BTreeMap<u8, types::SignatureEd25519>> = BTreeMap::new();
-    signature_map.insert(0, inner_signature_map);
+    let mut signature_map = BTreeMap::new();
+    signature_map.insert(
+        0,
+        CredentialSignatures {
+            sigs: inner_signature_map,
+        },
+    );
 
     log::debug!("Create Parameter.");
 
     let param: PermitParam = PermitParam {
         message,
-        signature: signature_map,
+        signature: AccountSignatures {
+            sigs: signature_map,
+        },
         signer,
     };
 

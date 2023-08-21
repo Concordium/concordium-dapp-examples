@@ -10,6 +10,8 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::Mutex;
+use tonic::transport::ClientTlsConfig;
+use warp::http;
 use warp::Filter;
 
 /// Structure used to receive the correct command line arguments.
@@ -59,7 +61,18 @@ async fn main() -> anyhow::Result<()> {
     log_builder.filter_level(app.log_level); // filter filter_module(module_path!(), app.log_level);
     log_builder.init();
 
-    let mut client_update_operator = concordium_rust_sdk::v2::Client::new(app.endpoint).await?;
+    let endpoint = if app
+        .endpoint
+        .uri()
+        .scheme()
+        .map_or(false, |x| x == &http::uri::Scheme::HTTPS)
+    {
+        app.endpoint.tls_config(ClientTlsConfig::new())?
+    } else {
+        app.endpoint
+    };
+
+    let mut client_update_operator = concordium_rust_sdk::v2::Client::new(endpoint).await?;
 
     let client_transfer = client_update_operator.clone();
 

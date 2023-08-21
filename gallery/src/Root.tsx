@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { detectConcordiumProvider } from '@concordium/browser-wallet-api-helpers';
 import Connection from './Connection';
 import { getNames } from './util';
+import { version } from '../package.json';
 
 const VERIFIER_URL = '/api';
 
@@ -82,6 +83,19 @@ export default function Gallery() {
                 {items.map(({ location, name }) => (
                     <Item location={location} name={name} authToken={authToken} onError={handleErrorOnLoad} />
                 ))}
+            </div>
+            <div>
+                <br />
+                Version: {version} |{' '}
+                <a
+                    style={{ color: 'white' }}
+                    href="https://developer.concordium.software/en/mainnet/net/guides/gallery/index.html"
+                    target="_blank"
+                    rel="noreferrer"
+                >
+                    Explore the gallery tutorial here.
+                </a>
+                <br />
             </div>
         </main>
     );
