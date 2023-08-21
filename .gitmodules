@@ -3,4 +3,4 @@
 	url = ../concordium-rust-sdk.git
 [submodule "deps/concordium-rust-smart-contracts"]
 	path = deps/concordium-rust-smart-contracts
-	url = git@github.com:Concordium/concordium-rust-smart-contracts.git
+	url = ../concordium-rust-smart-contracts/
