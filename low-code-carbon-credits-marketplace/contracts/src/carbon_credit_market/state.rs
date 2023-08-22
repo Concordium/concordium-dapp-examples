@@ -2,8 +2,6 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use std::ops::Sub;
-
 use concordium_std::*;
 
 use crate::client_utils::types::*;
@@ -94,7 +92,7 @@ pub struct TokenOwnedListItem {
     pub quantity: ContractTokenAmount,
 }
 
-#[derive(Serial, DeserialWithState, StateClone)]
+#[derive(Serial, DeserialWithState)]
 #[concordium(state_parameter = "S")]
 pub struct TokenListState<S: HasStateApi> {
     pub token_royalty: TokenRoyaltyState,
@@ -122,7 +120,7 @@ impl<S: HasStateApi> TokenListState<S> {
     }
 }
 
-#[derive(Serial, DeserialWithState, StateClone)]
+#[derive(Serial, DeserialWithState)]
 #[concordium(state_parameter = "S")]
 pub struct State<S: HasStateApi> {
     pub commission: Commission,
@@ -201,7 +199,7 @@ where
         delta: ContractTokenAmount,
     ) {
         if let Some(quantity) = self.tokens_owned.get(token_owner_info) {
-            let new_quantity = quantity.sub(delta);
+            let new_quantity = *quantity - delta;
             if new_quantity.eq(&ContractTokenAmount::from(0)) {
                 self.tokens_owned.remove(token_owner_info);
                 if let Some(mut token) = self.tokens_listed.get_mut(&token_owner_info.into()) {

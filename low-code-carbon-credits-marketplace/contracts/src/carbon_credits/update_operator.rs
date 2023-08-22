@@ -1,12 +1,7 @@
 use super::{contract_types::*, error::*, state::*};
 use concordium_std::*;
 
-/// Enable or disable addresses as operators of the sender address.
-/// Logs an `UpdateOperator` event.
-///
-/// It rejects if:
-/// - It fails to parse the parameter.
-/// - Fails to log event.
+/// `update_operator` function of the [CIS2 spec](https://proposals.concordium.software/CIS/cis-2.html#updateoperator)
 #[receive(
     contract = "carbon_credits",
     name = "updateOperator",

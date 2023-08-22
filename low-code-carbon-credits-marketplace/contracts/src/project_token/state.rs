@@ -4,7 +4,7 @@ use concordium_std::*;
 use super::{contract_types::*, error::*, mint::MintParam};
 
 /// The state for each address.
-#[derive(Serial, DeserialWithState, Deletable, StateClone)]
+#[derive(Serial, DeserialWithState, Deletable)]
 #[concordium(state_parameter = "S")]
 pub struct AddressState<S> {
     /// The amount of tokens owned by this address.
@@ -44,7 +44,7 @@ impl<S: HasStateApi> AddressState<S> {
 ///
 /// Note: The specification does not specify how to structure the contract state
 /// and this could be structured in a more space efficient way.
-#[derive(Serial, DeserialWithState, StateClone)]
+#[derive(Serial, DeserialWithState)]
 #[concordium(state_parameter = "S")]
 pub struct State<S> {
     /// The state of addresses.

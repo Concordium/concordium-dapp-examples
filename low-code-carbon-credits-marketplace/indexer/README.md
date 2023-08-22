@@ -7,8 +7,8 @@ This project provides a reference implementation for Node JS in Typescript to li
 
 ## Components
 
--   [Server](./server) : Its the backend code for a web service to which the users can connect and query for aggregated events and `listener` which has the code for long running process to listen for contract events.
--   [Server Rust Bindings](./server-rust-bindings) : Rust code that compiles to wasm and provides helper methods to deserialize the events.
+- [Server](./server) : Its the backend code for a web service to which the users can connect and query for aggregated events and `listener` which has the code for long running process to listen for contract events.
+- [Server Rust Bindings](./server-rust-bindings) : Rust code that compiles to wasm and provides helper methods to deserialize the events.
 
 ## Build
 
@@ -45,8 +45,8 @@ This repository is meant as a template repository / boilerplate code for creatin
 
 ### Prerequisites
 
--   [`yarn`](https://classic.yarnpkg.com/en/docs/install#debian-stable) : Used to build and run listener and web server.
--   [`cargo` & Rust](https://doc.rust-lang.org/cargo/getting-started/installation.html) : Used to build WASM dependencies for listener & web server.
+- [`yarn`](https://classic.yarnpkg.com/en/docs/install#debian-stable) : Used to build and run listener and web server.
+- [`cargo` & Rust](https://doc.rust-lang.org/cargo/getting-started/installation.html) : Used to build WASM dependencies for listener & web server.
 
 ### Build
 
@@ -54,14 +54,14 @@ This repository is meant as a template repository / boilerplate code for creatin
 
 ### Execute
 
--   Listener
+- Listener
 
 ```bash
 cd server
 yarn run dev-listener
 ```
 
--   Web Server
+- Web Server
 
 ```bash
 cd server

@@ -24,18 +24,18 @@ pub struct MintParams {
     pub tokens: Vec<TokenMintParams>,
 }
 
-/// Mint new tokens with a given address as the owner of these tokens.
-/// Can only be called by the contract owner.
-/// Logs a `Mint` and a `TokenMetadata` event for each token.
-/// The url for the token metadata is the token ID encoded in hex, appended on
-/// the `TOKEN_METADATA_BASE_URL`.
+/// Mint new tokens with a given address as the owner of these tokens. 
+/// Minting of carbon credits can only be done after a project token has already been transferred 
+/// to the carbon credit contract (this contract). Refferred to as the collateral token.
 ///
 /// It rejects if:
-/// - The sender is not the contract instance owner.
+/// - The sender is not an account.
 /// - Fails to parse parameter.
 /// - Any of the tokens fails to be minted, which could be if:
 ///     - Fails to log Mint event.
 ///     - Fails to log TokenMetadata event.
+///     - Token ID is already in use.
+///     - References a used collateral, or a non-existent collateral.
 ///
 /// Note: Can at most mint 32 token types in one call due to the limit on the
 /// number of logs a smart contract can produce on each function call.

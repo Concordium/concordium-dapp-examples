@@ -8,7 +8,7 @@ use crate::client_utils::types::ContractMetadataUrl;
 use super::{error::*, contract_types::{ContractTokenId, ContractTokenAmount, ContractCollateralTokenAmount, ContractResult}};
 
 /// The state for each address.
-#[derive(Serial, DeserialWithState, Deletable, StateClone)]
+#[derive(Serial, DeserialWithState, Deletable)]
 #[concordium(state_parameter = "S")]
 pub struct AddressState<S> {
     /// The amount of tokens owned by this address.
@@ -36,7 +36,7 @@ pub struct CollateralToken {
 ///
 /// Note: The specification does not specify how to structure the contract state
 /// and this could be structured in a more space efficient way.
-#[derive(Serial, DeserialWithState, StateClone)]
+#[derive(Serial, DeserialWithState)]
 #[concordium(state_parameter = "S")]
 pub struct State<S> {
     /// The state of addresses.
@@ -254,7 +254,9 @@ impl<S: HasStateApi> State<S> {
         self.collaterals.remove(collateral_key);
     }
 
-    /// Updates the owned token to attached a Minted Token Id
+    /// Attaches a collateral token to a minted token.
+    /// Returns the amount of collateral attached to the minted token.
+    /// Fails if the collateral token is already used for another minted token.
     pub fn use_collateral(
         &mut self,
         owned_token: &CollateralToken,

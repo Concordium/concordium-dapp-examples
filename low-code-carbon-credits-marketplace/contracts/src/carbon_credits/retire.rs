@@ -4,6 +4,10 @@ use crate::client_utils::client::Client;
 
 use super::{contract_types::*, error::*, events::*, state::*};
 
+/// Takea a list of tokens and retires them. Emitting a Retire event and a Burn event for each token.
+/// Retire event has the domain meaning of retiring a carbon credit.
+/// Burn event exists for compatibility with applications supporting CIS2 standard.
+/// The token / carbon credit should be mature and verified to be retired.
 #[receive(
     contract = "carbon_credits",
     name = "retire",
@@ -46,7 +50,7 @@ fn retire<S: HasStateApi>(
         // ensure is mature
         ensure!(is_mature, CustomContractError::TokenNotMature.into());
 
-        //ensure is verified
+        // ensure is verified
         ensure!(is_verified, CustomContractError::TokenNotVerified.into());
 
         let balance = state.balance(&token_id, &owner)?;
