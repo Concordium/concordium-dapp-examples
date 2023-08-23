@@ -20,7 +20,7 @@ function GetMintCardStep(props: {
         <Typography variant="caption" component="div">
           Maturity Time: {props.maturityTime.toLocaleString()}
         </Typography>
-        <Link href={props.imageIpfsUrl} variant="caption" component="div">
+        <Link href={props.imageIpfsUrl} variant="caption" display="block">
           Image IPFS Url
         </Link>
         <Link href={props.metadataUrl.url} variant="caption" target="_blank">

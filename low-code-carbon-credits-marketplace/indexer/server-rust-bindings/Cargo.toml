@@ -16,9 +16,7 @@ hex = "0.4"
 either = "1.6"
 thiserror = "1.0"
 rand = "0.7"
-
-[dependencies.concordium_base]
-path = "../../../deps/concordium-rust-sdk/concordium-base"
+concordium_base = { path = "../../../deps/concordium-rust-sdk/concordium-base/rust-src/concordium_base" }
 
 [lib]
 name = "server_rust_bindings"

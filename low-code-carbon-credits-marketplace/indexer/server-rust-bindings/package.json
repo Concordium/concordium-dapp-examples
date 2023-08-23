@@ -14,7 +14,7 @@
     "scripts": {
         "lint": "cargo clippy",
         "lint-fix": "cargo +nightly-2022-06-09-x86_64-unknown-linux-gnu fmt",
-        "build": "wasm-pack build --target web --out-dir pkg/bundler \"$@\" && wasm-pack build --target nodejs --out-dir pkg/node \"$@\"",
+        "build": "npx wasm-pack build --target web --out-dir pkg/bundler \"$@\" && wasm-pack build --target nodejs --out-dir pkg/node \"$@\"",
         "build-dev": "yarn build --dev",
         "build:rust-bindings": "yarn build"
     }

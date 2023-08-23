@@ -35,10 +35,10 @@
         "typescript": "^4.9.5"
     },
     "scripts": {
-        "dev-web": "nodemon src/web.ts",
-        "dev-listener": "nodemon --inspect src/listener.ts",
-        "build": "tsc",
-        "build-dev": "tsc",
+        "dev-web": "npx nodemon src/web.ts",
+        "dev-listener": "npx nodemon --inspect src/listener.ts",
+        "build": "npx tsc",
+        "build-dev": "npx tsc",
         "lint": "npx eslint . --cache --ext .ts,.tsx --max-warnings 0",
         "lint-fix": "yarn --silent lint --fix; exit 0"
     }

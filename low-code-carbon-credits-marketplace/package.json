@@ -1,0 +1,27 @@
+{
+    "name": "low-code-carbon-credits-marketplace",
+    "version": "1.0.0",
+    "main": "index.js",
+    "license": "MIT",
+    "private": true,
+    "workspaces": [
+        "contracts",
+        "market-ui",
+        "indexer/server-rust-bindings",
+        "indexer/server"
+    ],
+    "devDependencies": {
+      "nodemon": "*",
+      "typescript": "*",
+      "ts-node": "*",
+      "wasm-pack": "*"
+    },
+    "scripts": {
+      "build": "yarn workspaces run build",
+      "deploy:contracts": "yarn workspace contracts run deploy",
+      "start:mongo": "docker compose -f ./indexer/docker-compose.yml up -d",
+      "debug:listener": "yarn workspace server run dev-listener",
+      "debug:web": "yarn workspace server run dev-web",
+      "start:ui": "yarn workspace market-ui run start"
+    }
+}
