@@ -3,7 +3,6 @@ import FileUpload from 'react-material-file-upload';
 
 import { Button, Card, CardActions, CardContent, Typography } from '@mui/material';
 
-import { IPFS_GATEWAY_URL } from '../../../Constants';
 import { PinataClient } from '../../../models/PinataClient';
 import { tokenIdToArtifactFileName } from '../../../models/Utils';
 import DisplayError from '../../ui/DisplayError';
@@ -30,7 +29,7 @@ export default function UploadArtifactIpfsCardStep(props: {
   function submit() {
     setState({ ...state, isProcessing: true });
     props.pinata
-      .uploadFile(IPFS_GATEWAY_URL, file!, tokenIdToArtifactFileName(file!.name, props.tokenId))
+      .uploadFile(file!, tokenIdToArtifactFileName(file!.name, props.tokenId))
       .then((imageIpfsUrl) => {
         setState({
           ...state,

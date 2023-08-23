@@ -1,4 +1,4 @@
-import { default as axios } from 'axios';
+import { default as axios } from "axios";
 
 export class PinataClient {
   constructor(private pinataJwt: string) {}
@@ -15,7 +15,7 @@ export class PinataClient {
     return response.status === 200;
   }
 
-  async uploadFile(gatewayUrl: string, file: File, fileName: string): Promise<string> {
+  async uploadFile(file: File, fileName: string): Promise<string> {
     const data = new FormData();
     data.append("file", file);
     data.append("pinataMetadata", JSON.stringify({ name: fileName }));
@@ -29,10 +29,10 @@ export class PinataClient {
       data: data,
     });
 
-    return this.toGatewayUrl(gatewayUrl, response.data.IpfsHash);
+    return `ipfs://${response.data.IpfsHash}`;
   }
 
-  async uploadJson(gatewayUrl: string, json: any, fileName: string): Promise<string> {
+  async uploadJson(json: any, fileName: string): Promise<string> {
     const data = JSON.stringify({
       pinataMetadata: {
         name: fileName,
@@ -52,10 +52,6 @@ export class PinataClient {
       data: data,
     });
 
-    return this.toGatewayUrl(gatewayUrl, response.data.IpfsHash);
-  }
-
-  toGatewayUrl(gatewayUrl: string, ipfsHash: any): string {
-    return `${gatewayUrl}/${ipfsHash}`;
+    return `ipfs://${response.data.IpfsHash}`;
   }
 }

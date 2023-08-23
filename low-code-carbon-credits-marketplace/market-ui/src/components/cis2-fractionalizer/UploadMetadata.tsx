@@ -1,6 +1,5 @@
 import { useState } from 'react';
 
-import { IPFS_GATEWAY_URL } from '../../Constants';
 import { PinataClient } from '../../models/PinataClient';
 import { Metadata } from '../../models/ProjectNFTClient';
 import ConnectPinata from '../ConnectPinata';
@@ -22,7 +21,7 @@ export default function UploadMetadata(props: {
     setJwt(jwt);
     setState({ ...state, isProcessing: true });
     new PinataClient(jwt)
-      .uploadJson(IPFS_GATEWAY_URL, contents, props.fileName)
+      .uploadJson(contents, props.fileName)
       .then(url => props.onMetadataUploaded(url, jwt));
   }
 

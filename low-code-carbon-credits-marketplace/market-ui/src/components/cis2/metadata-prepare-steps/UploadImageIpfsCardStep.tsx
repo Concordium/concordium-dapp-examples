@@ -2,7 +2,6 @@ import { useState } from 'react';
 
 import { Button, Card, CardActions, CardContent, CardMedia, Typography } from '@mui/material';
 
-import { IPFS_GATEWAY_URL } from '../../../Constants';
 import { PinataClient } from '../../../models/PinataClient';
 import { tokenIdToTokenImageFileName } from '../../../models/Utils';
 import DisplayError from '../../ui/DisplayError';
@@ -26,7 +25,7 @@ export default function UploadImageIpfsCardStep(props: {
   function submit() {
     setState({ ...state, isUploadingImage: true });
     props.pinata
-      .uploadFile(IPFS_GATEWAY_URL, props.file, tokenIdToTokenImageFileName(props.file.name, props.tokenId))
+      .uploadFile(props.file, tokenIdToTokenImageFileName(props.file.name, props.tokenId))
       .then((imageIpfsUrl) => {
         setState({
           ...state,

@@ -19,6 +19,7 @@ import { Metadata } from '../models/ProjectNFTClient';
 import { fetchJson } from '../models/Utils';
 import { User } from '../types/user';
 import Cis2MetadataImageLazy from './cis2/Cis2MetadataImageLazy';
+import { toIpfsGatewayUrl } from '../utils';
 
 type ListItem = TokenListItem & { cis2Contract: CCContract };
 
@@ -105,7 +106,7 @@ function MarketplaceTokensListItem(props: {
   useEffect(() => {
     props.item.cis2Contract
       .tokenMetadata(props.item.tokenId)
-      .then((m) => fetchJson<Metadata>(m.url))
+      .then((m) => fetchJson<Metadata>(toIpfsGatewayUrl(m.url)))
       .then(setMetadata)
       .catch((e) => {
         console.error(e);

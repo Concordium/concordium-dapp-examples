@@ -6,7 +6,6 @@ import {
     Stack, TextField, Typography
 } from '@mui/material';
 
-import { IPFS_GATEWAY_URL } from '../../../Constants';
 import { PinataClient } from '../../../models/PinataClient';
 import { Metadata } from '../../../models/ProjectNFTClient';
 import { tokenIdToTokenMetadataFileName } from '../../../models/Utils';
@@ -105,7 +104,7 @@ export default function UploadMetadataIpfsCardStep(props: {
     const includeHash = formData.get("includeHash")?.toString();
     setState({ ...state, isUploadingMetadata: true });
     props.pinata
-      .uploadJson(IPFS_GATEWAY_URL, metadata, tokenIdToTokenMetadataFileName(props.tokenId))
+      .uploadJson(metadata, tokenIdToTokenMetadataFileName(props.tokenId))
       .then((metadataIpfsUrl) => {
         const metadataUrl = {
           url: metadataIpfsUrl,

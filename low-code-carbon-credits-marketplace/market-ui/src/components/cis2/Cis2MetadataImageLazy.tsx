@@ -5,6 +5,7 @@ import { Skeleton } from '@mui/material';
 
 import { Metadata } from '../../models/ProjectNFTClient';
 import { fetchJson } from '../../models/Utils';
+import { toIpfsGatewayUrl } from '../../utils';
 
 function Cis2MetadataImageLazy(props: { tokenId: string; cis2Contract: CIS2Contract }) {
   const [state, setState] = useState<{
@@ -21,7 +22,7 @@ function Cis2MetadataImageLazy(props: { tokenId: string; cis2Contract: CIS2Contr
     setState({ ...state, loading: true });
     props.cis2Contract
       .tokenMetadata(props.tokenId)
-      .then((m) => fetchJson<Metadata>(m.url))
+      .then((m) => fetchJson<Metadata>(toIpfsGatewayUrl(m.url)))
       .then((metadata) => {
         setState({ ...state, loading: false, metadata });
       })
@@ -35,8 +36,7 @@ function Cis2MetadataImageLazy(props: { tokenId: string; cis2Contract: CIS2Contr
     <Skeleton variant="rectangular" width={"100%"} height={"200px"} />
   ) : (
     <img
-      src={state.metadata?.display?.url}
-      srcSet={state.metadata?.display?.url}
+      src={toIpfsGatewayUrl(state.metadata?.display?.url)}
       alt={state.metadata?.name}
       loading="lazy"
       style={{ width: "100%", height: "200px", objectFit: "cover" }}

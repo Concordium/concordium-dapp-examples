@@ -7,6 +7,7 @@ import {
 
 import { ContractInfo } from '../../models/ConcordiumContractClient';
 import LazyCis2Metadata from './LazyCis2Metadata';
+import { toIpfsGatewayUrl } from '../../utils';
 
 const cardMediaSx: SxProps<Theme> = { maxHeight: "200px" };
 
@@ -22,7 +23,7 @@ function Cis2BatchItemMint(props: {
       <LazyCis2Metadata
         metadataUrl={props.token.metadataUrl}
         loadedTemplate={(metadata) => (
-          <CardMedia component="img" image={metadata.display?.url} alt="NFT" sx={cardMediaSx} />
+          <CardMedia component="img" image={toIpfsGatewayUrl(metadata.display?.url)} alt="NFT" sx={cardMediaSx} />
         )}
         loadingTemplate={() => (
           <Skeleton sx={{ ...cardMediaSx, height: "200px" }} animation="wave" variant="rectangular" />

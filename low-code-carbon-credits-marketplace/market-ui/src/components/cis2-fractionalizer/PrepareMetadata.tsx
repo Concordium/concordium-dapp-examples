@@ -8,6 +8,7 @@ import { Metadata } from '../../models/ProjectNFTClient';
 import { fetchJson } from '../../models/Utils';
 import Cis2TokenMetadataForm from '../cis2/Cis2TokenMetadataForm';
 import Alert from '../ui/Alert';
+import { toIpfsGatewayUrl } from '../../utils';
 
 export default function PrepareMetadata(props: {
   collateralTokenContract: CIS2Contract;
@@ -40,7 +41,7 @@ export default function PrepareMetadata(props: {
     setIsLoadingMetadata(true);
     cis2Contract
       .tokenMetadata(cis2TokenId)
-      .then((m) => fetchJson<Metadata>(m.url))
+      .then((m) => fetchJson<Metadata>(toIpfsGatewayUrl(m.url)))
       .then((metadata) => {
         const mergedMetadata = mergeMetadata({ attributes: getDefaultAttributes(metadata.attributes) }, metadata);
         setCis2TokenMetadata(mergedMetadata);

@@ -4,6 +4,7 @@ import { CIS2 } from '@concordium/web-sdk';
 
 import { Metadata } from '../../models/ProjectNFTClient';
 import { fetchJsonString } from '../../models/Utils';
+import { toIpfsGatewayUrl } from '../../utils';
 
 function LazyCis2Metadata(props: {
   metadataUrl: CIS2.MetadataUrl;
@@ -20,7 +21,7 @@ function LazyCis2Metadata(props: {
 
   useEffect(() => {
     setState({ ...state, loadingMetadata: true });
-    fetchJsonString(props.metadataUrl.url)
+    fetchJsonString(toIpfsGatewayUrl(props.metadataUrl.url))
       .then((metadata) => {
         setState({ ...state, metadata: JSON.parse(metadata), loadingMetadata: false });
         props.onMetadataLoaded && props.onMetadataLoaded(metadata);
