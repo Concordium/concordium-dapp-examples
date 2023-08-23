@@ -1,12 +1,5 @@
 # Carbon Credits Market Reference Implementation
 
-## User Roles
-
-* Admin : Represents the governance of the system. The role is responsible for setting up the system and adding verifiers to the system.
-* Project Owner : Represents the owner of the Carbon Credit Project. Can mint / retract a carbon credit project or can fractionalize a carbon credit project into carbon credit tokens.
-* Verifier : Responsible for verification of a carbon credit project. Only Verified & Mature projects can be retired.
-* Buyer : Any Account which wants to buy a Carbon Credit / Carbon Credit Token from the marketplace contract.
-
 ## Contracts
 
 ### [`project_token`](./src/project_token/mod.rs)
