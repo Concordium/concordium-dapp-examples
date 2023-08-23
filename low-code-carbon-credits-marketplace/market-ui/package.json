@@ -1,6 +1,5 @@
 {
   "name": "market-ui",
-  "homepage": "https://bogacyigitbasi.github.io/low-code-nft-marketplace",
   "version": "0.1.0",
   "private": true,
   "dependencies": {

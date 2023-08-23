@@ -2,7 +2,7 @@ use concordium_std::*;
 
 use super::state::State;
 
-/// Initialize contract instance with a no token types.
+/// Initialize contract instance with an empty state (no tokens exist in the state).
 #[init(
     contract = "project_token",
     event = "super::events::ContractEvent",

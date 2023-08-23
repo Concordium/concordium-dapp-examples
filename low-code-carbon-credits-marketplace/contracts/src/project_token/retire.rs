@@ -2,6 +2,10 @@ use concordium_std::*;
 
 use super::{contract_types::*, error::*, events::*, state::*};
 
+/// Take a list of tokens and retires them. Emitting a Retire event and a Burn event for each token.
+/// Retire event has the domain meaning of retiring a carbon credit.
+/// Burn event exists for compatibility with applications supporting CIS2 standard.
+/// The token / carbon credit should be mature and verified to be retired.
 #[receive(
     contract = "project_token",
     name = "retire",

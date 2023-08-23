@@ -7,7 +7,7 @@ import { Buffer } from 'buffer/';
  * Then appends the first 29 bytes of the base account address.
  *
  * @param email Email address of the user.
- * @returns Accoutn address of the user.
+ * @returns Account address of the user.
  */
 export async function getUserCurrent(email: string, baseAccountAddress: string): Promise<{ account: string }> {
     //TODO: implement Authentification Backend Service

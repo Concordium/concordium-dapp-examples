@@ -29,6 +29,6 @@ const deserializeContractEvent = (contractEvent: string, schema: string, contrac
     const schemaHex = Buffer.from(schema, 'base64').toString('hex');
     const eventJson = deserializeEventValue(contractEvent, schemaHex, contractName);
 
-    // If an error os thrown here. It means there is some issue with the deserialization.
+    // If an error is thrown here. It means there is some issue with the deserialization.
     return JSON.parse(eventJson);
 };

@@ -24,17 +24,13 @@ pub struct MintParams {
 pub struct MintResponse(Vec<ContractTokenId>);
 
 /// Mint new tokens with a given address as the owner of these tokens.
-/// Can only be called by the contract owner.
-/// Logs a `Mint` and a `TokenMetadata` event for each token.
-/// The url for the token metadata is the token ID encoded in hex, appended on
-/// the `TOKEN_METADATA_BASE_URL`.
 ///
 /// It rejects if:
-/// - The sender is not the contract instance owner.
 /// - Fails to parse parameter.
 /// - Any of the tokens fails to be minted, which could be if:
 ///     - Fails to log Mint event.
 ///     - Fails to log TokenMetadata event.
+///     - Fails to log MaturityTime event.
 ///
 /// Note: Can at most mint 32 token types in one call due to the limit on the
 /// number of logs a smart contract can produce on each function call.

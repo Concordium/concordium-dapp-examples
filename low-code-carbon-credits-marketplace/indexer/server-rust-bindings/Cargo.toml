@@ -1,7 +1,6 @@
 [package]
 name = "server-rust-bindings"
 version = "0.1.0"
-authors = ["parv@stactrace.com"]
 edition = "2018"
 
 [profile.dev]

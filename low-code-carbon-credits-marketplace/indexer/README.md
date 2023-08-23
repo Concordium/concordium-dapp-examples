@@ -2,8 +2,8 @@
 
 ## What it is?
 
-On Concordium Chain. The contracts can be coded to emit events. Which are the source for Off chain products to analyze whats happening on chain.
-This project provides a reference implementation for Node JS in Typescript to listen to such events and index them in database to be queried account to the business logic.
+On Concordium Chain. The contracts can be coded to emit events. Which are the sources for off-chain products to analyze what's happening on chain.
+This project provides a reference implementation for Node JS in Typescript to listen to such events and index them in a database to be queried by using an account as the key.
 
 ## Components
 
@@ -12,7 +12,7 @@ This project provides a reference implementation for Node JS in Typescript to li
 
 ## Build
 
-```
+```bash
 cd server-rust-bindings
 yarn run build
 ```
@@ -41,7 +41,7 @@ yarn run dev:web
 
 ## How to use?
 
-This repository is meant as a template repository / boilerplate code for creating a custom events listener for Concordium Blockchain. Read more about it.
+This repository is meant as a template repository / boilerplate code for creating a custom events listener for the Concordium Blockchain.
 
 ### Prerequisites
 
@@ -54,19 +54,25 @@ This repository is meant as a template repository / boilerplate code for creatin
 
 ### Execute
 
+- Start MongoDB
+
+    ```bash
+    docker compose -f ./docker-compose.yml up -d
+    ```
+
 - Listener
 
-```bash
-cd server
-yarn run dev-listener
-```
+    ```bash
+    cd server
+    yarn run dev-listener
+    ```
 
 - Web Server
 
-```bash
-cd server
-yarn run dev-web
-```
+    ```bash
+    cd server
+    yarn run dev-web
+    ```
 
 ### Debug
 

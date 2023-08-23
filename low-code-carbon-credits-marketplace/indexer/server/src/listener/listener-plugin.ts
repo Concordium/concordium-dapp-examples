@@ -11,7 +11,7 @@ export interface IListenerPlugin {
     getName(): unknown;
 
     /**
-     *Insert inpur block items with deserialized events into the database.
+     *Insert input block items with deserialized events into the database.
      * @param blockHash Block Hash.
      * @param blockHeight Block Height.
      * @param pluginBlockItems Block Items.

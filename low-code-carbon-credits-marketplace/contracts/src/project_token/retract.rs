@@ -4,6 +4,9 @@ use crate::client_utils::types::BurnParam;
 
 use super::{contract_types::*, error::*, events::*, state::*};
 
+/// Take a list of tokens and retracts them. Emitting a Retract event and a Burn event for each token.
+/// Retract event has the domain meaning of retracting a carbon credit.
+/// Burn event exists for compatibility with applications supporting CIS2 standard.
 #[receive(
     contract = "project_token",
     name = "retract",
@@ -50,7 +53,7 @@ fn retract<S: HasStateApi>(
         // Retire token.
         state.burn(&token_id, &owner)?;
 
-        // log token retire event.
+        // log token retract event.
         logger.log(&ContractEvent::Retract(BurnEvent {
             token_id,
             owner,
