@@ -61,7 +61,7 @@ After you click on the drop button, an extension will open with the transaction.
 
 ![ccd-transaction-1.png](docs/ccd-transaction-init.png)
 
-If you confirm it, you will see a loader with a link to concordium explorer where you can get more information about the transaction.
+If you confirm it, you will see a loader with a link to [concordium explorer](https://ccdscan.io) where you can get more information about the transaction.
 
 ![ccd-explorer-page.png](docs/ccd-explorer-page.png)
 
