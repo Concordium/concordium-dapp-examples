@@ -27,15 +27,15 @@ export const StatusTransactionInit: FC<StatusTransactionInitProps> = (
 	const { className, isLoading, errorCode, transactionHash, contractIndex } =
 		props;
 
-  if (isLoading) {
-    return (
-		<div className={classNames(cls.statusTransactionInit, className)}>
-			<div className={cls.iconsBar}>
-				<div>{isLoading && <Spinner variant='xs' />}</div>
+	if (isLoading) {
+		return (
+			<div className={classNames(cls.statusTransactionInit, className)}>
+				<div className={cls.iconsBar}>
+					<div>{isLoading && <Spinner variant='xs' />}</div>
+				</div>
 			</div>
-		</div>
-	);
-  }
+		);
+	}
 
 	return (
 		<div className={classNames(cls.statusTransactionInit, className)}>

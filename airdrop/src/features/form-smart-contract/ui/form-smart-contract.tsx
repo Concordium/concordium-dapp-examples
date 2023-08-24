@@ -2,13 +2,13 @@ import { FC } from 'react';
 import classNames from 'classnames';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { TextAlert } from 'shared/components/text-alert';
-import { LP_RAW_SCHEMA, RAW_MODULE_REFERENCE } from 'shared/config';
+import { BASE_64_RAW_SCHEMA, RAW_MODULE_REFERENCE } from 'shared/config';
 import {
 	LOCAL_STORAGE_KEY_MODULE_REFERENCE,
 	LOCAL_STORAGE_KEY_RAW_SCHEMA,
 } from 'shared/config/local-storage.ts';
 import {
-	DEFAULT_RAW_SCHEMA,
+	DEFAULT_BASE_64_RAW_SCHEMA,
 	DEFAULT_RAW_MODULE_REFERENCE,
 } from 'shared/config/smart-contract.ts';
 
@@ -37,7 +37,7 @@ export const FormSmartContract: FC<FormSmartContractWrapperProps> = ({
 		);
 		sessionStorage.setItem(
 			LOCAL_STORAGE_KEY_RAW_SCHEMA,
-			DEFAULT_RAW_SCHEMA,
+			DEFAULT_BASE_64_RAW_SCHEMA,
 		);
 		window.location.reload();
 	}
@@ -80,7 +80,7 @@ export const FormSmartContract: FC<FormSmartContractWrapperProps> = ({
 				<p>Raw Schema</p>
 				<textarea
 					className='w-[100%] border-2 border-gray-300 rounded-2xl px-4 py-2 h-96'
-					defaultValue={LP_RAW_SCHEMA}
+					defaultValue={BASE_64_RAW_SCHEMA}
 					{...register('Raw Schema', { required: true })}
 				/>
 			</div>

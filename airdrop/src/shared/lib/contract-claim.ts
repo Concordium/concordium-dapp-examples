@@ -1,10 +1,13 @@
 import { AccountTransactionType, CcdAmount } from '@concordium/web-sdk';
 import {
 	CONTRACT_NAME,
-	LP_RAW_SCHEMA,
+	BASE_64_RAW_SCHEMA,
 	MAX_CONTRACT_EXECUTION_ENERGY,
 } from '../config';
-import { WalletConnection } from '@concordium/react-components';
+import {
+	moduleSchemaFromBase64,
+	WalletConnection,
+} from '@concordium/react-components';
 import { getProof } from 'shared/lib/get-proof.ts';
 
 export async function contractClaim(
@@ -30,12 +33,14 @@ export async function contractClaim(
 			maxContractExecutionEnergy: MAX_CONTRACT_EXECUTION_ENERGY,
 		},
 		{
-			proof: proof,
-			node: account,
-			node_string: account,
-			selected_token: selectedToken.toString().padStart(8, '0'),
-			amount_of_tokens: amountOfTokens,
+			parameters: {
+				proof: proof,
+				node: account,
+				node_string: account,
+				selected_token: selectedToken.toString().padStart(8, '0'),
+				amount_of_tokens: amountOfTokens,
+			},
+			schema: moduleSchemaFromBase64(BASE_64_RAW_SCHEMA),
 		},
-		LP_RAW_SCHEMA,
 	);
 }

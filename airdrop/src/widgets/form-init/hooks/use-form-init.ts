@@ -18,7 +18,7 @@ export function useFormInit() {
 	} = useForm<FormInitProps>();
 
 	const [isLoading, setIsLoading] = useState(false);
-  const [errorCode, setErrorCode] = useState<number>();
+	const [errorCode, setErrorCode] = useState<number>();
 	const { connection, account } = useConcordiumApi();
 	const metadata = useMetadataStore((state) => state.metadata);
 	const metadataUrl = useMetadataStore((state) => state.metadataUrl);
@@ -89,36 +89,36 @@ export function useFormInit() {
 		) {
 			return;
 		}
-    let intervalCount = 0;
+		let intervalCount = 0;
 		const interval = setInterval(async () => {
-      ++intervalCount;
+			++intervalCount;
 			const status = await connection
 				.getJsonRpcClient()
 				.getTransactionStatus(submittedTxHash);
 
 			console.log('init', status);
 
-      if (intervalCount > INTERVAL_LIMIT) {
-        clearInterval(interval);
-        setIsLoading(false);
-        setErrorCode(() => -10);
-        let index = NaN;
-        console.error('interval limit reached');
-        pushLocalStorageInit({
-          initDate: new Date(),
-          metadataUrl: metadataUrl,
-          whitelistUrl: whitelistUrl,
-          endTime: new Date(data['nft time limit']),
-          hash: submittedTxHash,
-          nftLimit: +data['nft limit'],
-          nftLimitPerAddress: +data['nft limit per address'],
-          reserve: +data['reserve'],
-          selectedIndex: Boolean(data['selected index']),
-          error: errorCode ?? 0,
-          contractIndex: index,
-        });
-        return;
-      }
+			if (intervalCount > INTERVAL_LIMIT) {
+				clearInterval(interval);
+				setIsLoading(false);
+				setErrorCode(() => -10);
+				let index = NaN;
+				console.error('interval limit reached');
+				pushLocalStorageInit({
+					initDate: new Date(),
+					metadataUrl: metadataUrl,
+					whitelistUrl: whitelistUrl,
+					endTime: new Date(data['nft time limit']),
+					hash: submittedTxHash,
+					nftLimit: +data['nft limit'],
+					nftLimitPerAddress: +data['nft limit per address'],
+					reserve: +data['reserve'],
+					selectedIndex: Boolean(data['selected index']),
+					error: errorCode ?? 0,
+					contractIndex: index,
+				});
+				return;
+			}
 
 			if (status?.status === 'finalized' && status.outcomes) {
 				const outcome = Object.values(status.outcomes)[0];
@@ -129,7 +129,7 @@ export function useFormInit() {
 				let index = 0;
 
 				if (outcome.result.outcome === 'success') {
-          setErrorCode(() => 0);
+					setErrorCode(() => 0);
 					const contractIndex =
 						// @ts-ignore
 						outcome.result.events[0].address.index;
@@ -140,7 +140,7 @@ export function useFormInit() {
 					);
 					index = Number.parseInt(contractIndex);
 				} else {
-          setErrorCode(() => -1);
+					setErrorCode(() => -1);
 					console.error('creation failed');
 				}
 
@@ -160,7 +160,7 @@ export function useFormInit() {
 			}
 		}, 1000);
 
-    return () => clearInterval(interval);
+		return () => clearInterval(interval);
 	}
 
 	return {
@@ -170,6 +170,6 @@ export function useFormInit() {
 		transactionHash: submittedTxHash,
 		isLoading,
 		createdContractId,
-    errorCode,
+		errorCode,
 	};
 }
