@@ -10,14 +10,12 @@ interface FormWhitelistProps {
 	whitelist: FileList;
 }
 
-type FileError = 'IPFS error' | 'File loading error';
-
 export function FormWhitelist() {
 	const { register, handleSubmit } = useForm<FormWhitelistProps>();
 
 	const [whitelist, setWhitelist] = useState<string | undefined>('');
 	const [isLoading, setIsLoading] = useState(false);
-	const [fileError, setFileError] = useState<FileError>();
+	const [fileError, setFileError] = useState<string>();
 	const [filename, setFilename] = useState('');
 	const setStoreWhitelist = useWhitelistStore((state) => state.setWhitelist);
 	const setStoreWhitelistUrl = useWhitelistStore(
@@ -46,7 +44,11 @@ export function FormWhitelist() {
 			whitelistReader.readAsText(data.whitelist[0]);
 		} catch (error) {
 			console.error(error);
-			setFileError('File loading error');
+            if (error instanceof Error) {
+                setFileError(error.message)
+            } else {
+			    setFileError('File loading error');
+            }
 			setIsLoading(false);
 			return;
 		}
@@ -54,8 +56,12 @@ export function FormWhitelist() {
 		try {
 			setStoreWhitelistUrl(await postIpfs(data.whitelist[0]));
 		} catch (error) {
-			console.error(error);
-			setFileError('IPFS error');
+            console.error(error);
+            if (error instanceof Error) {
+                setFileError(error.message)
+            } else {
+                setFileError('File loading error');
+            }
 		} finally {
 			setIsLoading(false);
 		}
