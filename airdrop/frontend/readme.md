@@ -60,8 +60,7 @@ On the Create page you will find everything you need to create an airdrop using 
 After you click on the drop button, an extension will open with the transaction.
 
 ![ccd-transaction-1.png](docs/ccd-transaction-init.png)
-
-If you confirm it, you will see a loader with a link to [concordium explorer](https://ccdscan.io) where you can get more information about the transaction.
+If you confirm it, you will see a loader with a link to [concordium explorer](https://dashboard.testnet.concordium.com/lookup/b44658c583b978abfc950dc9d92d5d42c610b04d7db3af4b9437c08827c26375) where you can get more information about the transaction.
 
 ![ccd-explorer-page.png](docs/ccd-explorer-page.png)
 
