@@ -8,6 +8,8 @@ import { useMetadataStore } from 'shared/model/use-metadata-store.ts';
 import { useWhitelistStore } from 'shared/model/use-whitelist-store.ts';
 import { pushLocalStorageInit } from 'shared/lib/push-local-storage-init.ts';
 
+const INTERVAL_LIMIT = 10;
+
 export function useFormInit() {
 	const {
 		register,
@@ -16,6 +18,7 @@ export function useFormInit() {
 	} = useForm<FormInitProps>();
 
 	const [isLoading, setIsLoading] = useState(false);
+  const [errorCode, setErrorCode] = useState<number>();
 	const { connection, account } = useConcordiumApi();
 	const metadata = useMetadataStore((state) => state.metadata);
 	const metadataUrl = useMetadataStore((state) => state.metadataUrl);
@@ -86,12 +89,36 @@ export function useFormInit() {
 		) {
 			return;
 		}
+    let intervalCount = 0;
 		const interval = setInterval(async () => {
+      ++intervalCount;
 			const status = await connection
 				.getJsonRpcClient()
 				.getTransactionStatus(submittedTxHash);
 
 			console.log('init', status);
+
+      if (intervalCount > INTERVAL_LIMIT) {
+        clearInterval(interval);
+        setIsLoading(false);
+        setErrorCode(() => -10);
+        let index = NaN;
+        console.error('interval limit reached');
+        pushLocalStorageInit({
+          initDate: new Date(),
+          metadataUrl: metadataUrl,
+          whitelistUrl: whitelistUrl,
+          endTime: new Date(data['nft time limit']),
+          hash: submittedTxHash,
+          nftLimit: +data['nft limit'],
+          nftLimitPerAddress: +data['nft limit per address'],
+          reserve: +data['reserve'],
+          selectedIndex: Boolean(data['selected index']),
+          error: errorCode ?? 0,
+          contractIndex: index,
+        });
+        return;
+      }
 
 			if (status?.status === 'finalized' && status.outcomes) {
 				const outcome = Object.values(status.outcomes)[0];
@@ -99,10 +126,10 @@ export function useFormInit() {
 				clearInterval(interval);
 				setIsLoading(false);
 
-				let error = 0;
 				let index = 0;
 
 				if (outcome.result.outcome === 'success') {
+          setErrorCode(() => 0);
 					const contractIndex =
 						// @ts-ignore
 						outcome.result.events[0].address.index;
@@ -113,7 +140,7 @@ export function useFormInit() {
 					);
 					index = Number.parseInt(contractIndex);
 				} else {
-					error = -1;
+          setErrorCode(() => -1);
 					console.error('creation failed');
 				}
 
@@ -127,13 +154,13 @@ export function useFormInit() {
 					nftLimitPerAddress: +data['nft limit per address'],
 					reserve: +data['reserve'],
 					selectedIndex: Boolean(data['selected index']),
-					error,
+					error: errorCode ?? 0,
 					contractIndex: index,
 				});
 			}
 		}, 1000);
-		// TODO: return clear interval + promise race with timer instead of spinner
-		return null;
+
+    return () => clearInterval(interval);
 	}
 
 	return {
@@ -143,5 +170,6 @@ export function useFormInit() {
 		transactionHash: submittedTxHash,
 		isLoading,
 		createdContractId,
+    errorCode,
 	};
 }

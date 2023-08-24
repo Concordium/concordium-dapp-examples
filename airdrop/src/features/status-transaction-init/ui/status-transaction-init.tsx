@@ -27,14 +27,24 @@ export const StatusTransactionInit: FC<StatusTransactionInitProps> = (
 	const { className, isLoading, errorCode, transactionHash, contractIndex } =
 		props;
 
+  if (isLoading) {
+    return (
+		<div className={classNames(cls.statusTransactionInit, className)}>
+			<div className={cls.iconsBar}>
+				<div>{isLoading && <Spinner variant='xs' />}</div>
+			</div>
+		</div>
+	);
+  }
+
 	return (
 		<div className={classNames(cls.statusTransactionInit, className)}>
 			<div className={cls.iconsBar}>
 				<div>
-					{isLoading && <Spinner variant='xs' />}
 					{!!errorCode && (
 						<XMarkIcon className='h-6 w-6 text-red-700' />
 					)}
+
 					{!isLoading && !errorCode && (
 						<CheckIcon className='h-6 w-6 text-green-700' />
 					)}
@@ -48,7 +58,7 @@ export const StatusTransactionInit: FC<StatusTransactionInitProps> = (
 				</a>
 			</div>
 
-			{!!contractIndex && (
+			{!errorCode && !!contractIndex && (
 				<Link
 					className={classNames(cls.link, cls.borderTop)}
 					to={`${RoutePath.claim}/${contractIndex.toString()}/0`}

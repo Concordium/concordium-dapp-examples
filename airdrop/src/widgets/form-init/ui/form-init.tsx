@@ -16,6 +16,7 @@ export const FormInit: FC = () => {
 		transactionHash,
 		isLoading,
 		createdContractId,
+    errorCode
 	} = useFormInit();
 
 	return (
@@ -66,7 +67,7 @@ export const FormInit: FC = () => {
 					transactionHash={transactionHash}
 					contractIndex={createdContractId}
 					isLoading={isLoading}
-					errorCode={undefined}
+					errorCode={errorCode}
 				/>
 			)}
 		</form>

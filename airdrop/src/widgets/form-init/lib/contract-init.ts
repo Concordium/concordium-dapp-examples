@@ -1,11 +1,14 @@
 import { AccountTransactionType, CcdAmount } from '@concordium/web-sdk';
 import {
 	CONTRACT_NAME,
-	LP_RAW_SCHEMA,
+	BASE_64_RAW_SCHEMA,
 	MAX_CONTRACT_EXECUTION_ENERGY,
 	MODULE_REFERENCE,
 } from 'shared/config';
-import { WalletConnection } from '@concordium/react-components';
+import {
+	moduleSchemaFromBase64,
+	WalletConnection,
+} from '@concordium/react-components';
 import { ContractInitParameters } from '../model/contract-init-parameters';
 
 export function contractInit(
@@ -22,7 +25,9 @@ export function contractInit(
 			initName: CONTRACT_NAME,
 			maxContractExecutionEnergy: MAX_CONTRACT_EXECUTION_ENERGY,
 		},
-		{ ...parameters },
-		LP_RAW_SCHEMA,
+		{
+			schema: moduleSchemaFromBase64(BASE_64_RAW_SCHEMA),
+			parameters: { ...parameters },
+		},
 	);
 }

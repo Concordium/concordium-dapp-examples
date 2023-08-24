@@ -15,7 +15,7 @@
 		"prettier:fix": "prettier src --write"
 	},
 	"dependencies": {
-		"@concordium/react-components": "^0.2.1",
+		"@concordium/react-components": "^0.3.0",
 		"@heroicons/react": "^2.0.18",
 		"@types/crypto-js": "^4.1.1",
 		"axios": "^1.4.0",
