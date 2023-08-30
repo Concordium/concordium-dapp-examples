@@ -88,7 +88,7 @@ Any Account which wants to buy a Carbon Credit / Carbon Credit Token from the ma
          * `STARTING_BLOCK_HASH` : Hash of the block at which the the indexer would start listening.
          * `APP_PORT`: Port at which web backend would listen for requests.
          * `BASE_ACCOUNT_ADDRESS`: Address of the account which will be used to create aliases in case users want to use email address instead of concordium account.
-         * `GOOGLE_CLIENT_ID`: Client ID of the google app which will be used for authentication.
+         * `GOOGLE_CLIENT_ID`: Client ID of the google app which will be used for authentication. *not present by default*
          * `MODULE_REF`: Module reference of the deployed smart contract. This can be found in the output of the deploy command.
          * `MODULE_SCHEMA`: base64 encoded schema of the deployed smart contract. This can be found in the [file](./contracts/schema_base64.txt)  
       2. [Web Frontend](./market-ui/.env)
@@ -104,10 +104,11 @@ Any Account which wants to buy a Carbon Credit / Carbon Credit Token from the ma
          * `REACT_APP_CONCORDIUM_NODE_ENDPOINT` : Endpoint of concordium node.
          * `REACT_APP_CONCORDIUM_NODE_PORT`: Port of concordium node.
          * `REACT_APP_EXPLORER_URL_TXN_HASH` : URL of the explorer to view transaction details.
-         * `REACT_APP_WERT_PARTNER_ID` : ID of the wert partner.
+         * `REACT_APP_WERT_PARTNER_ID` : ID of the wert partner. *not present by default*
          * `REACT_APP_WERT_NETWORK` : Network of the wert partner.
          * `REACT_APP_WERT_ORIGIN` : Origin of the wert partner.
-         * `REACT_APP_GOOGLE_CLIENT_ID` : Client ID of the google app which will be used for authentication.
+         * `REACT_APP_WERT_PRIVATE_KEY` : private key of the wert partner. *not present by default*
+         * `REACT_APP_GOOGLE_CLIENT_ID` : Client ID of the google app which will be used for authentication. *not present by default*
          * `REACT_APP_IPFS_GATEWAY_URL` : URL of the IPFS gateway.
          * `REACT_APP_INDEXER_API_URL` : URL of the indexer / listener API.
          * `REACT_APP_MODULE_REF` : Module reference of the deployed smart contract. This can be found in the output of the deploy command.
@@ -117,8 +118,11 @@ Any Account which wants to buy a Carbon Credit / Carbon Credit Token from the ma
    1. Run [Events Listener Backend](./indexer/server/src/listener.ts)
 
         ```bash
+        yarn start:mongo
         yarn debug:listener
         ```
+
+      `yarn start:mongo` runs the mongo db instance at port `27017`, with an instance of [mongo-express](https://github.com/mongo-express/mongo-express) to view the database. Default values allows access to the mongo-express instance [here](http://localhost:8081/) and the database [`db`](http://localhost:8081/db/db/) is created after the first run. The default values can be changed in the [docker-compose](./indexer/docker-compose.yml) file.
 
    2. Run [Web Backend](./indexer/server/src/web.ts)
 
@@ -131,3 +135,11 @@ Any Account which wants to buy a Carbon Credit / Carbon Credit Token from the ma
         ```bash
         yarn start:ui
         ```
+
+      * Wert integration is **disabled by default**. To enable it, set thefollowing  environment variables in the [.env](./market-ui/.env) file 
+        * `REACT_APP_WERT_PARTNER_ID`
+        * `REACT_APP_WERT_NETWORK`
+        * `REACT_APP_WERT_ORIGIN`
+        * `REACT_APP_WERT_PRIVATE_KEY`
+      * Google authentication is **disabled by default**. To enable it, set the following environment variables in the [.env](./market-ui/.env) file
+        * `REACT_APP_GOOGLE_CLIENT_ID`

@@ -59,13 +59,13 @@ export const CONCORDIUM_NODE_PORT = process.env.REACT_APP_CONCORDIUM_NODE_PORT!;
 export const EXPLORER_URL_TXN_HASH = process.env.REACT_APP_EXPLORER_URL_TXN_HASH!;
 
 // Wert Config Options
-export const WERT_PRIVATE_KEY = process.env.REACT_APP_WERT_PRIVATE_KEY!;
-export const WERT_PARTNER_ID = process.env.REACT_APP_WERT_PARTNER_ID!;
-export const WERT_NETWORK = process.env.REACT_APP_WERT_NETWORK!;
-export const WERT_ORIGIN = process.env.REACT_APP_WERT_ORIGIN!;
+export const WERT_PRIVATE_KEY = process.env.REACT_APP_WERT_PRIVATE_KEY;
+export const WERT_PARTNER_ID = process.env.REACT_APP_WERT_PARTNER_ID;
+export const WERT_NETWORK = process.env.REACT_APP_WERT_NETWORK;
+export const WERT_ORIGIN = process.env.REACT_APP_WERT_ORIGIN;
 
 // Login Via Google Config Options
-export const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID!;
+export const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID;
 
 // Indexer Config Options
 export const INDEXER_API_URL = process.env.REACT_APP_INDEXER_API_URL!;

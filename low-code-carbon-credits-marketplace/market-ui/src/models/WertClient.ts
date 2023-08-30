@@ -37,6 +37,11 @@ export const transfer = async (
   height = 600,
 ) => {
   return new Promise((res, rej) => {
+    if (!validWertConfig()) {
+      rej(new Error("Wert config is not valid"));
+      return;
+    }
+
     const paramJson: TransferParams = {
       cis_contract_address: toParamContractAddress(nftContractAddress),
       token_id: tokenId,
@@ -63,9 +68,9 @@ export const transfer = async (
           entrypoint: `${MARKETPLACE_CONTRACT_INFO.contractName}.${MethodNames.transfer}`,
           params: parameter.toString("hex"),
         }),
-        network: WERT_NETWORK,
+        network: WERT_NETWORK!,
       },
-      WERT_PRIVATE_KEY,
+      WERT_PRIVATE_KEY!,
     );
     const otherWidgetOptions = {
       pk_id: "key1",
@@ -104,3 +109,7 @@ export const transfer = async (
     wertWidget.mount();
   });
 };
+
+function validWertConfig() {
+  return WERT_PARTNER_ID && WERT_PRIVATE_KEY && WERT_NETWORK && WERT_ORIGIN;
+}

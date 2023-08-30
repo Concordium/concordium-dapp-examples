@@ -13,11 +13,15 @@ import { AccountType, User } from '../../types/user';
 import DisplayError from '../ui/DisplayError';
 
 export default function LoginDialog(
-  props: DialogProps & { onLogin: (user: User) => void; hasWalletInstalled: boolean },
+  props: DialogProps & {
+    onLogin: (user: User) => void;
+    onClose: () => void;
+    hasWalletInstalled: boolean;
+  },
 ) {
   const { onLogin, hasWalletInstalled } = props;
   const [form, setForm] = useState<User>({
-    accountType: "email",
+    accountType: "",
     account: "",
     email: "",
   });
@@ -42,7 +46,7 @@ export default function LoginDialog(
             login({ account: wallet.account, email: "", accountType });
           })
           .catch((error) => {
-            setForm({ account: "", email: "", accountType });
+            setForm({ account: "", email: "", accountType: "" });
             setState({ isProcessing: false, error: error.message });
           });
         break;
@@ -71,8 +75,14 @@ export default function LoginDialog(
     login({ ...form, email: user.email, account: user.account });
   }
 
+  function onClose() {
+    props.onClose();
+    setState({ isProcessing: false, error: "" });
+    setForm({ account: "", email: "", accountType: "" });
+  }
+
   return (
-    <Dialog open={props.open} onClose={props.onClose} maxWidth={"md"}>
+    <Dialog open={props.open} onClose={() => onClose()} maxWidth={"md"}>
       <DialogTitle minWidth={"300px"}>Login</DialogTitle>
       <DialogContent>
         <Stack spacing={2} component={"form"} marginBottom={"2em"}>
@@ -98,7 +108,7 @@ export default function LoginDialog(
                   control={
                     <Radio
                       onChange={() => onAccountTypeChanged("email")}
-                      disabled={state.isProcessing}
+                      disabled={state.isProcessing || !GOOGLE_CLIENT_ID}
                       checked={form.accountType === "email"}
                     />
                   }
@@ -107,8 +117,8 @@ export default function LoginDialog(
               </RadioGroup>
             </FormControl>
           </FormGroup>
-          {form.accountType === "email" && (
-            <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+          {form.accountType === "email" && GOOGLE_CLIENT_ID && (
+            <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID!}>
               <GoogleLogin
                 onSuccess={onGooleLoginSuccess}
                 onError={() => {

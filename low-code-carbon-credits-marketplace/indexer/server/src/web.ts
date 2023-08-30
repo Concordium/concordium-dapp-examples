@@ -9,7 +9,7 @@ dotenv.config();
 const port = process.env.APP_PORT || '';
 const mongodbConnString = process.env.DB_CONN_STRING || '';
 const pageSize = parseInt(process.env.PAGE_SIZE || '20');
-const googleClientId = process.env.GOOGLE_CLIENT_ID!;
+const googleClientId = process.env.GOOGLE_CLIENT_ID;
 const baseAccountAddress = process.env.BASE_ACCOUNT_ADDRESS!;
 
 (async () => {
@@ -127,6 +127,11 @@ const baseAccountAddress = process.env.BASE_ACCOUNT_ADDRESS!;
         const reqBody = req.body as { credential: string };
         if (!reqBody?.credential) {
             res.status(400).json({ error: 'Invalid params' });
+            return;
+        }
+
+        if (!googleClientId) {
+            res.status(500).json({ error: 'Missing Google Client ID' });
             return;
         }
 
