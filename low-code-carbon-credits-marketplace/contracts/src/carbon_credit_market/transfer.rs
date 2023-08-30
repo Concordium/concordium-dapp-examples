@@ -91,7 +91,7 @@ fn transfer<S: HasStateApi>(
                 amount: params.quantity,
                 to: Receiver::Account(params.to),
                 token_id: params.token_id,
-                from: Address::Account(params.owner),
+                from: Address::Contract(ctx.self_address()),
                 data: AdditionalData::empty(),
             },
         )?;
