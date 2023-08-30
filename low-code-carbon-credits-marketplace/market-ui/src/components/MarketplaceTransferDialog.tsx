@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react';
 
-import { ContractAddress } from '@concordium/web-sdk';
+import { ContractAddress, TransactionStatusEnum } from '@concordium/web-sdk';
 import { Container, FormControl, InputLabel, MenuItem, Select, Stack } from '@mui/material';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
@@ -15,6 +15,7 @@ import { connectToWallet } from '../models/ConcordiumContractClient';
 import { transfer as transferWert } from '../models/WertClient';
 import { User } from '../types/user';
 import DisplayError from './ui/DisplayError';
+import TransactionProgress from './ui/TransactionProgress';
 
 export default function MarketplaceTransferDialog(props: {
   isOpen: boolean;
@@ -29,6 +30,8 @@ export default function MarketplaceTransferDialog(props: {
     quantity: props.token.quantity.toString(),
     medium: user.accountType === "wallet" ? "wallet" : "creditcard",
   });
+  const [txn, setTxn] = useState<{ status: TransactionStatusEnum; hash: string }>();
+
   const [totalAmount, setTotalAmount] = useState<bigint>(props.token.quantity * props.token.price);
 
   const [state, setState] = useState<{
@@ -36,9 +39,15 @@ export default function MarketplaceTransferDialog(props: {
     isProcessing?: boolean;
     error?: string;
   }>({});
+  
+  const setFormField = (field: string, value: string) => {
+    setForm({ ...form, [field]: value });
+    setState({ ...state, error: "" });
+  };
 
   const handleClose = () => {
     setOpen(false);
+    setTxn(undefined);
     props.onClose();
   };
 
@@ -58,6 +67,7 @@ export default function MarketplaceTransferDialog(props: {
             owner: item.owner,
             quantity,
             contractInfo: MARKETPLACE_CONTRACT_INFO,
+            onStatusUpdate: (status, hash) => setTxn({ status, hash }),
           }),
         );
       case "creditcard":
@@ -164,13 +174,13 @@ export default function MarketplaceTransferDialog(props: {
               name="quantity"
               fullWidth
               variant="standard"
-              onChange={(e) => setForm({ ...form, quantity: e.target.value })}
+              onChange={(e) => setFormField("quantity", e.target.value)}
               disabled={state.isBought || state.isProcessing}
               value={form.quantity}
             />
             <FormControl fullWidth>
               <InputLabel id="medium-label">Payment Medium</InputLabel>
-              <Select value={form.medium} onChange={(e) => setForm({ ...form, medium: e.target.value })}>
+              <Select value={form.medium} onChange={(e) => setFormField("medium", e.target.value)}>
                 <MenuItem value={"wallet"} disabled={user.accountType !== "wallet"}>
                   Wallet
                 </MenuItem>
@@ -187,6 +197,7 @@ export default function MarketplaceTransferDialog(props: {
         </DialogActions>
       </form>
       <DisplayError error={state.error} />
+      {txn && <TransactionProgress {...txn} />}
       <Container>
         <div id="widget" style={{ textAlign: "center" }}></div>
       </Container>
