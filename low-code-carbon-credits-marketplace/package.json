@@ -18,6 +18,7 @@
     },
     "scripts": {
       "build": "yarn workspaces run build",
+      "build:contracts": "yarn workspace contracts run build",
       "deploy:contracts": "yarn workspace contracts run deploy",
       "start:mongo": "docker compose -f ./indexer/docker-compose.yml up -d",
       "debug:listener": "yarn workspace server run dev-listener",
