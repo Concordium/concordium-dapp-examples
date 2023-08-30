@@ -133,8 +133,8 @@ function App() {
                     }
                   />
                   <Route path="events" element={<MarketEvents defaultContractAddress={marketContract} />} />
-                  <Route path="" element={<Navigate to={"/market/buy"} replace={true} />} />
                 </Route>
+                <Route path="" element={<Navigate to={"/market/buy"} replace={true} />} />
               </Route>
               <Route element={<GuardedRoute isRouteAccessible={!!user?.account} redirectRoute="/market" />}>
                 <Route path="/admin" element={<AdminPage />} key="admin">
