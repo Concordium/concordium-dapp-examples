@@ -136,10 +136,12 @@ Any Account which wants to buy a Carbon Credit / Carbon Credit Token from the ma
         yarn start:ui
         ```
 
-      * Wert integration is **disabled by default**. To enable it, set thefollowing  environment variables in the [.env](./market-ui/.env) file 
+      * Wert integration is **disabled by default**. To enable it, set thefollowing  environment variables in the [.env](./market-ui/.env) file. Contract [Wert sales](https://wert.io/for-partners) to get these credentials
         * `REACT_APP_WERT_PARTNER_ID`
         * `REACT_APP_WERT_NETWORK`
         * `REACT_APP_WERT_ORIGIN`
         * `REACT_APP_WERT_PRIVATE_KEY`
       * Google authentication is **disabled by default**. To enable it, set the following environment variables in the [.env](./market-ui/.env) file
         * `REACT_APP_GOOGLE_CLIENT_ID`
+
+         Wert allows users to do on chain transactions paying via their credit card. If Wert is not enabled then the user can only do on chain transactions using their concordium wallet. Kindly also note that this being a reference implementation uses `REACT_APP_WERT_PRIVATE_KEY` in the frontend this exposes the private key and this should **not** be done in production.
