@@ -14,6 +14,7 @@ import {
 } from '../../models/web/Events';
 import { getContractEventsByContractAddress } from '../../models/web/WebClient';
 import DisplayError from '../ui/DisplayError';
+import AddressDisplay from '../ui/EventAddressDisplay';
 
 const eventTypes = [
   "Mint",
@@ -38,7 +39,7 @@ function MintEvent(props: { event: FractionalizerMintEvent }) {
           <>
             <Typography component="div">Token #{event.token_id}</Typography>
             <Typography component="div">Amount {event.amount}</Typography>
-            <Typography component="div">By {event.owner.Account?.[0]}</Typography>
+            <Typography component="div">By {AddressDisplay({address: event.owner})}</Typography>
           </>
         }
       />
@@ -75,8 +76,8 @@ function TransferEvent(props: { event: FractionalizerTransferEvent }) {
           <>
             <Typography component="div">Token {event.token_id}</Typography>
             <Typography component="div">Amount {event.amount}</Typography>
-            <Typography component="div">By {event.from.Account?.[0]}</Typography>
-            <Typography component="div">To {event.to.Account?.[0]}</Typography>
+            <Typography component="div">By {AddressDisplay({address: event.from})}</Typography>
+            <Typography component="div">To {AddressDisplay({address: event.to})}</Typography>
           </>
         }
       />
@@ -97,7 +98,7 @@ function CollateralUpdatedEvent(props: { event: FractionalizerCollateralUpdatedE
               Token {event.token_id} ({event.contract.index}/{event.contract.subindex})
             </Typography>
             <Typography component="div">Amount {event.amount}</Typography>
-            <Typography component="div">From {event.owner.Account?.[0]}</Typography>
+            <Typography component="div">From {AddressDisplay({address: event.owner})}</Typography>
           </>
         }
       />
@@ -116,7 +117,7 @@ function BurnEvent(props: { event: Cis2BurnEvent; name: string }) {
           <>
             <Typography component="div">Token {event.token_id}</Typography>
             <Typography component="div">Amount {event.amount}</Typography>
-            <Typography component="div">By {event.owner.Account?.[0]}</Typography>
+            <Typography component="div">By {AddressDisplay({address: event.owner})}</Typography>
           </>
         }
       />

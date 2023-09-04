@@ -12,6 +12,7 @@ import {
 } from '../../models/web/Events';
 import { getContractEventsByContractAddress } from '../../models/web/WebClient';
 import DisplayError from '../ui/DisplayError';
+import AddressDisplay from '../ui/EventAddressDisplay';
 
 const eventTypes = ["TokenReceived", "TokenListed", "TokenTransferred"];
 
@@ -29,7 +30,7 @@ function TokenReceivedEvent(props: { event: MarketTokenReceivedEvent }) {
               Contract #{event.token_contract.index}/{event.token_contract.subindex}
             </Typography>
             <Typography component="div">Amount {event.amount}</Typography>
-            <Typography component="div">By {event.owner.Account?.[0]}</Typography>
+            <Typography component="div">By {AddressDisplay({address: event.owner})}</Typography>
           </>
         }
       />
@@ -73,8 +74,8 @@ function TokenTransferredEvent(props: { event: MarketTokenTransferredEvent }) {
               Contract #{event.token_contract.index}/{event.token_contract.subindex}
             </Typography>
             <Typography component="div">Amount {event.amount}</Typography>
-            <Typography component="div">From {event.from.Account?.[0]}</Typography>
-            <Typography component="div">To {event.to.Account?.[0]}</Typography>
+            <Typography component="div">From {AddressDisplay({address: event.from})}</Typography>
+            <Typography component="div">To {AddressDisplay({address: event.to})}</Typography>
           </>
         }
       />

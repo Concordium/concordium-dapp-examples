@@ -14,6 +14,7 @@ import {
 } from '../../models/web/Events';
 import { getContractEventsByContractAddress } from '../../models/web/WebClient';
 import DisplayError from '../ui/DisplayError';
+import AddressDisplay from '../ui/EventAddressDisplay';
 
 const eventTypes = [
   "Mint",
@@ -38,7 +39,7 @@ function MintEvent(props: { event: Cis2MintEvent }) {
         secondary={
           <>
             <Typography component="div">Token #{event.token_id}</Typography>
-            <Typography component="div">By {event.owner.Account?.[0]}</Typography>
+            <Typography component="div">By {AddressDisplay({address: event.owner})}</Typography>
           </>
         }
       />
@@ -92,8 +93,8 @@ function TransferEvent(props: { event: Cis2TransferEvent }) {
         secondary={
           <>
             <Typography component="div">Token {event.token_id}</Typography>
-            <Typography component="div">By {event.from.Account?.[0]}</Typography>
-            <Typography component="div">To {event.to.Account?.[0]}</Typography>
+            <Typography component="div">By {AddressDisplay({address: event.from})}</Typography>
+            <Typography component="div">To {AddressDisplay({address: event.to})}</Typography>
           </>
         }
       />
@@ -111,7 +112,7 @@ function BurnEvent(props: { event: Cis2BurnEvent; name: string }) {
         secondary={
           <>
             <Typography component="div">Token {event.token_id}</Typography>
-            <Typography component="div">By {event.owner.Account?.[0]}</Typography>
+            <Typography component="div">By {AddressDisplay({address: event.owner})}</Typography>
           </>
         }
       />
@@ -128,7 +129,7 @@ function VerifierUpdatedEvent(props: { event: ProjectNftVerifierUpdatedEvent; na
         primary={name}
         secondary={
           <>
-            <Typography component="div">Verifier {event.verifier.Account?.[0]}</Typography>
+            <Typography component="div">Verifier {AddressDisplay({address: event.verifier})}</Typography>
           </>
         }
       />
@@ -146,7 +147,7 @@ function VerificationEvent(props: { event: ProjectNftVerificationEvent }) {
         secondary={
           <>
             <Typography component="div">Token {event.token_id}</Typography>
-            <Typography component="div">Verifier {event.verifier.Account?.[0]}</Typography>
+            <Typography component="div">Verifier {AddressDisplay({address: event.verifier})}</Typography>
           </>
         }
       />
