@@ -16,12 +16,12 @@ import {
     useConnection,
     useConnect,
     typeSchemaFromBase64,
+    TESTNET,
 } from '@concordium/react-components';
 import { version } from '../package.json';
 
 import { submitUpdateOperator, submitTransfer, mint } from './utils';
 import {
-    STAGENET,
     SPONSORED_TX_CONTRACT_NAME,
     NONCE_OF_PARAMETER_SCHEMA,
     NONCE_OF_RETURN_VALUE_SCHEMA,
@@ -311,7 +311,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
 
     const { connection, setConnection, account, genesisHash } = useConnection(connectedAccounts, genesisHashes);
     const { connect, isConnecting, connectError } = useConnect(activeConnector, setConnection);
-    const grpcClient = useGrpcClient(STAGENET);
+    const grpcClient = useGrpcClient(TESTNET);
 
     const [publicKeyError, setPublicKeyError] = useState('');
     const [nextNonceError, setNextNonceError] = useState('');

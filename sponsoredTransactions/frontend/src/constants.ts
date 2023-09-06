@@ -1,9 +1,4 @@
-import {
-    BrowserWalletConnector,
-    ephemeralConnectorType,
-    Network,
-    WalletConnectConnector,
-} from '@concordium/react-components';
+import { BrowserWalletConnector, ephemeralConnectorType, WalletConnectConnector } from '@concordium/react-components';
 import { SignClientTypes } from '@walletconnect/types';
 import moment from 'moment';
 
@@ -38,16 +33,6 @@ const WALLET_CONNECT_OPTS: SignClientTypes.Options = {
         url: '#',
         icons: ['https://walletconnect.com/walletconnect-logo.png'],
     },
-};
-
-export const STAGENET: Network = {
-    name: 'stagenet',
-    genesisHash: '38bf770b4c247f09e1b62982bb71000c516480c5a2c5214dadac6da4b1ad50e5',
-    grpcOpts: {
-        baseUrl: 'https://grpc.stagenet.concordium.com:20000',
-    },
-    jsonRpcUrl: 'https://json-rpc.stagenet.concordium.com/',
-    ccdScanBaseUrl: 'https://stagenet.ccdscan.io/',
 };
 
 export const BROWSER_WALLET = ephemeralConnectorType(BrowserWalletConnector.create);

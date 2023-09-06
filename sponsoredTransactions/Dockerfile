@@ -1,5 +1,5 @@
 ARG node_base_image=node:16-slim
-ARG rust_base_image=rust:1.62
+ARG rust_base_image=rust:1.65
 
 FROM ${node_base_image} AS frontend
 
@@ -23,7 +23,7 @@ WORKDIR /build
 ENV PORT=8080
 ENV NODE=http://node.testnet.concordium.com:20000
 ENV LOG_LEVEL=info
-ENV SMART_CONTRACT_INDEX=4376
+ENV SMART_CONTRACT_INDEX=6372
 
 ENV ACCOUNT_KEY_FILE=/KEY_FILE
 

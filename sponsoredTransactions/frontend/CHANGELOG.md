@@ -1,5 +1,9 @@
 ## Unreleased changes
 
+## 2.0.2
+
+- Change the dApp to use the testnet smart contract index.
+
 ## 2.0.1
 
 - Migrate dApp from using deprecated JSON-RPC client to new gRPC client.
