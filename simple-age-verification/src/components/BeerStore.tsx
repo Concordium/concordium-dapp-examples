@@ -3,11 +3,10 @@ import { Dialog, DialogTitle, DialogActions, Typography, Alert, Button } from "@
 import { useEffect, useState } from "react";
 import beers from './../image/beers.png';
 import {
-    IdStatementBuilder
+    getPastDate, MIN_DATE, Web3StatementBuilder
 } from '@concordium/web-sdk';
 
 export default function BeerStore() {
-
     const [isVerified, setVerified] = useState(false);
     const [isFailed, setFailed] = useState(false);
 
@@ -28,16 +27,22 @@ export default function BeerStore() {
     async function ageCheck()   {
         const provider = await detectConcordiumProvider();
         try {
-            const account = await provider.connect() as string;
+            await provider.requestAccounts();
 
-            const statementBuilder = new IdStatementBuilder().addMinimumAge(18);
-            const statement = statementBuilder.getStatement();
+            // TODO Replace add range with addMinimumAge(18) when SDK is fixed.
+            const statementBuilder = new Web3StatementBuilder().addForIdentityCredentials([0,1,2,3,4,5], (b) => b.addRange(
+                "dob",
+                MIN_DATE,
+                getPastDate(18, 1)
+            ));
+            const statement = statementBuilder.getStatements();
             // In a production scenario the challenge should not be hardcoded, in order to avoid accepting proofs created for other contexts.
-            const challenge = "BBBBBBBB"
+            const challenge = "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
 
             // Requesting ID proof to check if user is 18 years old
-            provider.requestIdProof(account, statement, challenge)
-                    .then(() => {
+            provider.requestVerifiablePresentation(challenge, statement)
+                .then(() => {
+                        // TODO: Verifiy the proof
                         // User is 18 year old, show something
                         setVerified(true)
                         setFailed(false)

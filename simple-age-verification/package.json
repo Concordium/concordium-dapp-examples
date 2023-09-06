@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@concordium/browser-wallet-api-helpers": "^2.5.0",
-    "@concordium/web-sdk": "6.0.0",
+    "@concordium/browser-wallet-api-helpers": "^2.7.0",
+    "@concordium/web-sdk": "6.3.0",
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
     "@mui/icons-material": "^5.14.6",
