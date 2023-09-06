@@ -1,10 +1,85 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;700&display=swap');
+
+.green {
+    background-color: #016a3a !important;
+    color: white;
+}
+
+.green-text {
+    color: #9ccb63;
+}
+
+.white {
+    background-color: white;
+    color: black;
+}
+
 .App {
-  text-align: center;
+    text-align: center;
+    color: white;
+    padding-top: 70px;
+    font-family: 'IBM Plex Sans', sans-serif;
+}
+
+.beer-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .App-logo {
   height: 40vmin;
   pointer-events: none;
+}
+
+.header {
+    font-size: 40px;
+    line-height: 47px;
+    font-weight: 400;
+}
+
+.verify-title {
+    font-size: 57px;
+    font-weight: 500;
+    margin: 0;
+}
+
+.button {
+    border: 2px solid #9ccb63;
+    width: 100%;
+    font-size: inherit;
+    font-family: inherit;
+    padding: 15px;
+    background: transparent;
+    cursor: pointer;
+
+}
+
+.button:hover,
+.button:focus {
+    background-image: linear-gradient(rgb(0 0 0/10%) 0 0);
+}
+
+
+.verify-page {
+    max-width: 1200px;
+    width: max-content;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 100px;
+}
+
+.button,
+.read-more {
+    margin-top: 40px;
+}
+
+.read-more {
+    font-size: 36px;
 }
 
 @media (prefers-reduced-motion: no-preference) {
