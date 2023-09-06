@@ -55,6 +55,13 @@
 
 }
 
+.beerImage {
+    width: 60%;
+    height: 60%;
+    max-width: 1450px;
+    max-height: 900px;
+}
+
 .button:hover,
 .button:focus {
     background-image: linear-gradient(rgb(0 0 0/10%) 0 0);

@@ -1,7 +1,7 @@
 import { detectConcordiumProvider } from "@concordium/browser-wallet-api-helpers";
 import { Dialog, DialogTitle, DialogActions, Typography, Alert, Button } from "@mui/material";
 import { useEffect, useState } from "react";
-import beers from './../image/beers.png';
+import beers from './../image/beers.jpg';
 import {
     getPastDate, MIN_DATE, Web3StatementBuilder
 } from '@concordium/web-sdk';
@@ -83,7 +83,7 @@ export default function BeerStore() {
                 {
                     isVerified &&
                     <div className="beer-page white">
-                        <img src={beers} alt="beers" />
+                        <img className="beerImage" src={beers} alt="beers" />
                         <a
                             className="read-more"
                             href="https://www.concordium.com"
