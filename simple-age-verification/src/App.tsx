@@ -25,19 +25,14 @@ function App() {
         <Grid justifyContent={'center'}>
           <Container sx={{ mt: 30, ml: 'auto' }}>
             <Typography sx={{ flexGrow: 1, ml: 'auto' }}>
-              <div>
-                {
-                  !isConnected ?
-                    <div>
-                      <Box sx={{ mt: 10 }}>
-                        <BeerStore />
-
-                      </Box>
+            
+              { !isConnected && (
+                     <div>
+                         <Box sx={{ mt: 10 }}>
+                           <BeerStore />
+                        </Box>
                     </div>
-                    :
-                    ""
-                }
-              </div>
+              )}
             </Typography>
             {/* <Footer /> */}
           </Container>
