@@ -27,7 +27,7 @@ pipeline {
                       --tag="${image_name}" \
                       --pull \
                       --file sponsoredTransactions/Dockerfile \
-                      ./sponsoredTransactions
+                      .
                     docker push "${image_name}"
                 '''.stripIndent()
             }
