@@ -16,7 +16,7 @@ The following examples are available.
 
 - [sponsoredTransactions](./sponsoredTransactions/) demonstrates how a user (without holding CCD in the wallet) can sign a message with the browser wallet or mobile wallet through wallet connect and submit the signature to a backend. The backend pays for the transaction fee and submits the sponsored transaction on behalf of the user to the chain.
 
-- [simple age verification](./simple-age-verification/) demonstrates in a simple use case of verifiying the users age with the browser wallet.
+- [simple age verification](./simpleAgeVerification/) demonstrates in a simple use case of verifiying the users age with the browser wallet.
 
 ## Setup
 
