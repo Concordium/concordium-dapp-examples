@@ -1178,12 +1178,43 @@
     json-bigint "^1.0.0"
     uuid "^8.3.2"
 
+"@concordium/common-sdk@9.4.0":
+  version "9.4.0"
+  resolved "https://registry.yarnpkg.com/@concordium/common-sdk/-/common-sdk-9.4.0.tgz#b2b93122d6506f15a0a77591a3f70c20c4357b24"
+  integrity sha512-m1ZqJ1vpJxWbSpIksOcsR0azgUQ7iPIAA7jevgEdqeRhsJOxZT0EwPyVDjAnk3pRiIq5K/or/TxhljuH23LmrA==
+  dependencies:
+    "@concordium/rust-bindings" "1.2.0"
+    "@grpc/grpc-js" "^1.3.4"
+    "@noble/ed25519" "^1.7.1"
+    "@protobuf-ts/runtime-rpc" "^2.8.2"
+    "@scure/bip39" "^1.1.0"
+    big.js "^6.2.0"
+    bs58check "^2.1.2"
+    buffer "^6.0.3"
+    cross-fetch "3.1.5"
+    hash.js "^1.1.7"
+    iso-3166-1 "^2.1.1"
+    json-bigint "^1.0.0"
+    uuid "^8.3.2"
+
 "@concordium/rust-bindings@1.2.0":
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/@concordium/rust-bindings/-/rust-bindings-1.2.0.tgz#9ae3ed802bb4fdc99a1a5ccf28e91689095fb889"
   integrity sha512-GlfHg8uQCr0QJZZt6b1qZacJrVrgDXWjj68D0PvE3CNXo0yAqr81JXrUbpgfVzUXNabzfsUaDUifS8z8b197HA==
 
-"@concordium/web-sdk@6.3.0", "@concordium/web-sdk@^6.3.0":
+"@concordium/web-sdk@6.4.0":
+  version "6.4.0"
+  resolved "https://registry.yarnpkg.com/@concordium/web-sdk/-/web-sdk-6.4.0.tgz#d0407bb1d570fc7e919c43c6eb9fbca87334a0e6"
+  integrity sha512-Ib5cj4V2f2YSGDp7m6Jpjw5TJwdrp3ijxOiaNXFWwbPX7JXBb/eD7kT8CinR7mCwq/o6nS7QF2eHlX9ABdBL5Q==
+  dependencies:
+    "@concordium/common-sdk" "9.4.0"
+    "@concordium/rust-bindings" "1.2.0"
+    "@grpc/grpc-js" "^1.3.4"
+    "@protobuf-ts/grpcweb-transport" "^2.8.2"
+    buffer "^6.0.3"
+    process "^0.11.10"
+
+"@concordium/web-sdk@^6.3.0":
   version "6.3.0"
   resolved "https://registry.yarnpkg.com/@concordium/web-sdk/-/web-sdk-6.3.0.tgz#40040c806346c9180423f265e61656e9d44cbd2e"
   integrity sha512-qT2z8cT5dal/aFkapsIwle3hA/uzPYw13+8mNyvCX11f4n56QFwOW7eejenpK9zbFZeSRVWURXxC/wg1Z2UCMQ==
