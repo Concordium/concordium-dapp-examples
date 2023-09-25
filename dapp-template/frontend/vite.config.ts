@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react-swc';
-// Uncomment commeonted code when @concordium/web-sdk is upgraded to v10
+// Uncomment commented code when @concordium/web-sdk is upgraded to v10
 // import wasm from 'vite-plugin-wasm';
 // import topLevelAwait from 'vite-plugin-top-level-await';
 
@@ -13,7 +13,7 @@ export default defineConfig({
     // },
     plugins: [
         react(),
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+
         // wasm(),
         // topLevelAwait(), // For legacy browser compatibility
     ],
