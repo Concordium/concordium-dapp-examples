@@ -10,6 +10,8 @@ guide in what needs to be done.
 
 The following examples are available.
 
+- [dapp-template](./dapp-template/) serves as a starting point for a dApp frontend with common styling and build setup.
+
 - [signMessage](./signMessage/) demonstrates how to use the endpoint to sign an arbitrary message with the browser wallet or mobile wallet through wallet connect.
 
 - [gallery](./gallery/) demonstrates a gallery which requires the user to authorize using ID proofs from the browser wallet.
