@@ -1,0 +1,28 @@
+[package]
+name = "sponsored-transaction-backend"
+version = "2.0.0"
+authors = ["Concordium AG <developers@concordium.com>"]
+edition = "2021"
+license-file = "../../LICENSE"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+tonic = {version = "0.8", features = ["tls", "tls-roots"]} # Use system trust roots.
+warp = "0.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+log = "0.4.11"
+env_logger = "0.9"
+clap = { version = "4", features = ["derive"] }
+anyhow = "1.0"
+chrono = "0.4.19"
+thiserror = "1"
+rand = "0.8"
+uuid = { version = "1.2.2", features = ["v4", "serde"] }
+hex = "0.4.3"
+
+[dependencies.concordium-rust-sdk]
+path = "../../deps/concordium-rust-sdk/"
+
