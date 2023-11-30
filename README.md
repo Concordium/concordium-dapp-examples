@@ -16,7 +16,7 @@ The following examples are available.
 
 - [gallery](./gallery/) demonstrates a gallery which requires the user to authorize using ID proofs from the browser wallet.
 
-- [sponsoredTransactionsBasic](./sponsoredTransactionsBasic/) demonstrates how a user (without holding CCD in the wallet) can sign a message with the browser wallet or mobile wallet through wallet connect and submit the signature to a backend. The backend pays for the transaction fee and submits the sponsored transaction on behalf of the user to the chain.
+- [sponsoredTransactions](./sponsoredTransactions/) demonstrates how a user (without holding CCD in the wallet) can sign a message with the browser wallet or mobile wallet through wallet connect and submit the signature to a backend. The backend pays for the transaction fee and submits the sponsored transaction on behalf of the user to the chain.
 
 - [sponsoredTransactionsAuction](./sponsoredTransactionsAuction/) demonstrates how to use a sponsored-transaction-enabled token as a payment method in an auction contract so that the user does not have to hold CCD in their wallet. The user signs a bidding message with the browser wallet or mobile wallet through wallet connect and submit the signature to a backend. The backend pays for the transaction fee and submits the sponsored transaction on behalf of the user to the chain.
 

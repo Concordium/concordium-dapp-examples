@@ -20,7 +20,7 @@ import {
 } from '@concordium/react-components';
 import { version } from '../package.json';
 
-import { submitUpdateOperator, submitTransfer, mint } from './utils';
+import { submitUpdateOperator, submitTransfer, mint, addItem } from './utils';
 import {
     SPONSORED_TX_CONTRACT_NAME,
     NONCE_OF_PARAMETER_SCHEMA,
@@ -149,7 +149,7 @@ async function generateTransferMessage(
 
     const message = {
         contract_address: {
-            index: Number(process.env.SMART_CONTRACT_INDEX),
+            index: Number(process.env.CIS2_TOKEN_CONTRACT_INDEX),
             subindex: 0,
         },
         nonce: Number(nonce),
@@ -211,7 +211,7 @@ async function generateUpdateOperatorMessage(
 
     const message = {
         contract_address: {
-            index: Number(process.env.SMART_CONTRACT_INDEX),
+            index: Number(process.env.CIS2_TOKEN_CONTRACT_INDEX),
             subindex: 0,
         },
         nonce: Number(nonce),
@@ -245,13 +245,13 @@ async function getNonceOf(rpcClient: ConcordiumGRPCClient, account: string) {
 
     const res = await rpcClient.invokeContract({
         method: `${SPONSORED_TX_CONTRACT_NAME}.nonceOf`,
-        contract: { index: BigInt(Number(process.env.SMART_CONTRACT_INDEX)), subindex: CONTRACT_SUB_INDEX },
+        contract: { index: BigInt(Number(process.env.CIS2_TOKEN_CONTRACT_INDEX)), subindex: CONTRACT_SUB_INDEX },
         parameter: param,
     });
 
     if (!res || res.tag === 'failure' || !res.returnValue) {
         throw new Error(
-            `RPC call 'invokeContract' on method '${SPONSORED_TX_CONTRACT_NAME}.nonceOf' of contract SMART_CONTRACT_INDEX failed`
+            `RPC call 'invokeContract' on method '${SPONSORED_TX_CONTRACT_NAME}.nonceOf' of contract CIS2_TOKEN_CONTRACT_INDEX failed`
         );
     }
 
@@ -265,7 +265,7 @@ async function getNonceOf(rpcClient: ConcordiumGRPCClient, account: string) {
 
     if (returnValues === undefined) {
         throw new Error(
-            `Deserializing the returnValue from the '${SPONSORED_TX_CONTRACT_NAME}.nonceOf' method of contract SMART_CONTRACT_INDEX failed`
+            `Deserializing the returnValue from the '${SPONSORED_TX_CONTRACT_NAME}.nonceOf' method of contract CIS2_TOKEN_CONTRACT_INDEX failed`
         );
     } else {
         // Return next nonce of a user
@@ -329,6 +329,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
     const [nonce, setNonce] = useState('');
     const [from, setFrom] = useState('');
     const [signer, setSigner] = useState('');
+    const [name, setName] = useState('');
 
     const [signature, setSignature] = useState('');
     const [signingError, setSigningError] = useState('');
@@ -343,14 +344,14 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
         setTokenID(target.value);
     }, []);
 
+    const changeNameHandler = useCallback((event: ChangeEvent) => {
+        const target = event.target as HTMLTextAreaElement;
+        setName(target.value);
+    }, []);
+
     const changeToHandler = useCallback((event: ChangeEvent) => {
         const target = event.target as HTMLTextAreaElement;
         setTo(target.value);
-    }, []);
-
-    const changeFromHandler = useCallback((event: ChangeEvent) => {
-        const target = event.target as HTMLTextAreaElement;
-        setFrom(target.value);
     }, []);
 
     const changeNonceHandler = useCallback((event: ChangeEvent) => {
@@ -561,22 +562,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                     )}
                     {!isUpdateOperatorTab && (
                         <>
-                            <div>Mint a token to your account first:</div>
-                            <button
-                                style={ButtonStyle}
-                                type="button"
-                                onClick={async () => {
-                                    setTxHash('');
-                                    setTransactionError('');
-                                    setWaitingForUser(true);
-                                    const tx = mint(connection, account);
-                                    tx.then(setTxHash)
-                                        .catch((err: Error) => setTransactionError((err as Error).message))
-                                        .finally(() => setWaitingForUser(false));
-                                }}
-                            >
-                                Mint an NFT token
-                            </button>
+                            <div>Mint 100 tokens to an account (first step):</div>
                             <label>
                                 <p style={{ marginBottom: 0 }}>Token ID:</p>
                                 <input
@@ -589,16 +575,69 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                                 />
                             </label>
                             <label>
-                                <p style={{ marginBottom: 0 }}>From Address:</p>
+                                <p style={{ marginBottom: 0 }}>To Address:</p>
                                 <input
                                     className="input"
                                     style={InputFieldStyle}
-                                    id="from"
+                                    id="to"
                                     type="text"
                                     placeholder="4HoVMVsj6TwJr6B5krP5fW9qM4pbo6crVyrr7N95t2UQDrv1fq"
-                                    onChange={changeFromHandler}
+                                    onChange={changeToHandler}
                                 />
                             </label>
+                            <button
+                                style={ButtonStyle}
+                                type="button"
+                                onClick={async () => {
+                                    setTxHash('');
+                                    setTransactionError('');
+                                    setWaitingForUser(true);
+                                    const tx = mint(connection, account, tokenID, to);
+                                    tx.then(setTxHash)
+                                        .catch((err: Error) => setTransactionError((err as Error).message))
+                                        .finally(() => setWaitingForUser(false));
+                                }}
+                            >
+                                Mint 100 tokens
+                            </button>
+                            <div>Add item to auction (second step):</div>
+                            <label>
+                                <p style={{ marginBottom: 0 }}>Token ID:</p>
+                                <input
+                                    className="input"
+                                    style={InputFieldStyle}
+                                    id="tokenID"
+                                    type="text"
+                                    placeholder="00000006"
+                                    onChange={changeTokenIDHandler}
+                                />
+                            </label>
+                            <label>
+                                <p style={{ marginBottom: 0 }}>Item name:</p>
+                                <input
+                                    className="input"
+                                    style={InputFieldStyle}
+                                    id="name"
+                                    type="text"
+                                    placeholder="myName"
+                                    onChange={changeNameHandler}
+                                />
+                            </label>
+                            <button
+                                style={ButtonStyle}
+                                type="button"
+                                onClick={async () => {
+                                    setTxHash('');
+                                    setTransactionError('');
+                                    setWaitingForUser(true);
+                                    const tx = addItem(connection, account, tokenID, name);
+                                    tx.then(setTxHash)
+                                        .catch((err: Error) => setTransactionError((err as Error).message))
+                                        .finally(() => setWaitingForUser(false));
+                                }}
+                            >
+                                Add item
+                            </button>
                             <label>
                                 <p style={{ marginBottom: 0 }}>To Address:</p>
                                 <input
