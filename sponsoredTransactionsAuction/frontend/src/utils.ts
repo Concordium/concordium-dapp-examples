@@ -9,6 +9,7 @@ import {
     MINT_PARAMETER_SCHEMA,
     ADD_ITEM_PARAMETER_SCHEMA,
     AUCTION_CONTRACT_NAME,
+    PERMIT_PARAMETER_SCHEMA,
 } from './constants';
 
 /**
@@ -214,6 +215,61 @@ export async function mint(connection: WalletConnection, account: string, tokenI
                 token_id: tokenId,
             },
             schema: typeSchemaFromBase64(MINT_PARAMETER_SCHEMA),
+        }
+    );
+}
+
+/**
+ * Action for minting a token to the an account.
+ */
+export async function bid(
+    connection: WalletConnection,
+    account: string,
+    nonce: string,
+    payload: number[],
+    expiryTimeSignature: string,
+    signature: string
+) {
+    return connection.signAndSendTransaction(
+        account,
+        AccountTransactionType.Update,
+        {
+            amount: new CcdAmount(BigInt(0n)),
+            address: {
+                index: BigInt(Number(process.env.CIS2_TOKEN_CONTRACT_INDEX)),
+                subindex: CONTRACT_SUB_INDEX,
+            },
+            receiveName: `${SPONSORED_TX_CONTRACT_NAME}.permit`,
+            maxContractExecutionEnergy: 30000n,
+        } as unknown as UpdateContractPayload,
+        {
+            parameters: {
+                message: {
+                    contract_address: {
+                        index: 7370,
+                        subindex: 0,
+                    },
+                    entry_point: 'transfer',
+                    nonce: Number(nonce),
+                    payload,
+                    timestamp: expiryTimeSignature,
+                },
+                signature: [
+                    [
+                        0,
+                        [
+                            [
+                                0,
+                                {
+                                    Ed25519: [signature],
+                                },
+                            ],
+                        ],
+                    ],
+                ],
+                signer: account,
+            },
+            schema: typeSchemaFromBase64(PERMIT_PARAMETER_SCHEMA),
         }
     );
 }

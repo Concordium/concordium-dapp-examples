@@ -10,6 +10,7 @@ import {
     deserializeTypeValue,
     AccountAddress,
     ConcordiumGRPCClient,
+    Timestamp,
 } from '@concordium/web-sdk';
 import {
     useGrpcClient,
@@ -21,7 +22,7 @@ import {
 } from '@concordium/react-components';
 import { version } from '../package.json';
 
-import { submitUpdateOperator, submitTransfer, mint, addItem } from './utils';
+import { submitTransfer, mint, addItem, bid } from './utils';
 import {
     SPONSORED_TX_CONTRACT_NAME,
     NONCE_OF_PARAMETER_SCHEMA,
@@ -30,7 +31,6 @@ import {
     CONTRACT_SUB_INDEX,
     BROWSER_WALLET,
     WALLET_CONNECT,
-    UPDATE_OPERATOR_SCHEMA,
     TRANSFER_SCHEMA,
     REFRESH_INTERVAL,
     VERIFIER_URL,
@@ -87,152 +87,15 @@ const InputFieldStyle = {
     padding: '10px 20px',
 };
 
-async function generateTransferMessage(
-    expiryTimeSignature: string,
-    nonce: string,
-    tokenID: string,
-    from: string,
-    to: string
-) {
-    if (nonce === '') {
-        alert('Insert a nonce.');
-        return '';
-    }
-
-    // eslint-disable-next-line no-restricted-globals
-    if (isNaN(Number(nonce))) {
-        alert('Your nonce needs to be a number.');
-        return '';
-    }
-
-    if (tokenID === '') {
-        alert('Insert a tokenID.');
-        return '';
-    }
-
-    if (tokenID.length !== 8) {
-        alert('TokenID needs to have 8 digits.');
-        return '';
-    }
-
-    if (from === '') {
-        alert('Insert an `from` address.');
-        return '';
-    }
-
-    if (from.length !== 50) {
-        alert('`From` address needs to have 50 digits.');
-        return '';
-    }
-
-    if (to === '') {
-        alert('Insert an `to` address.');
-        return '';
-    }
-
-    if (to.length !== 50) {
-        alert('`To` address needs to have 50 digits.');
-        return '';
-    }
-
-    const transfer = [
-        {
-            amount: '1',
-            data: [],
-            from: {
-                Account: [from],
-            },
-            to: {
-                Account: [to],
-            },
-            token_id: tokenID,
-        },
-    ];
-
-    const payload = serializeTypeValue(transfer, toBuffer(TRANSFER_SCHEMA, 'base64'));
-
-    const message = {
-        contract_address: {
-            index: Number(process.env.CIS2_TOKEN_CONTRACT_INDEX),
-            subindex: 0,
-        },
-        nonce: Number(nonce),
-        timestamp: expiryTimeSignature,
-        entry_point: 'transfer',
-        payload: Array.from(payload),
-    };
-
-    const serializedMessage = serializeTypeValue(message, toBuffer(SERIALIZATION_HELPER_SCHEMA, 'base64'));
-
-    return serializedMessage;
-}
-
-async function generateUpdateOperatorMessage(
-    expiryTimeSignature: string,
-    nonce: string,
-    operator: string,
-    addOperator: boolean
-) {
-    if (nonce === '') {
-        alert('Insert a nonce.');
-        return '';
-    }
-
-    // eslint-disable-next-line no-restricted-globals
-    if (isNaN(Number(nonce))) {
-        alert('Your nonce needs to be a number.');
-        return '';
-    }
-
-    if (operator === '') {
-        alert('Insert an operator address.');
-        return '';
-    }
-
-    if (operator.length !== 50) {
-        alert('Operator address needs to have 50 digits.');
-        return '';
-    }
-
-    const operatorAction = addOperator
-        ? {
-              Add: [],
-          }
-        : {
-              Remove: [],
-          };
-
-    const updateOperator = [
-        {
-            operator: {
-                Account: [operator],
-            },
-            update: operatorAction,
-        },
-    ];
-
-    const payload = serializeTypeValue(updateOperator, toBuffer(UPDATE_OPERATOR_SCHEMA, 'base64'));
-
-    const message = {
-        contract_address: {
-            index: Number(process.env.CIS2_TOKEN_CONTRACT_INDEX),
-            subindex: 0,
-        },
-        nonce: Number(nonce),
-        timestamp: expiryTimeSignature,
-        entry_point: 'updateOperator',
-        payload: Array.from(payload),
-    };
-
-    const serializedMessage = serializeTypeValue(message, toBuffer(SERIALIZATION_HELPER_SCHEMA, 'base64'));
-
-    return serializedMessage;
-}
-
-async function getPublicKey(rpcClient: ConcordiumGRPCClient, account: string) {
-    const res = await rpcClient.getAccountInfo(new AccountAddress(account));
-    const publicKey = res?.accountCredentials[0].value.contents.credentialPublicKeys.keys[0].verifyKey;
-    return publicKey;
+interface ItemState {
+    auction_state: object;
+    creator: AccountAddress;
+    end: Timestamp;
+    highest_bid: string;
+    highest_bidder: object;
+    name: string;
+    start: Timestamp;
+    token_id: string;
 }
 
 async function viewItem(rpcClient: ConcordiumGRPCClient, itenIndex: string) {
@@ -270,6 +133,152 @@ async function viewItem(rpcClient: ConcordiumGRPCClient, itenIndex: string) {
     }
 }
 
+async function generateTransferMessage(
+    setPayload: (arg0: number[]) => void,
+    grpcClient: ConcordiumGRPCClient | undefined,
+    expiryTimeSignature: string,
+    account: string,
+    nonce: string,
+    amount: string | undefined,
+    itemIndexAuction: string | undefined
+) {
+    if (amount === undefined) {
+        alert('Insert an amount.');
+        return '';
+    }
+
+    // eslint-disable-next-line no-restricted-globals
+    if (isNaN(Number(nonce))) {
+        alert('Your nonce needs to be a number.');
+        return '';
+    }
+
+    if (itemIndexAuction === undefined) {
+        alert('Insert a itemIndexAuction.');
+        return '';
+    }
+
+    if (grpcClient === undefined) {
+        alert('grpcClient undefined.');
+        return '';
+    }
+
+    try {
+        const returnValue = await viewItem(grpcClient, itemIndexAuction);
+
+        const itemState = returnValue as unknown as ItemState;
+
+        const transfer = [
+            {
+                amount,
+                data: '',
+                from: {
+                    Account: [account],
+                },
+                to: {
+                    Contract: [
+                        {
+                            index: Number(process.env.AUCTION_CONTRACT_INDEX),
+                            subindex: 0,
+                        },
+                        'bid',
+                    ],
+                },
+                token_id: itemState.token_id,
+            },
+        ];
+        const payload = serializeTypeValue(transfer, toBuffer(TRANSFER_SCHEMA, 'base64'));
+        setPayload(Array.from(payload));
+
+        const message = {
+            contract_address: {
+                index: Number(process.env.CIS2_TOKEN_CONTRACT_INDEX),
+                subindex: 0,
+            },
+            nonce: Number(nonce),
+            timestamp: expiryTimeSignature,
+            entry_point: 'transfer',
+            payload: Array.from(payload),
+        };
+
+        const serializedMessage = serializeTypeValue(message, toBuffer(SERIALIZATION_HELPER_SCHEMA, 'base64'));
+
+        return serializedMessage;
+    } catch (error) {
+        console.log(error);
+        alert(error);
+        return '';
+    }
+}
+
+// async function generateUpdateOperatorMessage(
+//     expiryTimeSignature: string,
+//     nonce: string,
+//     operator: string,
+//     addOperator: boolean
+// ) {
+//     if (nonce === '') {
+//         alert('Insert a nonce.');
+//         return '';
+//     }
+
+//     // eslint-disable-next-line no-restricted-globals
+//     if (isNaN(Number(nonce))) {
+//         alert('Your nonce needs to be a number.');
+//         return '';
+//     }
+
+//     if (operator === '') {
+//         alert('Insert an operator address.');
+//         return '';
+//     }
+
+//     if (operator.length !== 50) {
+//         alert('Operator address needs to have 50 digits.');
+//         return '';
+//     }
+
+//     const operatorAction = addOperator
+//         ? {
+//             Add: [],
+//         }
+//         : {
+//             Remove: [],
+//         };
+
+//     const updateOperator = [
+//         {
+//             operator: {
+//                 Account: [operator],
+//             },
+//             update: operatorAction,
+//         },
+//     ];
+
+//     const payload = serializeTypeValue(updateOperator, toBuffer(UPDATE_OPERATOR_SCHEMA, 'base64'));
+
+//     const message = {
+//         contract_address: {
+//             index: Number(process.env.CIS2_TOKEN_CONTRACT_INDEX),
+//             subindex: 0,
+//         },
+//         nonce: Number(nonce),
+//         timestamp: expiryTimeSignature,
+//         entry_point: 'updateOperator',
+//         payload: Array.from(payload),
+//     };
+
+//     const serializedMessage = serializeTypeValue(message, toBuffer(SERIALIZATION_HELPER_SCHEMA, 'base64'));
+
+//     return serializedMessage;
+// }
+
+async function getPublicKey(rpcClient: ConcordiumGRPCClient, account: string) {
+    const res = await rpcClient.getAccountInfo(new AccountAddress(account));
+    const publicKey = res?.accountCredentials[0].value.contents.credentialPublicKeys.keys[0].verifyKey;
+    return publicKey;
+}
+
 async function getNonceOf(rpcClient: ConcordiumGRPCClient, account: string) {
     const param = serializeTypeValue(
         {
@@ -290,9 +299,9 @@ async function getNonceOf(rpcClient: ConcordiumGRPCClient, account: string) {
 
     if (!res || res.tag === 'failure' || !res.returnValue) {
         throw new Error(
-            `RPC call 'invokeContract' on method '${SPONSORED_TX_CONTRACT_NAME}.nonceOf' of contract CIS2_TOKEN_CONTRACT_INDEX failed. Response: ${JSONbig.stringify(
-                res
-            )}`
+            `RPC call 'invokeContract' on method '${SPONSORED_TX_CONTRACT_NAME}.nonceOf' of contract '${
+                process.env.CIS2_TOKEN_CONTRACT_INDEX
+            }' failed. Response: ${JSONbig.stringify(res)}`
         );
     }
 
@@ -306,7 +315,7 @@ async function getNonceOf(rpcClient: ConcordiumGRPCClient, account: string) {
 
     if (returnValues === undefined) {
         throw new Error(
-            `Deserializing the returnValue from the '${SPONSORED_TX_CONTRACT_NAME}.nonceOf' method of contract CIS2_TOKEN_CONTRACT_INDEX failed`
+            `Deserializing the returnValue from the '${SPONSORED_TX_CONTRACT_NAME}.nonceOf' method of contract '${process.env.CIS2_TOKEN_CONTRACT_INDEX}' failed`
         );
     } else {
         // Return next nonce of a user
@@ -363,8 +372,6 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
     const [accountInfoPublicKey, setAccountInfoPublicKey] = useState('');
 
     const [expiryTime, setExpiryTime] = useState('');
-    const [operator, setOperator] = useState('');
-    const [addOperator, setAddOperator] = useState<boolean>(true);
     const [tokenID, setTokenID] = useState('');
     const [to, setTo] = useState('');
     const [nonce, setNonce] = useState('');
@@ -374,14 +381,12 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
     const [itemIndex, setItemIndex] = useState('');
     const [itemState, setItemState] = useState('');
     const [itemStateError, setItemStateError] = useState<string | undefined>(undefined);
+    const [itemIndexAuction, setItemIndexAuction] = useState<string | undefined>(undefined);
+    const [amount, setAmount] = useState<string | undefined>(undefined);
+    const [payload, setPayload] = useState<number[]>([]);
 
     const [signature, setSignature] = useState('');
     const [signingError, setSigningError] = useState('');
-
-    const changeOperatorHandler = useCallback((event: ChangeEvent) => {
-        const target = event.target as HTMLTextAreaElement;
-        setOperator(target.value);
-    }, []);
 
     const changeItemIndexHandler = useCallback((event: ChangeEvent) => {
         const target = event.target as HTMLTextAreaElement;
@@ -413,12 +418,20 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
         setSigner(target.value);
     }, []);
 
+    const changeAmountHandler = useCallback((event: ChangeEvent) => {
+        const target = event.target as HTMLTextAreaElement;
+        setAmount(target.value);
+    }, []);
+
+    const changeItemIndexAuctionHandler = useCallback((event: ChangeEvent) => {
+        const target = event.target as HTMLTextAreaElement;
+        setItemIndexAuction(target.value);
+    }, []);
+
     useEffect(() => {
         // Refresh next nonce periodically.
         if (grpcClient && account) {
             const interval = setInterval(() => {
-                console.log('refreshing');
-
                 getNonceOf(grpcClient, account)
                     .then((nonceValue) => {
                         if (nonceValue !== undefined) {
@@ -565,7 +578,6 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                                 setTokenID('');
                                 setFrom('');
                                 setTo('');
-                                setOperator('');
                                 clearInputFields();
                             }}
                             onColor="#308274"
@@ -581,32 +593,27 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                     {!isUpdateOperatorTab && (
                         <>
                             <label>
-                                <p style={{ marginBottom: 0 }}>Operator Address:</p>
+                                <p style={{ marginBottom: 0 }}>Amount of Cis2 tokens:</p>
                                 <input
                                     className="input"
                                     style={InputFieldStyle}
-                                    id="operator"
+                                    id="amount"
                                     type="text"
                                     placeholder="4HoVMVsj6TwJr6B5krP5fW9qM4pbo6crVyrr7N95t2UQDrv1fq"
-                                    onChange={changeOperatorHandler}
+                                    onChange={changeAmountHandler}
                                 />
                             </label>
-                            <div className="containerSpaceBetween">
-                                <p>Add operator</p>
-                                <Switch
-                                    onChange={() => {
-                                        setAddOperator(!addOperator);
-                                    }}
-                                    onColor="#308274"
-                                    offColor="#308274"
-                                    onHandleColor="#174039"
-                                    offHandleColor="#174039"
-                                    checked={!addOperator}
-                                    checkedIcon={false}
-                                    uncheckedIcon={false}
+                            <label>
+                                <p style={{ marginBottom: 0 }}>Item index auction:</p>
+                                <input
+                                    className="input"
+                                    style={InputFieldStyle}
+                                    id="itemIndexAuction"
+                                    type="text"
+                                    placeholder="4HoVMVsj6TwJr6B5krP5fW9qM4pbo6crVyrr7N95t2UQDrv1fq"
+                                    onChange={changeItemIndexAuctionHandler}
                                 />
-                                <p>Remove operator</p>
-                            </div>
+                            </label>
                             <label>
                                 <p style={{ marginBottom: 0 }}>Nonce:</p>
                                 <input
@@ -633,14 +640,15 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                                     const expiryTimeSignature = date.toISOString();
                                     setExpiryTime(expiryTimeSignature);
 
-                                    const serializedMessage = isUpdateOperatorTab
-                                        ? await generateUpdateOperatorMessage(
-                                              expiryTimeSignature,
-                                              nonce,
-                                              operator,
-                                              addOperator
-                                          )
-                                        : await generateTransferMessage(expiryTimeSignature, nonce, tokenID, from, to);
+                                    const serializedMessage = await generateTransferMessage(
+                                        setPayload,
+                                        grpcClient,
+                                        expiryTimeSignature,
+                                        account,
+                                        nonce,
+                                        amount,
+                                        itemIndexAuction
+                                    );
 
                                     if (serializedMessage !== '') {
                                         const promise = connection.signMessage(account, {
@@ -670,6 +678,21 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                                 </>
                             )}
                             <br />
+                            <button
+                                style={ButtonStyle}
+                                type="button"
+                                onClick={async () => {
+                                    setTxHash('');
+                                    setTransactionError('');
+                                    setWaitingForUser(true);
+                                    const tx = bid(connection, account, nonce, payload, expiryTime, signature);
+                                    tx.then(setTxHash)
+                                        .catch((err: Error) => setTransactionError((err as Error).message))
+                                        .finally(() => setWaitingForUser(false));
+                                }}
+                            >
+                                Bid via browser wallet
+                            </button>
                             <label>
                                 <p style={{ marginBottom: 0 }}>Signer:</p>
                                 <input
@@ -690,26 +713,16 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                                     setTransactionError('');
                                     setWaitingForUser(true);
 
-                                    const tx = isUpdateOperatorTab
-                                        ? submitUpdateOperator(
-                                              VERIFIER_URL,
-                                              signer,
-                                              nonce,
-                                              signature,
-                                              expiryTime,
-                                              operator,
-                                              addOperator
-                                          )
-                                        : submitTransfer(
-                                              VERIFIER_URL,
-                                              signer,
-                                              nonce,
-                                              signature,
-                                              expiryTime,
-                                              tokenID,
-                                              from,
-                                              to
-                                          );
+                                    const tx = submitTransfer(
+                                        VERIFIER_URL,
+                                        signer,
+                                        nonce,
+                                        signature,
+                                        expiryTime,
+                                        tokenID,
+                                        from,
+                                        to
+                                    );
 
                                     tx.then((txHashReturned) => {
                                         setTxHash(txHashReturned.tx_hash);
@@ -718,7 +731,6 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                                             setTokenID('');
                                             setFrom('');
                                             setTo('');
-                                            setOperator('');
                                             setNonce('');
                                             setSigner('');
                                             clearInputFields();
@@ -835,7 +847,6 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                                         viewItem(grpcClient, itemIndex)
                                             .then((returnValue) => {
                                                 if (returnValue !== undefined) {
-                                                    console.log(returnValue);
                                                     setItemState(JSON.stringify(returnValue));
                                                 }
                                             })
