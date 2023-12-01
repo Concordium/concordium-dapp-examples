@@ -2,6 +2,7 @@
 /* eslint-disable no-alert */
 /* eslint-disable consistent-return */
 import React, { useEffect, useState, ChangeEvent, useCallback } from 'react';
+import JSONbig from 'json-bigint';
 import Switch from 'react-switch';
 import {
     toBuffer,
@@ -33,6 +34,9 @@ import {
     TRANSFER_SCHEMA,
     REFRESH_INTERVAL,
     VERIFIER_URL,
+    AUCTION_CONTRACT_NAME,
+    VIEW_ITEM_PARAMETER_SCHEMA,
+    VIEW_ITEM_RETURN_VALUE_SCHEMA,
 } from './constants';
 
 import { WalletConnectionTypeButton } from './WalletConnectorTypeButton';
@@ -231,6 +235,41 @@ async function getPublicKey(rpcClient: ConcordiumGRPCClient, account: string) {
     return publicKey;
 }
 
+async function viewItem(rpcClient: ConcordiumGRPCClient, itenIndex: string) {
+    const param = serializeTypeValue(Number(itenIndex), toBuffer(VIEW_ITEM_PARAMETER_SCHEMA, 'base64'));
+
+    const res = await rpcClient.invokeContract({
+        method: `${AUCTION_CONTRACT_NAME}.viewItemState`,
+        contract: { index: BigInt(Number(process.env.AUCTION_CONTRACT_INDEX)), subindex: CONTRACT_SUB_INDEX },
+        parameter: param,
+    });
+
+    if (!res || res.tag === 'failure' || !res.returnValue) {
+        throw new Error(
+            `RPC call 'invokeContract' on method '${AUCTION_CONTRACT_NAME}.viewItemState' of contract '${
+                process.env.AUCTION_CONTRACT_INDEX
+            }' failed. Response: ${JSONbig.stringify(res)}`
+        );
+    }
+
+    // eslint-disable-next-line  @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+    const returnValues = deserializeTypeValue(
+        toBuffer(res.returnValue, 'hex'),
+        toBuffer(VIEW_ITEM_RETURN_VALUE_SCHEMA, 'base64')
+    );
+
+    if (returnValues === undefined) {
+        throw new Error(
+            `Deserializing the returnValue from the '${AUCTION_CONTRACT_NAME}.viewItemState' method of contract '${process.env.AUCTION_CONTRACT_INDEX}' failed`
+        );
+    } else {
+        // Return item
+        return returnValues;
+    }
+}
+
 async function getNonceOf(rpcClient: ConcordiumGRPCClient, account: string) {
     const param = serializeTypeValue(
         {
@@ -251,7 +290,9 @@ async function getNonceOf(rpcClient: ConcordiumGRPCClient, account: string) {
 
     if (!res || res.tag === 'failure' || !res.returnValue) {
         throw new Error(
-            `RPC call 'invokeContract' on method '${SPONSORED_TX_CONTRACT_NAME}.nonceOf' of contract CIS2_TOKEN_CONTRACT_INDEX failed`
+            `RPC call 'invokeContract' on method '${SPONSORED_TX_CONTRACT_NAME}.nonceOf' of contract CIS2_TOKEN_CONTRACT_INDEX failed. Response: ${JSONbig.stringify(
+                res
+            )}`
         );
     }
 
@@ -330,6 +371,9 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
     const [from, setFrom] = useState('');
     const [signer, setSigner] = useState('');
     const [name, setName] = useState('');
+    const [itemIndex, setItemIndex] = useState('');
+    const [itemState, setItemState] = useState('');
+    const [itemStateError, setItemStateError] = useState<string | undefined>(undefined);
 
     const [signature, setSignature] = useState('');
     const [signingError, setSigningError] = useState('');
@@ -337,6 +381,11 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
     const changeOperatorHandler = useCallback((event: ChangeEvent) => {
         const target = event.target as HTMLTextAreaElement;
         setOperator(target.value);
+    }, []);
+
+    const changeItemIndexHandler = useCallback((event: ChangeEvent) => {
+        const target = event.target as HTMLTextAreaElement;
+        setItemIndex(target.value);
     }, []);
 
     const changeTokenIDHandler = useCallback((event: ChangeEvent) => {
@@ -529,7 +578,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                         />
                         <p>Transfer via a sponsored transaction</p>
                     </div>
-                    {isUpdateOperatorTab && (
+                    {!isUpdateOperatorTab && (
                         <>
                             <label>
                                 <p style={{ marginBottom: 0 }}>Operator Address:</p>
@@ -558,11 +607,136 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                                 />
                                 <p>Remove operator</p>
                             </div>
+                            <label>
+                                <p style={{ marginBottom: 0 }}>Nonce:</p>
+                                <input
+                                    className="input"
+                                    style={InputFieldStyle}
+                                    id="nonce"
+                                    type="text"
+                                    placeholder={nextNonce.toString()}
+                                    onChange={changeNonceHandler}
+                                />
+                            </label>
+                            <button
+                                style={ButtonStyle}
+                                type="button"
+                                onClick={async () => {
+                                    setSigningError('');
+                                    setSignature('');
+
+                                    // Signatures should expire in one day. Add 1 day to the current time.
+                                    const date = new Date();
+                                    date.setTime(date.getTime() + 86400 * 1000);
+
+                                    // RFC 3339 format (e.g. 2030-08-08T05:15:00Z)
+                                    const expiryTimeSignature = date.toISOString();
+                                    setExpiryTime(expiryTimeSignature);
+
+                                    const serializedMessage = isUpdateOperatorTab
+                                        ? await generateUpdateOperatorMessage(
+                                              expiryTimeSignature,
+                                              nonce,
+                                              operator,
+                                              addOperator
+                                          )
+                                        : await generateTransferMessage(expiryTimeSignature, nonce, tokenID, from, to);
+
+                                    if (serializedMessage !== '') {
+                                        const promise = connection.signMessage(account, {
+                                            type: 'BinaryMessage',
+                                            value: serializedMessage,
+                                            schema: typeSchemaFromBase64(SERIALIZATION_HELPER_SCHEMA),
+                                        });
+
+                                        promise
+                                            .then((permitSignature) => {
+                                                setSignature(permitSignature[0][0]);
+                                            })
+                                            .catch((err: Error) => setSigningError((err as Error).message));
+                                    } else {
+                                        setSigningError('Serialization Error');
+                                    }
+                                }}
+                            >
+                                Generate Signature
+                            </button>
+                            <br />
+                            {signingError && <div style={{ color: 'red' }}>Error: {signingError}.</div>}
+                            {signature !== '' && (
+                                <>
+                                    <div> Your generated signature is: </div>
+                                    <div className="loadingText">{signature}</div>
+                                </>
+                            )}
+                            <br />
+                            <label>
+                                <p style={{ marginBottom: 0 }}>Signer:</p>
+                                <input
+                                    className="input"
+                                    style={InputFieldStyle}
+                                    id="signer"
+                                    type="text"
+                                    placeholder="4HoVMVsj6TwJr6B5krP5fW9qM4pbo6crVyrr7N95t2UQDrv1fq"
+                                    onChange={changeSignerHandler}
+                                />
+                            </label>
+                            <button
+                                style={signature === '' ? ButtonStyleDisabled : ButtonStyle}
+                                disabled={signature === ''}
+                                type="button"
+                                onClick={async () => {
+                                    setTxHash('');
+                                    setTransactionError('');
+                                    setWaitingForUser(true);
+
+                                    const tx = isUpdateOperatorTab
+                                        ? submitUpdateOperator(
+                                              VERIFIER_URL,
+                                              signer,
+                                              nonce,
+                                              signature,
+                                              expiryTime,
+                                              operator,
+                                              addOperator
+                                          )
+                                        : submitTransfer(
+                                              VERIFIER_URL,
+                                              signer,
+                                              nonce,
+                                              signature,
+                                              expiryTime,
+                                              tokenID,
+                                              from,
+                                              to
+                                          );
+
+                                    tx.then((txHashReturned) => {
+                                        setTxHash(txHashReturned.tx_hash);
+                                        if (txHashReturned.tx_hash !== '') {
+                                            setSignature('');
+                                            setTokenID('');
+                                            setFrom('');
+                                            setTo('');
+                                            setOperator('');
+                                            setNonce('');
+                                            setSigner('');
+                                            clearInputFields();
+                                        }
+                                    })
+                                        .catch((err: Error) => setTransactionError((err as Error).message))
+                                        .finally(() => {
+                                            setWaitingForUser(false);
+                                        });
+                                }}
+                            >
+                                Submit Sponsored Transaction
+                            </button>
                         </>
                     )}
-                    {!isUpdateOperatorTab && (
+                    {isUpdateOperatorTab && (
                         <>
-                            <div>Mint 100 tokens to an account (first step):</div>
+                            <div>Step 1: Mint 100 tokens to an account:</div>
                             <label>
                                 <p style={{ marginBottom: 0 }}>Token ID:</p>
                                 <input
@@ -600,7 +774,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                             >
                                 Mint 100 tokens
                             </button>
-                            <div>Add item to auction (second step):</div>
+                            <div>Step 2: Add item to auction:</div>
                             <label>
                                 <p style={{ marginBottom: 0 }}>Token ID:</p>
                                 <input
@@ -638,130 +812,50 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                             >
                                 Add item
                             </button>
+                            <div>Step 3: View your item:</div>
                             <label>
-                                <p style={{ marginBottom: 0 }}>To Address:</p>
+                                <p style={{ marginBottom: 0 }}>Item index:</p>
                                 <input
                                     className="input"
                                     style={InputFieldStyle}
-                                    id="to"
+                                    id="itemIndex"
                                     type="text"
-                                    placeholder="4HoVMVsj6TwJr6B5krP5fW9qM4pbo6crVyrr7N95t2UQDrv1fq"
-                                    onChange={changeToHandler}
+                                    placeholder="0"
+                                    onChange={changeItemIndexHandler}
                                 />
                             </label>
+                            <button
+                                style={ButtonStyle}
+                                type="button"
+                                onClick={async () => {
+                                    setItemStateError(undefined);
+                                    setItemState('');
+
+                                    if (grpcClient) {
+                                        viewItem(grpcClient, itemIndex)
+                                            .then((returnValue) => {
+                                                if (returnValue !== undefined) {
+                                                    console.log(returnValue);
+                                                    setItemState(JSON.stringify(returnValue));
+                                                }
+                                            })
+                                            .catch((e) => {
+                                                setItemStateError((e as Error).message);
+                                            });
+                                    }
+                                }}
+                            >
+                                View item
+                            </button>
+                            {itemState && (
+                                <div>
+                                    Item state:
+                                    <pre>{JSON.stringify(JSON.parse(itemState), undefined, 2)}</pre>
+                                </div>
+                            )}
+                            {itemStateError && <div style={{ color: 'red' }}>Error: {itemStateError}.</div>}
                         </>
                     )}
-                    <label>
-                        <p style={{ marginBottom: 0 }}>Nonce:</p>
-                        <input
-                            className="input"
-                            style={InputFieldStyle}
-                            id="nonce"
-                            type="text"
-                            placeholder={nextNonce.toString()}
-                            onChange={changeNonceHandler}
-                        />
-                    </label>
-                    <button
-                        style={ButtonStyle}
-                        type="button"
-                        onClick={async () => {
-                            setSigningError('');
-                            setSignature('');
-
-                            // Signatures should expire in one day. Add 1 day to the current time.
-                            const date = new Date();
-                            date.setTime(date.getTime() + 86400 * 1000);
-
-                            // RFC 3339 format (e.g. 2030-08-08T05:15:00Z)
-                            const expiryTimeSignature = date.toISOString();
-                            setExpiryTime(expiryTimeSignature);
-
-                            const serializedMessage = isUpdateOperatorTab
-                                ? await generateUpdateOperatorMessage(expiryTimeSignature, nonce, operator, addOperator)
-                                : await generateTransferMessage(expiryTimeSignature, nonce, tokenID, from, to);
-
-                            if (serializedMessage !== '') {
-                                const promise = connection.signMessage(account, {
-                                    type: 'BinaryMessage',
-                                    value: serializedMessage,
-                                    schema: typeSchemaFromBase64(SERIALIZATION_HELPER_SCHEMA),
-                                });
-
-                                promise
-                                    .then((permitSignature) => {
-                                        setSignature(permitSignature[0][0]);
-                                    })
-                                    .catch((err: Error) => setSigningError((err as Error).message));
-                            } else {
-                                setSigningError('Serialization Error');
-                            }
-                        }}
-                    >
-                        Generate Signature
-                    </button>
-                    <br />
-                    {signingError && <div style={{ color: 'red' }}>Error: {signingError}.</div>}
-                    {signature !== '' && (
-                        <>
-                            <div> Your generated signature is: </div>
-                            <div className="loadingText">{signature}</div>
-                        </>
-                    )}
-                    <br />
-                    <label>
-                        <p style={{ marginBottom: 0 }}>Signer:</p>
-                        <input
-                            className="input"
-                            style={InputFieldStyle}
-                            id="signer"
-                            type="text"
-                            placeholder="4HoVMVsj6TwJr6B5krP5fW9qM4pbo6crVyrr7N95t2UQDrv1fq"
-                            onChange={changeSignerHandler}
-                        />
-                    </label>
-                    <button
-                        style={signature === '' ? ButtonStyleDisabled : ButtonStyle}
-                        disabled={signature === ''}
-                        type="button"
-                        onClick={async () => {
-                            setTxHash('');
-                            setTransactionError('');
-                            setWaitingForUser(true);
-
-                            const tx = isUpdateOperatorTab
-                                ? submitUpdateOperator(
-                                      VERIFIER_URL,
-                                      signer,
-                                      nonce,
-                                      signature,
-                                      expiryTime,
-                                      operator,
-                                      addOperator
-                                  )
-                                : submitTransfer(VERIFIER_URL, signer, nonce, signature, expiryTime, tokenID, from, to);
-
-                            tx.then((txHashReturned) => {
-                                setTxHash(txHashReturned.tx_hash);
-                                if (txHashReturned.tx_hash !== '') {
-                                    setSignature('');
-                                    setTokenID('');
-                                    setFrom('');
-                                    setTo('');
-                                    setOperator('');
-                                    setNonce('');
-                                    setSigner('');
-                                    clearInputFields();
-                                }
-                            })
-                                .catch((err: Error) => setTransactionError((err as Error).message))
-                                .finally(() => {
-                                    setWaitingForUser(false);
-                                });
-                        }}
-                    >
-                        Submit Sponsored Transaction
-                    </button>
                 </>
             )}
             {!connection && (
