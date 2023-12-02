@@ -37,6 +37,7 @@ import {
     AUCTION_CONTRACT_NAME,
     VIEW_ITEM_PARAMETER_SCHEMA,
     VIEW_ITEM_RETURN_VALUE_SCHEMA,
+    SERIALIZATION_HELPER_SCHEMA_ADDITIONAL_DATA,
 } from './constants';
 
 import { WalletConnectionTypeButton } from './WalletConnectorTypeButton';
@@ -168,10 +169,15 @@ async function generateTransferMessage(
 
         const itemState = returnValue as unknown as ItemState;
 
+        const data = serializeTypeValue(
+            Number(itemIndexAuction),
+            toBuffer(SERIALIZATION_HELPER_SCHEMA_ADDITIONAL_DATA, 'base64')
+        );
+
         const transfer = [
             {
                 amount,
-                data: '',
+                data: data.toString('hex'), // e.g. 0100 (for item with index 1)
                 from: {
                     Account: [account],
                 },
@@ -187,6 +193,7 @@ async function generateTransferMessage(
                 token_id: itemState.token_id,
             },
         ];
+
         const payload = serializeTypeValue(transfer, toBuffer(TRANSFER_SCHEMA, 'base64'));
         setPayload(Array.from(payload));
 
@@ -210,68 +217,6 @@ async function generateTransferMessage(
         return '';
     }
 }
-
-// async function generateUpdateOperatorMessage(
-//     expiryTimeSignature: string,
-//     nonce: string,
-//     operator: string,
-//     addOperator: boolean
-// ) {
-//     if (nonce === '') {
-//         alert('Insert a nonce.');
-//         return '';
-//     }
-
-//     // eslint-disable-next-line no-restricted-globals
-//     if (isNaN(Number(nonce))) {
-//         alert('Your nonce needs to be a number.');
-//         return '';
-//     }
-
-//     if (operator === '') {
-//         alert('Insert an operator address.');
-//         return '';
-//     }
-
-//     if (operator.length !== 50) {
-//         alert('Operator address needs to have 50 digits.');
-//         return '';
-//     }
-
-//     const operatorAction = addOperator
-//         ? {
-//             Add: [],
-//         }
-//         : {
-//             Remove: [],
-//         };
-
-//     const updateOperator = [
-//         {
-//             operator: {
-//                 Account: [operator],
-//             },
-//             update: operatorAction,
-//         },
-//     ];
-
-//     const payload = serializeTypeValue(updateOperator, toBuffer(UPDATE_OPERATOR_SCHEMA, 'base64'));
-
-//     const message = {
-//         contract_address: {
-//             index: Number(process.env.CIS2_TOKEN_CONTRACT_INDEX),
-//             subindex: 0,
-//         },
-//         nonce: Number(nonce),
-//         timestamp: expiryTimeSignature,
-//         entry_point: 'updateOperator',
-//         payload: Array.from(payload),
-//     };
-
-//     const serializedMessage = serializeTypeValue(message, toBuffer(SERIALIZATION_HELPER_SCHEMA, 'base64'));
-
-//     return serializedMessage;
-// }
 
 async function getPublicKey(rpcClient: ConcordiumGRPCClient, account: string) {
     const res = await rpcClient.getAccountInfo(new AccountAddress(account));

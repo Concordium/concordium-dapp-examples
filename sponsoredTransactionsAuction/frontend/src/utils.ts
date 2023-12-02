@@ -246,7 +246,7 @@ export async function bid(
             parameters: {
                 message: {
                     contract_address: {
-                        index: 7370,
+                        index: Number(process.env.CIS2_TOKEN_CONTRACT_INDEX),
                         subindex: 0,
                     },
                     entry_point: 'transfer',
