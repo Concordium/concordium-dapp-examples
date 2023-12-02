@@ -22,12 +22,12 @@ import {
 } from '@concordium/react-components';
 import { version } from '../package.json';
 
-import { submitTransfer, mint, addItem, bid } from './utils';
+import { submitBid, mint, addItem, bid } from './utils';
 import {
     SPONSORED_TX_CONTRACT_NAME,
     NONCE_OF_PARAMETER_SCHEMA,
     NONCE_OF_RETURN_VALUE_SCHEMA,
-    SERIALIZATION_HELPER_SCHEMA,
+    SERIALIZATION_HELPER_SCHEMA_PERMIT_MESSAGE,
     CONTRACT_SUB_INDEX,
     BROWSER_WALLET,
     WALLET_CONNECT,
@@ -136,6 +136,7 @@ async function viewItem(rpcClient: ConcordiumGRPCClient, itenIndex: string) {
 
 async function generateTransferMessage(
     setPayload: (arg0: number[]) => void,
+    setTokenIDAuction: (arg0: string) => void,
     grpcClient: ConcordiumGRPCClient | undefined,
     expiryTimeSignature: string,
     account: string,
@@ -168,6 +169,8 @@ async function generateTransferMessage(
         const returnValue = await viewItem(grpcClient, itemIndexAuction);
 
         const itemState = returnValue as unknown as ItemState;
+
+        setTokenIDAuction(itemState.token_id);
 
         const data = serializeTypeValue(
             Number(itemIndexAuction),
@@ -208,7 +211,10 @@ async function generateTransferMessage(
             payload: Array.from(payload),
         };
 
-        const serializedMessage = serializeTypeValue(message, toBuffer(SERIALIZATION_HELPER_SCHEMA, 'base64'));
+        const serializedMessage = serializeTypeValue(
+            message,
+            toBuffer(SERIALIZATION_HELPER_SCHEMA_PERMIT_MESSAGE, 'base64')
+        );
 
         return serializedMessage;
     } catch (error) {
@@ -318,9 +324,9 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
 
     const [expiryTime, setExpiryTime] = useState('');
     const [tokenID, setTokenID] = useState('');
+    const [tokenIDAuction, setTokenIDAuction] = useState<string | undefined>(undefined);
     const [to, setTo] = useState('');
     const [nonce, setNonce] = useState('');
-    const [from, setFrom] = useState('');
     const [signer, setSigner] = useState('');
     const [name, setName] = useState('');
     const [itemIndex, setItemIndex] = useState('');
@@ -510,7 +516,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
             {connection && account !== undefined && (
                 <>
                     <div className="containerSpaceBetween">
-                        <p>Update operator via a sponsored transaction</p>
+                        <p>Mint tokens and add Item to auction</p>
                         <Switch
                             onChange={() => {
                                 setUpdateOperatorTab(!isUpdateOperatorTab);
@@ -521,7 +527,6 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                                 setNonce('');
                                 setSigner('');
                                 setTokenID('');
-                                setFrom('');
                                 setTo('');
                                 clearInputFields();
                             }}
@@ -587,6 +592,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
 
                                     const serializedMessage = await generateTransferMessage(
                                         setPayload,
+                                        setTokenIDAuction,
                                         grpcClient,
                                         expiryTimeSignature,
                                         account,
@@ -599,7 +605,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                                         const promise = connection.signMessage(account, {
                                             type: 'BinaryMessage',
                                             value: serializedMessage,
-                                            schema: typeSchemaFromBase64(SERIALIZATION_HELPER_SCHEMA),
+                                            schema: typeSchemaFromBase64(SERIALIZATION_HELPER_SCHEMA_PERMIT_MESSAGE),
                                         });
 
                                         promise
@@ -658,15 +664,16 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                                     setTransactionError('');
                                     setWaitingForUser(true);
 
-                                    const tx = submitTransfer(
+                                    const tx = submitBid(
                                         VERIFIER_URL,
                                         signer,
                                         nonce,
                                         signature,
                                         expiryTime,
-                                        tokenID,
-                                        from,
-                                        to
+                                        tokenIDAuction,
+                                        account,
+                                        amount,
+                                        itemIndexAuction
                                     );
 
                                     tx.then((txHashReturned) => {
@@ -674,7 +681,6 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                                         if (txHashReturned.tx_hash !== '') {
                                             setSignature('');
                                             setTokenID('');
-                                            setFrom('');
                                             setTo('');
                                             setNonce('');
                                             setSigner('');

@@ -1,4 +1,4 @@
-use concordium_rust_sdk::cis2::{TokenId, Transfer, UpdateOperator};
+use concordium_rust_sdk::cis2::{TokenAmount, TokenId, Transfer};
 use concordium_rust_sdk::smart_contracts::common as concordium_std;
 use concordium_rust_sdk::types::RejectReason;
 use concordium_rust_sdk::{
@@ -28,8 +28,6 @@ pub enum LogError {
     TransactionSimulationError(RevertReason),
     #[error("Owned received name error.")]
     OwnedReceiveNameError,
-    #[error("TokenAmount error.")]
-    TokenAmountError,
     #[error("Rate limit error.")]
     RateLimitError,
     #[error("Parameter error.")]
@@ -70,31 +68,19 @@ pub struct ErrorResponse {
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, Clone)]
-pub struct UpdateOperatorInputParams {
+pub struct BidInputParams {
     pub signer: AccountAddress,
     pub nonce: u64,
     pub signature: String,
-    pub operator: AccountAddress,
-    pub add_operator: bool,
     pub timestamp: Timestamp,
-}
-
-#[derive(serde::Deserialize, serde::Serialize, Debug, Clone)]
-pub struct TransferInputParams {
-    pub signer: AccountAddress,
-    pub nonce: u64,
-    pub signature: String,
     pub token_id: TokenId,
     pub from: AccountAddress,
-    pub to: AccountAddress,
-    pub timestamp: Timestamp,
+    pub item_index_auction: u16,
+    pub token_amount: TokenAmount,
 }
 
 #[derive(Debug, Serial, Clone)]
 pub struct TransferParams(#[concordium(size_length = 2)] pub Vec<Transfer>);
-
-#[derive(Debug, Serial, Clone)]
-pub struct UpdateOperatorParams(#[concordium(size_length = 2)] pub Vec<UpdateOperator>);
 
 #[derive(Debug, Serial)]
 pub struct PermitParam {

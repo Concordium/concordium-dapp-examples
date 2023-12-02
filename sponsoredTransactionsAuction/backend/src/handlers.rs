@@ -1,85 +1,47 @@
 use crate::crypto_common::types::TransactionTime;
 use crate::types::*;
-use concordium_rust_sdk::cis2::{
-    AdditionalData, OperatorUpdate, Receiver, TokenAmount, Transfer, UpdateOperator,
-};
+use concordium_rust_sdk::cis2::{AdditionalData, Receiver, Transfer};
 use concordium_rust_sdk::smart_contracts::common::{
-    AccountAddress, AccountSignatures, Address, Amount, ContractAddress, CredentialSignatures,
-    OwnedEntrypointName, Signature, SignatureEd25519,
+    to_bytes, AccountAddress, AccountSignatures, Address, Amount, ContractAddress,
+    CredentialSignatures, OwnedEntrypointName, Signature, SignatureEd25519,
 };
-use concordium_rust_sdk::types::smart_contracts::{ContractContext, InvokeContractResult};
+use concordium_rust_sdk::types::smart_contracts::{
+    ContractContext, InvokeContractResult, OwnedReceiveName,
+};
 use concordium_rust_sdk::types::{smart_contracts, transactions, Energy, WalletAccount};
 use concordium_rust_sdk::v2::BlockIdentifier;
 use std::collections::BTreeMap;
 use std::convert::Infallible;
-use std::str::FromStr;
 use std::sync::Arc;
 use warp::{http::StatusCode, Rejection};
 
-const CONTRACT_NAME: &str = "cis3_nft";
-const ENERGY: u64 = 6000;
+const CONTRACT_NAME: &str = "cis2_multi";
+const ENERGY: u64 = 60000;
 const RATE_LIMIT_PER_ACCOUNT: u8 = 30;
 
-pub async fn handle_signature_update_operator(
+pub async fn handle_signature_bid(
     client: concordium_rust_sdk::v2::Client,
     key_update_operator: Arc<WalletAccount>,
-    request: UpdateOperatorInputParams,
-    smart_contract_index: u64,
-    state: Server,
-) -> Result<impl warp::Reply, Rejection> {
-    log::debug!("Create payload.");
-
-    let operator_update = match request.add_operator {
-        true => OperatorUpdate::Add,
-        false => OperatorUpdate::Remove,
-    };
-
-    let update_operator = UpdateOperator {
-        update: operator_update,
-        operator: Address::Account(request.operator),
-    };
-    let payload = UpdateOperatorParams(vec![update_operator]);
-
-    log::debug!("Create PermitMessage.");
-
-    let message: PermitMessage = PermitMessage {
-        contract_address: ContractAddress {
-            index: smart_contract_index,
-            subindex: 0,
-        },
-        nonce: request.nonce,
-        timestamp: request.timestamp,
-        entry_point: OwnedEntrypointName::new_unchecked("updateOperator".into()),
-        payload: concordium_rust_sdk::smart_contracts::common::to_bytes(&payload),
-    };
-
-    submit_transaction(
-        client,
-        key_update_operator,
-        state,
-        message,
-        request.signature,
-        request.signer,
-        smart_contract_index,
-    )
-    .await
-}
-
-pub async fn handle_signature_transfer(
-    client: concordium_rust_sdk::v2::Client,
-    key_update_operator: Arc<WalletAccount>,
-    request: TransferInputParams,
-    smart_contract_index: u64,
+    request: BidInputParams,
+    cis2_token_smart_contract_index: u64,
+    auction_smart_contract_index: u64,
     state: Server,
 ) -> Result<impl warp::Reply, Rejection> {
     log::debug!("Create payload.");
 
     let transfer = Transfer {
         from: Address::Account(request.from),
-        to: Receiver::Account(request.to),
+        to: Receiver::Contract(
+            ContractAddress {
+                index: auction_smart_contract_index,
+                subindex: 0,
+            },
+            OwnedReceiveName::new_unchecked("bid".to_owned()),
+        ),
         token_id: request.token_id,
-        amount: TokenAmount::from_str("1").map_err(|_| LogError::TokenAmountError)?,
-        data: AdditionalData::new(vec![]).map_err(|_| LogError::AdditionalDataError)?,
+        amount: request.token_amount,
+        data: AdditionalData::new(to_bytes(&request.item_index_auction))
+            .map_err(|_| LogError::AdditionalDataError)?,
     };
 
     let payload = TransferParams(vec![transfer]);
@@ -88,7 +50,7 @@ pub async fn handle_signature_transfer(
 
     let message: PermitMessage = PermitMessage {
         contract_address: ContractAddress {
-            index: smart_contract_index,
+            index: cis2_token_smart_contract_index,
             subindex: 0,
         },
         nonce: request.nonce,
@@ -104,7 +66,7 @@ pub async fn handle_signature_transfer(
         message,
         request.signature,
         request.signer,
-        smart_contract_index,
+        cis2_token_smart_contract_index,
     )
     .await
 }
@@ -116,7 +78,7 @@ pub async fn submit_transaction(
     message: PermitMessage,
     request_signature: String,
     signer: AccountAddress,
-    smart_contract_index: u64,
+    cis2_token_smart_contract_index: u64,
 ) -> Result<impl warp::Reply, Rejection> {
     log::debug!("Create signature map.");
 
@@ -159,7 +121,7 @@ pub async fn submit_transaction(
     let context = ContractContext {
         invoker: Some(concordium_rust_sdk::types::Address::Account(key.address)),
         contract: ContractAddress {
-            index: smart_contract_index,
+            index: cis2_token_smart_contract_index,
             subindex: 0,
         },
         amount: Amount::zero(),
@@ -205,7 +167,7 @@ pub async fn submit_transaction(
         payload: transactions::UpdateContractPayload {
             amount: Amount::from_micro_ccd(0),
             address: ContractAddress {
-                index: smart_contract_index,
+                index: cis2_token_smart_contract_index,
                 subindex: 0,
             },
             receive_name,
@@ -301,10 +263,6 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl warp::Reply, Infall
     } else if let Some(LogError::OwnedReceiveNameError) = err.find() {
         let code = StatusCode::BAD_REQUEST;
         let message = "Owned received name error.";
-        Ok(mk_reply(message.into(), code))
-    } else if let Some(LogError::TokenAmountError) = err.find() {
-        let code = StatusCode::BAD_REQUEST;
-        let message = "TokenAmount error.";
         Ok(mk_reply(message.into(), code))
     } else if let Some(LogError::SignatureError) = err.find() {
         let code = StatusCode::BAD_REQUEST;

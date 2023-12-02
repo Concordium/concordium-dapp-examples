@@ -10,19 +10,20 @@ The following parameters are supported
 - `log-level` maximum log level (defaults to `debug` if not given)
 - `public-folder` the path to the folder, which should be served, defaults to the `public` folder in the current directory.
 - `account` the path to a file which contains the key credentials.
-- `smart-contract-index` the smart contract index which the sponsored transaction is submitted to.
+- `cis2-token-smart-contract-index` the smart contract index which the sponsored transaction is submitted to.
+- `auction-smart-contract-index` the smart contract index of the auction smart contract.
 
 All of the above is available by using `--help` to get usage information.
 
 An example to run the backend with basic settings and testnet node would be:
 ```shell
-cargo run -- --node http://node.testnet.concordium.com:20000 --account <YourAccountPathToYourKeys> --smart-contract-index 4184
+cargo run -- --node http://node.testnet.concordium.com:20000 --account <YourAccountPathToYourKeys> --cis2-token-smart-contract-index 7370 --auction-smart-contract-index 7399
 ```
 
 An example to run the backend with some filled in example settings would be:
 
 ```shell
-cargo run -- --node http://node.testnet.concordium.com:20000 --port 8080 --account ./3PXwJYYPf6fyVb4GJquxSZU8puxrHfzc4XogdMVot8MUQK53tW.export --public-folder ../frontend/dist --smart-contract-index 4184
+cargo run -- --node http://node.testnet.concordium.com:20000 --port 8080 --account ./4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export --public-folder ../frontend/dist --cis2-token-smart-contract-index 7370 --auction-smart-contract-index 7399
 ```
 
 To get your account file (the `3PXwJYYPf6fyVb4GJquxSZU8puxrHfzc4XogdMVot8MUQK53tW.export` file in the above example), export it from the Concordium Browser wallet for web.
