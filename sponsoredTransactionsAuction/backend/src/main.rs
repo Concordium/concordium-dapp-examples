@@ -32,11 +32,17 @@ struct IdVerifierConfig {
     )]
     port: u16,
     #[clap(
-        long = "smart-contract-index",
-        default_value = "4184",
-        help = "The smart contract index which the sponsored transaction is submitted to."
+        long = "cis2-token-smart-contract-index",
+        default_value = "7370",
+        help = "The cis2 token smart contract index which the sponsored transaction is submitted to."
     )]
-    smart_contract_index: u64,
+    cis2_token_smart_contract_index: u64,
+    #[clap(
+        long = "auction-smart-contract-index",
+        default_value = "7399",
+        help = "The auction smart contract index which the sponsored transaction is submitted to."
+    )]
+    auction_smart_contract_index: u64,
     #[structopt(
         long = "log-level",
         default_value = "debug",
@@ -72,9 +78,7 @@ async fn main() -> anyhow::Result<()> {
         app.endpoint
     };
 
-    let mut client_update_operator = concordium_rust_sdk::v2::Client::new(endpoint).await?;
-
-    let client_transfer = client_update_operator.clone();
+    let mut client_transfer = concordium_rust_sdk::v2::Client::new(endpoint).await?;
 
     let cors = warp::cors()
         .allow_any_origin()
@@ -89,69 +93,47 @@ async fn main() -> anyhow::Result<()> {
     )
     .context("Could not parse the keys file.")?;
 
-    let key_update_operator = Arc::new(keys);
-
-    let key_transfer = key_update_operator.clone();
+    let key_transfer = Arc::new(keys);
 
     log::debug!("Acquire nonce of wallet account.");
 
-    let nonce_response = client_update_operator
-        .get_next_account_sequence_number(&key_update_operator.address)
+    let nonce_response = client_transfer
+        .get_next_account_sequence_number(&key_transfer.address)
         .await
         .map_err(|e| {
             log::warn!("NonceQueryError {:#?}.", e);
             LogError::NonceQueryError
         })?;
 
-    let state_update_operator = Server {
+    let state_transfer = Server {
         nonce: Arc::new(Mutex::new(nonce_response.nonce)),
         rate_limits: Arc::new(Mutex::new(HashMap::new())),
     };
 
-    let state_transfer = state_update_operator.clone();
-
     // 1. Provide submit update operator
-    let provide_submit_update_operator = warp::post()
+    let provide_submit_bid = warp::post()
         .and(warp::filters::body::content_length_limit(50 * 1024))
-        .and(warp::path!("api" / "submitUpdateOperator"))
+        .and(warp::path!("api" / "bid"))
         .and(warp::body::json())
-        .and_then(move |request: UpdateOperatorInputParams| {
-            log::debug!("Process update operator transaction.");
+        .and_then(move |request: BidInputParams| {
+            log::debug!("Process bid transaction.");
 
-            handle_signature_update_operator(
-                client_update_operator.clone(),
-                key_update_operator.clone(),
-                request,
-                app.smart_contract_index,
-                state_update_operator.clone(),
-            )
-        });
-
-    // 2. Provide submit transfer
-    let provide_submit_transfer = warp::post()
-        .and(warp::filters::body::content_length_limit(50 * 1024))
-        .and(warp::path!("api" / "submitTransfer"))
-        .and(warp::body::json())
-        .and_then(move |request: TransferInputParams| {
-            log::debug!("Process transfer transaction.");
-
-            handle_signature_transfer(
+            handle_signature_bid(
                 client_transfer.clone(),
                 key_transfer.clone(),
                 request,
-                app.smart_contract_index,
+                app.cis2_token_smart_contract_index,
+                app.auction_smart_contract_index,
                 state_transfer.clone(),
             )
         });
-
     log::debug!("Get public files to serve.");
 
     let serve_public_files = warp::get().and(warp::fs::dir(app.public_folder));
 
     log::debug!("Serve response back to frontend.");
 
-    let server = provide_submit_update_operator
-        .or(provide_submit_transfer)
+    let server = provide_submit_bid
         .or(serve_public_files)
         .recover(handle_rejection)
         .with(cors)
