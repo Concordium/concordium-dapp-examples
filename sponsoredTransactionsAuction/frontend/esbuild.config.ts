@@ -4,6 +4,7 @@ import esbuild, { BuildOptions } from 'esbuild';
 import { htmlPlugin } from '@craftamap/esbuild-plugin-html';
 import svgrPlugin from 'esbuild-plugin-svgr';
 import fs from 'fs';
+import { sassPlugin } from 'esbuild-sass-plugin';
 
 if (process.env.CIS2_TOKEN_CONTRACT_INDEX === undefined || Number.isNaN(process.env.CIS2_TOKEN_CONTRACT_INDEX)) {
     throw Error('Environmental variable CIS2_TOKEN_CONTRACT_INDEX needs to be defined and set to a number');
@@ -30,6 +31,7 @@ const config: BuildOptions = {
     target: ['chrome67'],
     outdir: 'dist',
     plugins: [
+        sassPlugin(),
         htmlPlugin({
             files: [
                 {

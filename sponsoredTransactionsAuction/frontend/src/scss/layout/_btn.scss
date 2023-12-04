@@ -1,0 +1,7 @@
+.btn-secondary {
+  @include button-variant($mineral-blue, $mineral-blue, $white);
+}
+
+.btn-danger {
+  @include button-variant($red-600, $red-600);
+}
