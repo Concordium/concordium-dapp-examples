@@ -4,6 +4,7 @@
 import React, { useEffect, useState, ChangeEvent, useCallback } from 'react';
 import JSONbig from 'json-bigint';
 import Switch from 'react-switch';
+import { Alert } from 'react-bootstrap';
 import {
     toBuffer,
     serializeTypeValue,
@@ -19,6 +20,7 @@ import {
     useConnect,
     typeSchemaFromBase64,
     TESTNET,
+    useWalletConnectorSelector,
 } from '@concordium/react-components';
 import { version } from '../package.json';
 
@@ -30,7 +32,6 @@ import {
     SERIALIZATION_HELPER_SCHEMA_PERMIT_MESSAGE,
     CONTRACT_SUB_INDEX,
     BROWSER_WALLET,
-    WALLET_CONNECT,
     TRANSFER_SCHEMA,
     REFRESH_INTERVAL,
     VERIFIER_URL,
@@ -39,8 +40,6 @@ import {
     VIEW_ITEM_RETURN_VALUE_SCHEMA,
     SERIALIZATION_HELPER_SCHEMA_ADDITIONAL_DATA,
 } from './constants';
-
-import { WalletConnectionTypeButton } from './WalletConnectorTypeButton';
 
 const blackCardStyle = {
     backgroundColor: 'black',
@@ -311,7 +310,10 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
         props;
 
     const { connection, setConnection, account, genesisHash } = useConnection(connectedAccounts, genesisHashes);
-    const { connect, isConnecting, connectError } = useConnect(activeConnector, setConnection);
+    const { connect, connectError } = useConnect(activeConnector, setConnection);
+    const { isConnected, select } = useWalletConnectorSelector(BROWSER_WALLET, connection, {
+        ...props,
+    });
     const grpcClient = useGrpcClient(TESTNET);
 
     const [publicKeyError, setPublicKeyError] = useState('');
@@ -379,6 +381,9 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
         setItemIndexAuction(target.value);
     }, []);
 
+    const [txHash, setTxHash] = useState('');
+    const [transactionError, setTransactionError] = useState('');
+
     useEffect(() => {
         // Refresh next nonce periodically.
         if (grpcClient && account) {
@@ -433,51 +438,31 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
         }
     }, [grpcClient, account]);
 
-    const [txHash, setTxHash] = useState('');
-    const [transactionError, setTransactionError] = useState('');
+    useEffect(() => {
+        select();
+    }, []);
 
-    const [isWaitingForTransaction, setWaitingForUser] = useState(false);
     return (
         <div style={blackCardStyle}>
-            <h1 className="header">Explore Sponsored Transactions</h1>
-            <div className="containerSpaceBetween">
-                <WalletConnectionTypeButton
-                    buttonStyle={ButtonStyle}
-                    disabledButtonStyle={ButtonStyleDisabled}
-                    connectorType={BROWSER_WALLET}
-                    connectorName="Browser Wallet"
-                    setWaitingForUser={setWaitingForUser}
-                    connection={connection}
-                    {...props}
-                />
-                {/* TODO: Enable walletConnect again once mobile wallets are updated to sign Objects/Bytes
-                with a schema with the `signMessage` function without the hex encoding.
-                 <WalletConnectionTypeButton
-                    buttonStyle={ButtonStyle}
-                    disabledButtonStyle={ButtonStyleDisabled}
-                    connectorType={WALLET_CONNECT}
-                    connectorName="Wallet Connect"
-                    setWaitingForUser={setWaitingForUser}
-                    connection={connection}
-                    {...props}
-                /> */}
-            </div>
+            <h3>Explore Sponsored Transactions</h3>
             <div>
-                {activeConnectorError && <p style={{ color: 'red' }}>Connector Error: {activeConnectorError}.</p>}
-                {!activeConnectorError && !isWaitingForTransaction && activeConnectorType && !activeConnector && (
+                {activeConnectorError && <Alert variant="danger">Connector Error: {activeConnectorError}.</Alert>}
+                {!activeConnectorError && activeConnectorType && !activeConnector && (
                     <p>
                         <i>Loading connector...</i>
                     </p>
                 )}
-                {connectError && <p style={{ color: 'red' }}>Connect Error: {connectError}.</p>}
-                {!connection && !isWaitingForTransaction && activeConnectorType && activeConnector && (
-                    <p>
-                        <button style={ButtonStyle} type="button" onClick={connect}>
-                            {isConnecting && 'Connecting...'}
-                            {!isConnecting && activeConnectorType === BROWSER_WALLET && 'Connect Browser Wallet'}
-                            {!isConnecting && activeConnectorType === WALLET_CONNECT && 'Connect Mobile Wallet'}
-                        </button>
-                    </p>
+                {connectError && <Alert variant="danger">Connect Error: {connectError}.</Alert>}
+                {!isConnected && (
+                    <button
+                        style={ButtonStyle}
+                        type="button"
+                        onClick={() => {
+                            connect();
+                        }}
+                    >
+                        Connect
+                    </button>
                 )}
                 {account && (
                     <>
@@ -635,11 +620,10 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                                 onClick={async () => {
                                     setTxHash('');
                                     setTransactionError('');
-                                    setWaitingForUser(true);
                                     const tx = bid(connection, account, nonce, payload, expiryTime, signature);
-                                    tx.then(setTxHash)
-                                        .catch((err: Error) => setTransactionError((err as Error).message))
-                                        .finally(() => setWaitingForUser(false));
+                                    tx.then(setTxHash).catch((err: Error) =>
+                                        setTransactionError((err as Error).message)
+                                    );
                                 }}
                             >
                                 Bid via browser wallet
@@ -662,7 +646,6 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                                 onClick={async () => {
                                     setTxHash('');
                                     setTransactionError('');
-                                    setWaitingForUser(true);
 
                                     const tx = submitBid(
                                         VERIFIER_URL,
@@ -686,11 +669,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                                             setSigner('');
                                             clearInputFields();
                                         }
-                                    })
-                                        .catch((err: Error) => setTransactionError((err as Error).message))
-                                        .finally(() => {
-                                            setWaitingForUser(false);
-                                        });
+                                    }).catch((err: Error) => setTransactionError((err as Error).message));
                                 }}
                             >
                                 Submit Sponsored Transaction
@@ -728,11 +707,11 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                                 onClick={async () => {
                                     setTxHash('');
                                     setTransactionError('');
-                                    setWaitingForUser(true);
+
                                     const tx = mint(connection, account, tokenID, to);
-                                    tx.then(setTxHash)
-                                        .catch((err: Error) => setTransactionError((err as Error).message))
-                                        .finally(() => setWaitingForUser(false));
+                                    tx.then(setTxHash).catch((err: Error) =>
+                                        setTransactionError((err as Error).message)
+                                    );
                                 }}
                             >
                                 Mint 100 tokens
@@ -766,11 +745,11 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                                 onClick={async () => {
                                     setTxHash('');
                                     setTransactionError('');
-                                    setWaitingForUser(true);
+
                                     const tx = addItem(connection, account, tokenID, name);
-                                    tx.then(setTxHash)
-                                        .catch((err: Error) => setTransactionError((err as Error).message))
-                                        .finally(() => setWaitingForUser(false));
+                                    tx.then(setTxHash).catch((err: Error) =>
+                                        setTransactionError((err as Error).message)
+                                    );
                                 }}
                             >
                                 Add item
@@ -819,11 +798,6 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                         </>
                     )}
                 </>
-            )}
-            {!connection && (
-                <button style={ButtonStyleDisabled} type="button" disabled>
-                    Waiting for connection...
-                </button>
             )}
             {connection && account && accountInfoPublicKey && (
                 <>
