@@ -24,6 +24,8 @@ import {
 } from '@concordium/react-components';
 import { version } from '../package.json';
 
+import MintTokens from './components/MintTokens';
+
 import { submitBid, mint, addItem, bid } from './utils';
 import {
     SPONSORED_TX_CONTRACT_NAME,
@@ -44,7 +46,7 @@ import {
 const blackCardStyle = {
     backgroundColor: 'black',
     color: 'white',
-    width: '500px',
+    width: '650px',
     borderRadius: 10,
     margin: '10px 0px 10px 0px',
     padding: '10px 18px',
@@ -444,7 +446,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
 
     return (
         <div style={blackCardStyle}>
-            <h3>Explore Sponsored Transactions</h3>
+            <h2>Explore Sponsored Transactions</h2>
             <div>
                 {activeConnectorError && <Alert variant="danger">Connector Error: {activeConnectorError}.</Alert>}
                 {!activeConnectorError && activeConnectorType && !activeConnector && (
@@ -498,6 +500,33 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                     </p>
                 )}
             </div>
+            <hr />
+            {connection && account && accountInfoPublicKey && (
+                <>
+                    <div>Transaction status{txHash === '' ? '' : ' (May take a moment to finalize)'}</div>
+                    {!txHash && transactionError && <div style={{ color: 'red' }}>Error: {transactionError}.</div>}
+                    {!txHash && !transactionError && <div className="loadingText">None</div>}
+                    {txHash && (
+                        <>
+                            <button
+                                className="link"
+                                type="button"
+                                onClick={() => {
+                                    window.open(
+                                        `https://testnet.ccdscan.io/?dcount=1&dentity=transaction&dhash=${txHash}`,
+                                        '_blank',
+                                        'noopener,noreferrer'
+                                    );
+                                }}
+                            >
+                                {txHash}
+                            </button>
+                            <br />
+                        </>
+                    )}
+                </>
+            )}
+            <hr />
             {connection && account !== undefined && (
                 <>
                     <div className="containerSpaceBetween">
@@ -678,6 +707,15 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                     )}
                     {isUpdateOperatorTab && (
                         <>
+                            <hr />
+                            <MintTokens
+                                account={account}
+                                connection={connection}
+                                setTxHash={setTxHash}
+                                setTransactionError={setTransactionError}
+                            />
+                            <hr />
+                            <hr />
                             <div>Step 1: Mint 100 tokens to an account:</div>
                             <label>
                                 <p style={{ marginBottom: 0 }}>Token ID:</p>
@@ -795,31 +833,6 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                                 </div>
                             )}
                             {itemStateError && <div style={{ color: 'red' }}>Error: {itemStateError}.</div>}
-                        </>
-                    )}
-                </>
-            )}
-            {connection && account && accountInfoPublicKey && (
-                <>
-                    <div>Transaction status{txHash === '' ? '' : ' (May take a moment to finalize)'}</div>
-                    {!txHash && transactionError && <div style={{ color: 'red' }}>Error: {transactionError}.</div>}
-                    {!txHash && !transactionError && <div className="loadingText">None</div>}
-                    {txHash && (
-                        <>
-                            <button
-                                className="link"
-                                type="button"
-                                onClick={() => {
-                                    window.open(
-                                        `https://testnet.ccdscan.io/?dcount=1&dentity=transaction&dhash=${txHash}`,
-                                        '_blank',
-                                        'noopener,noreferrer'
-                                    );
-                                }}
-                            >
-                                {txHash}
-                            </button>
-                            <br />
                         </>
                     )}
                 </>

@@ -1,0 +1,33 @@
+#root {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.center {
+  text-align: center;
+}
+
+.ccd-logo {
+  height: rfs-value(20px);
+}
+
+.platform-options svg {
+  width: 1.5em;
+  height: 1.5em;
+}
+
+.some-btn {
+  display: inline-flex !important;
+  align-items: center;
+
+  svg {
+    width: 1.2em;
+    height: 1.2em;
+    margin-right: 0.5em;
+  }
+}
+
+
+
