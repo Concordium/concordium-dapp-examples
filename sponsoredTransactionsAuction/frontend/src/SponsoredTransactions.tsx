@@ -22,11 +22,14 @@ import {
     TESTNET,
     useWalletConnectorSelector,
 } from '@concordium/react-components';
+import { viewItemState } from 'src/reading_from_blockchain';
 import { version } from '../package.json';
 
 import MintTokens from './components/MintTokens';
+import AddItemToAuction from './components/AddItemToAuction';
+import ViewItem from './components/ViewItem';
 
-import { submitBid, mint, addItem, bid } from './utils';
+import { submitBid, bid } from './utils';
 import {
     SPONSORED_TX_CONTRACT_NAME,
     NONCE_OF_PARAMETER_SCHEMA,
@@ -37,11 +40,22 @@ import {
     TRANSFER_SCHEMA,
     REFRESH_INTERVAL,
     VERIFIER_URL,
-    AUCTION_CONTRACT_NAME,
-    VIEW_ITEM_PARAMETER_SCHEMA,
-    VIEW_ITEM_RETURN_VALUE_SCHEMA,
     SERIALIZATION_HELPER_SCHEMA_ADDITIONAL_DATA,
 } from './constants';
+
+/**
+ * Send bidding signature to backend.
+ */
+interface ItemState {
+    auction_state: object;
+    creator: AccountAddress;
+    end: Timestamp;
+    highest_bid: string;
+    highest_bidder: object;
+    name: string;
+    start: Timestamp;
+    token_id: string;
+}
 
 const blackCardStyle = {
     backgroundColor: 'black',
@@ -89,52 +103,6 @@ const InputFieldStyle = {
     padding: '10px 20px',
 };
 
-interface ItemState {
-    auction_state: object;
-    creator: AccountAddress;
-    end: Timestamp;
-    highest_bid: string;
-    highest_bidder: object;
-    name: string;
-    start: Timestamp;
-    token_id: string;
-}
-
-async function viewItem(rpcClient: ConcordiumGRPCClient, itenIndex: string) {
-    const param = serializeTypeValue(Number(itenIndex), toBuffer(VIEW_ITEM_PARAMETER_SCHEMA, 'base64'));
-
-    const res = await rpcClient.invokeContract({
-        method: `${AUCTION_CONTRACT_NAME}.viewItemState`,
-        contract: { index: BigInt(Number(process.env.AUCTION_CONTRACT_INDEX)), subindex: CONTRACT_SUB_INDEX },
-        parameter: param,
-    });
-
-    if (!res || res.tag === 'failure' || !res.returnValue) {
-        throw new Error(
-            `RPC call 'invokeContract' on method '${AUCTION_CONTRACT_NAME}.viewItemState' of contract '${
-                process.env.AUCTION_CONTRACT_INDEX
-            }' failed. Response: ${JSONbig.stringify(res)}`
-        );
-    }
-
-    // eslint-disable-next-line  @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-    const returnValues = deserializeTypeValue(
-        toBuffer(res.returnValue, 'hex'),
-        toBuffer(VIEW_ITEM_RETURN_VALUE_SCHEMA, 'base64')
-    );
-
-    if (returnValues === undefined) {
-        throw new Error(
-            `Deserializing the returnValue from the '${AUCTION_CONTRACT_NAME}.viewItemState' method of contract '${process.env.AUCTION_CONTRACT_INDEX}' failed`
-        );
-    } else {
-        // Return item
-        return returnValues;
-    }
-}
-
 async function generateTransferMessage(
     setPayload: (arg0: number[]) => void,
     setTokenIDAuction: (arg0: string) => void,
@@ -167,7 +135,7 @@ async function generateTransferMessage(
     }
 
     try {
-        const returnValue = await viewItem(grpcClient, itemIndexAuction);
+        const returnValue = await viewItemState(grpcClient, itemIndexAuction);
 
         const itemState = returnValue as unknown as ItemState;
 
@@ -327,41 +295,15 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
     const [accountInfoPublicKey, setAccountInfoPublicKey] = useState('');
 
     const [expiryTime, setExpiryTime] = useState('');
-    const [tokenID, setTokenID] = useState('');
     const [tokenIDAuction, setTokenIDAuction] = useState<string | undefined>(undefined);
-    const [to, setTo] = useState('');
     const [nonce, setNonce] = useState('');
     const [signer, setSigner] = useState('');
-    const [name, setName] = useState('');
-    const [itemIndex, setItemIndex] = useState('');
-    const [itemState, setItemState] = useState('');
-    const [itemStateError, setItemStateError] = useState<string | undefined>(undefined);
     const [itemIndexAuction, setItemIndexAuction] = useState<string | undefined>(undefined);
     const [amount, setAmount] = useState<string | undefined>(undefined);
     const [payload, setPayload] = useState<number[]>([]);
 
     const [signature, setSignature] = useState('');
     const [signingError, setSigningError] = useState('');
-
-    const changeItemIndexHandler = useCallback((event: ChangeEvent) => {
-        const target = event.target as HTMLTextAreaElement;
-        setItemIndex(target.value);
-    }, []);
-
-    const changeTokenIDHandler = useCallback((event: ChangeEvent) => {
-        const target = event.target as HTMLTextAreaElement;
-        setTokenID(target.value);
-    }, []);
-
-    const changeNameHandler = useCallback((event: ChangeEvent) => {
-        const target = event.target as HTMLTextAreaElement;
-        setName(target.value);
-    }, []);
-
-    const changeToHandler = useCallback((event: ChangeEvent) => {
-        const target = event.target as HTMLTextAreaElement;
-        setTo(target.value);
-    }, []);
 
     const changeNonceHandler = useCallback((event: ChangeEvent) => {
         const target = event.target as HTMLTextAreaElement;
@@ -540,8 +482,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                                 setTransactionError('');
                                 setNonce('');
                                 setSigner('');
-                                setTokenID('');
-                                setTo('');
+
                                 clearInputFields();
                             }}
                             onColor="#308274"
@@ -692,8 +633,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                                         setTxHash(txHashReturned.tx_hash);
                                         if (txHashReturned.tx_hash !== '') {
                                             setSignature('');
-                                            setTokenID('');
-                                            setTo('');
+
                                             setNonce('');
                                             setSigner('');
                                             clearInputFields();
@@ -715,124 +655,15 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                                 setTransactionError={setTransactionError}
                             />
                             <hr />
+                            <AddItemToAuction
+                                account={account}
+                                connection={connection}
+                                setTxHash={setTxHash}
+                                setTransactionError={setTransactionError}
+                            />
                             <hr />
-                            <div>Step 1: Mint 100 tokens to an account:</div>
-                            <label>
-                                <p style={{ marginBottom: 0 }}>Token ID:</p>
-                                <input
-                                    className="input"
-                                    style={InputFieldStyle}
-                                    id="tokenID"
-                                    type="text"
-                                    placeholder="00000006"
-                                    onChange={changeTokenIDHandler}
-                                />
-                            </label>
-                            <label>
-                                <p style={{ marginBottom: 0 }}>To Address:</p>
-                                <input
-                                    className="input"
-                                    style={InputFieldStyle}
-                                    id="to"
-                                    type="text"
-                                    placeholder="4HoVMVsj6TwJr6B5krP5fW9qM4pbo6crVyrr7N95t2UQDrv1fq"
-                                    onChange={changeToHandler}
-                                />
-                            </label>
-                            <button
-                                style={ButtonStyle}
-                                type="button"
-                                onClick={async () => {
-                                    setTxHash('');
-                                    setTransactionError('');
-
-                                    const tx = mint(connection, account, tokenID, to);
-                                    tx.then(setTxHash).catch((err: Error) =>
-                                        setTransactionError((err as Error).message)
-                                    );
-                                }}
-                            >
-                                Mint 100 tokens
-                            </button>
-                            <div>Step 2: Add item to auction:</div>
-                            <label>
-                                <p style={{ marginBottom: 0 }}>Token ID:</p>
-                                <input
-                                    className="input"
-                                    style={InputFieldStyle}
-                                    id="tokenID"
-                                    type="text"
-                                    placeholder="00000006"
-                                    onChange={changeTokenIDHandler}
-                                />
-                            </label>
-                            <label>
-                                <p style={{ marginBottom: 0 }}>Item name:</p>
-                                <input
-                                    className="input"
-                                    style={InputFieldStyle}
-                                    id="name"
-                                    type="text"
-                                    placeholder="myName"
-                                    onChange={changeNameHandler}
-                                />
-                            </label>
-                            <button
-                                style={ButtonStyle}
-                                type="button"
-                                onClick={async () => {
-                                    setTxHash('');
-                                    setTransactionError('');
-
-                                    const tx = addItem(connection, account, tokenID, name);
-                                    tx.then(setTxHash).catch((err: Error) =>
-                                        setTransactionError((err as Error).message)
-                                    );
-                                }}
-                            >
-                                Add item
-                            </button>
-                            <div>Step 3: View your item:</div>
-                            <label>
-                                <p style={{ marginBottom: 0 }}>Item index:</p>
-                                <input
-                                    className="input"
-                                    style={InputFieldStyle}
-                                    id="itemIndex"
-                                    type="text"
-                                    placeholder="0"
-                                    onChange={changeItemIndexHandler}
-                                />
-                            </label>
-                            <button
-                                style={ButtonStyle}
-                                type="button"
-                                onClick={async () => {
-                                    setItemStateError(undefined);
-                                    setItemState('');
-
-                                    if (grpcClient) {
-                                        viewItem(grpcClient, itemIndex)
-                                            .then((returnValue) => {
-                                                if (returnValue !== undefined) {
-                                                    setItemState(JSON.stringify(returnValue));
-                                                }
-                                            })
-                                            .catch((e) => {
-                                                setItemStateError((e as Error).message);
-                                            });
-                                    }
-                                }}
-                            >
-                                View item
-                            </button>
-                            {itemState && (
-                                <div>
-                                    Item state:
-                                    <pre>{JSON.stringify(JSON.parse(itemState), undefined, 2)}</pre>
-                                </div>
-                            )}
-                            {itemStateError && <div style={{ color: 'red' }}>Error: {itemStateError}.</div>}
+                            <ViewItem grpcClient={grpcClient} />
+                            <hr />
                         </>
                     )}
                 </>
