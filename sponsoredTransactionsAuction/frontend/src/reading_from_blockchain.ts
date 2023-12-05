@@ -1,12 +1,21 @@
 /* eslint-disable consistent-return */
 /* eslint-disable no-alert */
-import { toBuffer, deserializeTypeValue, ConcordiumGRPCClient, serializeTypeValue } from '@concordium/web-sdk';
+import {
+    toBuffer,
+    deserializeTypeValue,
+    ConcordiumGRPCClient,
+    serializeTypeValue,
+    AccountAddress,
+} from '@concordium/web-sdk';
 import JSONbig from 'json-bigint';
 import {
     CONTRACT_SUB_INDEX,
     AUCTION_CONTRACT_NAME,
     VIEW_ITEM_PARAMETER_SCHEMA,
     VIEW_ITEM_RETURN_VALUE_SCHEMA,
+    SPONSORED_TX_CONTRACT_NAME,
+    NONCE_OF_PARAMETER_SCHEMA,
+    NONCE_OF_RETURN_VALUE_SCHEMA,
 } from './constants';
 
 export async function viewItemState(rpcClient: ConcordiumGRPCClient, itenIndex: string) {
@@ -41,5 +50,55 @@ export async function viewItemState(rpcClient: ConcordiumGRPCClient, itenIndex: 
     } else {
         // Return item
         return returnValues;
+    }
+}
+
+export async function getPublicKey(rpcClient: ConcordiumGRPCClient, account: string) {
+    const res = await rpcClient.getAccountInfo(new AccountAddress(account));
+    const publicKey = res?.accountCredentials[0].value.contents.credentialPublicKeys.keys[0].verifyKey;
+    return publicKey;
+}
+
+export async function getNonceOf(rpcClient: ConcordiumGRPCClient, account: string) {
+    const param = serializeTypeValue(
+        {
+            queries: [
+                {
+                    account,
+                },
+            ],
+        },
+        toBuffer(NONCE_OF_PARAMETER_SCHEMA, 'base64')
+    );
+
+    const res = await rpcClient.invokeContract({
+        method: `${SPONSORED_TX_CONTRACT_NAME}.nonceOf`,
+        contract: { index: BigInt(Number(process.env.CIS2_TOKEN_CONTRACT_INDEX)), subindex: CONTRACT_SUB_INDEX },
+        parameter: param,
+    });
+
+    if (!res || res.tag === 'failure' || !res.returnValue) {
+        throw new Error(
+            `RPC call 'invokeContract' on method '${SPONSORED_TX_CONTRACT_NAME}.nonceOf' of contract '${
+                process.env.CIS2_TOKEN_CONTRACT_INDEX
+            }' failed. Response: ${JSONbig.stringify(res)}`
+        );
+    }
+
+    // eslint-disable-next-line  @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+    const returnValues: any[][] = deserializeTypeValue(
+        toBuffer(res.returnValue, 'hex'),
+        toBuffer(NONCE_OF_RETURN_VALUE_SCHEMA, 'base64')
+    );
+
+    if (returnValues === undefined) {
+        throw new Error(
+            `Deserializing the returnValue from the '${SPONSORED_TX_CONTRACT_NAME}.nonceOf' method of contract '${process.env.CIS2_TOKEN_CONTRACT_INDEX}' failed`
+        );
+    } else {
+        // Return next nonce of a user
+        return returnValues[0][0];
     }
 }

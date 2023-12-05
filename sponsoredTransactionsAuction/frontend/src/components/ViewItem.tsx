@@ -66,7 +66,7 @@ export default function ViewItem(props: ConnectionProps) {
                     <pre>{JSON.stringify(JSON.parse(itemState), undefined, 2)}</pre>
                 </div>
             )}
-            {itemStateError && <div style={{ color: 'red' }}>Error: {itemStateError}.</div>}
+            {itemStateError && <Alert variant="danger">Error: {itemStateError}.</Alert>}
         </>
     );
 }
