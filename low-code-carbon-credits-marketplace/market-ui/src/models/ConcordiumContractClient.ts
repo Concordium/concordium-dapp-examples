@@ -4,9 +4,9 @@ import {
     detectConcordiumProvider, SmartContractParameters, WalletApi
 } from '@concordium/browser-wallet-api-helpers';
 import {
-    AccountAddress, AccountTransactionType, CcdAmount, ConcordiumGRPCClient, ContractAddress,
-    ModuleReference, serializeUpdateContractParameters, TransactionStatusEnum, TransactionSummary,
-    UpdateContractPayload
+    AccountAddress, AccountTransactionType, BlockItemSummaryInBlock, CcdAmount,
+    ConcordiumGRPCClient, ContractAddress, ModuleReference, serializeUpdateContractParameters,
+    TransactionKindString, TransactionStatusEnum, TransactionSummaryType, UpdateContractPayload
 } from '@concordium/web-sdk';
 
 export type ContractName = "project_token" | "carbon_credits" | "carbon_credit_market";
@@ -146,7 +146,7 @@ export async function updateContract(
   amount = BigInt(0),
   onStatusUpdate: (status: TransactionStatusEnum, txnHash: string) => void = (status, txnHash) =>
     console.log(`txn #${txnHash}, status:${status}`),
-): Promise<{ txnHash: string; outcomes: Record<string, TransactionSummary> }> {
+): Promise<{ txnHash: string; outcomes: BlockItemSummaryInBlock }> {
   const { schemaBuffer, contractName } = contractInfo;
   const txnHash = await provider.sendTransaction(
     account,
@@ -189,52 +189,56 @@ function waitForTransaction(
   provider: WalletApi,
   txnHash: string,
   onStatusUpdate: (status: TransactionStatusEnum, txnHash: string) => void,
-): Promise<Record<string, TransactionSummary> | undefined> {
+): Promise<BlockItemSummaryInBlock> {
   return new Promise((res, rej) => {
     _wait(provider, txnHash, res, rej, (status, hash) => onStatusUpdate(status, hash));
   });
 }
 
-function ensureValidOutcome(outcomes?: Record<string, TransactionSummary>): Record<string, TransactionSummary> {
+function ensureValidOutcome(outcomes?: BlockItemSummaryInBlock): BlockItemSummaryInBlock {
   if (!outcomes) {
     throw Error("Null Outcome");
   }
 
-  Object.keys(outcomes).map((o) => {
-    const result = outcomes[o].result;
-    switch (result.outcome) {
-      case "success":
-        return result;
-      case "reject":
-        switch (result.rejectReason.tag) {
-          case "InvalidReceiveMethod":
-            throw Error(`Invalid Receive Method: ${result.rejectReason.contents.join(",")}`, {
-              cause: result.rejectReason,
-            });
-          case "InvalidInitMethod":
-            throw Error(`Invalid Init Method: ${result.rejectReason.contents.join(",")}`, {
-              cause: result.rejectReason,
-            });
-          case "AmountTooLarge":
-            throw Error(`Amount Too Large: ${result.rejectReason.contents.join(",")}`, { cause: result.rejectReason });
-          case "InvalidContractAddress": {
-            const contractAddress = result.rejectReason.contents;
-            throw Error(
-              `Invalid Contract Address: ${contractAddress.index.toString()}, ${contractAddress.subindex.toString()}`,
-              { cause: result.rejectReason },
-            );
+  switch (outcomes.summary.type) {
+    case TransactionSummaryType.AccountTransaction:
+      switch (outcomes.summary.transactionType) {
+        case TransactionKindString.Failed:
+          switch (outcomes.summary.rejectReason.tag) {
+            case "InvalidReceiveMethod":
+              throw Error(`Invalid Receive Method: ${outcomes.summary.rejectReason.contents.receiveName}`, {
+                cause: outcomes.summary.rejectReason,
+              });
+            case "InvalidInitMethod":
+              throw Error(`Invalid Init Method: ${outcomes.summary.rejectReason.contents.initName}`, {
+                cause: outcomes.summary.rejectReason,
+              });
+            case "AmountTooLarge":
+              throw Error(`Amount Too Large: ${outcomes.summary.rejectReason.contents.amount.toString()}`, {
+                cause: outcomes.summary.rejectReason,
+              });
+            case "InvalidContractAddress": {
+              const contractAddress = outcomes.summary.rejectReason.contents;
+              throw Error(
+                `Invalid Contract Address: ${contractAddress.index.toString()}, ${contractAddress.subindex.toString()}`,
+                { cause: outcomes.summary.rejectReason },
+              );
+            }
+            case "RejectedReceive":
+              throw Error(`Rejected Receive: ${outcomes.summary.rejectReason.receiveName}`, {
+                cause: outcomes.summary.rejectReason,
+              });
+            default:
+              throw Error(`Unknown Reject Reason: ${outcomes.summary.rejectReason.tag}`, {
+                cause: outcomes.summary.rejectReason,
+              });
           }
-          case "RejectedReceive":
-            throw Error(`Rejected Receive: ${result.rejectReason.rejectReason}`, {
-              cause: result.rejectReason,
-            });
-          default:
-            throw Error(`Unknown Reject Reason: ${result.rejectReason.tag}`, { cause: result.rejectReason });
-        }
-    }
-  });
-
-  return outcomes;
+        default:
+          return outcomes;
+      }
+    default:
+      throw Error("Invalid Transaction Type");
+  }
 }
 
 /**
@@ -252,48 +256,47 @@ function serializeParams<T>(contractName: string, schema: Buffer, methodName: st
 function _wait(
   provider: WalletApi,
   txnHash: string,
-  res: (p: Record<string, TransactionSummary> | undefined) => void,
+  res: (p: BlockItemSummaryInBlock) => void,
   rej: (reason: any) => void,
   onStatusUpdate: (status: TransactionStatusEnum, txnHash: string) => void,
 ) {
   setTimeout(() => {
     provider
-      .getJsonRpcClient()
-      .getTransactionStatus(txnHash)
-      .then((txnStatus) => {
-        if (!txnStatus) {
+      .getGrpcClient()
+      .getBlockItemStatus(txnHash)
+      .then((s) => {
+        if (!s) {
           return rej("Transaction Status is null");
         }
-
-        // console.info(`txn : ${txnHash}, status: ${txnStatus?.status}`);
-        onStatusUpdate(txnStatus.status, txnHash);
-        if (txnStatus?.status === TransactionStatusEnum.Finalized) {
-          return res(txnStatus.outcomes);
+        onStatusUpdate(s.status, txnHash);
+        switch (s.status) {
+          case TransactionStatusEnum.Received:
+            _wait(provider, txnHash, res, rej, onStatusUpdate);
+            break;
+          case TransactionStatusEnum.Committed:
+            _wait(provider, txnHash, res, rej, onStatusUpdate);
+            break;
+          case TransactionStatusEnum.Finalized:
+            return res(s.outcome as BlockItemSummaryInBlock);
         }
-
-        _wait(provider, txnHash, res, rej, onStatusUpdate);
       })
       .catch((err) => rej(err));
   }, 1000);
 }
 
-function parseContractAddress(outcomes: Record<string, TransactionSummary>): ContractAddress {
-  for (const blockHash in outcomes) {
-    const res = outcomes[blockHash];
-
-    if (res.result.outcome === "success") {
-      for (const event of res.result.events) {
-        if (event.tag === "ContractInitialized") {
-          return {
-            index: toBigInt((event as any).address.index),
-            subindex: toBigInt((event as any).address.subindex),
-          };
-        }
+function parseContractAddress(outcomes: BlockItemSummaryInBlock): ContractAddress {
+  switch (outcomes.summary.type) {
+    case TransactionSummaryType.AccountTransaction:
+      switch (outcomes.summary.transactionType) {
+        case TransactionKindString.InitContract:
+          return outcomes.summary.contractInitialized.address;
+        default:
+          throw Error(`unable to parse Contract Address from input outcomes: Invalid Account Transaction Type`);
       }
-    }
+      break;
+    default:
+      throw Error(`unable to parse Contract Address from input outcomes: : Invalid Transaction Type`);
   }
-
-  throw Error(`unable to parse Contract Address from input outcomes`);
 }
 
 function toBigInt(num: bigint | number): bigint {

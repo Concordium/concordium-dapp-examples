@@ -1,7 +1,7 @@
 import { SmartContractParameters, WalletApi } from '@concordium/browser-wallet-api-helpers';
 import {
-    AccountAddress, ConcordiumGRPCClient, ContractAddress, deserializeReceiveReturnValue,
-    TransactionStatusEnum, TransactionSummary
+    AccountAddress, BlockItemSummaryInBlock, ConcordiumGRPCClient, ContractAddress,
+    deserializeReceiveReturnValue, TransactionStatusEnum
 } from '@concordium/web-sdk';
 
 import {
@@ -100,7 +100,7 @@ export async function add(
   maxContractExecutionEnergy = BigInt(9999),
   onStatusUpdate: (status: TransactionStatusEnum, txnHash: string) => void = (status, txnHash) =>
     console.log(`txn #${txnHash}, status:${status}`),
-): Promise<{ txnHash: string; outcomes: Record<string, TransactionSummary> }> {
+): Promise<{ txnHash: string; outcomes: BlockItemSummaryInBlock }> {
   return updateContract(
     provider,
     contractInfo,
@@ -152,7 +152,7 @@ export async function transfer({
   contractInfo: ContractInfo;
   maxContractExecutionEnergy?: bigint;
   onStatusUpdate?: (status: TransactionStatusEnum, txnHash: string) => void;
-}): Promise<{ txnHash: string; outcomes: Record<string, TransactionSummary> }> {
+}): Promise<{ txnHash: string; outcomes: BlockItemSummaryInBlock }> {
   const paramJson: TransferParams = {
     cis_contract_address: toParamContractAddress(nftContractAddress),
     token_id: tokenId,
