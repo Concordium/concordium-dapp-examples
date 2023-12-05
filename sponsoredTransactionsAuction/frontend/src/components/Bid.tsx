@@ -13,7 +13,7 @@ import {
     VERIFIER_URL,
 } from 'src/constants';
 import { WalletConnection, typeSchemaFromBase64 } from '@concordium/react-components';
-import { submitBid } from '../utils';
+import { submitBid } from '../writing_to_blockchain';
 
 interface ConnectionProps {
     grpcClient: ConcordiumGRPCClient | undefined;
@@ -168,6 +168,7 @@ export default function Bid(props: ConnectionProps) {
 
     const [expiryTime, setExpiryTime] = useState('');
     const [tokenIDAuction, setTokenIDAuction] = useState<string | undefined>(undefined);
+    const [showMessage, setShowMessage] = useState(false);
 
     type FormTypeGenerateSignature = {
         itemIndex: string;
@@ -189,6 +190,8 @@ export default function Bid(props: ConnectionProps) {
     async function onSubmitBid(data: FormTypeBid, accountValue: string | undefined) {
         setTxHash('');
         setTransactionError('');
+        setShowMessage(false);
+
         if (accountValue) {
             const tx = submitBid(
                 VERIFIER_URL,
@@ -204,6 +207,8 @@ export default function Bid(props: ConnectionProps) {
 
             tx.then((txHashReturned) => {
                 setTxHash(txHashReturned.tx_hash);
+                setShowMessage(true);
+
                 if (txHashReturned.tx_hash !== '') {
                     setSignature('');
 
@@ -305,10 +310,10 @@ export default function Bid(props: ConnectionProps) {
                     <div className="loadingText">{signature}</div>
                 </>
             )}
-            {signingError && <div style={{ color: 'red' }}>Error: {signingError}.</div>}
-            <br />
+            {signingError && <Alert variant="danger">Error: {signingError}.</Alert>}
+            <hr />
             <Form onSubmit={formBid.handleSubmit((data) => onSubmitBid(data, account))}>
-                <Form.Label>Step 4: Submit Sponsored Transaction</Form.Label>
+                <Form.Label>Step 5: Submit Sponsored Transaction</Form.Label>
 
                 <Form.Group className="mb-3 text-center">
                     <Form.Label>Signer</Form.Label>
@@ -325,6 +330,12 @@ export default function Bid(props: ConnectionProps) {
                     Submit Sponsored Transaction
                 </Button>
             </Form>
+            <br />
+            {showMessage && (
+                <Alert variant="info">
+                    The `Transaction status` was updated with the link to your transaction at the top of this page.
+                </Alert>
+            )}
         </>
     );
 }

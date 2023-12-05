@@ -2,15 +2,7 @@
 /* eslint-disable no-alert */
 /* eslint-disable consistent-return */
 import React, { useEffect, useState } from 'react';
-import JSONbig from 'json-bigint';
 import { Alert, Button } from 'react-bootstrap';
-import {
-    toBuffer,
-    serializeTypeValue,
-    deserializeTypeValue,
-    AccountAddress,
-    ConcordiumGRPCClient,
-} from '@concordium/web-sdk';
 import {
     useGrpcClient,
     WalletConnectionProps,
@@ -26,14 +18,8 @@ import AddItemToAuction from './components/AddItemToAuction';
 import ViewItem from './components/ViewItem';
 import Bid from './components/Bid';
 
-import {
-    SPONSORED_TX_CONTRACT_NAME,
-    NONCE_OF_PARAMETER_SCHEMA,
-    NONCE_OF_RETURN_VALUE_SCHEMA,
-    CONTRACT_SUB_INDEX,
-    BROWSER_WALLET,
-    REFRESH_INTERVAL,
-} from './constants';
+import { BROWSER_WALLET, REFRESH_INTERVAL } from './constants';
+import { getNonceOf, getPublicKey } from './reading_from_blockchain';
 
 const blackCardStyle = {
     backgroundColor: 'black',
@@ -80,56 +66,6 @@ const blackCardStyle = {
 //     margin: '7px 0px 7px 0px',
 //     padding: '10px 20px',
 // };
-
-async function getPublicKey(rpcClient: ConcordiumGRPCClient, account: string) {
-    const res = await rpcClient.getAccountInfo(new AccountAddress(account));
-    const publicKey = res?.accountCredentials[0].value.contents.credentialPublicKeys.keys[0].verifyKey;
-    return publicKey;
-}
-
-async function getNonceOf(rpcClient: ConcordiumGRPCClient, account: string) {
-    const param = serializeTypeValue(
-        {
-            queries: [
-                {
-                    account,
-                },
-            ],
-        },
-        toBuffer(NONCE_OF_PARAMETER_SCHEMA, 'base64')
-    );
-
-    const res = await rpcClient.invokeContract({
-        method: `${SPONSORED_TX_CONTRACT_NAME}.nonceOf`,
-        contract: { index: BigInt(Number(process.env.CIS2_TOKEN_CONTRACT_INDEX)), subindex: CONTRACT_SUB_INDEX },
-        parameter: param,
-    });
-
-    if (!res || res.tag === 'failure' || !res.returnValue) {
-        throw new Error(
-            `RPC call 'invokeContract' on method '${SPONSORED_TX_CONTRACT_NAME}.nonceOf' of contract '${
-                process.env.CIS2_TOKEN_CONTRACT_INDEX
-            }' failed. Response: ${JSONbig.stringify(res)}`
-        );
-    }
-
-    // eslint-disable-next-line  @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-    const returnValues: any[][] = deserializeTypeValue(
-        toBuffer(res.returnValue, 'hex'),
-        toBuffer(NONCE_OF_RETURN_VALUE_SCHEMA, 'base64')
-    );
-
-    if (returnValues === undefined) {
-        throw new Error(
-            `Deserializing the returnValue from the '${SPONSORED_TX_CONTRACT_NAME}.nonceOf' method of contract '${process.env.CIS2_TOKEN_CONTRACT_INDEX}' failed`
-        );
-    } else {
-        // Return next nonce of a user
-        return returnValues[0][0];
-    }
-}
 
 export default function SponsoredTransactions(props: WalletConnectionProps) {
     const { network, activeConnectorType, activeConnector, activeConnectorError, connectedAccounts, genesisHashes } =
@@ -251,16 +187,16 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                         <br />
                         <div> Your public key is: </div>
                         <div className="loadingText">{accountInfoPublicKey}</div>
-                        {publicKeyError && <div style={{ color: 'red' }}>Error: {publicKeyError}.</div>}
+                        {publicKeyError && <Alert variant="danger">Error: {publicKeyError}. </Alert>}
                         <br />
                         <div> Your next nonce is: </div>
                         <div className="loadingText">{nextNonce}</div>
-                        {nextNonceError && <div style={{ color: 'red' }}>Error: {nextNonceError}.</div>}
+                        {nextNonceError && <Alert variant="danger">Error: {nextNonceError}. </Alert>}
                     </>
                 )}
                 {genesisHash && genesisHash !== network.genesisHash && (
                     <p style={{ color: 'red' }}>
-                        Unexpected genesis hash: Please ensure that your wallet is connected to network{' '}
+                        Unexpected genesis hash: Please ensure that your wallet is connected to the network{' '}
                         <code>{network.name}</code>.
                     </p>
                 )}
@@ -269,7 +205,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                 <>
                     <hr />
                     <div>Transaction status{txHash === '' ? '' : ' (May take a moment to finalize)'}</div>
-                    {!txHash && transactionError && <div style={{ color: 'red' }}>Error: {transactionError}.</div>}
+                    {!txHash && transactionError && <Alert variant="danger">Error: {transactionError}. </Alert>}
                     {!txHash && !transactionError && <div className="loadingText">None</div>}
                     {txHash && (
                         <>
@@ -308,10 +244,11 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                         connection={connection}
                         setTxHash={setTxHash}
                         setTransactionError={setTransactionError}
+                        txHash={txHash}
+                        grpcClient={grpcClient}
                     />
                     <hr />
                     <ViewItem grpcClient={grpcClient} />
-
                     <hr />
                     <Bid
                         grpcClient={grpcClient}
@@ -322,7 +259,6 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                     />
                     <hr />
 
-                    <hr />
                     <div>
                         <br />
                         Version: {version} |{' '}
