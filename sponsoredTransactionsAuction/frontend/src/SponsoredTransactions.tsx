@@ -1,5 +1,3 @@
-/* eslint-disable no-console */
-/* eslint-disable no-alert */
 /* eslint-disable consistent-return */
 import React, { useEffect, useState } from 'react';
 import { Alert, Button } from 'react-bootstrap';
@@ -11,7 +9,6 @@ import {
     TESTNET,
     useWalletConnectorSelector,
 } from '@concordium/react-components';
-import { version } from '../package.json';
 
 import MintTokens from './components/MintTokens';
 import AddItemToAuction from './components/AddItemToAuction';
@@ -21,52 +18,7 @@ import Bid from './components/Bid';
 import { BROWSER_WALLET, REFRESH_INTERVAL } from './constants';
 import { getNonceOf, getPublicKey } from './reading_from_blockchain';
 import { AccountLink, TxHashLink } from './components/CCDScanLinks';
-
-const blackCardStyle = {
-    backgroundColor: 'black',
-    color: 'white',
-    width: '650px',
-    borderRadius: 10,
-    margin: '10px 0px 10px 0px',
-    padding: '10px 18px',
-    border: '1px solid #308274',
-};
-
-// const ButtonStyle = {
-//     color: 'white',
-//     borderRadius: 10,
-//     margin: '7px 0px 7px 0px',
-//     padding: '10px',
-//     width: '100%',
-//     border: '1px solid #26685D',
-//     backgroundColor: '#308274',
-//     cursor: 'pointer',
-//     fontWeight: 300,
-//     fontSize: '14px',
-// };
-
-// const ButtonStyleDisabled = {
-//     color: 'white',
-//     borderRadius: 10,
-//     margin: '7px 0px 7px 0px',
-//     padding: '10px',
-//     width: '100%',
-//     border: '1px solid #4B4A4A',
-//     backgroundColor: '#979797',
-//     cursor: 'pointer',
-//     fontWeight: 300,
-//     fontSize: '14px',
-// };
-
-// const InputFieldStyle = {
-//     backgroundColor: '#181817',
-//     color: 'white',
-//     borderRadius: 10,
-//     width: '100%',
-//     border: '1px solid #308274',
-//     margin: '7px 0px 7px 0px',
-//     padding: '10px 20px',
-// };
+import Footer from './components/Footer';
 
 export default function SponsoredTransactions(props: WalletConnectionProps) {
     const { network, activeConnectorType, activeConnector, activeConnectorError, connectedAccounts, genesisHashes } =
@@ -147,7 +99,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
     }, []);
 
     return (
-        <div style={blackCardStyle}>
+        <div className="blackCardStyle">
             <h2>Explore Sponsored Transactions</h2>
             <div>
                 {activeConnectorError && <Alert variant="danger">Connector Error: {activeConnectorError}.</Alert>}
@@ -184,10 +136,10 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                     </>
                 )}
                 {genesisHash && genesisHash !== network.genesisHash && (
-                    <p style={{ color: 'red' }}>
-                        Unexpected genesis hash: Please ensure that your wallet is connected to the network{' '}
+                    <Alert variant="danger">
+                        Error: Unexpected genesis hash: Please ensure that your wallet is connected to the network{' '}
                         <code>{network.name}</code>.
-                    </p>
+                    </Alert>
                 )}
             </div>
             {connection && account && accountInfoPublicKey && (
@@ -232,19 +184,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                     />
                     <hr />
 
-                    <div>
-                        <br />
-                        Version: {version} |{' '}
-                        <a
-                            style={{ color: 'white' }}
-                            href="https://developer.concordium.software/en/mainnet/smart-contracts/tutorials/sponsoredTransactions/index.html"
-                            target="_blank"
-                            rel="noreferrer"
-                        >
-                            Learn more about sponsored tx here
-                        </a>
-                        <br />
-                    </div>
+                    <Footer />
                 </>
             )}
         </div>

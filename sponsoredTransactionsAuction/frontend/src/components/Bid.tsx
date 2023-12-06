@@ -37,38 +37,6 @@ interface ItemState {
     token_id: string;
 }
 
-function clearInputFields() {
-    const operator = document.getElementById('operator') as HTMLTextAreaElement;
-    if (operator !== null) {
-        operator.value = '';
-    }
-
-    const from = document.getElementById('from') as HTMLTextAreaElement;
-    if (from !== null) {
-        from.value = '';
-    }
-
-    const to = document.getElementById('to') as HTMLTextAreaElement;
-    if (to !== null) {
-        to.value = '';
-    }
-
-    const tokenID = document.getElementById('tokenID') as HTMLTextAreaElement;
-    if (tokenID !== null) {
-        tokenID.value = '';
-    }
-
-    const nonce = document.getElementById('nonce') as HTMLTextAreaElement;
-    if (nonce !== null) {
-        nonce.value = '';
-    }
-
-    const signer = document.getElementById('signer') as HTMLTextAreaElement;
-    if (signer !== null) {
-        signer.value = '';
-    }
-}
-
 async function generateTransferMessage(
     setTokenIDAuction: (arg0: string) => void,
     grpcClient: ConcordiumGRPCClient | undefined,
@@ -210,10 +178,8 @@ export default function Bid(props: ConnectionProps) {
 
                 if (txHashReturned.tx_hash !== '') {
                     setSignature('');
-
-                    // setNonce('');
-                    // setSigner('');
-                    // clearInputFields();
+                    formGenerateSignature.reset();
+                    formBid.reset();
                 }
             })
                 .catch((err: Error) => setTransactionError((err as Error).message))
@@ -265,37 +231,46 @@ export default function Bid(props: ConnectionProps) {
     return (
         <>
             <Form onSubmit={formGenerateSignature.handleSubmit(onSubmit)}>
-                <Form.Label>Step 4: Generate signature</Form.Label>
+                <Form.Label className="h5">Step 4: Generate signature</Form.Label>
                 <Form.Group className="mb-3 text-center">
-                    <Form.Label>Amount of Cis2 tokens</Form.Label>
-                    <Form.Control {...formGenerateSignature.register('tokenAmount', { required: true })} />
+                    <Form.Label>Amount of Cis2 tokens (payment token)</Form.Label>
+                    <Form.Control
+                        type="number"
+                        {...formGenerateSignature.register('tokenAmount', {
+                            required: 'Token amount is required.',
+                            min: { value: 0, message: 'Number must be greater than or equal to 0.' },
+                        })}
+                    />
                     {formGenerateSignature.formState.errors.tokenAmount && (
-                        <Alert key="info" variant="info">
-                            {' '}
-                            Token amount is required{' '}
-                        </Alert>
+                        <Alert variant="danger">{formGenerateSignature.formState.errors.tokenAmount.message}</Alert>
                     )}
                     <Form.Text />
                 </Form.Group>
                 <Form.Group className="mb-3 text-center">
                     <Form.Label>Item Index</Form.Label>
-                    <Form.Control {...formGenerateSignature.register('itemIndex', { required: true })} />
+                    <Form.Control
+                        type="number"
+                        {...formGenerateSignature.register('itemIndex', {
+                            required: 'Item index is required.',
+                            min: { value: 0, message: 'Number must be greater than or equal to 0.' },
+                        })}
+                    />
                     {formGenerateSignature.formState.errors.itemIndex && (
-                        <Alert key="info" variant="info">
-                            {' '}
-                            Item Index is required{' '}
-                        </Alert>
+                        <Alert variant="danger">{formGenerateSignature.formState.errors.itemIndex.message}</Alert>
                     )}
                     <Form.Text />
                 </Form.Group>
                 <Form.Group className="mb-3 text-center">
                     <Form.Label>Nonce</Form.Label>
-                    <Form.Control {...formGenerateSignature.register('nonce', { required: true })} />
+                    <Form.Control
+                        type="number"
+                        {...formGenerateSignature.register('nonce', {
+                            required: 'Nonce is required.',
+                            min: { value: 0, message: 'Number must be greater than or equal to 0.' },
+                        })}
+                    />
                     {formGenerateSignature.formState.errors.nonce && (
-                        <Alert key="info" variant="info">
-                            {' '}
-                            Nonce is required{' '}
-                        </Alert>
+                        <Alert variant="danger">{formGenerateSignature.formState.errors.nonce.message}</Alert>
                     )}
                     <Form.Text />
                 </Form.Group>
@@ -314,23 +289,32 @@ export default function Bid(props: ConnectionProps) {
             {signingError && <Alert variant="danger">Error: {signingError}.</Alert>}
             <hr />
             <Form onSubmit={formBid.handleSubmit((data) => onSubmitBid(data, account))}>
-                <Form.Label>Step 5: Submit Sponsored Transaction</Form.Label>
+                <Form.Label className="h5">Step 5: Submit Sponsored Transaction</Form.Label>
 
                 <Form.Group className="mb-3 text-center">
                     <Form.Label>Signer</Form.Label>
-                    <Form.Control {...formBid.register('signer', { required: true })} />
+
+                    <Form.Control
+                        {...formBid.register('signer', {
+                            required: 'Signer is required.',
+                            pattern: {
+                                value: /^[1-9A-HJ-NP-Za-km-z]{50}$/,
+                                message:
+                                    'Please enter a valid account address. It is a base58 string with a fixed length of 50 characters.',
+                            },
+                        })}
+                    />
                     {formBid.formState.errors.signer && (
-                        <Alert key="info" variant="info">
-                            {' '}
-                            Signer is required{' '}
-                        </Alert>
+                        <Alert variant="danger">{formBid.formState.errors.signer.message}</Alert>
                     )}
+
                     <Form.Text />
                 </Form.Group>
-                <Button variant="primary" type="submit">
-                    Submit Sponsored Transaction
+                <Button disabled={!signature} variant={signature ? 'primary' : 'disabled'} type="submit">
+                    {signature ? 'Submit Sponsored Transaction' : 'Generate a signature in step 4 first'}
                 </Button>
             </Form>
+
             <br />
             {showMessage && (
                 <Alert variant="info">

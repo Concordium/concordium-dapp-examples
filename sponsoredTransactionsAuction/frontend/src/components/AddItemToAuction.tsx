@@ -104,27 +104,30 @@ export default function AddItemToAuction(props: ConnectionProps) {
     return (
         <>
             <Form onSubmit={form.handleSubmit(onSubmit)}>
-                <Form.Label>Step 2: Add item to auction</Form.Label>
+                <Form.Label className="h5">Step 2: Add item to auction</Form.Label>
                 <Form.Group className="mb-3 text-center">
-                    <Form.Label>Token ID</Form.Label>
-                    <Form.Control {...form.register('tokenID', { required: true })} />
+                    <Form.Label>Cis2 Token ID (payment token) in decimal</Form.Label>
+                    <Form.Control
+                        type="number"
+                        {...form.register('tokenID', {
+                            required: 'Token ID is required.',
+                            min: { value: 0, message: 'Number must be greater than or equal to 0.' },
+                            max: { value: 255, message: 'Number must be lower than or equal to 255.' },
+                        })}
+                    />
                     {form.formState.errors.tokenID && (
-                        <Alert key="info" variant="info">
-                            {' '}
-                            Token ID is required{' '}
-                        </Alert>
+                        <Alert variant="danger">{form.formState.errors.tokenID.message}</Alert>
                     )}
                     <Form.Text />
                 </Form.Group>
                 <Form.Group className=" mb-3 text-center">
                     <Form.Label>Name</Form.Label>
-                    <Form.Control {...form.register('name', { required: true })} />
-                    {form.formState.errors.name && (
-                        <Alert key="info" variant="info">
-                            {' '}
-                            Name is required{' '}
-                        </Alert>
-                    )}
+                    <Form.Control
+                        {...form.register('name', {
+                            required: 'Name is required.',
+                        })}
+                    />
+                    {form.formState.errors.name && <Alert variant="danger">{form.formState.errors.name.message}</Alert>}
                     <Form.Text />
                 </Form.Group>
                 <Button variant="primary" type="submit">

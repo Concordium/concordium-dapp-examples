@@ -1,5 +1,4 @@
-import { BrowserWalletConnector, ephemeralConnectorType, WalletConnectConnector } from '@concordium/react-components';
-import { SignClientTypes } from '@walletconnect/types';
+import { BrowserWalletConnector, ephemeralConnectorType } from '@concordium/react-components';
 import moment from 'moment';
 
 export const VERIFIER_URL = '/api';
@@ -36,18 +35,4 @@ export const MINT_PARAMETER_SCHEMA =
 export const ADD_ITEM_PARAMETER_SCHEMA =
     'FAAFAAAABAAAAG5hbWUWAgMAAABlbmQNBQAAAHN0YXJ0DQsAAABtaW5pbXVtX2JpZBslAAAACAAAAHRva2VuX2lkHQA=';
 
-const WALLET_CONNECT_PROJECT_ID = '76324905a70fe5c388bab46d3e0564dc';
-const WALLET_CONNECT_OPTS: SignClientTypes.Options = {
-    projectId: WALLET_CONNECT_PROJECT_ID,
-    metadata: {
-        name: 'sponsoredTxs',
-        description: 'Example dApp for sponsored txs.',
-        url: '#',
-        icons: ['https://walletconnect.com/walletconnect-logo.png'],
-    },
-};
-
 export const BROWSER_WALLET = ephemeralConnectorType(BrowserWalletConnector.create);
-export const WALLET_CONNECT = ephemeralConnectorType(
-    WalletConnectConnector.create.bind(undefined, WALLET_CONNECT_OPTS)
-);

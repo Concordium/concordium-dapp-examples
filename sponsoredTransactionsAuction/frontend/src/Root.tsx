@@ -9,7 +9,7 @@ import SponsoredTransactions from './SponsoredTransactions';
 export default function Root() {
     return (
         <div>
-            <main className="sponsoredTransactions">
+            <main>
                 <WithWalletConnector network={TESTNET}>
                     {(props) => <SponsoredTransactions {...props} />}
                 </WithWalletConnector>

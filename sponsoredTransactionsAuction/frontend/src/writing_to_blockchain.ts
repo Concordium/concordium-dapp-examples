@@ -131,7 +131,7 @@ export async function mint(connection: WalletConnection, account: string, tokenI
                     },
                     url: 'https://s3.eu-central-1.amazonaws.com/tokens.testnet.concordium.com/ft/wccd',
                 },
-                token_id: tokenId,
+                token_id: `0${Number(tokenId).toString(16)}`.slice(-2),
             },
             schema: typeSchemaFromBase64(MINT_PARAMETER_SCHEMA),
         }
@@ -160,7 +160,7 @@ export async function addItem(connection: WalletConnection, account: string, tok
                 end: '2050-01-01T12:00:00Z',
                 start: '2000-01-01T12:00:00Z',
                 minimum_bid: '0',
-                token_id: tokenId,
+                token_id: `0${Number(tokenId).toString(16)}`.slice(-2),
             },
             schema: typeSchemaFromBase64(ADD_ITEM_PARAMETER_SCHEMA),
         }
