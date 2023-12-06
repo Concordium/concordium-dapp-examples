@@ -1,20 +1,23 @@
-# Sponsored Transactions Web Application
+# Auction Sponsored Transactions Web Application
 
-The example project included in this repository serves as a working example of how to integrate sponsored transactions with smart contracts on the Concordium blockchain. This web app supports the following flows with the browser wallet:
+This front end interacts with the [sponsored-enabled-auction](https://github.com/Concordium/concordium-rust-smart-contracts/tree/main/examples/sponsored-tx-enabled-auction) and the [cis2-multi](https://github.com/Concordium/concordium-rust-smart-contracts/tree/main/examples/cis2-multi) smart contracts. Users can bid for the items in the auction contract by using a sponsored-transaction-enabled token as a payment method (no CCD required in the user's wallet). This web app supports the following flows with the browser wallet:
 
--   Compute the message of a sponsored updateOperator transaction => Sign it with the wallet => Submit the signature and some input parameters to the `/submitUpdateOperator` backend endpoint.
--   Mint an NFT to your wallet => Compute the message of a sponsored transfer transaction => Sign it with the wallet => Submit the signature and some input parameters to the `/submitTransfer` backend endpoint.
+- Mint payment tokens to your wallet.
+- Add an item to the auction contract.
+- View your item from the auction contract.
+- Bid for an item without sending a transaction from the browser wallet. In other words, without paying for the transaction fees from your browser wallet. This flow first computes the message hash for the bid transaction which you have to sign in your browser wallet. Then this signature is submit to the `/bid` backend endpoint.
 
-The backend creates a sponsored transaction and submits it to the `permit` function in the smart contract {index: SMART_CONTRACT_INDEX, subindex: 0}. You can look up the SMART_CONTRACT_INDEX in the `package.json` file. The backend returns the transaction hash to the frontend.
+The backend creates a sponsored transaction and submits it to the `permit` function in the smart contract {index: CIS2_TOKEN_CONTRACT_INDEX, subindex: 0}. You can look up the CIS2_TOKEN_CONTRACT_INDEX in the `package.json` file. The backend returns the transaction hash to the frontend.
 
-Note: Use the same smart contract index for the frontend and backend. In other words, use the SMART_CONTRACT_INDEX from the `package.json` file (frontend folder) when starting the backend server.
+Note: Use the same smart contract index for the frontend and backend. In other words, use the CIS2_TOKEN_CONTRACT_INDEX and AUCTION_CONTRACT_INDEX from the `package.json` file (frontend folder) when starting the backend server.
 
 Note:
-The smart contract code at {index: SMART_CONTRACT_INDEX, subindex: 0} can be found [here](https://github.com/Concordium/concordium-rust-smart-contracts/tree/main/examples/cis3-nft-sponsored-txs).
+The smart contract code at {index: CIS2_TOKEN_CONTRACT_INDEX, subindex: 0} can be found [here](https://github.com/Concordium/concordium-rust-smart-contracts/tree/main/examples/cis2-multi).
+The smart contract code at {index: AUCTION_CONTRACT_INDEX, subindex: 0} can be found [here](https://github.com/Concordium/concordium-rust-smart-contracts/tree/main/examples/sponsored-tx-enabled-auction).
 
 ## Prerequisites
 
--   Browser wallet extension must be installed in Google Chrome and the Concordium testnet needs to be selected or a mobile wallet needs to be set up that supports wallet connect in order to view smart contract details or submit transactions.
+-   Browser wallet extension must be installed in Google Chrome and the Concordium testnet needs to be selected.
 
 ## Running the sponsored txs example (without backend -> submitting the sponsored transaction to chain will fail)
 

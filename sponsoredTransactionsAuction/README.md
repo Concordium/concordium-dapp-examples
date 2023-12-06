@@ -13,7 +13,7 @@ or
 git clone --recurse-submodules https://github.com/Concordium/concordium-dapp-examples.git
 ```
 
-To set up the project locally, complete the steps in the `README.md` file in the `sponsoredTransactions/frontend` folder and then complete the steps in the `README.md` file in the `sponsoredTransactions/backend` folder.
+To set up the project locally, complete the steps in the `README.md` file in the `sponsoredTransactionsAuction/frontend` folder and then complete the steps in the `README.md` file in the `sponsoredTransactionsAuction/backend` folder.
 
 Alternatively, follow the steps to deploy the docker container below. This docker container will set up the frontend as well as the backend.
 
@@ -21,7 +21,7 @@ Alternatively, follow the steps to deploy the docker container below. This docke
 
 Add your `ACCOUNT_KEY_FILE` to the repository's root folder and run the dockerfile from the repository's root folder with the command:
 ```shell
-docker build -t sponsored_transactions -f sponsoredTransactions/Dockerfile .
+docker build -t sponsored_transactions -f sponsoredTransactionsAuction/Dockerfile .
 ```
 
 
@@ -44,7 +44,7 @@ Note: To get your `ACCOUNT_KEY_FILE` (the `3PXwJYYPf6fyVb4GJquxSZU8puxrHfzc4Xogd
 
 See the [docker file](./Dockerfile) to explore the environment variables that can set.
 
-Note: Use the same smart contract index for the frontend and backend. In other words, use the smart contract index from the `./frontend/package.json` file in the dockerfile.
+Note: Use the same smart contract indices for the frontend and backend. In other words, use the smart contract indices from the `./frontend/package.json` file in the dockerfile.
 
 
 
