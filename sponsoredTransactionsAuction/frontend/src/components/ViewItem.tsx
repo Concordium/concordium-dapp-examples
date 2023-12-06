@@ -43,15 +43,17 @@ export default function ViewItem(props: ConnectionProps) {
     return (
         <>
             <Form onSubmit={form.handleSubmit(onSubmit)}>
-                <Form.Label>Step 3: View your item</Form.Label>
+                <Form.Label className="h5">Step 3: View your item</Form.Label>
                 <Form.Group className="mb-3 text-center">
                     <Form.Label>Item Index</Form.Label>
-                    <Form.Control {...form.register('itemIndex', { required: true })} />
+                    <Form.Control
+                        {...form.register('itemIndex', {
+                            required: 'Item index is required.',
+                            min: { value: 0, message: 'Number must be greater than or equal to 0.' },
+                        })}
+                    />
                     {form.formState.errors.itemIndex && (
-                        <Alert key="info" variant="info">
-                            {' '}
-                            Item Index is required{' '}
-                        </Alert>
+                        <Alert variant="danger">{form.formState.errors.itemIndex.message}</Alert>
                     )}
                     <Form.Text />
                 </Form.Group>
@@ -60,13 +62,9 @@ export default function ViewItem(props: ConnectionProps) {
                 </Button>
             </Form>
 
-            {itemState && (
-                <div>
-                    Item state:
-                    <pre>{JSON.stringify(JSON.parse(itemState), undefined, 2)}</pre>
-                </div>
-            )}
+            {itemState && <pre className="leftAlign">{JSON.stringify(JSON.parse(itemState), undefined, 2)}</pre>}
             {itemStateError && <Alert variant="danger">Error: {itemStateError}.</Alert>}
+            <br />
         </>
     );
 }

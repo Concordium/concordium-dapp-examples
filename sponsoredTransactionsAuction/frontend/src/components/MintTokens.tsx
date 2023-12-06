@@ -42,26 +42,36 @@ export default function MintTokens(props: ConnectionProps) {
     return (
         <>
             <Form onSubmit={form.handleSubmit(onSubmit)}>
-                <Form.Label>Step 1: Mint 100 tokens to an account</Form.Label>
+                <Form.Label className="h5">Step 1: Mint 100 tokens to your account</Form.Label>
                 <Form.Group className="mb-3 text-center">
-                    <Form.Label>Token ID</Form.Label>
-                    <Form.Control {...form.register('tokenID', { required: true })} />
+                    <Form.Label>Cis2 Token ID (payment token) in decimal</Form.Label>
+                    <Form.Control
+                        type="number"
+                        {...form.register('tokenID', {
+                            required: 'Token ID is required.',
+                            min: { value: 0, message: 'Number must be greater than or equal to 0.' },
+                            max: { value: 255, message: 'Number must be lower than or equal to 255.' },
+                        })}
+                    />
                     {form.formState.errors.tokenID && (
-                        <Alert key="info" variant="info">
-                            {' '}
-                            Token ID is required{' '}
-                        </Alert>
+                        <Alert variant="danger">{form.formState.errors.tokenID.message}</Alert>
                     )}
                     <Form.Text />
                 </Form.Group>
                 <Form.Group className=" mb-3 text-center">
                     <Form.Label>To Address</Form.Label>
-                    <Form.Control {...form.register('toAddress', { required: true })} />
+                    <Form.Control
+                        {...form.register('toAddress', {
+                            required: 'To address is required.',
+                            pattern: {
+                                value: /^[1-9A-HJ-NP-Za-km-z]{50}$/,
+                                message:
+                                    'Please enter a valid account address. It is a base58 string with a fixed length of 50 characters.',
+                            },
+                        })}
+                    />
                     {form.formState.errors.toAddress && (
-                        <Alert key="info" variant="info">
-                            {' '}
-                            To Address is required{' '}
-                        </Alert>
+                        <Alert variant="danger">{form.formState.errors.toAddress.message}</Alert>
                     )}
                     <Form.Text />
                 </Form.Group>
