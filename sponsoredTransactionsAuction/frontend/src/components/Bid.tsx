@@ -207,7 +207,6 @@ export default function Bid(props: ConnectionProps) {
 
             tx.then((txHashReturned) => {
                 setTxHash(txHashReturned.tx_hash);
-                setShowMessage(true);
 
                 if (txHashReturned.tx_hash !== '') {
                     setSignature('');
@@ -216,7 +215,9 @@ export default function Bid(props: ConnectionProps) {
                     // setSigner('');
                     // clearInputFields();
                 }
-            }).catch((err: Error) => setTransactionError((err as Error).message));
+            })
+                .catch((err: Error) => setTransactionError((err as Error).message))
+                .finally(() => setShowMessage(true));
         }
     }
 
@@ -333,7 +334,8 @@ export default function Bid(props: ConnectionProps) {
             <br />
             {showMessage && (
                 <Alert variant="info">
-                    The `Transaction status` was updated with the link to your transaction at the top of this page.
+                    The `Transaction status` at the top of this page was updated. It displays the transaction hash link
+                    (or an error if one occured).
                 </Alert>
             )}
         </>

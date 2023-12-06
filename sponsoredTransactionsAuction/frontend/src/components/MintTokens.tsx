@@ -33,10 +33,9 @@ export default function MintTokens(props: ConnectionProps) {
 
         if (connection && account) {
             const tx = mint(connection, account, data.tokenID, data.toAddress);
-            tx.then((hash) => {
-                setTxHash(hash);
-                setShowMessage(true);
-            }).catch((err: Error) => setTransactionError((err as Error).message));
+            tx.then(setTxHash)
+                .catch((err: Error) => setTransactionError((err as Error).message))
+                .finally(() => setShowMessage(true));
         }
     }
 
@@ -73,7 +72,8 @@ export default function MintTokens(props: ConnectionProps) {
             <br />
             {showMessage && (
                 <Alert variant="info">
-                    The `Transaction status` was updated with the link to your transaction at the top of this page.
+                    The `Transaction status` at the top of this page was updated. It displays the transaction hash link
+                    (or an error if one occured).
                 </Alert>
             )}
         </>
