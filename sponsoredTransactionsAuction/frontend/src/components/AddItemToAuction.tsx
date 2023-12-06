@@ -53,10 +53,9 @@ export default function AddItemToAuction(props: ConnectionProps) {
 
         if (account) {
             const tx = addItem(connection, account, data.tokenID, data.name);
-            tx.then((hash) => {
-                setTxHash(hash);
-                setShowMessage(true);
-            }).catch((err: Error) => setTransactionError((err as Error).message));
+            tx.then(setTxHash)
+                .catch((err: Error) => setTransactionError((err as Error).message))
+                .finally(() => setShowMessage(true));
         }
     }
 
@@ -136,7 +135,13 @@ export default function AddItemToAuction(props: ConnectionProps) {
             <br />
 
             {showMessage && (
-                <Alert variant="info">You will see the item index below after the transaction is finalized.</Alert>
+                <>
+                    <Alert variant="info">
+                        The `Transaction status` at the top of this page was updated. It displays the transaction hash
+                        link (or an error if one occured).
+                    </Alert>
+                    <Alert variant="info">You will see the item index below after the transaction is finalized.</Alert>
+                </>
             )}
             {itemIndex && <Alert variant="info">Item index: {itemIndex}</Alert>}
             {itemIndexError && <Alert variant="danger">Error: {itemIndexError}</Alert>}

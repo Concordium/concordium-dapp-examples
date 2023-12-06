@@ -20,6 +20,7 @@ import Bid from './components/Bid';
 
 import { BROWSER_WALLET, REFRESH_INTERVAL } from './constants';
 import { getNonceOf, getPublicKey } from './reading_from_blockchain';
+import { AccountLink, TxHashLink } from './components/CCDScanLinks';
 
 const blackCardStyle = {
     backgroundColor: 'black',
@@ -170,19 +171,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                 {account && (
                     <>
                         <div className="text">Connected to</div>
-                        <button
-                            className="link"
-                            type="button"
-                            onClick={() => {
-                                window.open(
-                                    `https://testnet.ccdscan.io/?dcount=1&dentity=account&daddress=${account}`,
-                                    '_blank',
-                                    'noopener,noreferrer'
-                                );
-                            }}
-                        >
-                            {account}
-                        </button>
+                        <AccountLink account={account} />
                         <br />
                         <br />
                         <div> Your public key is: </div>
@@ -205,26 +194,10 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                 <>
                     <hr />
                     <div>Transaction status{txHash === '' ? '' : ' (May take a moment to finalize)'}</div>
-                    {!txHash && transactionError && <Alert variant="danger">Error: {transactionError}. </Alert>}
+                    {txHash && <TxHashLink txHash={txHash} />}
                     {!txHash && !transactionError && <div className="loadingText">None</div>}
-                    {txHash && (
-                        <>
-                            <button
-                                className="link"
-                                type="button"
-                                onClick={() => {
-                                    window.open(
-                                        `https://testnet.ccdscan.io/?dcount=1&dentity=transaction&dhash=${txHash}`,
-                                        '_blank',
-                                        'noopener,noreferrer'
-                                    );
-                                }}
-                            >
-                                {txHash}
-                            </button>
-                            <br />
-                        </>
-                    )}
+                    {!txHash && transactionError && <Alert variant="danger">Error: {transactionError}. </Alert>}
+                    <br />
                     <hr />
                 </>
             )}
