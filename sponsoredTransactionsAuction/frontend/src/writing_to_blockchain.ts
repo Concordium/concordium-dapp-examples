@@ -8,8 +8,9 @@ import {
     AUCTION_CONTRACT_NAME,
 } from './constants';
 
-/**
- * Send bidding signature to backend.
+/*
+ * This function sends the bidding signature to back end and other parameters.
+ * The back end will then submit the sponsored transaction on behalf of the user.
  */
 export async function submitBid(
     backend: string,
@@ -48,8 +49,8 @@ export async function submitBid(
     throw new Error('Unable to submit bid');
 }
 
-/**
- * Action for minting a token to the an account.
+/*
+ * This function submits a transaction to mint/airdrop tokens to an account.
  */
 export async function mint(connection: WalletConnection, account: string, tokenId: string, to: string) {
     return connection.signAndSendTransaction(
@@ -80,8 +81,8 @@ export async function mint(connection: WalletConnection, account: string, tokenI
     );
 }
 
-/**
- * Action for adding an item to an auction.
+/*
+ * This function submits a transaction to add an item to the auction contract.
  */
 export async function addItem(connection: WalletConnection, account: string, tokenId: string, name: string) {
     return connection.signAndSendTransaction(

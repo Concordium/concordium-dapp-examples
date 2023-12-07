@@ -16,6 +16,9 @@ import {
     NONCE_OF_RETURN_VALUE_SCHEMA,
 } from './constants';
 
+/*
+ * This function views an item from the auction contract.
+ */
 export async function viewItemState(rpcClient: ConcordiumGRPCClient, itenIndex: string) {
     const param = serializeTypeValue(Number(itenIndex), toBuffer(VIEW_ITEM_PARAMETER_SCHEMA, 'base64'));
 
@@ -48,12 +51,19 @@ export async function viewItemState(rpcClient: ConcordiumGRPCClient, itenIndex: 
     }
 }
 
+/*
+ * This function gets the public key of an account.
+ * This function works with a wallet account that has just one public-private key pair in its two-level key map.
+ */
 export async function getPublicKey(rpcClient: ConcordiumGRPCClient, account: string) {
     const res = await rpcClient.getAccountInfo(new AccountAddress(account));
     const publicKey = res?.accountCredentials[0].value.contents.credentialPublicKeys.keys[0].verifyKey;
     return publicKey;
 }
 
+/*
+ * This function gets the current nonce of an account from the sponsored enabled token contract.
+ */
 export async function getNonceOf(rpcClient: ConcordiumGRPCClient, account: string) {
     const param = serializeTypeValue(
         {

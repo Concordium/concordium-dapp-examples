@@ -1,6 +1,7 @@
 /* eslint-disable consistent-return */
 import React, { useEffect, useState } from 'react';
 import { Alert, Button } from 'react-bootstrap';
+
 import {
     useGrpcClient,
     WalletConnectionProps,
@@ -14,12 +15,16 @@ import MintTokens from './components/MintTokens';
 import AddItemToAuction from './components/AddItemToAuction';
 import ViewItem from './components/ViewItem';
 import Bid from './components/Bid';
-
-import { BROWSER_WALLET, REFRESH_INTERVAL } from './constants';
-import { getNonceOf, getPublicKey } from './reading_from_blockchain';
 import { AccountLink, TxHashLink } from './components/CCDScanLinks';
 import Footer from './components/Footer';
 
+import { BROWSER_WALLET, REFRESH_INTERVAL } from './constants';
+import { getNonceOf, getPublicKey } from './reading_from_blockchain';
+
+/*
+ * The main component that manages the wallet connection.
+ * It imports and displays the four components `MintTokens`, `AddItemToAuction`, `ViewItem`, and `Bid`.
+ */
 export default function SponsoredTransactions(props: WalletConnectionProps) {
     const { network, activeConnectorType, activeConnector, activeConnectorError, connectedAccounts, genesisHashes } =
         props;
@@ -32,16 +37,16 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
     const grpcClient = useGrpcClient(TESTNET);
 
     const [publicKeyError, setPublicKeyError] = useState<undefined | string>(undefined);
+    const [publicKey, setPublicKey] = useState<string | undefined>(undefined);
+
     const [nextNonceError, setNextNonceError] = useState<undefined | string>(undefined);
-
     const [nextNonce, setNextNonce] = useState<number>(0);
-    const [accountInfoPublicKey, setAccountInfoPublicKey] = useState<string | undefined>(undefined);
 
-    const [txHash, setTxHash] = useState('');
+    const [txHash, setTxHash] = useState<undefined | string>(undefined);
     const [transactionError, setTransactionError] = useState<string | undefined>(undefined);
 
     useEffect(() => {
-        // Refresh next nonce periodically.
+        // Refresh the next nonce value periodically.
         if (grpcClient && account) {
             const interval = setInterval(() => {
                 getNonceOf(grpcClient, account)
@@ -61,7 +66,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
     }, [grpcClient, account]);
 
     useEffect(() => {
-        // Get next nonce record from smart contract.
+        // Get the next nonce record from the smart contract.
         if (grpcClient && account) {
             getNonceOf(grpcClient, account)
                 .then((nonceValue) => {
@@ -78,18 +83,18 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
     }, [grpcClient, account]);
 
     useEffect(() => {
-        // Get publicKey record from chain.
+        // Get the publicKey record of an account from the chain.
         if (grpcClient && account) {
             getPublicKey(grpcClient, account)
-                .then((publicKey) => {
-                    if (publicKey !== undefined) {
-                        setAccountInfoPublicKey(publicKey);
+                .then((publicKeyValue) => {
+                    if (publicKeyValue !== undefined) {
+                        setPublicKey(publicKeyValue);
                     }
                     setPublicKeyError(undefined);
                 })
                 .catch((e) => {
                     setPublicKeyError((e as Error).message);
-                    setAccountInfoPublicKey(undefined);
+                    setPublicKey(undefined);
                 });
         }
     }, [grpcClient, account]);
@@ -127,7 +132,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                         <br />
                         <br />
                         <div> Your public key is: </div>
-                        <div className="loadingText">{accountInfoPublicKey}</div>
+                        <div className="loadingText">{publicKey}</div>
                         {publicKeyError && <Alert variant="danger">Error: {publicKeyError}. </Alert>}
                         <br />
                         <div> Your next nonce is: </div>
@@ -142,7 +147,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                     </Alert>
                 )}
             </div>
-            {connection && account && accountInfoPublicKey && (
+            {connection && account && publicKey && (
                 <>
                     <hr />
                     <div>Transaction status{txHash === '' ? '' : ' (May take a moment to finalize)'}</div>

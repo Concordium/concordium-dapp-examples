@@ -6,14 +6,15 @@ import { WalletConnection } from '@concordium/react-components';
 import { mint } from 'src/writing_to_blockchain';
 
 interface ConnectionProps {
-    setTxHash: (hash: string) => void;
-    setTransactionError: (error: string) => void;
+    setTxHash: (hash: string | undefined) => void;
+    setTransactionError: (error: string | undefined) => void;
     account: string | undefined;
     connection: WalletConnection;
 }
 
-/* A component that manages the input fields and corresponding state to update a smart contract instance on the chain.
- * This components creates an `Update` transaction.
+/*
+ * A component that manages the input fields and corresponding state to mint/airdrop some cis2 tokens to the user.
+ * This component creates an `Update` transaction.
  */
 export default function MintTokens(props: ConnectionProps) {
     const { account, connection, setTxHash, setTransactionError } = props;
@@ -27,8 +28,8 @@ export default function MintTokens(props: ConnectionProps) {
     const [showMessage, setShowMessage] = useState(false);
 
     function onSubmit(data: FormType) {
-        setTxHash('');
-        setTransactionError('');
+        setTxHash(undefined);
+        setTransactionError(undefined);
         setShowMessage(false);
 
         if (connection && account) {
@@ -83,7 +84,7 @@ export default function MintTokens(props: ConnectionProps) {
             {showMessage && (
                 <Alert variant="info">
                     The `Transaction status` at the top of this page was updated. It displays the transaction hash link
-                    (or an error if one occured).
+                    (or an error if one occurred).
                 </Alert>
             )}
         </>
