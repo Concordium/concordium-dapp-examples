@@ -4,16 +4,16 @@ ARG rust_base_image=rust:1.65
 FROM ${node_base_image} AS frontend
 
 WORKDIR /app
-COPY ./sponsoredTransactions/frontend ./
+COPY ./sponsoredTransactionsAuction/frontend ./
 
 RUN yarn && yarn cache clean
 RUN yarn build
 
 FROM ${rust_base_image} AS backend
 
-WORKDIR /backend
+WORKDIR /backend/app
 COPY ./deps/concordium-rust-sdk /deps/concordium-rust-sdk
-COPY ./sponsoredTransactions/backend ./
+COPY ./sponsoredTransactionsAuction/backend ./
 
 RUN cargo build --release
 
@@ -23,13 +23,14 @@ WORKDIR /build
 ENV PORT=8080
 ENV NODE=http://node.testnet.concordium.com:20000
 ENV LOG_LEVEL=info
-ENV SMART_CONTRACT_INDEX=6372
+ENV CIS2_TOKEN_CONTRACT_INDEX=7370
+ENV AUCTION_CONTRACT_INDEX=7415
 
 ENV ACCOUNT_KEY_FILE=/KEY_FILE
 
-COPY --from=backend ./backend/target/release/sponsored-transaction-backend ./main
+COPY --from=backend ./backend/app/target/release/sponsored-transaction-backend ./main
 COPY --from=frontend ./app/dist ./public
 
 RUN chmod +x ./main
 
-CMD ./main --node "${NODE}" --port "${PORT}" --account "${ACCOUNT_KEY_FILE}" --smart-contract-index "${SMART_CONTRACT_INDEX}" --log-level "${LOG_LEVEL}" --public-folder public
+CMD ./main --node "${NODE}" --port "${PORT}" --account "${ACCOUNT_KEY_FILE}" --cis2-token-smart-contract-index "${CIS2_TOKEN_CONTRACT_INDEX}" --auction-smart-contract-index "${AUCTION_CONTRACT_INDEX}" --log-level "${LOG_LEVEL}" --public-folder public
