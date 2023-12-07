@@ -4,7 +4,7 @@
 pipeline {
     agent any
     environment {
-        image_repo = "concordium/dapp-sponsored-txs"
+        image_repo = "concordium/dapp-auction-sponsored-txs"
         image_name = "${image_repo}:${image_tag}"
     }
     stages {
@@ -26,7 +26,7 @@ pipeline {
                       --label build_image="${build_image}" \
                       --tag="${image_name}" \
                       --pull \
-                      --file sponsoredTransactions/Dockerfile \
+                      --file sponsoredTransactionsAuction/Dockerfile \
                       .
                     docker push "${image_name}"
                 '''.stripIndent()

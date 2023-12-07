@@ -31,14 +31,14 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
     });
     const grpcClient = useGrpcClient(TESTNET);
 
-    const [publicKeyError, setPublicKeyError] = useState('');
-    const [nextNonceError, setNextNonceError] = useState('');
+    const [publicKeyError, setPublicKeyError] = useState<undefined | string>(undefined);
+    const [nextNonceError, setNextNonceError] = useState<undefined | string>(undefined);
 
     const [nextNonce, setNextNonce] = useState<number>(0);
-    const [accountInfoPublicKey, setAccountInfoPublicKey] = useState('');
+    const [accountInfoPublicKey, setAccountInfoPublicKey] = useState<string | undefined>(undefined);
 
     const [txHash, setTxHash] = useState('');
-    const [transactionError, setTransactionError] = useState('');
+    const [transactionError, setTransactionError] = useState<string | undefined>(undefined);
 
     useEffect(() => {
         // Refresh next nonce periodically.
@@ -49,7 +49,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                         if (nonceValue !== undefined) {
                             setNextNonce(nonceValue);
                         }
-                        setNextNonceError('');
+                        setNextNonceError(undefined);
                     })
                     .catch((e) => {
                         setNextNonceError((e as Error).message);
@@ -68,7 +68,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                     if (nonceValue !== undefined) {
                         setNextNonce(nonceValue);
                     }
-                    setNextNonceError('');
+                    setNextNonceError(undefined);
                 })
                 .catch((e) => {
                     setNextNonceError((e as Error).message);
@@ -85,11 +85,11 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                     if (publicKey !== undefined) {
                         setAccountInfoPublicKey(publicKey);
                     }
-                    setPublicKeyError('');
+                    setPublicKeyError(undefined);
                 })
                 .catch((e) => {
                     setPublicKeyError((e as Error).message);
-                    setAccountInfoPublicKey('');
+                    setAccountInfoPublicKey(undefined);
                 });
         }
     }, [grpcClient, account]);

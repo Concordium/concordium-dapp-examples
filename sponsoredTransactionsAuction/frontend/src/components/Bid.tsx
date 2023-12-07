@@ -1,4 +1,3 @@
-/* eslint-disable no-alert */
 import React, { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { Alert, Button, Form } from 'react-bootstrap';
@@ -15,17 +14,6 @@ import {
 import { WalletConnection, typeSchemaFromBase64 } from '@concordium/react-components';
 import { submitBid } from '../writing_to_blockchain';
 
-interface ConnectionProps {
-    grpcClient: ConcordiumGRPCClient | undefined;
-    account: string | undefined;
-    connection: WalletConnection;
-    setTxHash: (hash: string) => void;
-    setTransactionError: (error: string) => void;
-}
-
-/**
- * Send bidding signature to backend.
- */
 interface ItemState {
     auction_state: object;
     creator: AccountAddress;
@@ -37,36 +25,18 @@ interface ItemState {
     token_id: string;
 }
 
+/**
+ * Send bidding signature to backend.
+ */
 async function generateTransferMessage(
     setTokenIDAuction: (arg0: string) => void,
-    grpcClient: ConcordiumGRPCClient | undefined,
+    grpcClient: ConcordiumGRPCClient,
     expiryTimeSignature: string,
     account: string,
     nonce: string,
     amount: string | undefined,
-    itemIndexAuction: string | undefined
+    itemIndexAuction: string
 ) {
-    if (amount === undefined) {
-        alert('Insert an amount.');
-        return '';
-    }
-
-    // eslint-disable-next-line no-restricted-globals
-    if (isNaN(Number(nonce))) {
-        alert('Your nonce needs to be a number.');
-        return '';
-    }
-
-    if (itemIndexAuction === undefined) {
-        alert('Insert a itemIndexAuction.');
-        return '';
-    }
-
-    if (grpcClient === undefined) {
-        alert('grpcClient undefined.');
-        return '';
-    }
-
     try {
         const returnValue = await viewItemState(grpcClient, itemIndexAuction);
 
@@ -119,10 +89,16 @@ async function generateTransferMessage(
 
         return serializedMessage;
     } catch (error) {
-        console.log(error);
-        alert(error);
-        return '';
+        throw new Error(`Generating transfer message failed. Orginal error: ${error}`);
     }
+}
+
+interface ConnectionProps {
+    grpcClient: ConcordiumGRPCClient | undefined;
+    account: string | undefined;
+    connection: WalletConnection;
+    setTxHash: (hash: string) => void;
+    setTransactionError: (error: string) => void;
 }
 
 /* A component that manages the input fields and corresponding state to update a smart contract instance on the chain.
@@ -131,8 +107,8 @@ async function generateTransferMessage(
 export default function Bid(props: ConnectionProps) {
     const { grpcClient, account, connection, setTxHash, setTransactionError } = props;
 
-    const [signature, setSignature] = useState('');
-    const [signingError, setSigningError] = useState('');
+    const [signature, setSignature] = useState<undefined | string>(undefined);
+    const [signingError, setSigningError] = useState<undefined | string>(undefined);
 
     const [expiryTime, setExpiryTime] = useState('');
     const [tokenIDAuction, setTokenIDAuction] = useState<string | undefined>(undefined);
@@ -155,41 +131,9 @@ export default function Bid(props: ConnectionProps) {
     };
     const formBid = useForm<FormTypeBid>({ mode: 'all' });
 
-    async function onSubmitBid(data: FormTypeBid, accountValue: string | undefined) {
-        setTxHash('');
-        setTransactionError('');
-        setShowMessage(false);
-
-        if (accountValue) {
-            const tx = submitBid(
-                VERIFIER_URL,
-                data.signer,
-                nonce,
-                signature,
-                expiryTime,
-                tokenIDAuction,
-                accountValue,
-                tokenAmount,
-                itemIndex
-            );
-
-            tx.then((txHashReturned) => {
-                setTxHash(txHashReturned.tx_hash);
-
-                if (txHashReturned.tx_hash !== '') {
-                    setSignature('');
-                    formGenerateSignature.reset();
-                    formBid.reset();
-                }
-            })
-                .catch((err: Error) => setTransactionError((err as Error).message))
-                .finally(() => setShowMessage(true));
-        }
-    }
-
-    async function onSubmit(data: FormTypeGenerateSignature) {
-        setSigningError('');
-        setSignature('');
+    async function onSubmitSigning(data: FormTypeGenerateSignature) {
+        setSigningError(undefined);
+        setSignature(undefined);
 
         // Signatures should expire in one day. Add 1 day to the current time.
         const date = new Date();
@@ -199,38 +143,65 @@ export default function Bid(props: ConnectionProps) {
         const expiryTimeSignature = date.toISOString();
         setExpiryTime(expiryTimeSignature);
 
-        if (account) {
-            const serializedMessage = await generateTransferMessage(
-                setTokenIDAuction,
-                grpcClient,
-                expiryTimeSignature,
-                account,
-                data.nonce,
-                data.tokenAmount,
-                data.itemIndex
-            );
+        if (account && grpcClient) {
+            try {
+                const serializedMessage = await generateTransferMessage(
+                    setTokenIDAuction,
+                    grpcClient,
+                    expiryTimeSignature,
+                    account,
+                    data.nonce,
+                    data.tokenAmount,
+                    data.itemIndex
+                );
 
-            if (serializedMessage !== '') {
-                const promise = connection.signMessage(account, {
+                const permitSignature = await connection.signMessage(account, {
                     type: 'BinaryMessage',
                     value: serializedMessage,
                     schema: typeSchemaFromBase64(SERIALIZATION_HELPER_SCHEMA_PERMIT_MESSAGE),
                 });
 
-                promise
-                    .then((permitSignature) => {
-                        setSignature(permitSignature[0][0]);
-                    })
-                    .catch((err: Error) => setSigningError((err as Error).message));
-            } else {
-                setSigningError('Serialization Error');
+                setSignature(permitSignature[0][0]);
+            } catch (err) {
+                setSigningError((err as Error).message);
             }
         }
     }
 
+    async function onSubmitBid(data: FormTypeBid, accountAddress: string | undefined) {
+        setTxHash('');
+        setTransactionError('');
+        setShowMessage(false);
+
+        if (accountAddress && signature) {
+            const tx = submitBid(
+                VERIFIER_URL,
+                data.signer,
+                nonce,
+                signature,
+                expiryTime,
+                tokenIDAuction,
+                accountAddress,
+                tokenAmount,
+                itemIndex
+            );
+
+            tx.then((txHashReturned) => {
+                setTxHash(txHashReturned.tx_hash);
+
+                if (txHashReturned.tx_hash !== '') {
+                    setSignature(undefined);
+                    formGenerateSignature.reset();
+                    formBid.reset();
+                }
+            })
+                .catch((err: Error) => setTransactionError((err as Error).message))
+                .finally(() => setShowMessage(true));
+        }
+    }
     return (
         <>
-            <Form onSubmit={formGenerateSignature.handleSubmit(onSubmit)}>
+            <Form onSubmit={formGenerateSignature.handleSubmit(onSubmitSigning)}>
                 <Form.Label className="h5">Step 4: Generate signature</Form.Label>
                 <Form.Group className="mb-3 text-center">
                     <Form.Label>Amount of Cis2 tokens (payment token)</Form.Label>

@@ -1,5 +1,3 @@
-/* eslint-disable consistent-return */
-/* eslint-disable no-alert */
 import {
     toBuffer,
     deserializeTypeValue,
@@ -35,9 +33,6 @@ export async function viewItemState(rpcClient: ConcordiumGRPCClient, itenIndex: 
         );
     }
 
-    // eslint-disable-next-line  @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    // eslint-disable-next-line  @typescript-eslint/no-explicit-any
     const returnValues = deserializeTypeValue(
         toBuffer(res.returnValue, 'hex'),
         toBuffer(VIEW_ITEM_RETURN_VALUE_SCHEMA, 'base64')
@@ -85,13 +80,10 @@ export async function getNonceOf(rpcClient: ConcordiumGRPCClient, account: strin
         );
     }
 
-    // eslint-disable-next-line  @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-    const returnValues: any[][] = deserializeTypeValue(
+    const returnValues = deserializeTypeValue(
         toBuffer(res.returnValue, 'hex'),
         toBuffer(NONCE_OF_RETURN_VALUE_SCHEMA, 'base64')
-    );
+    ) as number[][];
 
     if (returnValues === undefined) {
         throw new Error(

@@ -15,7 +15,7 @@ interface ConnectionProps {
 export default function ViewItem(props: ConnectionProps) {
     const { grpcClient } = props;
 
-    const [itemState, setItemState] = useState('');
+    const [itemState, setItemState] = useState<undefined|string>(undefined);
     const [itemStateError, setItemStateError] = useState<string | undefined>(undefined);
 
     type FormType = {
@@ -25,7 +25,7 @@ export default function ViewItem(props: ConnectionProps) {
 
     function onSubmit(data: FormType) {
         setItemStateError(undefined);
-        setItemState('');
+        setItemState(undefined);
 
         if (grpcClient) {
             viewItemState(grpcClient, data.itemIndex)
