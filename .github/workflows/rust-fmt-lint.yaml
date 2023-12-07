@@ -26,6 +26,7 @@ jobs:
         crates:
           - gallery/verifier/Cargo.toml
           - sponsoredTransactions/backend/Cargo.toml
+          - sponsoredTransactionsAuction/backend/Cargo.toml
 
     steps:
       - name: Checkout
@@ -54,6 +55,7 @@ jobs:
         crates:
           - gallery/verifier/Cargo.toml
           - sponsoredTransactions/backend/Cargo.toml
+          - sponsoredTransactionsAuction/backend/Cargo.toml
 
     steps:
       - name: Checkout
