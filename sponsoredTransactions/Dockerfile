@@ -11,7 +11,7 @@ RUN yarn build
 
 FROM ${rust_base_image} AS backend
 
-WORKDIR /backend
+WORKDIR /backend/app
 COPY ./deps/concordium-rust-sdk /deps/concordium-rust-sdk
 COPY ./sponsoredTransactions/backend ./
 
@@ -27,7 +27,7 @@ ENV SMART_CONTRACT_INDEX=6372
 
 ENV ACCOUNT_KEY_FILE=/KEY_FILE
 
-COPY --from=backend ./backend/target/release/sponsored-transaction-backend ./main
+COPY --from=backend ./backend/app/target/release/sponsored-transaction-backend ./main
 COPY --from=frontend ./app/dist ./public
 
 RUN chmod +x ./main
