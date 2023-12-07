@@ -2,7 +2,7 @@ import React from 'react';
 
 import { version } from '../../package.json';
 
-/**
+/*
  * A component that displays a link to the developer documentation and the version of the app.
  */
 export default function Footer() {

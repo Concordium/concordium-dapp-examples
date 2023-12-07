@@ -3,8 +3,6 @@ import { useForm } from 'react-hook-form';
 import { Alert, Button, Form } from 'react-bootstrap';
 
 import { WalletConnection, useGrpcClient } from '@concordium/react-components';
-import { addItem } from 'src/writing_to_blockchain';
-
 import {
     TransactionKindString,
     TransactionSummaryType,
@@ -13,12 +11,14 @@ import {
     toBuffer,
     deserializeTypeValue,
 } from '@concordium/web-sdk';
+
 import { EVENT_SCHEMA, REFRESH_INTERVAL } from 'src/constants';
+import { addItem } from 'src/writing_to_blockchain';
 
 interface ConnectionProps {
-    setTxHash: (hash: string) => void;
-    setTransactionError: (error: string) => void;
-    txHash: string;
+    setTxHash: (hash: string | undefined) => void;
+    setTransactionError: (error: string | undefined) => void;
+    txHash: string | undefined;
     account: string | undefined;
     connection: WalletConnection;
     grpcClient: ConcordiumGRPCClient | undefined;
@@ -30,8 +30,9 @@ interface Event {
     };
 }
 
-/* A component that manages the input fields and corresponding state to update a smart contract instance on the chain.
- * This components creates an `Update` transaction.
+/*
+ * A component that manages the input fields and corresponding state to add an item to the auction contract.
+ * This component creates an `Update` transaction.
  */
 export default function AddItemToAuction(props: ConnectionProps) {
     const { account, connection, grpcClient, setTxHash, txHash, setTransactionError } = props;
@@ -47,8 +48,8 @@ export default function AddItemToAuction(props: ConnectionProps) {
     const [showMessage, setShowMessage] = useState(false);
 
     function onSubmit(data: FormType) {
-        setTxHash('');
-        setTransactionError('');
+        setTxHash(undefined);
+        setTransactionError(undefined);
         setShowMessage(false);
 
         if (account) {
@@ -59,10 +60,12 @@ export default function AddItemToAuction(props: ConnectionProps) {
         }
     }
 
-    // Refresh smartContractIndex periodically.
+    // Periodically fetch the status of the submitted transaction until it is finalized.
+    // Once the transaction is finalized extract the
+    // newly created ItemIndex from the event emitted within the transaction.
     // eslint-disable-next-line consistent-return
     useEffect(() => {
-        if (connection && grpcClient && txHash !== undefined && txHash !== '') {
+        if (connection && grpcClient && txHash !== undefined) {
             const interval = setInterval(() => {
                 grpcClient
                     .getBlockItemStatus(txHash)
@@ -74,10 +77,10 @@ export default function AddItemToAuction(props: ConnectionProps) {
                                     report.outcome.summary.type === TransactionSummaryType.AccountTransaction &&
                                     report.outcome.summary.transactionType === TransactionKindString.Update
                                 ) {
-                                    const test = report.outcome.summary.events[0] as UpdatedEvent;
+                                    const eventList = report.outcome.summary.events[0] as UpdatedEvent;
 
                                     const returnValues = deserializeTypeValue(
-                                        toBuffer(test.events[0], 'hex'),
+                                        toBuffer(eventList.events[0], 'hex'),
                                         toBuffer(EVENT_SCHEMA, 'base64')
                                     );
 
@@ -141,7 +144,7 @@ export default function AddItemToAuction(props: ConnectionProps) {
                 <>
                     <Alert variant="info">
                         The `Transaction status` at the top of this page was updated. It displays the transaction hash
-                        link (or an error if one occured).
+                        link (or an error if one occurred).
                     </Alert>
                     <Alert variant="info">You will see the item index below after the transaction is finalized.</Alert>
                 </>

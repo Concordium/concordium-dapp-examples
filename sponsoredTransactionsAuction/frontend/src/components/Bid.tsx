@@ -2,17 +2,18 @@ import React, { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { Alert, Button, Form } from 'react-bootstrap';
 
-import { viewItemState } from 'src/reading_from_blockchain';
 import { AccountAddress, ConcordiumGRPCClient, Timestamp, serializeTypeValue, toBuffer } from '@concordium/web-sdk';
+import { WalletConnection, typeSchemaFromBase64 } from '@concordium/react-components';
 
 import {
     SERIALIZATION_HELPER_SCHEMA_ADDITIONAL_DATA,
     SERIALIZATION_HELPER_SCHEMA_PERMIT_MESSAGE,
     TRANSFER_SCHEMA,
     VERIFIER_URL,
-} from 'src/constants';
-import { WalletConnection, typeSchemaFromBase64 } from '@concordium/react-components';
+} from '../constants';
+
 import { submitBid } from '../writing_to_blockchain';
+import { viewItemState } from '../reading_from_blockchain';
 
 interface ItemState {
     auction_state: object;
@@ -25,11 +26,11 @@ interface ItemState {
     token_id: string;
 }
 
-/**
- * Send bidding signature to backend.
+/*
+ * This function generates the transfer message to be signed in the browser wallet.
  */
 async function generateTransferMessage(
-    setTokenIDAuction: (arg0: string) => void,
+    setTokenID: (arg0: string) => void,
     grpcClient: ConcordiumGRPCClient,
     expiryTimeSignature: string,
     account: string,
@@ -42,7 +43,7 @@ async function generateTransferMessage(
 
         const itemState = returnValue as unknown as ItemState;
 
-        setTokenIDAuction(itemState.token_id);
+        setTokenID(itemState.token_id);
 
         const data = serializeTypeValue(
             Number(itemIndexAuction),
@@ -97,12 +98,12 @@ interface ConnectionProps {
     grpcClient: ConcordiumGRPCClient | undefined;
     account: string | undefined;
     connection: WalletConnection;
-    setTxHash: (hash: string) => void;
-    setTransactionError: (error: string) => void;
+    setTxHash: (hash: string | undefined) => void;
+    setTransactionError: (error: string | undefined) => void;
 }
 
-/* A component that manages the input fields and corresponding state to update a smart contract instance on the chain.
- * This components creates an `Update` transaction.
+/*
+ * A component that manages the input fields and corresponding state to sign a bid message and submit the signature to the backend.
  */
 export default function Bid(props: ConnectionProps) {
     const { grpcClient, account, connection, setTxHash, setTransactionError } = props;
@@ -111,7 +112,7 @@ export default function Bid(props: ConnectionProps) {
     const [signingError, setSigningError] = useState<undefined | string>(undefined);
 
     const [expiryTime, setExpiryTime] = useState('');
-    const [tokenIDAuction, setTokenIDAuction] = useState<string | undefined>(undefined);
+    const [tokenID, setTokenID] = useState<string | undefined>(undefined);
     const [showMessage, setShowMessage] = useState(false);
 
     type FormTypeGenerateSignature = {
@@ -146,7 +147,7 @@ export default function Bid(props: ConnectionProps) {
         if (account && grpcClient) {
             try {
                 const serializedMessage = await generateTransferMessage(
-                    setTokenIDAuction,
+                    setTokenID,
                     grpcClient,
                     expiryTimeSignature,
                     account,
@@ -169,8 +170,8 @@ export default function Bid(props: ConnectionProps) {
     }
 
     async function onSubmitBid(data: FormTypeBid, accountAddress: string | undefined) {
-        setTxHash('');
-        setTransactionError('');
+        setTxHash(undefined);
+        setTransactionError(undefined);
         setShowMessage(false);
 
         if (accountAddress && signature) {
@@ -180,7 +181,7 @@ export default function Bid(props: ConnectionProps) {
                 nonce,
                 signature,
                 expiryTime,
-                tokenIDAuction,
+                tokenID,
                 accountAddress,
                 tokenAmount,
                 itemIndex
@@ -290,7 +291,7 @@ export default function Bid(props: ConnectionProps) {
             {showMessage && (
                 <Alert variant="info">
                     The `Transaction status` at the top of this page was updated. It displays the transaction hash link
-                    (or an error if one occured).
+                    (or an error if one occurred).
                 </Alert>
             )}
         </>

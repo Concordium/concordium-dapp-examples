@@ -2,20 +2,21 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Alert, Button, Form } from 'react-bootstrap';
 
-import { viewItemState } from 'src/reading_from_blockchain';
 import { ConcordiumGRPCClient } from '@concordium/web-sdk';
+
+import { viewItemState } from 'src/reading_from_blockchain';
 
 interface ConnectionProps {
     grpcClient: ConcordiumGRPCClient | undefined;
 }
 
-/* A component that manages the input fields and corresponding state to update a smart contract instance on the chain.
- * This components creates an `Update` transaction.
+/*
+ * A component that manages the input fields and corresponding state to view an item in the auction contract.
  */
 export default function ViewItem(props: ConnectionProps) {
     const { grpcClient } = props;
 
-    const [itemState, setItemState] = useState<undefined|string>(undefined);
+    const [itemState, setItemState] = useState<undefined | string>(undefined);
     const [itemStateError, setItemStateError] = useState<string | undefined>(undefined);
 
     type FormType = {
