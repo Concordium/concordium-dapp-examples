@@ -2,4 +2,4 @@
 
 ## 1.0.0
 
-- Initial sponsored transaction back end.
+- Initial auction sponsored transaction back end.

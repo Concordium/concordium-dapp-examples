@@ -1,5 +1,3 @@
-/* eslint-disable consistent-return */
-/* eslint-disable no-alert */
 import { AccountTransactionType, CcdAmount, UpdateContractPayload } from '@concordium/web-sdk';
 import { WalletConnection, typeSchemaFromBase64 } from '@concordium/react-components';
 import {
@@ -24,62 +22,6 @@ export async function submitBid(
     tokenAmount: string | undefined,
     itemIndexAuction: string | undefined
 ) {
-    if (tokenAmount === undefined) {
-        alert('Insert an amount.');
-        return '';
-    }
-
-    if (itemIndexAuction === undefined) {
-        alert('itemIndexAuction needs to be defined.');
-        return '';
-    }
-
-    if (signer === '') {
-        alert('Insert an signer address.');
-        return '';
-    }
-
-    if (signer.length !== 50) {
-        alert('Signer address needs to have 50 digits.');
-        return '';
-    }
-
-    if (nonce === '') {
-        alert('Insert a nonce.');
-        return '';
-    }
-
-    // eslint-disable-next-line no-restricted-globals
-    if (isNaN(Number(nonce))) {
-        alert('Your nonce needs to be a number.');
-        return '';
-    }
-
-    if (signature === '') {
-        alert('Insert a signature.');
-        return '';
-    }
-
-    if (signature.length !== 128) {
-        alert('Signature needs to have 128 digits.');
-        return '';
-    }
-
-    if (tokenID === undefined) {
-        alert('tokenID is undefined.');
-        return '';
-    }
-
-    if (from === '') {
-        alert('Insert an `from` address.');
-        return '';
-    }
-
-    if (from.length !== 50) {
-        alert('`From` address needs to have 50 digits.');
-        return '';
-    }
-
     const response = await fetch(`${backend}/bid`, {
         method: 'POST',
         headers: new Headers({ 'content-type': 'application/json' }),
