@@ -1,0 +1,14 @@
+{
+  "name": "cis2-market",
+  "version": "1.0.0",
+  "description": "Smart Contract",
+  "main": " ",
+  "repository": " ",
+  "author": "parv@stactrace.com",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "build": "cargo concordium build --out=module.wasm --schema-base64-out=schema_base64.txt",
+    "deploy": "concordium-client --grpc-ip node.testnet.concordium.com module deploy ./module.wasm --no-confirm --sender"
+  }
+}

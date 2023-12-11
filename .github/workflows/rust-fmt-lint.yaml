@@ -73,4 +73,3 @@ jobs:
         with:
           command: clippy
           args: --manifest-path ${{ matrix.crates }} -- -D warnings
-

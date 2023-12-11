@@ -1,0 +1,13 @@
+// Bootstrap config
+@import 'bootstrap/scss/variables';
+@import 'bootstrap/scss/variables-dark';
+@import 'bootstrap/scss/maps';
+@import 'bootstrap/scss/mixins';
+@import 'bootstrap/scss/utilities';
+
+// Bootstrap layout & components - add components as needed
+@import 'bootstrap/scss/close';
+
+// Bootstrap helpers
+@import 'bootstrap/scss/helpers';
+@import 'bootstrap/scss/utilities/api';

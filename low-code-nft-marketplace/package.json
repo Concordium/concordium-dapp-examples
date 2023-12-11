@@ -1,0 +1,21 @@
+{
+    "private": true,
+    "workspaces": [
+        "./common-ui",
+        "./market-ui",
+        "./mint-ui",
+        "./cis2-market"
+    ],
+    "devDependencies": {
+        "typescript": "^5.1.6"
+    },
+    "scripts": {
+        "build:all": "yarn run build:tsc && yarn run build:smart-contract",
+        "build:tsc": "npx tsc -b",
+        "build:smart-contract": "yarn workspace cis2-market build",
+        "deploy:smart-contract": "yarn workspace cis2-market run deploy",
+        "clean:tsc": "npx tsc -b --clean",
+        "debug:market-ui": "yarn workspace market-ui run start",
+        "debug:mint-ui": "yarn workspace mint-ui run start"
+    }
+}

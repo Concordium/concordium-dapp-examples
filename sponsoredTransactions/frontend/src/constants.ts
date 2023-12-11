@@ -6,8 +6,6 @@ export const VERIFIER_URL = '/api';
 
 export const REFRESH_INTERVAL = moment.duration(5, 'seconds');
 
-export const TESTNET_GENESIS_BLOCK_HASH = '4221332d34e1694168c2a0c0b3fd0f273809612cb13d000d5c2e00e85f50f796';
-
 export const SPONSORED_TX_CONTRACT_NAME = 'cis3_nft';
 
 export const CONTRACT_SUB_INDEX = 0n;
