@@ -1,0 +1,50 @@
+.connect-wallet {
+    &__button {
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        // flex-direction: column;
+        margin: 0 10px 5px;
+        font-weight: $font-weight-bold;
+        font-size: 14px;
+    }
+
+    &__button-icon {
+        width: 50px;
+        height: 50px;
+        margin-right: 20px;
+
+        &--chrome {
+            padding: 7px;
+        }
+    }
+}
+
+.active-connection {
+    &__sub-title {
+        font-size: 12px;
+        font-weight: $font-weight-normal;
+    }
+
+    &__no-submissions {
+        font-size: 12px;
+    }
+
+    &__submission {
+        font-size: 12px;
+
+        &--inactive {
+            .progress-bar:not(.bg-danger) {
+                background: $gray-400 !important;
+            }
+        }
+    }
+
+    &__submission-status {
+        font-size: 11px;
+
+        .active-connection__submission--inactive & {
+            text-decoration: line-through;
+        }
+    }
+}

@@ -1,0 +1,44 @@
+diff --git a/dist/utils/resolve-pattern.js b/dist/utils/resolve-pattern.js
+index 7350b021456cc1cfee77509f349e43b0cf8ad3f3..21fa086115d150a02d26a7c6975d148436faa030 100644
+--- a/dist/utils/resolve-pattern.js
++++ b/dist/utils/resolve-pattern.js
+@@ -7,7 +7,7 @@ function resolvePattern(pattern) {
+         case "Identifier":
+             return pattern.value;
+         case "ObjectPattern":
+-            return pattern.properties.flatMap(prop => {
++            return pattern.properties.flatMap((prop) => {
+                 switch (prop.type) {
+                     case "AssignmentPatternProperty":
+                         return prop.key.value;
+@@ -18,17 +18,23 @@ function resolvePattern(pattern) {
+                 }
+             });
+         case "ArrayPattern":
+-            return pattern.elements.flatMap(elem => {
+-                if (elem.type === "RestElement") {
+-                    return resolvePattern(elem.argument);
+-                }
+-                return resolvePattern(elem);
+-            });
++            return pattern.elements
++                .flatMap((elem) => {
++                    if (elem == undefined) return undefined;
++                    if (elem.type === "RestElement") {
++                        return resolvePattern(elem.argument);
++                    }
++                    return resolvePattern(elem);
++                })
++                .filter((e) => e !== undefined);
+         case "AssignmentPattern":
+             return resolvePattern(pattern.left);
+         /* istanbul ignore next */
+         default:
+-            (0, error_1.raiseUnexpectedNode)("pattern in variable declaration", pattern.type);
++            (0, error_1.raiseUnexpectedNode)(
++                "pattern in variable declaration",
++                pattern.type,
++            );
+     }
+ }
+ exports.resolvePattern = resolvePattern;
