@@ -188,9 +188,9 @@ export default function Bid(props: ConnectionProps) {
             );
 
             tx.then((txHashReturned) => {
-                setTxHash(txHashReturned.tx_hash);
+                setTxHash(txHashReturned);
 
-                if (txHashReturned.tx_hash !== '') {
+                if (txHashReturned !== '') {
                     setSignature(undefined);
                     formGenerateSignature.reset();
                     formBid.reset();

@@ -1,15 +1,15 @@
 use crate::crypto_common::types::TransactionTime;
 use crate::types::*;
-use concordium_rust_sdk::cis2::{AdditionalData, Receiver, Transfer};
-use concordium_rust_sdk::smart_contracts::common::{
-    to_bytes, AccountAddress, AccountSignatures, Address, Amount, ContractAddress,
-    CredentialSignatures, OwnedEntrypointName, Signature, SignatureEd25519,
+use concordium_rust_sdk::{
+    cis2::{AdditionalData, Receiver, Transfer},
+    smart_contracts::common::{
+        to_bytes, AccountAddress, AccountSignatures, Address, Amount, ContractAddress,
+        CredentialSignatures, OwnedEntrypointName, Signature, SignatureEd25519,
+    },
+    types::smart_contracts::{ContractContext, InvokeContractResult, OwnedReceiveName},
+    types::{smart_contracts, transactions, Energy, WalletAccount},
+    v2::BlockIdentifier,
 };
-use concordium_rust_sdk::types::smart_contracts::{
-    ContractContext, InvokeContractResult, OwnedReceiveName,
-};
-use concordium_rust_sdk::types::{smart_contracts, transactions, Energy, WalletAccount};
-use concordium_rust_sdk::v2::BlockIdentifier;
 use std::collections::BTreeMap;
 use std::convert::Infallible;
 use std::sync::Arc;
@@ -19,10 +19,16 @@ const CONTRACT_NAME: &str = "cis2_multi";
 const ENERGY: u64 = 60000;
 const RATE_LIMIT_PER_ACCOUNT: u8 = 30;
 
+// Before submitting a transaction we simulate/dry-run the transaction to get an estimate of the energy
+// needed for executing the transaction. In addition, we allow an additional small amount of energy
+// `EPSILON_ENERGY` to be consumed by the transaction to cover small variations (e.g. changes to
+// the smart contract state) caused by transactions that have been executed meanwhile.
+const EPSILON_ENERGY: u64 = 1000;
+
 pub async fn handle_signature_bid(
     client: concordium_rust_sdk::v2::Client,
     key_update_operator: Arc<WalletAccount>,
-    request: BidInputParams,
+    request: BidParams,
     cis2_token_smart_contract_index: u64,
     auction_smart_contract_index: u64,
     state: Server,
@@ -54,7 +60,7 @@ pub async fn handle_signature_bid(
             subindex: 0,
         },
         nonce: request.nonce,
-        timestamp: request.timestamp,
+        timestamp: request.expiry_timestamp,
         entry_point: OwnedEntrypointName::new_unchecked("transfer".into()),
         payload: concordium_rust_sdk::smart_contracts::common::to_bytes(&payload),
     };
@@ -107,10 +113,8 @@ pub async fn submit_transaction(
         signer,
     };
 
-    let bytes = concordium_rust_sdk::smart_contracts::common::to_bytes(&param);
-
-    let parameter =
-        smart_contracts::OwnedParameter::try_from(bytes).map_err(|_| LogError::ParameterError)?;
+    let parameter = smart_contracts::OwnedParameter::from_serial(&param)
+        .map_err(|_| LogError::ParameterError)?;
 
     let receive_name =
         smart_contracts::OwnedReceiveName::new_unchecked(format!("{}.permit", CONTRACT_NAME));
@@ -134,18 +138,23 @@ pub async fn submit_transaction(
         .invoke_instance(&BlockIdentifier::Best, &context)
         .await;
 
-    if info.is_err() {
-        log::error!("SimulationInvokeError {:#?}.", info);
+    let info = match info {
+        Ok(info) => info,
+        Err(e) => {
+            log::warn!("SimulationInvokeError {e}.");
+            return Err(warp::reject::custom(LogError::SimulationInvokeError));
+        }
+    };
 
-        return Err(warp::reject::custom(LogError::SimulationInvokeError));
-    }
-
-    match &info.as_ref().unwrap().response {
+    let used_energy = match info.response {
         InvokeContractResult::Success {
             return_value: _,
             events: _,
-            used_energy: _,
-        } => log::debug!("TransactionSimulationSuccess"),
+            used_energy,
+        } => {
+            log::debug!("TransactionSimulationSuccess");
+            used_energy
+        }
         InvokeContractResult::Failure {
             return_value: _,
             reason,
@@ -154,18 +163,16 @@ pub async fn submit_transaction(
             log::warn!("TransactionSimulationError {:#?}.", reason);
 
             return Err(warp::reject::custom(LogError::TransactionSimulationError(
-                RevertReason {
-                    reason: reason.clone(),
-                },
+                RevertReason { reason },
             )));
         }
-    }
+    };
 
     log::debug!("Create transaction.");
 
     // Transaction should expiry after one hour.
     let transaction_expiry = TransactionTime::hours_after(1);
-    
+
     // Get the current nonce for the backend wallet and lock it. This is necessary since it is possible that API requests come in parallel.
     // The nonce is increased by 1 and its lock is released after the transaction is submitted to the blockchain.
     let mut nonce = state.nonce.lock().await;
@@ -199,9 +206,11 @@ pub async fn submit_transaction(
         key.address,
         *nonce,
         transaction_expiry,
-        concordium_rust_sdk::types::transactions::send::GivenEnergy::Absolute(Energy {
-            energy: ENERGY,
-        }),
+        // We add a small amount of energy `EPSILON_ENERGY` to the previously simulated `used_energy` to cover variations
+        // (e.g. smart contract state changes) caused by transactions that have been executed meanwhile.
+        concordium_rust_sdk::types::transactions::send::GivenEnergy::Add(
+            used_energy + Energy::from(EPSILON_ENERGY),
+        ),
         concordium_rust_sdk::types::transactions::Payload::Update { payload },
     );
 
@@ -213,10 +222,10 @@ pub async fn submit_transaction(
         Ok(hash) => {
             *nonce = nonce.next();
 
-            Ok(warp::reply::json(&TxHash { tx_hash: hash }))
+            Ok(warp::reply::json(&hash))
         }
         Err(e) => {
-            log::error!("SubmitSponsoredTransactionError {:#?}.", e);
+            log::error!("SubmitSponsoredTransactionError {e}.");
 
             Err(warp::reject::custom(
                 LogError::SubmitSponsoredTransactionError,
@@ -240,7 +249,7 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl warp::Reply, Infall
         Ok(mk_reply(message.into(), code))
     } else if let Some(LogError::TransactionSimulationError(e)) = err.find() {
         let code = StatusCode::INTERNAL_SERVER_ERROR;
-        let message = format!("Transaction simulation error. Your transaction would revert with the given input parameters: {}", e);
+        let message = format!("Transaction simulation error. Your transaction would revert with the given reject reason: {:?}", e.reason);
         Ok(mk_reply(message, code))
     } else if let Some(LogError::SubmitSponsoredTransactionError) = err.find() {
         let code = StatusCode::INTERNAL_SERVER_ERROR;
