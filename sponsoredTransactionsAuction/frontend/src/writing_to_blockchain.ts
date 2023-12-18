@@ -100,8 +100,8 @@ export async function addItem(connection: WalletConnection, account: string, tok
         {
             parameters: {
                 name,
-                end: '2050-01-01T12:00:00Z',
-                start: '2000-01-01T12:00:00Z',
+                end: '2050-01-01T12:00:00Z', // Hardcoded value for simplicity.
+                start: '2000-01-01T12:00:00Z', // Hardcoded value for simplicity.
                 minimum_bid: '0',
                 token_id: `0${Number(tokenId).toString(16)}`.slice(-2),
             },

@@ -2497,7 +2497,6 @@ name = "sponsored-transaction-backend"
 version = "1.0.0"
 dependencies = [
  "anyhow",
- "chrono",
  "clap",
  "concordium-rust-sdk",
  "env_logger",
