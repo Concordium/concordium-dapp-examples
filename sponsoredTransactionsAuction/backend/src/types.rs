@@ -26,8 +26,6 @@ pub enum LogError {
     SimulationInvokeError,
     #[error("Transaction simulation error.")]
     TransactionSimulationError(RevertReason),
-    #[error("Owned received name error.")]
-    OwnedReceiveNameError,
     #[error("Rate limit error.")]
     RateLimitError,
     #[error("Parameter error.")]

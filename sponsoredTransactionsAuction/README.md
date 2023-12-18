@@ -27,13 +27,13 @@ docker build -t sponsored_transactions -f sponsoredTransactionsAuction/Dockerfil
 
 The image can then be run with:
 ```shell
-docker run -p 8080:8080 --mount type=bind,source="$(pwd)"/<ACCOUNT_KEY_FILE>,target=/KEY_FILE,readonly -e PORT=<PORT> -e NODE=<NODE> -e LOG_LEVEL=<LOG_LEVEL> -e CIS2_TOKEN_CONTRACT_INDEX=<CONTRACT_INDEX> -e AUCTION_CONTRACT_INDEX=<CONTRACT_INDEX> sponsored_transactions
+docker run -p 8080:8080 --mount type=bind,source="$(pwd)"/<ACCOUNT_KEY_FILE>,target=/KEY,readonly -e ACCOUNT_KEY_FILE="/KEY" -e PORT=<PORT> -e NODE=<NODE> -e LOG_LEVEL=<LOG_LEVEL> -e CIS2_TOKEN_CONTRACT_INDEX=<CONTRACT_INDEX> -e AUCTION_CONTRACT_INDEX=<CONTRACT_INDEX> sponsored_transactions
 ```
 
 e.g.
 
 ```shell
-docker run -p 8080:8080 --mount type=bind,source="$(pwd)"/4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export,target=/KEY_FILE,readonly  -e PORT=8080 -e NODE="http://node.testnet.concordium.com:20000" -e LOG_LEVEL="info" -e CIS2_TOKEN_CONTRACT_INDEX=7370 -e AUCTION_CONTRACT_INDEX=7415  sponsored_transactions
+docker run -p 8080:8080 --mount type=bind,source="$(pwd)"/4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export,target=/KEY,readonly -e ACCOUNT_KEY_FILE=/KEY -e PORT=8080 -e NODE=http://node.testnet.concordium.com:20000 -e LOG_LEVEL=info -e CIS2_TOKEN_CONTRACT_INDEX=7370 -e AUCTION_CONTRACT_INDEX=7415 sponsored_transactions
 ```
 
 Note: To get your `ACCOUNT_KEY_FILE` (the `4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export` file), export it from the Concordium Browser Wallet for Web.

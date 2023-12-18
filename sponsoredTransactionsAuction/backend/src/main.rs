@@ -21,41 +21,51 @@ use warp::Filter;
 struct IdVerifierConfig {
     #[clap(
         long = "node",
-        help = "GRPC V2 interface of the node.",
-        default_value = "http://localhost:20000"
+        default_value = "http://localhost:20000",
+        env = "NODE",
+        help = "GRPC V2 interface of the node."
     )]
     endpoint: concordium_rust_sdk::v2::Endpoint,
     #[clap(
         long = "port",
         default_value = "8100",
+        env = "PORT",
         help = "Port on which the server will listen on."
     )]
     port: u16,
     #[clap(
         long = "cis2-token-smart-contract-index",
         default_value = "7370",
+        env = "CIS2_TOKEN_CONTRACT_INDEX",
         help = "The cis2 token smart contract index which the sponsored transaction is submitted to."
     )]
     cis2_token_smart_contract_index: u64,
     #[clap(
         long = "auction-smart-contract-index",
         default_value = "7399",
+        env = "AUCTION_CONTRACT_INDEX",
         help = "The auction smart contract index which the sponsored transaction is submitted to."
     )]
     auction_smart_contract_index: u64,
     #[structopt(
         long = "log-level",
         default_value = "debug",
+        env = "LOG_LEVEL",
         help = "Maximum log level."
     )]
     log_level: log::LevelFilter,
     #[structopt(
         long = "public-folder",
         default_value = "public",
+        env = "PUBLIC_FOLDER",
         help = "location of the folder to serve"
     )]
     public_folder: String,
-    #[structopt(long = "account", help = "Path to the account key file.")]
+    #[structopt(
+        long = "account_key_file",
+        env = "ACCOUNT_KEY_FILE",
+        help = "Path to the account key file."
+    )]
     keys_path: PathBuf,
 }
 
@@ -84,8 +94,6 @@ async fn main() -> anyhow::Result<()> {
         .allow_any_origin()
         .allow_header("Content-Type")
         .allow_methods(vec!["POST", "GET"]);
-
-    log::debug!("Acquire keys.");
 
     // load account keys and sender address from a file
     let keys: WalletAccount = serde_json::from_str(

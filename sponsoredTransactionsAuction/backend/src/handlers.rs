@@ -113,22 +113,22 @@ pub async fn submit_transaction(
         smart_contracts::OwnedParameter::try_from(bytes).map_err(|_| LogError::ParameterError)?;
 
     let receive_name =
-        smart_contracts::OwnedReceiveName::try_from(format!("{}.permit", CONTRACT_NAME))
-            .map_err(|_| LogError::OwnedReceiveNameError)?;
+        smart_contracts::OwnedReceiveName::new_unchecked(format!("{}.permit", CONTRACT_NAME));
 
     log::debug!("Simulate transaction to check its validity.");
 
-    let context = ContractContext {
-        invoker: Some(concordium_rust_sdk::types::Address::Account(key.address)),
-        contract: ContractAddress {
+    let payload = transactions::UpdateContractPayload {
+        amount: Amount::from_micro_ccd(0),
+        address: ContractAddress {
             index: cis2_token_smart_contract_index,
             subindex: 0,
         },
-        amount: Amount::zero(),
-        method: receive_name.clone(),
-        parameter: parameter.clone(),
-        energy: Energy { energy: ENERGY },
+        receive_name,
+        message: parameter,
     };
+
+    let context =
+        ContractContext::new_from_payload(key.address, Energy { energy: ENERGY }, payload.clone());
 
     let info = client
         .invoke_instance(&BlockIdentifier::Best, &context)
@@ -151,7 +151,7 @@ pub async fn submit_transaction(
             reason,
             used_energy: _,
         } => {
-            log::error!("TransactionSimulationError {:#?}.", info);
+            log::warn!("TransactionSimulationError {:#?}.", reason);
 
             return Err(warp::reject::custom(LogError::TransactionSimulationError(
                 RevertReason {
@@ -163,21 +163,9 @@ pub async fn submit_transaction(
 
     log::debug!("Create transaction.");
 
-    let payload = transactions::Payload::Update {
-        payload: transactions::UpdateContractPayload {
-            amount: Amount::from_micro_ccd(0),
-            address: ContractAddress {
-                index: cis2_token_smart_contract_index,
-                subindex: 0,
-            },
-            receive_name,
-            message: parameter,
-        },
-    };
-
     // Transaction should expiry after one hour.
-    let transaction_expiry_seconds = chrono::Utc::now().timestamp() as u64 + 3600;
-
+    let transaction_expiry = TransactionTime::hours_after(1);
+    
     // Get the current nonce for the backend wallet and lock it. This is necessary since it is possible that API requests come in parallel.
     // The nonce is increased by 1 and its lock is released after the transaction is submitted to the blockchain.
     let mut nonce = state.nonce.lock().await;
@@ -196,10 +184,10 @@ pub async fn submit_transaction(
 
     let mut rate_limits = state.rate_limits.lock().await;
 
-    let limit = rate_limits.entry(signer).or_insert_with(|| 0u8);
+    let limit = rate_limits.entry(signer).or_insert(0u8);
 
     if *limit >= RATE_LIMIT_PER_ACCOUNT {
-        log::error!("Rate limit for account {:#?} reached.", signer);
+        log::error!("Rate limit for account {} reached.", signer);
 
         return Err(warp::reject::custom(LogError::RateLimitError));
     }
@@ -210,13 +198,11 @@ pub async fn submit_transaction(
         &key.keys,
         key.address,
         *nonce,
-        TransactionTime {
-            seconds: transaction_expiry_seconds,
-        },
+        transaction_expiry,
         concordium_rust_sdk::types::transactions::send::GivenEnergy::Absolute(Energy {
             energy: ENERGY,
         }),
-        payload,
+        concordium_rust_sdk::types::transactions::Payload::Update { payload },
     );
 
     let bi = transactions::BlockItem::AccountTransaction(tx);
@@ -259,10 +245,6 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl warp::Reply, Infall
     } else if let Some(LogError::SubmitSponsoredTransactionError) = err.find() {
         let code = StatusCode::INTERNAL_SERVER_ERROR;
         let message = "Submit sponsored transaction error.";
-        Ok(mk_reply(message.into(), code))
-    } else if let Some(LogError::OwnedReceiveNameError) = err.find() {
-        let code = StatusCode::BAD_REQUEST;
-        let message = "Owned received name error.";
         Ok(mk_reply(message.into(), code))
     } else if let Some(LogError::SignatureError) = err.find() {
         let code = StatusCode::BAD_REQUEST;
