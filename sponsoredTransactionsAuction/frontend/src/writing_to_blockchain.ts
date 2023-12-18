@@ -34,7 +34,7 @@ export async function submitBid(
             from,
             token_amount: tokenAmount,
             item_index_auction: Number(itemIndexAuction),
-            timestamp: expiryTimeSignature,
+            expiry_timestamp: expiryTimeSignature,
         }),
     });
 
@@ -72,7 +72,7 @@ export async function mint(connection: WalletConnection, account: string, tokenI
                     hash: {
                         None: [],
                     },
-                    url: 'https://s3.eu-central-1.amazonaws.com/tokens.testnet.concordium.com/ft/wccd',
+                    url: 'https://s3.eu-central-1.amazonaws.com/tokens.testnet.concordium.com/ft/wccd', // Hardcoded value for simplicity for this demo dApp.
                 },
                 token_id: `0${Number(tokenId).toString(16)}`.slice(-2),
             },
@@ -100,8 +100,8 @@ export async function addItem(connection: WalletConnection, account: string, tok
         {
             parameters: {
                 name,
-                end: '2050-01-01T12:00:00Z', // Hardcoded value for simplicity.
-                start: '2000-01-01T12:00:00Z', // Hardcoded value for simplicity.
+                end: '2050-01-01T12:00:00Z', // Hardcoded value for simplicity for this demo dApp.
+                start: '2000-01-01T12:00:00Z', // Hardcoded value for simplicity for this demo dApp.
                 minimum_bid: '0',
                 token_id: `0${Number(tokenId).toString(16)}`.slice(-2),
             },

@@ -123,7 +123,7 @@ async fn main() -> anyhow::Result<()> {
         .and(warp::filters::body::content_length_limit(50 * 1024))
         .and(warp::path!("api" / "bid"))
         .and(warp::body::json())
-        .and_then(move |request: BidInputParams| {
+        .and_then(move |request: BidParams| {
             log::debug!("Process bid transaction.");
 
             handle_signature_bid(
@@ -135,11 +135,8 @@ async fn main() -> anyhow::Result<()> {
                 state_transfer.clone(),
             )
         });
-    log::debug!("Get public files to serve.");
 
     let serve_public_files = warp::get().and(warp::fs::dir(app.public_folder));
-
-    log::debug!("Serve response back to frontend.");
 
     let server = provide_submit_bid
         .or(serve_public_files)
