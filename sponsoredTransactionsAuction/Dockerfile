@@ -6,7 +6,7 @@ FROM ${node_base_image} AS frontend
 WORKDIR /app
 COPY ./sponsoredTransactionsAuction/frontend ./
 
-RUN yarn && yarn cache clean
+RUN yarn
 RUN yarn build
 
 FROM ${rust_base_image} AS backend
@@ -20,17 +20,15 @@ RUN cargo build --release
 FROM ubuntu:22.04
 WORKDIR /build
 
-ENV PORT=8080
-ENV NODE=http://node.testnet.concordium.com:20000
-ENV LOG_LEVEL=info
-ENV CIS2_TOKEN_CONTRACT_INDEX=7370
-ENV AUCTION_CONTRACT_INDEX=7415
+ENV PORT $PORT
+ENV NODE $NODE
+ENV LOG_LEVEL $LOG_LEVEL
+ENV CIS2_TOKEN_CONTRACT_INDEX $CIS2_TOKEN_CONTRACT_INDEX
+ENV AUCTION_CONTRACT_INDEX $AUCTION_CONTRACT_INDEX
 
 ENV ACCOUNT_KEY_FILE=/KEY_FILE
 
-COPY --from=backend ./backend/app/target/release/sponsored-transaction-backend ./main
+COPY --from=backend ./backend/app/target/release/sponsored-transaction-backend ./sponsored-transaction-backend
 COPY --from=frontend ./app/dist ./public
 
-RUN chmod +x ./main
-
-CMD ./main --node "${NODE}" --port "${PORT}" --account "${ACCOUNT_KEY_FILE}" --cis2-token-smart-contract-index "${CIS2_TOKEN_CONTRACT_INDEX}" --auction-smart-contract-index "${AUCTION_CONTRACT_INDEX}" --log-level "${LOG_LEVEL}" --public-folder public
+CMD ./sponsored-transaction-backend --node "${NODE}" --port "${PORT}" --account "${ACCOUNT_KEY_FILE}" --cis2-token-smart-contract-index "${CIS2_TOKEN_CONTRACT_INDEX}" --auction-smart-contract-index "${AUCTION_CONTRACT_INDEX}" --log-level "${LOG_LEVEL}" --public-folder public
