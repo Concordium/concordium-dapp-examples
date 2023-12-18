@@ -6,7 +6,7 @@ FROM ${node_base_image} AS frontend
 WORKDIR /app
 COPY ./sponsoredTransactions/frontend ./
 
-RUN yarn && yarn cache clean
+RUN yarn
 RUN yarn build
 
 FROM ${rust_base_image} AS backend
