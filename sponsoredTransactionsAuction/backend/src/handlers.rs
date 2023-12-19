@@ -1,28 +1,29 @@
-use crate::crypto_common::types::TransactionTime;
-use crate::types::*;
+use crate::{crypto_common::types::TransactionTime, types::*};
 use concordium_rust_sdk::{
     cis2::{AdditionalData, Receiver, Transfer},
     smart_contracts::common::{
         to_bytes, AccountAddress, AccountSignatures, Address, Amount, ContractAddress,
         CredentialSignatures, OwnedEntrypointName, Signature, SignatureEd25519,
     },
-    types::smart_contracts::{ContractContext, InvokeContractResult, OwnedReceiveName},
-    types::{smart_contracts, transactions, Energy, WalletAccount},
+    types::{
+        smart_contracts,
+        smart_contracts::{ContractContext, InvokeContractResult, OwnedReceiveName},
+        transactions, Energy, WalletAccount,
+    },
     v2::BlockIdentifier,
 };
-use std::collections::BTreeMap;
-use std::convert::Infallible;
-use std::sync::Arc;
+use std::{collections::BTreeMap, convert::Infallible, sync::Arc};
 use warp::{http::StatusCode, Rejection};
 
 const CONTRACT_NAME: &str = "cis2_multi";
 const ENERGY: u64 = 60000;
 const RATE_LIMIT_PER_ACCOUNT: u8 = 30;
 
-// Before submitting a transaction we simulate/dry-run the transaction to get an estimate of the energy
-// needed for executing the transaction. In addition, we allow an additional small amount of energy
-// `EPSILON_ENERGY` to be consumed by the transaction to cover small variations (e.g. changes to
-// the smart contract state) caused by transactions that have been executed meanwhile.
+// Before submitting a transaction we simulate/dry-run the transaction to get an
+// estimate of the energy needed for executing the transaction. In addition, we
+// allow an additional small amount of energy `EPSILON_ENERGY` to be consumed by
+// the transaction to cover small variations (e.g. changes to the smart contract
+// state) caused by transactions that have been executed meanwhile.
 const EPSILON_ENERGY: u64 = 1000;
 
 pub async fn handle_signature_bid(
@@ -36,17 +37,17 @@ pub async fn handle_signature_bid(
     log::debug!("Create payload.");
 
     let transfer = Transfer {
-        from: Address::Account(request.from),
-        to: Receiver::Contract(
+        from:     Address::Account(request.from),
+        to:       Receiver::Contract(
             ContractAddress {
-                index: auction_smart_contract_index,
+                index:    auction_smart_contract_index,
                 subindex: 0,
             },
             OwnedReceiveName::new_unchecked("bid".to_owned()),
         ),
         token_id: request.token_id,
-        amount: request.token_amount,
-        data: AdditionalData::new(to_bytes(&request.item_index_auction))
+        amount:   request.token_amount,
+        data:     AdditionalData::new(to_bytes(&request.item_index_auction))
             .map_err(|_| LogError::AdditionalDataError)?,
     };
 
@@ -56,13 +57,13 @@ pub async fn handle_signature_bid(
 
     let message: PermitMessage = PermitMessage {
         contract_address: ContractAddress {
-            index: cis2_token_smart_contract_index,
+            index:    cis2_token_smart_contract_index,
             subindex: 0,
         },
-        nonce: request.nonce,
-        timestamp: request.expiry_timestamp,
-        entry_point: OwnedEntrypointName::new_unchecked("transfer".into()),
-        payload: concordium_rust_sdk::smart_contracts::common::to_bytes(&payload),
+        nonce:            request.nonce,
+        timestamp:        request.expiry_timestamp,
+        entry_point:      OwnedEntrypointName::new_unchecked("transfer".into()),
+        payload:          concordium_rust_sdk::smart_contracts::common::to_bytes(&payload),
     };
 
     submit_transaction(
@@ -96,12 +97,9 @@ pub async fn submit_transaction(
     inner_signature_map.insert(0, Signature::Ed25519(SignatureEd25519(signature)));
 
     let mut signature_map = BTreeMap::new();
-    signature_map.insert(
-        0,
-        CredentialSignatures {
-            sigs: inner_signature_map,
-        },
-    );
+    signature_map.insert(0, CredentialSignatures {
+        sigs: inner_signature_map,
+    });
 
     log::debug!("Create Parameter.");
 
@@ -124,7 +122,7 @@ pub async fn submit_transaction(
     let payload = transactions::UpdateContractPayload {
         amount: Amount::from_micro_ccd(0),
         address: ContractAddress {
-            index: cis2_token_smart_contract_index,
+            index:    cis2_token_smart_contract_index,
             subindex: 0,
         },
         receive_name,
@@ -173,20 +171,25 @@ pub async fn submit_transaction(
     // Transaction should expiry after one hour.
     let transaction_expiry = TransactionTime::hours_after(1);
 
-    // Get the current nonce for the backend wallet and lock it. This is necessary since it is possible that API requests come in parallel.
-    // The nonce is increased by 1 and its lock is released after the transaction is submitted to the blockchain.
+    // Get the current nonce for the backend wallet and lock it. This is necessary
+    // since it is possible that API requests come in parallel. The nonce is
+    // increased by 1 and its lock is released after the transaction is submitted to
+    // the blockchain.
     let mut nonce = state.nonce.lock().await;
 
-    // There should be rate limiting in place to prevent the sponsor wallet from being drained.
-    // We only allow up to RATE_LIMIT_PER_ACCOUNT API calls to this backend.
-    // The rate_limits are transient and are reset on server restart.
+    // There should be rate limiting in place to prevent the sponsor wallet from
+    // being drained. We only allow up to RATE_LIMIT_PER_ACCOUNT API calls to
+    // this backend. The rate_limits are transient and are reset on server
+    // restart.
 
-    // We only check the rate_limits after acquiring the nonce lock. If we do it before we don't
-    // have guarantees due to possible parallel API requests.
+    // We only check the rate_limits after acquiring the nonce lock. If we do it
+    // before we don't have guarantees due to possible parallel API requests.
 
     // On mainnet, a user can only create around 25 accounts per identity.
-    // In production, a user registration/authentication at the frontend can be added or a database that permanently
-    // keeps track of the rate_limits so that the server can be restarted and reload the rate_limit values from the database.
+    // In production, a user registration/authentication at the frontend can be
+    // added or a database that permanently keeps track of the rate_limits so
+    // that the server can be restarted and reload the rate_limit values from the
+    // database.
     log::debug!("Check rate limit.");
 
     let mut rate_limits = state.rate_limits.lock().await;
@@ -206,8 +209,9 @@ pub async fn submit_transaction(
         key.address,
         *nonce,
         transaction_expiry,
-        // We add a small amount of energy `EPSILON_ENERGY` to the previously simulated `used_energy` to cover variations
-        // (e.g. smart contract state changes) caused by transactions that have been executed meanwhile.
+        // We add a small amount of energy `EPSILON_ENERGY` to the previously simulated
+        // `used_energy` to cover variations (e.g. smart contract state changes) caused by
+        // transactions that have been executed meanwhile.
         concordium_rust_sdk::types::transactions::send::GivenEnergy::Add(
             used_energy + Energy::from(EPSILON_ENERGY),
         ),
@@ -249,7 +253,11 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl warp::Reply, Infall
         Ok(mk_reply(message.into(), code))
     } else if let Some(LogError::TransactionSimulationError(e)) = err.find() {
         let code = StatusCode::INTERNAL_SERVER_ERROR;
-        let message = format!("Transaction simulation error. Your transaction would revert with the given reject reason: {:?}", e.reason);
+        let message = format!(
+            "Transaction simulation error. Your transaction would revert with the given reject \
+             reason: {:?}",
+            e.reason
+        );
         Ok(mk_reply(message, code))
     } else if let Some(LogError::SubmitSponsoredTransactionError) = err.find() {
         let code = StatusCode::INTERNAL_SERVER_ERROR;

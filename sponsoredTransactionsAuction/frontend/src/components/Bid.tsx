@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { Alert, Button, Form } from 'react-bootstrap';
 
@@ -36,7 +36,7 @@ async function generateTransferMessage(
     account: string,
     nonce: string,
     amount: string | undefined,
-    itemIndexAuction: string
+    itemIndexAuction: string,
 ) {
     try {
         const returnValue = await viewItemState(grpcClient, itemIndexAuction);
@@ -47,7 +47,7 @@ async function generateTransferMessage(
 
         const data = serializeTypeValue(
             Number(itemIndexAuction),
-            toBuffer(SERIALIZATION_HELPER_SCHEMA_ADDITIONAL_DATA, 'base64')
+            toBuffer(SERIALIZATION_HELPER_SCHEMA_ADDITIONAL_DATA, 'base64'),
         );
 
         const transfer = [
@@ -85,7 +85,7 @@ async function generateTransferMessage(
 
         const serializedMessage = serializeTypeValue(
             message,
-            toBuffer(SERIALIZATION_HELPER_SCHEMA_PERMIT_MESSAGE, 'base64')
+            toBuffer(SERIALIZATION_HELPER_SCHEMA_PERMIT_MESSAGE, 'base64'),
         );
 
         return serializedMessage;
@@ -115,11 +115,11 @@ export default function Bid(props: ConnectionProps) {
     const [tokenID, setTokenID] = useState<string | undefined>(undefined);
     const [showMessage, setShowMessage] = useState(false);
 
-    type FormTypeGenerateSignature = {
+    interface FormTypeGenerateSignature {
         itemIndex: string;
         tokenAmount: string;
         nonce: string;
-    };
+    }
     const formGenerateSignature = useForm<FormTypeGenerateSignature>({ mode: 'all' });
 
     const [nonce, tokenAmount, itemIndex] = useWatch({
@@ -127,9 +127,9 @@ export default function Bid(props: ConnectionProps) {
         name: ['nonce', 'tokenAmount', 'itemIndex'],
     });
 
-    type FormTypeBid = {
+    interface FormTypeBid {
         signer: string;
-    };
+    }
     const formBid = useForm<FormTypeBid>({ mode: 'all' });
 
     async function onSubmitSigning(data: FormTypeGenerateSignature) {
@@ -153,7 +153,7 @@ export default function Bid(props: ConnectionProps) {
                     account,
                     data.nonce,
                     data.tokenAmount,
-                    data.itemIndex
+                    data.itemIndex,
                 );
 
                 const permitSignature = await connection.signMessage(account, {
@@ -184,7 +184,7 @@ export default function Bid(props: ConnectionProps) {
                 tokenID,
                 accountAddress,
                 tokenAmount,
-                itemIndex
+                itemIndex,
             );
 
             tx.then((txHashReturned) => {
@@ -196,7 +196,7 @@ export default function Bid(props: ConnectionProps) {
                     formBid.reset();
                 }
             })
-                .catch((err: Error) => setTransactionError((err as Error).message))
+                .catch((err: Error) => setTransactionError(err.message))
                 .finally(() => setShowMessage(true));
         }
     }

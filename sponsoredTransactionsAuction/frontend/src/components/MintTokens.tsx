@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Alert, Button, Form } from 'react-bootstrap';
 
 import { WalletConnection } from '@concordium/react-components';
-import { mint } from 'src/writing_to_blockchain';
+import { mint } from '../writing_to_blockchain';
 
 interface ConnectionProps {
     setTxHash: (hash: string | undefined) => void;
@@ -19,10 +19,10 @@ interface ConnectionProps {
 export default function MintTokens(props: ConnectionProps) {
     const { account, connection, setTxHash, setTransactionError } = props;
 
-    type FormType = {
+    interface FormType {
         toAddress: string;
         tokenID: string;
-    };
+    }
     const form = useForm<FormType>({ mode: 'all' });
 
     const [showMessage, setShowMessage] = useState(false);
@@ -35,7 +35,7 @@ export default function MintTokens(props: ConnectionProps) {
         if (connection && account) {
             const tx = mint(connection, account, data.tokenID, data.toAddress);
             tx.then(setTxHash)
-                .catch((err: Error) => setTransactionError((err as Error).message))
+                .catch((err: Error) => setTransactionError(err.message))
                 .finally(() => setShowMessage(true));
         }
     }

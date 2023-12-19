@@ -21,7 +21,7 @@ export async function submitBid(
     tokenID: string | undefined,
     from: string,
     tokenAmount: string | undefined,
-    itemIndexAuction: string | undefined
+    itemIndexAuction: string | undefined,
 ) {
     const response = await fetch(`${backend}/bid`, {
         method: 'POST',
@@ -72,12 +72,12 @@ export async function mint(connection: WalletConnection, account: string, tokenI
                     hash: {
                         None: [],
                     },
-                    url: 'https://s3.eu-central-1.amazonaws.com/tokens.testnet.concordium.com/ft/wccd', // Hardcoded value for simplicity for this demo dApp.
+                    url: 'https://s3.eu-central-1.amazonaws.com/tokens.testnet.concordium.com/ft/wccd', // Hardcoded value for simplicity for this demo dApp. In production, you should consider using a different metadata file for each token_id.
                 },
                 token_id: `0${Number(tokenId).toString(16)}`.slice(-2),
             },
             schema: typeSchemaFromBase64(MINT_PARAMETER_SCHEMA),
-        }
+        },
     );
 }
 
@@ -106,6 +106,6 @@ export async function addItem(connection: WalletConnection, account: string, tok
                 token_id: `0${Number(tokenId).toString(16)}`.slice(-2),
             },
             schema: typeSchemaFromBase64(ADD_ITEM_PARAMETER_SCHEMA),
-        }
+        },
     );
 }
