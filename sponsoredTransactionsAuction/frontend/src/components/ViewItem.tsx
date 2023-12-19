@@ -63,7 +63,7 @@ export default function ViewItem(props: ConnectionProps) {
                 </Button>
             </Form>
 
-            {itemState && <pre className="leftAlign">{JSON.stringify(JSON.parse(itemState), undefined, 2)}</pre>}
+            {itemState && <pre className="left-align-loading-text">{JSON.stringify(JSON.parse(itemState), undefined, 2)}</pre>}
             {itemStateError && <Alert variant="danger">Error: {itemStateError}.</Alert>}
             <br />
         </>

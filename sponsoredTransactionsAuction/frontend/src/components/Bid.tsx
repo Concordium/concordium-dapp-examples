@@ -254,7 +254,7 @@ export default function Bid(props: ConnectionProps) {
             {signature !== '' && (
                 <>
                     <div> Your generated signature is: </div>
-                    <div className="loadingText">{signature}</div>
+                    <div className="loading-text">{signature}</div>
                 </>
             )}
             {signingError && <Alert variant="danger">Error: {signingError}.</Alert>}

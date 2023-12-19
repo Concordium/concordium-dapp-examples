@@ -1,0 +1,38 @@
+.black-card-style {
+  background-color: #282828;
+  width: 650px;
+  margin: 1rem;
+  padding: 1rem;
+  border-radius:15px;
+  border-style: solid;
+  border-width: 0.1rem;
+  border-color: $mineral-blue;
+}
+
+.ccd-logo {
+  height: rfs-value(20px);
+}
+
+.platform-options{
+  width: 1.5em;
+  height: 1.5em;
+}
+
+.some-btn {
+  display: inline-flex !important;
+  align-items: center;
+}
+
+.alert {
+  display: inline-block;
+}
+
+.left-align-loading-text {
+  text-align: left !important;
+  color: #979797;
+}
+
+.loading-text {
+  color: #979797;
+  overflow-wrap: anywhere;
+}
