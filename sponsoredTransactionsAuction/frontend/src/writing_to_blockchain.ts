@@ -39,7 +39,7 @@ export async function submitBid(
     });
 
     if (!response.ok) {
-        const error = await response.json();
+        const error = await response.json() as object;
         throw new Error(`Unable to submit bid: ${JSON.stringify(error)}`);
     }
     const body = await response.json();
@@ -57,12 +57,12 @@ export async function mint(connection: WalletConnection, account: string, tokenI
         account,
         AccountTransactionType.Update,
         {
-            amount: new CcdAmount(BigInt(0n)),
+            amount: CcdAmount.zero(),
             address: {
                 index: BigInt(Number(process.env.CIS2_TOKEN_CONTRACT_INDEX)),
                 subindex: CONTRACT_SUB_INDEX,
             },
-            receiveName: `${SPONSORED_TX_CONTRACT_NAME}.mint`,
+            receiveName: `${SPONSORED_TX_CONTRACT_NAME.value}.mint`,
             maxContractExecutionEnergy: 30000n,
         } as unknown as UpdateContractPayload,
         {
@@ -89,12 +89,12 @@ export async function addItem(connection: WalletConnection, account: string, tok
         account,
         AccountTransactionType.Update,
         {
-            amount: new CcdAmount(BigInt(0n)),
+            amount: CcdAmount.zero(),
             address: {
                 index: BigInt(Number(process.env.AUCTION_CONTRACT_INDEX)),
                 subindex: CONTRACT_SUB_INDEX,
             },
-            receiveName: `${AUCTION_CONTRACT_NAME}.addItem`,
+            receiveName: `${AUCTION_CONTRACT_NAME.value}.addItem`,
             maxContractExecutionEnergy: 30000n,
         } as unknown as UpdateContractPayload,
         {

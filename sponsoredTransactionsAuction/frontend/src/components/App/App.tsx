@@ -135,7 +135,7 @@ export default function App(props: WalletConnectionProps) {
                         {publicKeyError && <Alert variant="danger">Error: {publicKeyError}. </Alert>}
                         <br />
                         <div> Your next nonce is: </div>
-                        <div className="loadingText">{nextNonce}</div>
+                        <div className="loadingText">{nextNonce.toString()}</div>
                         {nextNonceError && <Alert variant="danger">Error: {nextNonceError}. </Alert>}
                     </>
                 )}
@@ -194,16 +194,3 @@ export default function App(props: WalletConnectionProps) {
         </div>
     );
 }
-
-// function App() {
-//     return (
-//         <>
-//             <h1>Vite + React + Concordium</h1>
-//             <p className="pt-2">
-//                 Edit <code>src/components/App/App.tsx</code> and save to test HMR
-//             </p>
-//         </>
-//     );
-// }
-
-// export default App;

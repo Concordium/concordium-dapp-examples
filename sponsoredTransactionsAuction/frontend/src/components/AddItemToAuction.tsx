@@ -8,11 +8,13 @@ import {
     TransactionSummaryType,
     ConcordiumGRPCClient,
     UpdatedEvent,
-    toBuffer,
-    deserializeTypeValue,
+    // toBuffer,
+    // deserializeTypeValue,
+    TransactionHash,
 } from '@concordium/web-sdk';
 
-import { EVENT_SCHEMA, REFRESH_INTERVAL } from '../constants';
+// EVENT_SCHEMA
+import { REFRESH_INTERVAL } from '../constants';
 import { addItem } from '../writing_to_blockchain';
 
 interface ConnectionProps {
@@ -24,11 +26,11 @@ interface ConnectionProps {
     grpcClient: ConcordiumGRPCClient | undefined;
 }
 
-interface Event {
-    AddItemEvent: {
-        item_index: string;
-    };
-}
+// interface Event {
+//     AddItemEvent: {
+//         item_index: string;
+//     };
+// }
 
 /*
  * A component that manages the input fields and corresponding state to add an item to the auction contract.
@@ -68,7 +70,7 @@ export default function AddItemToAuction(props: ConnectionProps) {
         if (connection && grpcClient && txHash !== undefined) {
             const interval = setInterval(() => {
                 grpcClient
-                    .getBlockItemStatus(txHash)
+                    .getBlockItemStatus(TransactionHash.fromHexString(txHash))
                     .then((report) => {
                         if (report !== undefined) {
                             setItemIndex(undefined);
@@ -79,14 +81,17 @@ export default function AddItemToAuction(props: ConnectionProps) {
                                 ) {
                                     const eventList = report.outcome.summary.events[0] as UpdatedEvent;
 
-                                    const returnValues = deserializeTypeValue(
-                                        toBuffer(eventList.events[0], 'hex'),
-                                        toBuffer(EVENT_SCHEMA, 'base64'),
-                                    );
+                                    console.log(eventList)
+                                    // TODO
+                                    
+                                    // const returnValues = deserializeTypeValue(
+                                    //     toBuffer(eventList.events[0] as unknown as string, 'hex'),
+                                    //     toBuffer(EVENT_SCHEMA, 'base64'),
+                                    // );
 
-                                    const event = returnValues as unknown as Event;
-                                    setItemIndex(event.AddItemEvent.item_index);
-                                    clearInterval(interval);
+                                    // const event = returnValues as unknown as Event;
+                                    // setItemIndex(event.AddItemEvent.item_index);
+                                    // clearInterval(interval);
                                 } else {
                                     setItemIndexError('Tansaction failed or event decoding failed.');
                                     clearInterval(interval);

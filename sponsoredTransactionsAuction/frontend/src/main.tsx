@@ -10,16 +10,3 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </React.StrictMode>,
 );
 
-// import SponsoredTransactions from './SponsoredTransactions';
-
-// export default function Root() {
-//     return (
-//         <div>
-//             <main>
-//             <WithWalletConnector network={TESTNET}>
-//                     {(props) => <SponsoredTransactions {...props} />}
-//                 </WithWalletConnector>
-//             </main>
-//         </div>
-//     );
-// }

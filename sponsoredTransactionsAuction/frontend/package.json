@@ -12,9 +12,9 @@
         "preview": "vite preview"
     },
     "dependencies": {
-        "@concordium/browser-wallet-api-helpers": "2.4.0",
-        "@concordium/react-components": "^0.3.0",
-        "@concordium/web-sdk": "^3.4.0",
+        "@concordium/browser-wallet-api-helpers": "^3.0.0",
+        "@concordium/react-components": "^0.4.0",
+        "@concordium/web-sdk": "^7.1.0",
         "@walletconnect/types": "^2.1.4",
         "bootstrap": "^5.3.2",
         "cross-env": "^7.0.3",
@@ -23,7 +23,7 @@
         "react": "^18.2.0",
         "react-bootstrap": "^2.8.0",
         "react-dom": "^18.2.0",
-        "react-hook-form": "7.48"
+        "react-hook-form": "^7.48.2"
     },
     "devDependencies": {
         "@types/json-bigint": "^1",
