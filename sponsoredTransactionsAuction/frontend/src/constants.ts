@@ -1,12 +1,14 @@
 import { BrowserWalletConnector, ephemeralConnectorType } from '@concordium/react-components';
+import { ContractName } from '@concordium/web-sdk';
+
 import moment from 'moment';
 
 export const VERIFIER_URL = '/api';
 
 export const REFRESH_INTERVAL = moment.duration(5, 'seconds');
 
-export const SPONSORED_TX_CONTRACT_NAME = 'cis2_multi';
-export const AUCTION_CONTRACT_NAME = 'sponsored_tx_enabled_auction';
+export const SPONSORED_TX_CONTRACT_NAME = ContractName.fromString('cis2_multi');
+export const AUCTION_CONTRACT_NAME = ContractName.fromString('sponsored_tx_enabled_auction');
 
 export const CONTRACT_SUB_INDEX = 0n;
 

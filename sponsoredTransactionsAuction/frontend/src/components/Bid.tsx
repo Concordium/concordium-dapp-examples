@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { Alert, Button, Form } from 'react-bootstrap';
 
-import { AccountAddress, ConcordiumGRPCClient, Timestamp, serializeTypeValue, toBuffer } from '@concordium/web-sdk';
+import { ConcordiumGRPCClient, serializeTypeValue, toBuffer } from '@concordium/web-sdk';
 import { WalletConnection, typeSchemaFromBase64 } from '@concordium/react-components';
+
+import { Buffer } from 'buffer/';
 
 import {
     SERIALIZATION_HELPER_SCHEMA_ADDITIONAL_DATA,
@@ -15,14 +17,7 @@ import {
 import { submitBid } from '../writing_to_blockchain';
 import { viewItemState } from '../reading_from_blockchain';
 
-interface ItemState {
-    auction_state: object;
-    creator: AccountAddress;
-    end: Timestamp;
-    highest_bid: string;
-    highest_bidder: object;
-    name: string;
-    start: Timestamp;
+interface PartialItemState {
     token_id: string;
 }
 
@@ -41,7 +36,7 @@ async function generateTransferMessage(
     try {
         const returnValue = await viewItemState(grpcClient, itemIndexAuction);
 
-        const itemState = returnValue as unknown as ItemState;
+        const itemState = returnValue as unknown as PartialItemState;
 
         setTokenID(itemState.token_id);
 
@@ -50,10 +45,14 @@ async function generateTransferMessage(
             toBuffer(SERIALIZATION_HELPER_SCHEMA_ADDITIONAL_DATA, 'base64'),
         );
 
+        const hexStringData = [...data.buffer]
+            .map(b => b.toString(16).padStart(2, "0"))
+            .join("");
+
         const transfer = [
             {
                 amount,
-                data: data.toString('hex'), // e.g. 0100 (for item with index 1)
+                data: hexStringData, // e.g. 0100 (for item with index 1)
                 from: {
                     Account: [account],
                 },
@@ -71,7 +70,7 @@ async function generateTransferMessage(
         ];
 
         const payload = serializeTypeValue(transfer, toBuffer(TRANSFER_SCHEMA, 'base64'));
-
+   
         const message = {
             contract_address: {
                 index: Number(process.env.CIS2_TOKEN_CONTRACT_INDEX),
@@ -80,7 +79,7 @@ async function generateTransferMessage(
             nonce: Number(nonce),
             timestamp: expiryTimeSignature,
             entry_point: 'transfer',
-            payload: Array.from(payload),
+            payload: Array.from(payload.buffer),
         };
 
         const serializedMessage = serializeTypeValue(
@@ -158,7 +157,7 @@ export default function Bid(props: ConnectionProps) {
 
                 const permitSignature = await connection.signMessage(account, {
                     type: 'BinaryMessage',
-                    value: serializedMessage,
+                    value: Buffer.from(serializedMessage.buffer) ,
                     schema: typeSchemaFromBase64(SERIALIZATION_HELPER_SCHEMA_PERMIT_MESSAGE),
                 });
 
