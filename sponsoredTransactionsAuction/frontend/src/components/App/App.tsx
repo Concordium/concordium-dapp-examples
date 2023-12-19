@@ -129,13 +129,12 @@ export default function App(props: WalletConnectionProps) {
                         <div className="text">Connected to</div>
                         <AccountLink account={account} />
                         <br />
-                        <br />
                         <div> Your public key is: </div>
-                        <div className="loadingText">{publicKey}</div>
+                        <div className="loading-text">{publicKey}</div>
                         {publicKeyError && <Alert variant="danger">Error: {publicKeyError}. </Alert>}
                         <br />
                         <div> Your next nonce is: </div>
-                        <div className="loadingText">{nextNonce.toString()}</div>
+                        <div className="loading-text">{nextNonce.toString()}</div>
                         {nextNonceError && <Alert variant="danger">Error: {nextNonceError}. </Alert>}
                     </>
                 )}
@@ -151,46 +150,54 @@ export default function App(props: WalletConnectionProps) {
                     <hr />
                     <div>Transaction status{txHash === '' ? '' : ' (May take a moment to finalize)'}</div>
                     {txHash && <TxHashLink txHash={txHash} />}
-                    {!txHash && !transactionError && <div className="loadingText">None</div>}
-                    {!txHash && transactionError && <Alert variant="danger">Error: {transactionError}. </Alert>}
-                    <br />
+                    {!txHash && !transactionError && <div className="loading-text">None</div>}
+
+                    {!txHash && transactionError && (
+                        <>
+                            <br />
+                            <Alert variant="danger">Error: {transactionError}. </Alert>
+                        </>
+                    )}
                     <hr />
                 </>
-            )}
+            )
+            }
 
-            {connection && account !== undefined && (
-                <>
-                    <hr />
-                    <MintTokens
-                        account={account}
-                        connection={connection}
-                        setTxHash={setTxHash}
-                        setTransactionError={setTransactionError}
-                    />
-                    <hr />
-                    <AddItemToAuction
-                        account={account}
-                        connection={connection}
-                        setTxHash={setTxHash}
-                        setTransactionError={setTransactionError}
-                        txHash={txHash}
-                        grpcClient={grpcClient}
-                    />
-                    <hr />
-                    <ViewItem grpcClient={grpcClient} />
-                    <hr />
-                    <Bid
-                        grpcClient={grpcClient}
-                        connection={connection}
-                        account={account}
-                        setTxHash={setTxHash}
-                        setTransactionError={setTransactionError}
-                    />
-                    <hr />
+            {
+                connection && account !== undefined && (
+                    <>
+                        <hr />
+                        <MintTokens
+                            account={account}
+                            connection={connection}
+                            setTxHash={setTxHash}
+                            setTransactionError={setTransactionError}
+                        />
+                        <hr />
+                        <AddItemToAuction
+                            account={account}
+                            connection={connection}
+                            setTxHash={setTxHash}
+                            setTransactionError={setTransactionError}
+                            txHash={txHash}
+                            grpcClient={grpcClient}
+                        />
+                        <hr />
+                        <ViewItem grpcClient={grpcClient} />
+                        <hr />
+                        <Bid
+                            grpcClient={grpcClient}
+                            connection={connection}
+                            account={account}
+                            setTxHash={setTxHash}
+                            setTransactionError={setTransactionError}
+                        />
+                        <hr />
 
-                    <Footer />
-                </>
-            )}
-        </div>
+                        <Footer />
+                    </>
+                )
+            }
+        </div >
     );
 }
