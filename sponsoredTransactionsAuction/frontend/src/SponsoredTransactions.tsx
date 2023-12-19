@@ -1,5 +1,4 @@
-/* eslint-disable consistent-return */
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, Button } from 'react-bootstrap';
 
 import {
@@ -104,7 +103,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
     }, []);
 
     return (
-        <div className="blackCardStyle">
+        <div className="black-card-style">
             <h2>Explore Sponsored Transactions</h2>
             <div>
                 {activeConnectorError && <Alert variant="danger">Connector Error: {activeConnectorError}.</Alert>}

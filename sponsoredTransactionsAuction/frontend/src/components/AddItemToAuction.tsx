@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Alert, Button, Form } from 'react-bootstrap';
 
@@ -12,8 +12,8 @@ import {
     deserializeTypeValue,
 } from '@concordium/web-sdk';
 
-import { EVENT_SCHEMA, REFRESH_INTERVAL } from 'src/constants';
-import { addItem } from 'src/writing_to_blockchain';
+import { EVENT_SCHEMA, REFRESH_INTERVAL } from '../constants';
+import { addItem } from '../writing_to_blockchain';
 
 interface ConnectionProps {
     setTxHash: (hash: string | undefined) => void;
@@ -37,10 +37,10 @@ interface Event {
 export default function AddItemToAuction(props: ConnectionProps) {
     const { account, connection, grpcClient, setTxHash, txHash, setTransactionError } = props;
 
-    type FormType = {
+    interface FormType {
         tokenID: string;
         name: string;
-    };
+    }
     const form = useForm<FormType>({ mode: 'all' });
 
     const [itemIndex, setItemIndex] = useState<string | undefined>(undefined);
@@ -55,7 +55,7 @@ export default function AddItemToAuction(props: ConnectionProps) {
         if (account) {
             const tx = addItem(connection, account, data.tokenID, data.name);
             tx.then(setTxHash)
-                .catch((err: Error) => setTransactionError((err as Error).message))
+                .catch((err: Error) => setTransactionError(err.message))
                 .finally(() => setShowMessage(true));
         }
     }
@@ -63,7 +63,7 @@ export default function AddItemToAuction(props: ConnectionProps) {
     // Periodically fetch the status of the submitted transaction until it is finalized.
     // Once the transaction is finalized extract the
     // newly created ItemIndex from the event emitted within the transaction.
-    // eslint-disable-next-line consistent-return
+
     useEffect(() => {
         if (connection && grpcClient && txHash !== undefined) {
             const interval = setInterval(() => {
@@ -81,7 +81,7 @@ export default function AddItemToAuction(props: ConnectionProps) {
 
                                     const returnValues = deserializeTypeValue(
                                         toBuffer(eventList.events[0], 'hex'),
-                                        toBuffer(EVENT_SCHEMA, 'base64')
+                                        toBuffer(EVENT_SCHEMA, 'base64'),
                                     );
 
                                     const event = returnValues as unknown as Event;

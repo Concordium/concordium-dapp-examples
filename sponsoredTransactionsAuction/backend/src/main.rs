@@ -1,18 +1,16 @@
 mod handlers;
 mod types;
-use crate::handlers::*;
-use crate::types::*;
+use crate::{handlers::*, types::*};
 use anyhow::Context;
 use clap::Parser;
-use concordium_rust_sdk::common::{self as crypto_common};
-use concordium_rust_sdk::types::WalletAccount;
-use std::collections::HashMap;
-use std::path::PathBuf;
-use std::sync::Arc;
+use concordium_rust_sdk::{
+    common::{self as crypto_common},
+    types::WalletAccount,
+};
+use std::{collections::HashMap, path::PathBuf, sync::Arc};
 use tokio::sync::Mutex;
 use tonic::transport::ClientTlsConfig;
-use warp::http;
-use warp::Filter;
+use warp::{http, Filter};
 
 /// Structure used to receive the correct command line arguments.
 #[derive(clap::Parser, Debug)]
@@ -37,7 +35,8 @@ struct IdVerifierConfig {
         long = "cis2-token-smart-contract-index",
         default_value = "7370",
         env = "CIS2_TOKEN_CONTRACT_INDEX",
-        help = "The cis2 token smart contract index which the sponsored transaction is submitted to."
+        help = "The cis2 token smart contract index which the sponsored transaction is submitted \
+                to."
     )]
     cis2_token_smart_contract_index: u64,
     #[clap(
@@ -114,7 +113,7 @@ async fn main() -> anyhow::Result<()> {
         })?;
 
     let state_transfer = Server {
-        nonce: Arc::new(Mutex::new(nonce_response.nonce)),
+        nonce:       Arc::new(Mutex::new(nonce_response.nonce)),
         rate_limits: Arc::new(Mutex::new(HashMap::new())),
     };
 

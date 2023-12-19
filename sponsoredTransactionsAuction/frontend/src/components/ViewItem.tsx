@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Alert, Button, Form } from 'react-bootstrap';
 
 import { ConcordiumGRPCClient } from '@concordium/web-sdk';
 
-import { viewItemState } from 'src/reading_from_blockchain';
+import { viewItemState } from '../reading_from_blockchain';
 
 interface ConnectionProps {
     grpcClient: ConcordiumGRPCClient | undefined;
@@ -19,9 +19,9 @@ export default function ViewItem(props: ConnectionProps) {
     const [itemState, setItemState] = useState<undefined | string>(undefined);
     const [itemStateError, setItemStateError] = useState<string | undefined>(undefined);
 
-    type FormType = {
+    interface FormType {
         itemIndex: string;
-    };
+    }
     const form = useForm<FormType>({ mode: 'all' });
 
     function onSubmit(data: FormType) {

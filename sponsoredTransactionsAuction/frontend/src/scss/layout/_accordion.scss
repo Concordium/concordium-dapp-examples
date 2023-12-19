@@ -1,6 +1,8 @@
+@import 'bootstrap/scss/accordion';
+
 .accordion-button {
-  &:not(.collapsed) {
-    color: $ocean-blue;
-    background: $header-gradient;
-  }
+    &:not(.collapsed) {
+        color: $ocean-blue;
+        background: $header-gradient;
+    }
 }

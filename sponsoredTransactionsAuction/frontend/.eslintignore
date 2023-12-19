@@ -1,10 +1,4 @@
-.eslintcache
-.yarn
-node_modules
-
-# OSX
-.DS_Store
-
-dist
-package.json
-
+.eslintrc.cjs
+.yarn/
+node_modules/
+dist/

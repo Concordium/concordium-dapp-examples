@@ -32,18 +32,18 @@ export async function viewItemState(rpcClient: ConcordiumGRPCClient, itenIndex: 
         throw new Error(
             `RPC call 'invokeContract' on method '${AUCTION_CONTRACT_NAME}.viewItemState' of contract '${
                 process.env.AUCTION_CONTRACT_INDEX
-            }' failed. Response: ${JSONbig.stringify(res)}`
+            }' failed. Response: ${JSONbig.stringify(res)}`,
         );
     }
 
     const returnValues = deserializeTypeValue(
         toBuffer(res.returnValue, 'hex'),
-        toBuffer(VIEW_ITEM_RETURN_VALUE_SCHEMA, 'base64')
+        toBuffer(VIEW_ITEM_RETURN_VALUE_SCHEMA, 'base64'),
     );
 
     if (returnValues === undefined) {
         throw new Error(
-            `Deserializing the returnValue from the '${AUCTION_CONTRACT_NAME}.viewItemState' method of contract '${process.env.AUCTION_CONTRACT_INDEX}' failed`
+            `Deserializing the returnValue from the '${AUCTION_CONTRACT_NAME}.viewItemState' method of contract '${process.env.AUCTION_CONTRACT_INDEX}' failed`,
         );
     } else {
         // Return item
@@ -73,7 +73,7 @@ export async function getNonceOf(rpcClient: ConcordiumGRPCClient, account: strin
                 },
             ],
         },
-        toBuffer(NONCE_OF_PARAMETER_SCHEMA, 'base64')
+        toBuffer(NONCE_OF_PARAMETER_SCHEMA, 'base64'),
     );
 
     const res = await rpcClient.invokeContract({
@@ -86,18 +86,18 @@ export async function getNonceOf(rpcClient: ConcordiumGRPCClient, account: strin
         throw new Error(
             `RPC call 'invokeContract' on method '${SPONSORED_TX_CONTRACT_NAME}.nonceOf' of contract '${
                 process.env.CIS2_TOKEN_CONTRACT_INDEX
-            }' failed. Response: ${JSONbig.stringify(res)}`
+            }' failed. Response: ${JSONbig.stringify(res)}`,
         );
     }
 
     const returnValues = deserializeTypeValue(
         toBuffer(res.returnValue, 'hex'),
-        toBuffer(NONCE_OF_RETURN_VALUE_SCHEMA, 'base64')
+        toBuffer(NONCE_OF_RETURN_VALUE_SCHEMA, 'base64'),
     ) as number[][];
 
     if (returnValues === undefined) {
         throw new Error(
-            `Deserializing the returnValue from the '${SPONSORED_TX_CONTRACT_NAME}.nonceOf' method of contract '${process.env.CIS2_TOKEN_CONTRACT_INDEX}' failed`
+            `Deserializing the returnValue from the '${SPONSORED_TX_CONTRACT_NAME}.nonceOf' method of contract '${process.env.CIS2_TOKEN_CONTRACT_INDEX}' failed`,
         );
     } else {
         // Return next nonce of a user
