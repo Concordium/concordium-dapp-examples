@@ -61,7 +61,7 @@ struct IdVerifierConfig {
     )]
     public_folder: String,
     #[structopt(
-        long = "account_key_file",
+        long = "account-key-file",
         env = "ACCOUNT_KEY_FILE",
         help = "Path to the account key file."
     )]

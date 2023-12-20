@@ -160,44 +160,41 @@ export default function App(props: WalletConnectionProps) {
                     )}
                     <hr />
                 </>
-            )
-            }
+            )}
 
-            {
-                connection && account !== undefined && (
-                    <>
-                        <hr />
-                        <MintTokens
-                            account={account}
-                            connection={connection}
-                            setTxHash={setTxHash}
-                            setTransactionError={setTransactionError}
-                        />
-                        <hr />
-                        <AddItemToAuction
-                            account={account}
-                            connection={connection}
-                            setTxHash={setTxHash}
-                            setTransactionError={setTransactionError}
-                            txHash={txHash}
-                            grpcClient={grpcClient}
-                        />
-                        <hr />
-                        <ViewItem grpcClient={grpcClient} />
-                        <hr />
-                        <Bid
-                            grpcClient={grpcClient}
-                            connection={connection}
-                            account={account}
-                            setTxHash={setTxHash}
-                            setTransactionError={setTransactionError}
-                        />
-                        <hr />
+            {connection && account !== undefined && (
+                <>
+                    <hr />
+                    <MintTokens
+                        account={account}
+                        connection={connection}
+                        setTxHash={setTxHash}
+                        setTransactionError={setTransactionError}
+                    />
+                    <hr />
+                    <AddItemToAuction
+                        account={account}
+                        connection={connection}
+                        setTxHash={setTxHash}
+                        setTransactionError={setTransactionError}
+                        txHash={txHash}
+                        grpcClient={grpcClient}
+                    />
+                    <hr />
+                    <ViewItem grpcClient={grpcClient} />
+                    <hr />
+                    <Bid
+                        grpcClient={grpcClient}
+                        connection={connection}
+                        account={account}
+                        setTxHash={setTxHash}
+                        setTransactionError={setTransactionError}
+                    />
+                    <hr />
 
-                        <Footer />
-                    </>
-                )
-            }
-        </div >
+                    <Footer />
+                </>
+            )}
+        </div>
     );
 }

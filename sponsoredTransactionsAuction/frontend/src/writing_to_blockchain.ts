@@ -39,10 +39,10 @@ export async function submitBid(
     });
 
     if (!response.ok) {
-        const error = await response.json() as object;
+        const error = (await response.json()) as Error;
         throw new Error(`Unable to submit bid: ${JSON.stringify(error)}`);
     }
-    const body = await response.json();
+    const body = (await response.json()) as string;
     if (body) {
         return body;
     }

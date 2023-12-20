@@ -1,13 +1,13 @@
 @import 'bootstrap/scss/buttons';
 
 .btn-secondary {
-  @include button-variant($mineral-blue, $mineral-blue, $white);
+    @include button-variant($mineral-blue, $mineral-blue, $white);
 }
 
 .btn-danger {
-  @include button-variant($red-600, $red-600);
+    @include button-variant($red-600, $red-600);
 }
 
 .btn-disabled {
-  color: gray
+    color: gray;
 }

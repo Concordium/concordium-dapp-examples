@@ -19,13 +19,14 @@ Alternatively, follow the steps to deploy the docker container below. This docke
 
 ## Run as docker
 
-Add your `ACCOUNT_KEY_FILE` to the repository's root folder and run the dockerfile from the repository's root folder with the command:
+Run the dockerfile from the repository's root folder with the command:
+
 ```shell
 docker build -t sponsored_transactions -f sponsoredTransactionsAuction/Dockerfile .
 ```
 
+Add your `ACCOUNT_KEY_FILE` to the repository's root folder and run the image with the command:
 
-The image can then be run with:
 ```shell
 docker run -p 8080:8080 --mount type=bind,source="$(pwd)"/<ACCOUNT_KEY_FILE>,target=/KEY,readonly -e ACCOUNT_KEY_FILE="/KEY" -e PORT=<PORT> -e NODE=<NODE> -e LOG_LEVEL=<LOG_LEVEL> -e CIS2_TOKEN_CONTRACT_INDEX=<CONTRACT_INDEX> -e AUCTION_CONTRACT_INDEX=<CONTRACT_INDEX> sponsored_transactions
 ```
@@ -42,9 +43,7 @@ Note: To get your `ACCOUNT_KEY_FILE` (the `4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGb
 <img src="./backend/pic/pic2.png"  width="200" />
 <img src="./backend/pic/pic3.png"  width="200" />
 
-See the [docker file](./Dockerfile) to explore the environment variables that can set.
-
-Note: Use the same smart contract indices for the frontend and backend. In other words, use the smart contract indices from the `./frontend/package.json` file in the dockerfile.
+Note: Use the same smart contract indices for the frontend and backend. In other words, use the smart contract indices from the `./frontend/package.json` file when running the image.
 
 
 
