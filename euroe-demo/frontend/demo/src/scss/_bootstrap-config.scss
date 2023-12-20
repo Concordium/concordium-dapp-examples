@@ -1,8 +1,0 @@
-@use 'sass:map';
-
-$grid-columns: 24;
-$enable-negative-margins: true;
-
-@import 'bootstrap/scss/bootstrap.scss';
-
-$theme-colors: map.set($theme-colors, 'faded', $gray-300);
