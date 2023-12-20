@@ -20,6 +20,10 @@ The following examples are available.
 
 - [simple age verification](./simpleAgeVerification/) demonstrates in a simple use case of verifiying the users age with the browser wallet.
 
+- [euroe-demo](./euroe-demo/) demonstrates an example frontend and wallet
+  interactions of a store that sells restricted items, and supports payment in
+  EUROe tokens (or generally any CIS2 token).
+
 ## Setup
 
 Some projects uses submodules, to initialize or update those, run:

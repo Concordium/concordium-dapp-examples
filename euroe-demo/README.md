@@ -1,30 +1,37 @@
-# React + TypeScript + Vite
+# EUROe usage demo
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This dapp exemplifies how to do age verification together with payment using
+EUROe, or any other CIS2, token.
 
-Currently, two official plugins are available:
+Note that only the **frontend** is here. This frontend does not verify age
+proofs, it just accepts them. In a real production scenario the proofs would of
+course be verified, linked to an account, and a session token generated to allow
+usage of the store for that session.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+To develop use
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
-
-- Configure the top-level `parserOptions` property like this:
-
-```js
-export default {
-  // other rules...
-  parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-    project: ['./tsconfig.json', './tsconfig.node.json'],
-    tsconfigRootDir: __dirname,
-  },
-};
+```
+yarn dev
 ```
 
-- Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or `plugin:@typescript-eslint/strict-type-checked`
-- Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list
+which will start a development server and print the address on which it is
+listening. Use `yarn fmt` and `yarn lint` before committing to ensure consistent
+formatting and adherence to common style.
+
+To build for production run
+```
+yarn build
+```
+
+which will produce the artifacts in the `dist` folder.
+
+
+## Docker image
+
+To build a docker image run
+
+```
+docker build -f scripts/Dockerfile .
+```
+
+from this directory (i.e., directory the README file is located in).
