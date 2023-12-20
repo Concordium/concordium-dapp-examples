@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Alert, Button, Form } from 'react-bootstrap';
 
-import { WalletConnection, useGrpcClient } from '@concordium/react-components';
+import { WalletConnection } from '@concordium/react-components';
 import {
     TransactionKindString,
     TransactionSummaryType,
@@ -81,9 +81,9 @@ export default function AddItemToAuction(props: ConnectionProps) {
                                 ) {
                                     const eventList = report.outcome.summary.events[0] as UpdatedEvent;
 
-                                    console.log(eventList)
+                                    console.log(eventList);
                                     // TODO
-                                    
+
                                     // const returnValues = deserializeTypeValue(
                                     //     toBuffer(eventList.events[0] as unknown as string, 'hex'),
                                     //     toBuffer(EVENT_SCHEMA, 'base64'),
@@ -107,12 +107,12 @@ export default function AddItemToAuction(props: ConnectionProps) {
             }, REFRESH_INTERVAL.asMilliseconds());
             return () => clearInterval(interval);
         }
-    }, [connection, useGrpcClient, txHash]);
+    }, [connection, grpcClient, txHash]);
 
     return (
         <>
             <Form onSubmit={form.handleSubmit(onSubmit)}>
-                <Form.Label className="h5">Step 2: Add item to auction</Form.Label>
+                <Form.Label className="h2">Step 2: Add item to auction</Form.Label>
                 <Form.Group className="mb-3 text-center">
                     <Form.Label>Cis2 Token ID (payment token) in decimal</Form.Label>
                     <Form.Control

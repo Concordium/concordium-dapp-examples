@@ -45,9 +45,7 @@ async function generateTransferMessage(
             toBuffer(SERIALIZATION_HELPER_SCHEMA_ADDITIONAL_DATA, 'base64'),
         );
 
-        const hexStringData = [...data.buffer]
-            .map(b => b.toString(16).padStart(2, "0"))
-            .join("");
+        const hexStringData = [...data.buffer].map((b) => b.toString(16).padStart(2, '0')).join('');
 
         const transfer = [
             {
@@ -70,7 +68,7 @@ async function generateTransferMessage(
         ];
 
         const payload = serializeTypeValue(transfer, toBuffer(TRANSFER_SCHEMA, 'base64'));
-   
+
         const message = {
             contract_address: {
                 index: Number(process.env.CIS2_TOKEN_CONTRACT_INDEX),
@@ -89,7 +87,7 @@ async function generateTransferMessage(
 
         return serializedMessage;
     } catch (error) {
-        throw new Error(`Generating transfer message failed. Orginal error: ${error}`);
+        throw new Error(`Generating transfer message failed. Orginal error: ${(error as Error).message}`);
     }
 }
 
@@ -157,7 +155,7 @@ export default function Bid(props: ConnectionProps) {
 
                 const permitSignature = await connection.signMessage(account, {
                     type: 'BinaryMessage',
-                    value: Buffer.from(serializedMessage.buffer) ,
+                    value: Buffer.from(serializedMessage.buffer),
                     schema: typeSchemaFromBase64(SERIALIZATION_HELPER_SCHEMA_PERMIT_MESSAGE),
                 });
 
@@ -168,7 +166,7 @@ export default function Bid(props: ConnectionProps) {
         }
     }
 
-    async function onSubmitBid(data: FormTypeBid, accountAddress: string | undefined) {
+    function onSubmitBid(data: FormTypeBid, accountAddress: string | undefined) {
         setTxHash(undefined);
         setTransactionError(undefined);
         setShowMessage(false);
@@ -202,7 +200,7 @@ export default function Bid(props: ConnectionProps) {
     return (
         <>
             <Form onSubmit={formGenerateSignature.handleSubmit(onSubmitSigning)}>
-                <Form.Label className="h5">Step 4: Generate signature</Form.Label>
+                <Form.Label className="h2">Step 4: Generate signature</Form.Label>
                 <Form.Group className="mb-3 text-center">
                     <Form.Label>Amount of Cis2 tokens (payment token)</Form.Label>
                     <Form.Control
@@ -260,7 +258,7 @@ export default function Bid(props: ConnectionProps) {
             {signingError && <Alert variant="danger">Error: {signingError}.</Alert>}
             <hr />
             <Form onSubmit={formBid.handleSubmit((data) => onSubmitBid(data, account))}>
-                <Form.Label className="h5">Step 5: Submit Sponsored Transaction</Form.Label>
+                <Form.Label className="h2">Step 5: Submit Sponsored Transaction</Form.Label>
 
                 <Form.Group className="mb-3 text-center">
                     <Form.Label>Signer</Form.Label>

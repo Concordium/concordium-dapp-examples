@@ -9,4 +9,3 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <WithWalletConnector network={TESTNET}>{(props) => <App {...props} />}</WithWalletConnector>
     </React.StrictMode>,
 );
-

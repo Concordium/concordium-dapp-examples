@@ -44,7 +44,7 @@ export default function ViewItem(props: ConnectionProps) {
     return (
         <>
             <Form onSubmit={form.handleSubmit(onSubmit)}>
-                <Form.Label className="h5">Step 3: View your item</Form.Label>
+                <Form.Label className="h2">Step 3: View your item</Form.Label>
                 <Form.Group className="mb-3 text-center">
                     <Form.Label>Item Index</Form.Label>
                     <Form.Control
@@ -63,7 +63,9 @@ export default function ViewItem(props: ConnectionProps) {
                 </Button>
             </Form>
 
-            {itemState && <pre className="left-align-loading-text">{JSON.stringify(JSON.parse(itemState), undefined, 2)}</pre>}
+            {itemState && (
+                <pre className="left-align-loading-text">{JSON.stringify(JSON.parse(itemState), undefined, 2)}</pre>
+            )}
             {itemStateError && <Alert variant="danger">Error: {itemStateError}.</Alert>}
             <br />
         </>

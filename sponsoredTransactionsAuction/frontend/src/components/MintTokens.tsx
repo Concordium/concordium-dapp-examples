@@ -43,7 +43,7 @@ export default function MintTokens(props: ConnectionProps) {
     return (
         <>
             <Form onSubmit={form.handleSubmit(onSubmit)}>
-                <Form.Label className="h5">Step 1: Mint 100 tokens to your account</Form.Label>
+                <Form.Label className="h2">Step 1: Mint 100 tokens to your account</Form.Label>
                 <Form.Group className="mb-3 text-center">
                     <Form.Label>Cis2 Token ID (payment token) in decimal</Form.Label>
                     <Form.Control
