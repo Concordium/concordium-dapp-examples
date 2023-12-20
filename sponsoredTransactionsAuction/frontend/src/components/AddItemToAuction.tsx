@@ -8,13 +8,12 @@ import {
     TransactionSummaryType,
     ConcordiumGRPCClient,
     UpdatedEvent,
-    // toBuffer,
-    // deserializeTypeValue,
+    toBuffer,
+    deserializeTypeValue,
     TransactionHash,
 } from '@concordium/web-sdk';
 
-// EVENT_SCHEMA
-import { REFRESH_INTERVAL } from '../constants';
+import { EVENT_SCHEMA } from '../constants';
 import { addItem } from '../writing_to_blockchain';
 
 interface ConnectionProps {
@@ -26,11 +25,11 @@ interface ConnectionProps {
     grpcClient: ConcordiumGRPCClient | undefined;
 }
 
-// interface Event {
-//     AddItemEvent: {
-//         item_index: string;
-//     };
-// }
+interface ContractEvent {
+    AddItemEvent: {
+        item_index: string;
+    };
+}
 
 /*
  * A component that manages the input fields and corresponding state to add an item to the auction contract.
@@ -62,50 +61,35 @@ export default function AddItemToAuction(props: ConnectionProps) {
         }
     }
 
-    // Periodically fetch the status of the submitted transaction until it is finalized.
-    // Once the transaction is finalized extract the
+    // Wait until the submitted transaction is finalized.
+    // Once the transaction is finalized, extract the
     // newly created ItemIndex from the event emitted within the transaction.
-
     useEffect(() => {
         if (connection && grpcClient && txHash !== undefined) {
-            const interval = setInterval(() => {
-                grpcClient
-                    .getBlockItemStatus(TransactionHash.fromHexString(txHash))
-                    .then((report) => {
-                        if (report !== undefined) {
-                            setItemIndex(undefined);
-                            if (report.status === 'finalized') {
-                                if (
-                                    report.outcome.summary.type === TransactionSummaryType.AccountTransaction &&
-                                    report.outcome.summary.transactionType === TransactionKindString.Update
-                                ) {
-                                    const eventList = report.outcome.summary.events[0] as UpdatedEvent;
+            grpcClient
+                .waitForTransactionFinalization(TransactionHash.fromHexString(txHash))
+                .then((report) => {
+                    if (
+                        report.summary.type === TransactionSummaryType.AccountTransaction &&
+                        report.summary.transactionType === TransactionKindString.Update
+                    ) {
+                        const eventList = report.summary.events[0] as UpdatedEvent;
 
-                                    console.log(eventList);
-                                    // TODO
+                        const returnValues = deserializeTypeValue(
+                            eventList.events[0].buffer,
+                            toBuffer(EVENT_SCHEMA, 'base64'),
+                        );
 
-                                    // const returnValues = deserializeTypeValue(
-                                    //     toBuffer(eventList.events[0] as unknown as string, 'hex'),
-                                    //     toBuffer(EVENT_SCHEMA, 'base64'),
-                                    // );
-
-                                    // const event = returnValues as unknown as Event;
-                                    // setItemIndex(event.AddItemEvent.item_index);
-                                    // clearInterval(interval);
-                                } else {
-                                    setItemIndexError('Tansaction failed or event decoding failed.');
-                                    clearInterval(interval);
-                                }
-                            }
-                        }
-                    })
-                    .catch((e) => {
-                        setItemIndex(undefined);
-                        setItemIndexError((e as Error).message);
-                        clearInterval(interval);
-                    });
-            }, REFRESH_INTERVAL.asMilliseconds());
-            return () => clearInterval(interval);
+                        const event = returnValues as unknown as ContractEvent;
+                        setItemIndex(event.AddItemEvent.item_index);
+                    } else {
+                        setItemIndexError('Tansaction failed or event decoding failed.');
+                    }
+                })
+                .catch((e) => {
+                    setItemIndex(undefined);
+                    setItemIndexError((e as Error).message);
+                });
         }
     }, [connection, grpcClient, txHash]);
 
@@ -154,7 +138,7 @@ export default function AddItemToAuction(props: ConnectionProps) {
                     <Alert variant="info">You will see the item index below after the transaction is finalized.</Alert>
                 </>
             )}
-            {itemIndex && <Alert variant="info">Item index: {itemIndex}</Alert>}
+            {itemIndex && <Alert variant="info">Item index: {itemIndex.toString()}</Alert>}
             {itemIndexError && <Alert variant="danger">Error: {itemIndexError}</Alert>}
         </>
     );
