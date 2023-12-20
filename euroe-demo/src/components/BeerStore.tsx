@@ -92,7 +92,7 @@ type SubmitButtonsProps = {
   account: AccountAddress.Type;
   open: boolean;
   setOpen: (open: boolean) => void;
-  selectedItems: any[];
+  selectedItems: unknown[];
   setUpdateBalance: (updated: boolean) => void;
 };
 
