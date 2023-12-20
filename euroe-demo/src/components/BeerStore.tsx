@@ -51,13 +51,13 @@ import { green } from '@mui/material/colors';
 import CheckIcon from '@mui/icons-material/Check';
 import PublishRoundedIcon from '@mui/icons-material/PublishRounded';
 
-const CONTRACT_ADDRESS = ContractAddress.create(2059);
+const CONTRACT_ADDRESS = ContractAddress.create(7260);
 const RECEIVER_ADDRESS = AccountAddress.fromBase58('4DnXB9GTJ178e3YWHpCZQxwY5kVN9CJvQeBNbGczjnT8A7Wfcx');
 
 async function submitTransaction(items: bigint, account: AccountAddress.Type, wallet: WalletApi, client: CIS2Contract) {
   const transfer: CIS2.Transfer = {
     tokenId: '',
-    tokenAmount: items * 1000n,
+    tokenAmount: items * 1000000n,
     from: account,
     to: RECEIVER_ADDRESS,
   };
