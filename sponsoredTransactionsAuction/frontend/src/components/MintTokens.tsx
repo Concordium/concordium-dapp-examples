@@ -3,7 +3,10 @@ import { useForm } from 'react-hook-form';
 import { Alert, Button, Form } from 'react-bootstrap';
 
 import { WalletConnection } from '@concordium/react-components';
-import { mint } from '../writing_to_blockchain';
+import { mintTest } from '../cis2_token_contract';
+import { AccountAddress } from '@concordium/web-sdk';
+
+import * as Cis2MultiContract from '../../generated/cis2_multi_cis2_multi'; // Code generated from a smart contract module.
 
 interface ConnectionProps {
     setTxHash: (hash: string | undefined) => void;
@@ -33,10 +36,29 @@ export default function MintTokens(props: ConnectionProps) {
         setShowMessage(false);
 
         if (connection && account) {
-            const tx = mint(connection, account, data.tokenID, data.toAddress);
-            tx.then(setTxHash)
+            const mintParam: Cis2MultiContract.MintParameter = {
+                owner: {
+                    type: 'Account',
+                    content: AccountAddress.fromBase58(account),
+                },
+                metadata_url: {
+                    hash: { type: 'None' },
+                    url: 'https://s3.eu-central-1.amazonaws.com/tokens.testnet.concordium.com/ft/wccd', // Hardcoded value for simplicity for this demo dApp. In production, you should consider using a different metadata file for each token_id.
+                },
+                token_id: `0${Number(data.tokenID).toString(16)}`.slice(-2),
+            };
+
+            const tx = mintTest(connection, AccountAddress.fromBase58(account), mintParam);
+
+            tx.then((test) => {
+                console.log(test);
+            })
                 .catch((err: Error) => setTransactionError(err.message))
                 .finally(() => setShowMessage(true));
+
+            // tx.then(setTxHash)
+            //     .catch((err: Error) => setTransactionError(err.message))
+            //     .finally(() => setShowMessage(true));
         }
     }
 
