@@ -38,7 +38,7 @@ export async function mintTest(
     mintParameter: Cis2MultiContract.MintParameter,
 ): Promise<TransactionHash.Type> {
     const params: TypedSmartContractParameters = {
-        parameters: mintParameter as any,
+        parameters: mintParameter,
         schema: {
             type: 'TypeSchema',
             value: toBuffer(MINT_PARAMETER_SCHEMA, 'base64'),
