@@ -11,10 +11,14 @@ import {
     toBuffer,
     deserializeTypeValue,
     TransactionHash,
+    AccountAddress,
+    Timestamp,
 } from '@concordium/web-sdk';
 
 import { EVENT_SCHEMA } from '../constants';
-import { addItem } from '../writing_to_blockchain';
+import { addItemTest } from '../auction_contract';
+
+import * as AuctionContract from '../../generated/sponsored_tx_enabled_auction_sponsored_tx_enabled_auction'; // Code generated from a smart contract module.
 
 interface ConnectionProps {
     setTxHash: (hash: string | undefined) => void;
@@ -53,11 +57,26 @@ export default function AddItemToAuction(props: ConnectionProps) {
         setTransactionError(undefined);
         setShowMessage(false);
 
+        const addItemParameter: AuctionContract.AddItemParameter = {
+            name: data.name,
+            start: Timestamp.fromMillis(0), // Hardcoded value for simplicity for this demo dApp.
+            end: Timestamp.fromMillis(9999999999999n), // Hardcoded value for simplicity for this demo dApp.
+            minimum_bid: 0,
+            token_id: `0${Number(data.tokenID).toString(16)}`.slice(-2),
+        };
+
         if (account) {
-            const tx = addItem(connection, account, data.tokenID, data.name);
-            tx.then(setTxHash)
+            const tx = addItemTest(connection, AccountAddress.fromBase58(account), addItemParameter);
+
+            tx.then((test) => {
+                console.log(test);
+            })
                 .catch((err: Error) => setTransactionError(err.message))
                 .finally(() => setShowMessage(true));
+
+            // tx.then(setTxHash)
+            //     .catch((err: Error) => setTransactionError(err.message))
+            //     .finally(() => setShowMessage(true));
         }
     }
 
