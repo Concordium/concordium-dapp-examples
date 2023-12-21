@@ -3,16 +3,22 @@
     "private": true,
     "version": "1.0.0",
     "type": "module",
+    "engines": {
+        "npm": ">=10.0.0",
+        "node": ">=18.19.0"
+    },
     "scripts": {
         "dev": "CIS2_TOKEN_CONTRACT_INDEX=7370 AUCTION_CONTRACT_INDEX=7415 vite",
         "build": "tsc && CIS2_TOKEN_CONTRACT_INDEX=7370 AUCTION_CONTRACT_INDEX=7415 vite build",
         "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
         "lint-fix": "yarn lint --fix",
+        "generate-client": "ccd-js-gen --module ./contracts/sponsored_tx_enabled_auction.wasm.v1 --out-dir ./generated; ccd-js-gen --module ./contracts/cis2_multi.wasm.v1 --out-dir ./generated",
         "fmt": "prettier -w .",
         "preview": "vite preview"
     },
     "dependencies": {
         "@concordium/browser-wallet-api-helpers": "^3.0.0",
+        "@concordium/ccd-js-gen": "^1.0.1",
         "@concordium/react-components": "^0.4.0",
         "@concordium/web-sdk": "^7.1.0",
         "@walletconnect/types": "^2.1.4",
