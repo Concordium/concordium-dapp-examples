@@ -10,6 +10,7 @@ module.exports = {
         'plugin:react/jsx-runtime',
         'plugin:jsx-a11y/recommended',
         'eslint-config-prettier',
+        'prettier',
     ],
     parser: '@typescript-eslint/parser',
     plugins: ['react', 'react-refresh'],
