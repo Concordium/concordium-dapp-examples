@@ -5,6 +5,10 @@ import moment from 'moment';
 
 export const VERIFIER_URL = '/api';
 
+export const NODE = 'http://node.testnet.concordium.com';
+
+export const PORT = 20000;
+
 export const REFRESH_INTERVAL = moment.duration(5, 'seconds');
 
 export const SPONSORED_TX_CONTRACT_NAME = ContractName.fromString('cis2_multi');

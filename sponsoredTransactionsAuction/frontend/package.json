@@ -14,7 +14,7 @@
         "lint-fix": "yarn lint --fix",
         "generate-client": "ccd-js-gen --module ./contracts/sponsored_tx_enabled_auction.wasm.v1 --out-dir ./generated; ccd-js-gen --module ./contracts/cis2_multi.wasm.v1 --out-dir ./generated",
         "fmt": "prettier -w .",
-        "preview": "vite preview"
+        "preview": "CIS2_TOKEN_CONTRACT_INDEX=7370 AUCTION_CONTRACT_INDEX=7415 vite preview"
     },
     "dependencies": {
         "@concordium/browser-wallet-api-helpers": "^3.0.0",

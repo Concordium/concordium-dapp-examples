@@ -1,7 +1,8 @@
+// @ts-nocheck
 import * as SDK from "@concordium/web-sdk";
 
 /** The reference of the smart contract module supported by the provided client. */
-export const moduleReference: SDK.ModuleReference.Type = /*#__PURE__*/ SDK.ModuleReference.fromHexString('cd1e280d4bcae5c37aa0bcd391a7c516e9f9d8217b233599b8a97890a9275419');
+export const moduleReference: SDK.ModuleReference.Type = /*#__PURE__*/ SDK.ModuleReference.fromHexString('d4a3a3bf1fc4eec66c5407602fb7a30955136df4982436f2445773925a8baf75');
 /** Name of the smart contract supported by this client. */
 export const contractName: SDK.ContractName.Type = /*#__PURE__*/ SDK.ContractName.fromStringUnchecked('cis2_multi');
 
