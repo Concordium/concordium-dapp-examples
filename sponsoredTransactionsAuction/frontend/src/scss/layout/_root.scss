@@ -25,3 +25,29 @@ body {
     align-items: center;
     justify-content: center;
 }
+
+.black-card-style {
+    background-color: #282828;
+    width: 650px;
+    margin: 1rem;
+    padding: 1rem;
+    border-radius: 15px;
+    border-style: solid;
+    border-width: 0.1rem;
+    border-color: $mineral-blue;
+}
+
+.left-align-loading-text {
+    text-align: left !important;
+    color: #979797;
+}
+
+.loading-text {
+    color: #979797;
+    overflow-wrap: anywhere;
+}
+
+.alert {
+    display: inline-block;
+    overflow-wrap: anywhere !important;
+}

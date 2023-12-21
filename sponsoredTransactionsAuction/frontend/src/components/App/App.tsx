@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Alert, Button } from 'react-bootstrap';
 
 import {
@@ -44,28 +44,7 @@ export default function App(props: WalletConnectionProps) {
     const [txHash, setTxHash] = useState<undefined | string>(undefined);
     const [transactionError, setTransactionError] = useState<string | undefined>(undefined);
 
-    useEffect(() => {
-        // Refresh the next nonce value periodically.
-        if (grpcClient && account) {
-            const interval = setInterval(() => {
-                getNonceOf(grpcClient, account)
-                    .then((nonceValue) => {
-                        if (nonceValue !== undefined) {
-                            setNextNonce(nonceValue);
-                        }
-                        setNextNonceError(undefined);
-                    })
-                    .catch((e) => {
-                        setNextNonceError((e as Error).message);
-                        setNextNonce(0);
-                    });
-            }, REFRESH_INTERVAL.asMilliseconds());
-            return () => clearInterval(interval);
-        }
-    }, [grpcClient, account]);
-
-    useEffect(() => {
-        // Get the next nonce record from the smart contract.
+    const refreshNonce = useCallback(() => {
         if (grpcClient && account) {
             getNonceOf(grpcClient, account)
                 .then((nonceValue) => {
@@ -80,6 +59,13 @@ export default function App(props: WalletConnectionProps) {
                 });
         }
     }, [grpcClient, account]);
+
+    useEffect(() => {
+        refreshNonce();
+        // Refresh the next nonce value periodically.
+        const interval = setInterval(refreshNonce, REFRESH_INTERVAL.asMilliseconds());
+        return () => clearInterval(interval);
+    }, [refreshNonce]);
 
     useEffect(() => {
         // Get the publicKey record of an account from the chain.
