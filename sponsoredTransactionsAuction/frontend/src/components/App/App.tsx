@@ -9,7 +9,7 @@ import {
     TESTNET,
     useWalletConnectorSelector,
 } from '@concordium/react-components';
-import { AccountAddress } from '@concordium/web-sdk';
+import { AccountAddress, TransactionHash } from '@concordium/web-sdk';
 
 import MintTokens from '../MintTokens';
 import AddItemToAuction from '../AddItemToAuction';
@@ -45,7 +45,7 @@ export default function App(props: WalletConnectionProps) {
     const [nextNonceError, setNextNonceError] = useState<undefined | string>(undefined);
     const [nextNonce, setNextNonce] = useState<number>(0);
 
-    const [txHash, setTxHash] = useState<undefined | string>(undefined);
+    const [txHash, setTxHash] = useState<undefined | TransactionHash.Type>(undefined);
     const [transactionError, setTransactionError] = useState<string | undefined>(undefined);
 
     const refreshNonce = useCallback(() => {
@@ -140,7 +140,7 @@ export default function App(props: WalletConnectionProps) {
             {connection && account && publicKey && (
                 <>
                     <hr />
-                    <div>Transaction status{txHash === '' ? '' : ' (May take a moment to finalize)'}</div>
+                    <div>Transaction status{txHash === undefined ? '' : ' (May take a moment to finalize)'}</div>
                     {txHash && <TxHashLink txHash={txHash} />}
                     {!txHash && !transactionError && <div className="loading-text">None</div>}
 

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { Alert, Button, Form } from 'react-bootstrap';
 
-import { ConcordiumGRPCClient, serializeTypeValue, toBuffer } from '@concordium/web-sdk';
+import { ConcordiumGRPCClient, TransactionHash, serializeTypeValue, toBuffer } from '@concordium/web-sdk';
 import { WalletConnection, typeSchemaFromBase64 } from '@concordium/react-components';
 
 import { Buffer } from 'buffer/';
@@ -95,7 +95,7 @@ interface ConnectionProps {
     grpcClient: ConcordiumGRPCClient | undefined;
     account: string | undefined;
     connection: WalletConnection;
-    setTxHash: (hash: string | undefined) => void;
+    setTxHash: (hash: TransactionHash.Type | undefined) => void;
     setTransactionError: (error: string | undefined) => void;
 }
 
@@ -185,7 +185,8 @@ export default function Bid(props: ConnectionProps) {
             );
 
             tx.then((txHashReturned) => {
-                setTxHash(txHashReturned);
+                // TODO: fix
+                // setTxHash(txHashReturned);
 
                 if (txHashReturned !== '') {
                     setSignature(undefined);

@@ -1,3 +1,4 @@
+// TODO: FIX that event is only searched for if txHash is updated by this component.
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Alert, Button, Form } from 'react-bootstrap';
@@ -21,9 +22,9 @@ import { addItemTest } from '../auction_contract';
 import * as AuctionContract from '../../generated/sponsored_tx_enabled_auction_sponsored_tx_enabled_auction'; // Code generated from a smart contract module.
 
 interface ConnectionProps {
-    setTxHash: (hash: string | undefined) => void;
+    setTxHash: (hash: TransactionHash.Type | undefined) => void;
     setTransactionError: (error: string | undefined) => void;
-    txHash: string | undefined;
+    txHash: TransactionHash.Type | undefined;
     account: string | undefined;
     connection: WalletConnection;
     grpcClient: ConcordiumGRPCClient | undefined;
@@ -68,15 +69,9 @@ export default function AddItemToAuction(props: ConnectionProps) {
         if (account) {
             const tx = addItemTest(connection, AccountAddress.fromBase58(account), addItemParameter);
 
-            tx.then((test) => {
-                console.log(test);
-            })
+            tx.then(setTxHash)
                 .catch((err: Error) => setTransactionError(err.message))
                 .finally(() => setShowMessage(true));
-
-            // tx.then(setTxHash)
-            //     .catch((err: Error) => setTransactionError(err.message))
-            //     .finally(() => setShowMessage(true));
         }
     }
 
@@ -86,7 +81,7 @@ export default function AddItemToAuction(props: ConnectionProps) {
     useEffect(() => {
         if (connection && grpcClient && txHash !== undefined) {
             grpcClient
-                .waitForTransactionFinalization(TransactionHash.fromHexString(txHash))
+                .waitForTransactionFinalization(txHash)
                 .then((report) => {
                     if (
                         report.summary.type === TransactionSummaryType.AccountTransaction &&
