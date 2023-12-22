@@ -16,6 +16,8 @@ import {
 } from '@concordium/web-sdk';
 import {
     CONTRACT_SUB_INDEX,
+    EPSILON_ENERGY,
+    METADATA_URL,
     MINT_PARAMETER_SCHEMA,
     NODE,
     NONCE_OF_RETURN_VALUE_SCHEMA,
@@ -47,20 +49,17 @@ export async function mintTest(
     accountAddress: AccountAddress.Type,
     mintParameter: Cis2MultiContract.MintParameter,
 ): Promise<TransactionHash.Type> {
-    const params: TypedSmartContractParameters = {
-        parameters: mintParameter,
-        schema: {
-            type: 'TypeSchema',
-            value: toBuffer(MINT_PARAMETER_SCHEMA, 'base64'),
-        },
-    };
-
     const result = await Cis2MultiContract.dryRunMint(contract, mintParameter);
-    if (result.tag === 'failure' || result.returnValue === undefined) {
-        throw new Error('Failed to invoke contract');
+
+    if (!result || result.tag === 'failure' || !result.returnValue) {
+        throw new Error(
+            `RPC call 'invokeContract' on method '${SPONSORED_TX_CONTRACT_NAME.value}.nonceOf' of contract '${
+                process.env.CIS2_TOKEN_CONTRACT_INDEX
+            }' failed. Response: ${JSONbig.stringify(result)}`,
+        );
     }
 
-    const maxContractExecutionEnergy = Energy.create(result.usedEnergy.value + 1n); // +1 needs to be here, as there seems to be an issue with running out of energy 1 energy prior to reaching the execution limit
+    const maxContractExecutionEnergy = Energy.create(result.usedEnergy.value + EPSILON_ENERGY); // + EPSILON_ENERGY needs to be here, as there seems to be an issue with running out of energy 1 energy prior to reaching the execution limit
 
     const payload: Omit<UpdateContractPayload, 'message'> = {
         amount: CcdAmount.zero(),
@@ -69,9 +68,37 @@ export async function mintTest(
         maxContractExecutionEnergy,
     };
 
-    return connection
-        .signAndSendTransaction(AccountAddress.toBase58(accountAddress), AccountTransactionType.Update, payload, params)
-        .then(TransactionHash.fromHexString);
+    if (mintParameter.owner.type == 'Account') {
+        // The `ccd-js-gen` tool is not fully integrated with the browser wallet yet and we need
+        // to manually convert from Cis2MultiContract.MintParameter to TypedSmartContractParameters.
+        const params: TypedSmartContractParameters = {
+            parameters: {
+                owner: { Account: [mintParameter.owner.content.address] },
+                metadata_url: {
+                    hash: {
+                        None: [],
+                    },
+                    url: METADATA_URL, // In production, you should consider using a different metadata file for each token_id.
+                },
+                token_id: mintParameter.token_id,
+            },
+            schema: {
+                type: 'TypeSchema',
+                value: toBuffer(MINT_PARAMETER_SCHEMA, 'base64'),
+            },
+        };
+
+        return connection
+            .signAndSendTransaction(
+                AccountAddress.toBase58(accountAddress),
+                AccountTransactionType.Update,
+                payload,
+                params,
+            )
+            .then(TransactionHash.fromHexString);
+    } else {
+        throw new Error('MintParameter.owner.type should be an Account.');
+    }
 }
 
 /**
@@ -108,44 +135,3 @@ export async function nonceOf(nonceOfParameter: Cis2MultiContract.NonceOfParamet
         return returnValues[0][0];
     }
 }
-
-// /*
-//  * This function submits a transaction to mint/airdrop tokens to an account.
-//  */
-// export async function mint(connection: WalletConnection, account: string, tokenId: string, to: string) {
-//     return connection.signAndSendTransaction(
-//         account,
-//         AccountTransactionType.Update,
-//         {
-//             amount: CcdAmount.zero(),
-//             address: {
-//                 index: BigInt(Number(process.env.CIS2_TOKEN_CONTRACT_INDEX)),
-//                 subindex: CONTRACT_SUB_INDEX,
-//             },
-//             receiveName: `${SPONSORED_TX_CONTRACT_NAME.value}.mint`,
-//             maxContractExecutionEnergy: 30000n,
-//         } as unknown as UpdateContractPayload,
-//         {
-//             parameters: {
-//                 owner: { Account: [to] },
-//                 metadata_url: {
-//                     hash: {
-//                         None: [],
-//                     },
-//                     url: 'https://s3.eu-central-1.amazonaws.com/tokens.testnet.concordium.com/ft/wccd', // Hardcoded value for simplicity for this demo dApp. In production, you should consider using a different metadata file for each token_id.
-//                 },
-//                 token_id: `0${Number(tokenId).toString(16)}`.slice(-2),
-//             },
-//             schema: typeSchemaFromBase64(MINT_PARAMETER_SCHEMA),
-//         },
-//     );
-// }
-
-// /**
-//  * Gets the configuration of the election contract.
-//  * @returns A promise resolving with the corresponding {@linkcode ElectionContract.ReturnValueViewConfig}
-//  */
-// export async function getElectionConfig() {
-//     const result = await ElectionContract.dryRunViewConfig(contract, Parameter.empty());
-//     return ElectionContract.parseReturnValueViewConfig(result);
-// }

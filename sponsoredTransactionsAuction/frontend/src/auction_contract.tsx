@@ -13,8 +13,19 @@ import {
     ContractAddress,
     ConcordiumGRPCWebClient,
 } from '@concordium/web-sdk';
-import { ADD_ITEM_PARAMETER_SCHEMA, CONTRACT_SUB_INDEX, NODE, PORT } from './constants';
+import {
+    ADD_ITEM_PARAMETER_SCHEMA,
+    AUCTION_CONTRACT_NAME,
+    AUCTION_END,
+    AUCTION_START,
+    CONTRACT_SUB_INDEX,
+    EPSILON_ENERGY,
+    NODE,
+    PORT,
+} from './constants';
 import { TypedSmartContractParameters, WalletConnection } from '@concordium/wallet-connectors';
+
+import JSONbig from 'json-bigint';
 
 const grpc = new ConcordiumGRPCWebClient(NODE, PORT);
 
@@ -37,26 +48,39 @@ export async function addItemTest(
     accountAddress: AccountAddress.Type,
     addItemParameter: AcutionContract.AddItemParameter,
 ): Promise<TransactionHash.Type> {
-    const params: TypedSmartContractParameters = {
-        parameters: addItemParameter,
-        schema: {
-            type: 'TypeSchema',
-            value: toBuffer(ADD_ITEM_PARAMETER_SCHEMA, 'base64'),
-        },
-    };
-
     const result = await AcutionContract.dryRunAddItem(contract, addItemParameter);
-    if (result.tag === 'failure' || result.returnValue === undefined) {
-        throw new Error('Failed to invoke contract');
+
+    if (!result || result.tag === 'failure' || !result.returnValue) {
+        throw new Error(
+            `RPC call 'invokeContract' on method '${AUCTION_CONTRACT_NAME.value}.addItem' of contract '${
+                process.env.AUCTION_CONTRACT_INDEX
+            }' failed. Response: ${JSONbig.stringify(result)}`,
+        );
     }
 
-    const maxContractExecutionEnergy = Energy.create(result.usedEnergy.value + 1n); // +1 needs to be here, as there seems to be an issue with running out of energy 1 energy prior to reaching the execution limit
+    const maxContractExecutionEnergy = Energy.create(result.usedEnergy.value + EPSILON_ENERGY); // + EPSILON_ENERGY needs to be here, as there seems to be an issue with running out of energy 1 energy prior to reaching the execution limit
 
     const payload: Omit<UpdateContractPayload, 'message'> = {
         amount: CcdAmount.zero(),
         address: ContractAddress.create(Number(process.env.AUCTION_CONTRACT_INDEX), CONTRACT_SUB_INDEX),
         receiveName: ReceiveName.create(AcutionContract.contractName, EntrypointName.fromString('addItem')),
         maxContractExecutionEnergy,
+    };
+
+    // The `ccd-js-gen` tool is not fully integrated with the browser wallet yet and we need
+    // to manually convert from Cis2MultiContract.AddItemParameter to TypedSmartContractParameters.
+    const params: TypedSmartContractParameters = {
+        parameters: {
+            end: AUCTION_END, // Hardcoded value for simplicity for this demo dApp.
+            start: AUCTION_START, // Hardcoded value for simplicity for this demo dApp.
+            minimum_bid: addItemParameter.minimum_bid.toString(),
+            name: addItemParameter.name,
+            token_id: addItemParameter.token_id,
+        },
+        schema: {
+            type: 'TypeSchema',
+            value: toBuffer(ADD_ITEM_PARAMETER_SCHEMA, 'base64'),
+        },
     };
 
     return connection

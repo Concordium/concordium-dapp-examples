@@ -7,6 +7,7 @@ import { mintTest } from '../cis2_token_contract';
 import { AccountAddress } from '@concordium/web-sdk';
 
 import * as Cis2MultiContract from '../../generated/cis2_multi_cis2_multi'; // Code generated from a smart contract module.
+import { METADATA_URL } from '../constants';
 
 interface ConnectionProps {
     setTxHash: (hash: string | undefined) => void;
@@ -43,7 +44,7 @@ export default function MintTokens(props: ConnectionProps) {
                 },
                 metadata_url: {
                     hash: { type: 'None' },
-                    url: 'https://s3.eu-central-1.amazonaws.com/tokens.testnet.concordium.com/ft/wccd', // Hardcoded value for simplicity for this demo dApp. In production, you should consider using a different metadata file for each token_id.
+                    url: METADATA_URL, // In production, you should consider using a different metadata file for each token_id.
                 },
                 token_id: `0${Number(data.tokenID).toString(16)}`.slice(-2),
             };
