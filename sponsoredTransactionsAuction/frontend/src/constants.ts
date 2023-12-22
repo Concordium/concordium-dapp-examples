@@ -16,6 +16,13 @@ export const AUCTION_CONTRACT_NAME = ContractName.fromString('sponsored_tx_enabl
 
 export const CONTRACT_SUB_INDEX = 0n;
 
+export const EPSILON_ENERGY = 1000n;
+
+export const AUCTION_START = '2000-01-01T12:00:00Z'; // Hardcoded value for simplicity for this demo dApp.
+export const AUCTION_END = '2050-01-01T12:00:00Z'; // Hardcoded value for simplicity for this demo dApp.
+
+export const METADATA_URL = 'https://s3.eu-central-1.amazonaws.com/tokens.testnet.concordium.com/ft/wccd'; // We use the same metadat URL for every token_id for simplicity for this demo dApp. In production, you should consider using a different metadata file for each token_id.
+
 export const EVENT_SCHEMA = 'HwEAAAAADAAAAEFkZEl0ZW1FdmVudAABAAAACgAAAGl0ZW1faW5kZXgD';
 
 export const TRANSFER_SCHEMA =
