@@ -1,4 +1,4 @@
-import * as AcutionContract from '../generated/sponsored_tx_enabled_auction_sponsored_tx_enabled_auction'; // Code generated from a smart contract module.
+import * as AuctionContract from '../generated/sponsored_tx_enabled_auction_sponsored_tx_enabled_auction'; // Code generated from a smart contract module.
 
 import {
     AccountTransactionType,
@@ -12,6 +12,8 @@ import {
     TransactionHash,
     ContractAddress,
     ConcordiumGRPCWebClient,
+    deserializeTypeValue,
+    SmartContractTypeValues,
 } from '@concordium/web-sdk';
 import {
     ADD_ITEM_PARAMETER_SCHEMA,
@@ -22,6 +24,7 @@ import {
     EPSILON_ENERGY,
     NODE,
     PORT,
+    VIEW_ITEM_RETURN_VALUE_SCHEMA,
 } from './constants';
 import { TypedSmartContractParameters, WalletConnection } from '@concordium/wallet-connectors';
 
@@ -29,7 +32,7 @@ import JSONbig from 'json-bigint';
 
 const grpc = new ConcordiumGRPCWebClient(NODE, PORT);
 
-const contract = AcutionContract.createUnchecked(
+const contract = AuctionContract.createUnchecked(
     grpc,
     ContractAddress.create(Number(process.env.AUCTION_CONTRACT_INDEX), CONTRACT_SUB_INDEX),
 );
@@ -46,14 +49,13 @@ const contract = AcutionContract.createUnchecked(
 export async function addItemTest(
     connection: WalletConnection,
     accountAddress: AccountAddress.Type,
-    addItemParameter: AcutionContract.AddItemParameter,
+    addItemParameter: AuctionContract.AddItemParameter,
 ): Promise<TransactionHash.Type> {
-    const result = await AcutionContract.dryRunAddItem(contract, addItemParameter);
+    const result = await AuctionContract.dryRunAddItem(contract, addItemParameter);
 
     if (!result || result.tag === 'failure' || !result.returnValue) {
         throw new Error(
-            `RPC call 'invokeContract' on method '${AUCTION_CONTRACT_NAME.value}.addItem' of contract '${
-                process.env.AUCTION_CONTRACT_INDEX
+            `RPC call 'invokeContract' on method '${AUCTION_CONTRACT_NAME.value}.addItem' of contract '${process.env.AUCTION_CONTRACT_INDEX
             }' failed. Response: ${JSONbig.stringify(result)}`,
         );
     }
@@ -63,7 +65,7 @@ export async function addItemTest(
     const payload: Omit<UpdateContractPayload, 'message'> = {
         amount: CcdAmount.zero(),
         address: ContractAddress.create(Number(process.env.AUCTION_CONTRACT_INDEX), CONTRACT_SUB_INDEX),
-        receiveName: ReceiveName.create(AcutionContract.contractName, EntrypointName.fromString('addItem')),
+        receiveName: ReceiveName.create(AuctionContract.contractName, EntrypointName.fromString('addItem')),
         maxContractExecutionEnergy,
     };
 
@@ -86,4 +88,38 @@ export async function addItemTest(
     return connection
         .signAndSendTransaction(AccountAddress.toBase58(accountAddress), AccountTransactionType.Update, payload, params)
         .then(TransactionHash.fromHexString);
+}
+
+/**
+ * TODO: update comment
+ * View item state.
+ * @param connection - The wallet connection to use for sending the transaction
+ * @param accountAddress - The account address to send from
+ * @param mintParameter - The parameter for the mint function
+ * @throws If the contract could not be updated
+ * @returns A promise resolving with the corresponding {@linkcode TransactionHash.Type}
+ */
+export async function viewItemStateTest(viewItemState: AuctionContract.ViewItemStateParameter): Promise<SmartContractTypeValues> {
+
+    const result = await AuctionContract.dryRunViewItemState(contract, Number(viewItemState));
+
+    if (!result || result.tag === 'failure' || !result.returnValue) {
+        throw new Error(
+            `RPC call 'invokeContract' on method '${AUCTION_CONTRACT_NAME.value}.viewItemState' of contract '${process.env.AUCTION_CONTRACT_INDEX
+            }' failed. Response: ${JSONbig.stringify(result)}`,
+        );
+    }
+
+    const returnValues = deserializeTypeValue(
+        result.returnValue.buffer,
+        toBuffer(VIEW_ITEM_RETURN_VALUE_SCHEMA, 'base64'),
+    );
+
+    if (returnValues === undefined) {
+        throw new Error(
+            `Deserializing the returnValue from the '${AUCTION_CONTRACT_NAME.value}.viewItemState' method of contract '${process.env.AUCTION_CONTRACT_INDEX}' failed`,
+        );
+    } else {
+        return returnValues
+    }
 }
