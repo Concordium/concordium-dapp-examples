@@ -9,6 +9,7 @@ import {
     TESTNET,
     useWalletConnectorSelector,
 } from '@concordium/react-components';
+import { AccountAddress } from '@concordium/web-sdk';
 
 import MintTokens from '../MintTokens';
 import AddItemToAuction from '../AddItemToAuction';
@@ -18,7 +19,10 @@ import { AccountLink, TxHashLink } from '../CCDScanLinks';
 import Footer from '../Footer';
 
 import { BROWSER_WALLET, REFRESH_INTERVAL } from '../../constants';
-import { getNonceOf, getPublicKey } from '../../reading_from_blockchain';
+import { getPublicKey } from '../../reading_from_blockchain';
+
+import { nonceOf } from '../../cis2_token_contract';
+import * as Cis2MultiContract from '../../../generated/cis2_multi_cis2_multi'; // Code generated from a smart contract module.
 
 /*
  * The main component that manages the wallet connection.
@@ -46,7 +50,9 @@ export default function App(props: WalletConnectionProps) {
 
     const refreshNonce = useCallback(() => {
         if (grpcClient && account) {
-            getNonceOf(grpcClient, account)
+            const nonceOfParam: Cis2MultiContract.NonceOfParameter = [AccountAddress.fromBase58(account)];
+
+            nonceOf(nonceOfParam)
                 .then((nonceValue) => {
                     if (nonceValue !== undefined) {
                         setNextNonce(nonceValue);
