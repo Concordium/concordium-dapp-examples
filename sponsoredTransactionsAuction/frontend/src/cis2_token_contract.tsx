@@ -12,9 +12,19 @@ import {
     TransactionHash,
     ContractAddress,
     ConcordiumGRPCWebClient,
+    deserializeTypeValue,
 } from '@concordium/web-sdk';
-import { CONTRACT_SUB_INDEX, MINT_PARAMETER_SCHEMA, NODE, PORT } from './constants';
+import {
+    CONTRACT_SUB_INDEX,
+    MINT_PARAMETER_SCHEMA,
+    NODE,
+    NONCE_OF_RETURN_VALUE_SCHEMA,
+    PORT,
+    SPONSORED_TX_CONTRACT_NAME,
+} from './constants';
 import { TypedSmartContractParameters, WalletConnection } from '@concordium/wallet-connectors';
+
+import JSONbig from 'json-bigint';
 
 const grpc = new ConcordiumGRPCWebClient(NODE, PORT);
 
@@ -62,6 +72,41 @@ export async function mintTest(
     return connection
         .signAndSendTransaction(AccountAddress.toBase58(accountAddress), AccountTransactionType.Update, payload, params)
         .then(TransactionHash.fromHexString);
+}
+
+/**
+ * Mints new cis2 tokens to the account specified in the mintParameter.
+ *
+ * @param connection - The wallet connection to use for sending the transaction
+ * @param accountAddress - The account address to send from
+ * @param mintParameter - The parameter for the mint function
+ * @throws If the contract could not be updated
+ * @returns A promise resolving with the corresponding {@linkcode TransactionHash.Type}
+ */
+export async function nonceOf(nonceOfParameter: Cis2MultiContract.NonceOfParameter): Promise<number> {
+    const result = await Cis2MultiContract.dryRunNonceOf(contract, nonceOfParameter);
+
+    if (!result || result.tag === 'failure' || !result.returnValue) {
+        throw new Error(
+            `RPC call 'invokeContract' on method '${SPONSORED_TX_CONTRACT_NAME.value}.nonceOf' of contract '${
+                process.env.CIS2_TOKEN_CONTRACT_INDEX
+            }' failed. Response: ${JSONbig.stringify(result)}`,
+        );
+    }
+
+    const returnValues = deserializeTypeValue(
+        result.returnValue.buffer,
+        toBuffer(NONCE_OF_RETURN_VALUE_SCHEMA, 'base64'),
+    ) as number[][];
+
+    if (returnValues === undefined) {
+        throw new Error(
+            `Deserializing the returnValue from the '${SPONSORED_TX_CONTRACT_NAME.value}.nonceOf' method of contract '${process.env.CIS2_TOKEN_CONTRACT_INDEX}' failed`,
+        );
+    } else {
+        // Return next nonce of a user
+        return returnValues[0][0];
+    }
 }
 
 // /*

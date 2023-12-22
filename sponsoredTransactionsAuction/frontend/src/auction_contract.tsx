@@ -37,7 +37,6 @@ export async function addItemTest(
     accountAddress: AccountAddress.Type,
     addItemParameter: AcutionContract.AddItemParameter,
 ): Promise<TransactionHash.Type> {
-
     const params: TypedSmartContractParameters = {
         parameters: addItemParameter,
         schema: {
