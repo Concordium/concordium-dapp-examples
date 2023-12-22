@@ -1,5 +1,7 @@
+import { TransactionHash } from '@concordium/web-sdk';
+
 interface TxHashLinkProps {
-    txHash: string;
+    txHash: TransactionHash.Type;
 }
 
 /*
@@ -14,9 +16,11 @@ export const TxHashLink = function TxHashLink(props: TxHashLinkProps) {
                 className="link"
                 target="_blank"
                 rel="noreferrer"
-                href={`https://testnet.ccdscan.io/?dcount=1&dentity=transaction&dhash=${txHash}`}
+                href={`https://testnet.ccdscan.io/?dcount=1&dentity=transaction&dhash=${TransactionHash.toHexString(
+                    txHash,
+                )}`}
             >
-                {txHash}
+                {TransactionHash.toHexString(txHash)}
             </a>
         </div>
     );

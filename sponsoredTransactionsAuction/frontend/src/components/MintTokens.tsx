@@ -4,13 +4,13 @@ import { Alert, Button, Form } from 'react-bootstrap';
 
 import { WalletConnection } from '@concordium/react-components';
 import { mintTest } from '../cis2_token_contract';
-import { AccountAddress } from '@concordium/web-sdk';
+import { AccountAddress, TransactionHash } from '@concordium/web-sdk';
 
 import * as Cis2MultiContract from '../../generated/cis2_multi_cis2_multi'; // Code generated from a smart contract module.
 import { METADATA_URL } from '../constants';
 
 interface ConnectionProps {
-    setTxHash: (hash: string | undefined) => void;
+    setTxHash: (hash: TransactionHash.Type | undefined) => void;
     setTransactionError: (error: string | undefined) => void;
     account: string | undefined;
     connection: WalletConnection;
@@ -51,15 +51,9 @@ export default function MintTokens(props: ConnectionProps) {
 
             const tx = mintTest(connection, AccountAddress.fromBase58(account), mintParam);
 
-            tx.then((test) => {
-                console.log(test);
-            })
+            tx.then(setTxHash)
                 .catch((err: Error) => setTransactionError(err.message))
                 .finally(() => setShowMessage(true));
-
-            // tx.then(setTxHash)
-            //     .catch((err: Error) => setTransactionError(err.message))
-            //     .finally(() => setShowMessage(true));
         }
     }
 
