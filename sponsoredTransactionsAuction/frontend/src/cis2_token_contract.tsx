@@ -35,6 +35,7 @@ const contract = Cis2MultiContract.createUnchecked(
     ContractAddress.create(Number(process.env.CIS2_TOKEN_CONTRACT_INDEX), CONTRACT_SUB_INDEX),
 );
 
+// This function submits a transaction to mint/airdrop tokens to an account.
 /**
  * Mints new cis2 tokens to the account specified in the mintParameter.
  *
@@ -44,7 +45,7 @@ const contract = Cis2MultiContract.createUnchecked(
  * @throws If the contract could not be updated
  * @returns A promise resolving with the corresponding {@linkcode TransactionHash.Type}
  */
-export async function mintTest(
+export async function mint(
     connection: WalletConnection,
     accountAddress: AccountAddress.Type,
     mintParameter: Cis2MultiContract.MintParameter,

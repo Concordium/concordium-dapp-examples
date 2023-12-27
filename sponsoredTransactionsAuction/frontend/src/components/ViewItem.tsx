@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { Alert, Button, Form } from 'react-bootstrap';
 
 import { ConcordiumGRPCClient } from '@concordium/web-sdk';
-import { viewItemStateTest } from '../auction_contract';
+import { viewItemState } from '../auction_contract';
 
 interface ConnectionProps {
     grpcClient: ConcordiumGRPCClient | undefined;
@@ -28,11 +28,11 @@ export default function ViewItem(props: ConnectionProps) {
     function onSubmit(data: FormType) {
         setItemStateError(undefined);
         setItemState(undefined);
-  
-        let viewItemStateParam: AuctionContract.ViewItemStateParameter = data.itemIndex as unknown as number;
+
+        const viewItemStateParam: AuctionContract.ViewItemStateParameter = data.itemIndex as unknown as number;
 
         if (grpcClient) {
-            viewItemStateTest(viewItemStateParam)
+            viewItemState(viewItemStateParam)
                 .then((returnValue) => {
                     if (returnValue !== undefined) {
                         setItemState(JSON.stringify(returnValue));

@@ -17,7 +17,7 @@ import {
 } from '@concordium/web-sdk';
 
 import { AUCTION_END, AUCTION_START, EVENT_SCHEMA } from '../constants';
-import { addItemTest } from '../auction_contract';
+import { addItem } from '../auction_contract';
 
 import * as AuctionContract from '../../generated/sponsored_tx_enabled_auction_sponsored_tx_enabled_auction'; // Code generated from a smart contract module.
 
@@ -67,7 +67,7 @@ export default function AddItemToAuction(props: ConnectionProps) {
         };
 
         if (account) {
-            const tx = addItemTest(connection, AccountAddress.fromBase58(account), addItemParameter);
+            const tx = addItem(connection, AccountAddress.fromBase58(account), addItemParameter);
 
             tx.then(setTxHash)
                 .catch((err: Error) => setTransactionError(err.message))

@@ -37,6 +37,7 @@ const contract = AuctionContract.createUnchecked(
     ContractAddress.create(Number(process.env.AUCTION_CONTRACT_INDEX), CONTRACT_SUB_INDEX),
 );
 
+// This function submits a transaction to add an item to the auction contract.
 /**
  * Add new item to the auction contract.
  *
@@ -46,7 +47,7 @@ const contract = AuctionContract.createUnchecked(
  * @throws If the contract could not be updated
  * @returns A promise resolving with the corresponding {@linkcode TransactionHash.Type}
  */
-export async function addItemTest(
+export async function addItem(
     connection: WalletConnection,
     accountAddress: AccountAddress.Type,
     addItemParameter: AuctionContract.AddItemParameter,
@@ -55,7 +56,8 @@ export async function addItemTest(
 
     if (!result || result.tag === 'failure' || !result.returnValue) {
         throw new Error(
-            `RPC call 'invokeContract' on method '${AUCTION_CONTRACT_NAME.value}.addItem' of contract '${process.env.AUCTION_CONTRACT_INDEX
+            `RPC call 'invokeContract' on method '${AUCTION_CONTRACT_NAME.value}.addItem' of contract '${
+                process.env.AUCTION_CONTRACT_INDEX
             }' failed. Response: ${JSONbig.stringify(result)}`,
         );
     }
@@ -99,13 +101,15 @@ export async function addItemTest(
  * @throws If the contract could not be updated
  * @returns A promise resolving with the corresponding {@linkcode TransactionHash.Type}
  */
-export async function viewItemStateTest(viewItemState: AuctionContract.ViewItemStateParameter): Promise<SmartContractTypeValues> {
-
+export async function viewItemState(
+    viewItemState: AuctionContract.ViewItemStateParameter,
+): Promise<SmartContractTypeValues> {
     const result = await AuctionContract.dryRunViewItemState(contract, Number(viewItemState));
 
     if (!result || result.tag === 'failure' || !result.returnValue) {
         throw new Error(
-            `RPC call 'invokeContract' on method '${AUCTION_CONTRACT_NAME.value}.viewItemState' of contract '${process.env.AUCTION_CONTRACT_INDEX
+            `RPC call 'invokeContract' on method '${AUCTION_CONTRACT_NAME.value}.viewItemState' of contract '${
+                process.env.AUCTION_CONTRACT_INDEX
             }' failed. Response: ${JSONbig.stringify(result)}`,
         );
     }
@@ -120,6 +124,6 @@ export async function viewItemStateTest(viewItemState: AuctionContract.ViewItemS
             `Deserializing the returnValue from the '${AUCTION_CONTRACT_NAME.value}.viewItemState' method of contract '${process.env.AUCTION_CONTRACT_INDEX}' failed`,
         );
     } else {
-        return returnValues
+        return returnValues;
     }
 }
