@@ -19,7 +19,7 @@ import { AccountLink, TxHashLink } from '../CCDScanLinks';
 import Footer from '../Footer';
 
 import { BROWSER_WALLET, REFRESH_INTERVAL } from '../../constants';
-import { getPublicKey } from '../../reading_from_blockchain';
+import { getPublicKey } from '../../utils';
 
 import { nonceOf } from '../../cis2_token_contract';
 import * as Cis2MultiContract from '../../../generated/cis2_multi_cis2_multi'; // Code generated from a smart contract module.
@@ -176,7 +176,6 @@ export default function App(props: WalletConnectionProps) {
                     <ViewItem grpcClient={grpcClient} />
                     <hr />
                     <Bid
-                        grpcClient={grpcClient}
                         connection={connection}
                         account={account}
                         setTxHash={setTxHash}

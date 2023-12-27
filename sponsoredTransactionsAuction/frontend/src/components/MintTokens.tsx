@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { Alert, Button, Form } from 'react-bootstrap';
 
 import { WalletConnection } from '@concordium/react-components';
-import { mintTest } from '../cis2_token_contract';
+import { mint } from '../cis2_token_contract';
 import { AccountAddress, TransactionHash } from '@concordium/web-sdk';
 
 import * as Cis2MultiContract from '../../generated/cis2_multi_cis2_multi'; // Code generated from a smart contract module.
@@ -49,7 +49,7 @@ export default function MintTokens(props: ConnectionProps) {
                 token_id: `0${Number(data.tokenID).toString(16)}`.slice(-2),
             };
 
-            const tx = mintTest(connection, AccountAddress.fromBase58(account), mintParam);
+            const tx = mint(connection, AccountAddress.fromBase58(account), mintParam);
 
             tx.then(setTxHash)
                 .catch((err: Error) => setTransactionError(err.message))

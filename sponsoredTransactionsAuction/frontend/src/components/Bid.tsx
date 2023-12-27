@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { Alert, Button, Form } from 'react-bootstrap';
 
-import { ConcordiumGRPCClient, TransactionHash, serializeTypeValue, toBuffer } from '@concordium/web-sdk';
+import { TransactionHash, serializeTypeValue, toBuffer } from '@concordium/web-sdk';
 import { WalletConnection, typeSchemaFromBase64 } from '@concordium/react-components';
 
 import { Buffer } from 'buffer/';
@@ -14,8 +14,10 @@ import {
     VERIFIER_URL,
 } from '../constants';
 
-import { submitBid } from '../writing_to_blockchain';
-import { viewItemState } from '../reading_from_blockchain';
+import { submitBid } from '../utils';
+import { viewItemState } from '../auction_contract';
+
+import * as AuctionContract from '../../generated/sponsored_tx_enabled_auction_sponsored_tx_enabled_auction'; // Code generated from a smart contract module.
 
 interface PartialItemState {
     token_id: string;
@@ -26,7 +28,6 @@ interface PartialItemState {
  */
 async function generateTransferMessage(
     setTokenID: (arg0: string) => void,
-    grpcClient: ConcordiumGRPCClient,
     expiryTimeSignature: string,
     account: string,
     nonce: string,
@@ -34,7 +35,9 @@ async function generateTransferMessage(
     itemIndexAuction: string,
 ) {
     try {
-        const returnValue = await viewItemState(grpcClient, itemIndexAuction);
+        const viewItemStateParam: AuctionContract.ViewItemStateParameter = itemIndexAuction as unknown as number;
+
+        const returnValue = await viewItemState(viewItemStateParam);
 
         const itemState = returnValue as unknown as PartialItemState;
 
@@ -92,7 +95,6 @@ async function generateTransferMessage(
 }
 
 interface ConnectionProps {
-    grpcClient: ConcordiumGRPCClient | undefined;
     account: string | undefined;
     connection: WalletConnection;
     setTxHash: (hash: TransactionHash.Type | undefined) => void;
@@ -103,7 +105,7 @@ interface ConnectionProps {
  * A component that manages the input fields and corresponding state to sign a bid message and submit the signature to the backend.
  */
 export default function Bid(props: ConnectionProps) {
-    const { grpcClient, account, connection, setTxHash, setTransactionError } = props;
+    const { account, connection, setTxHash, setTransactionError } = props;
 
     const [signature, setSignature] = useState<undefined | string>(undefined);
     const [signingError, setSigningError] = useState<undefined | string>(undefined);
@@ -141,11 +143,10 @@ export default function Bid(props: ConnectionProps) {
         const expiryTimeSignature = date.toISOString();
         setExpiryTime(expiryTimeSignature);
 
-        if (account && grpcClient) {
+        if (account) {
             try {
                 const serializedMessage = await generateTransferMessage(
                     setTokenID,
-                    grpcClient,
                     expiryTimeSignature,
                     account,
                     data.nonce,
@@ -185,14 +186,10 @@ export default function Bid(props: ConnectionProps) {
             );
 
             tx.then((txHashReturned) => {
-                // TODO: fix
-                // setTxHash(txHashReturned);
-
-                if (txHashReturned !== '') {
-                    setSignature(undefined);
-                    formGenerateSignature.reset();
-                    formBid.reset();
-                }
+                setTxHash(txHashReturned);
+                setSignature(undefined);
+                formGenerateSignature.reset();
+                formBid.reset();
             })
                 .catch((err: Error) => setTransactionError(err.message))
                 .finally(() => setShowMessage(true));
