@@ -169,7 +169,6 @@ export default function App(props: WalletConnectionProps) {
                         connection={connection}
                         setTxHash={setTxHash}
                         setTransactionError={setTransactionError}
-                        txHash={txHash}
                         grpcClient={grpcClient}
                     />
                     <hr />
