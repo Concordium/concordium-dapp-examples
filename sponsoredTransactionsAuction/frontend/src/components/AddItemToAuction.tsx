@@ -24,7 +24,6 @@ import * as AuctionContract from '../../generated/sponsored_tx_enabled_auction_s
 interface ConnectionProps {
     setTxHash: (hash: TransactionHash.Type | undefined) => void;
     setTransactionError: (error: string | undefined) => void;
-    txHash: TransactionHash.Type | undefined;
     account: string | undefined;
     connection: WalletConnection;
     grpcClient: ConcordiumGRPCClient | undefined;
@@ -41,7 +40,7 @@ interface ContractEvent {
  * This component creates an `Update` transaction.
  */
 export default function AddItemToAuction(props: ConnectionProps) {
-    const { account, connection, grpcClient, setTxHash, txHash, setTransactionError } = props;
+    const { account, connection, grpcClient, setTxHash, setTransactionError } = props;
 
     interface FormType {
         tokenID: string;
@@ -52,8 +51,10 @@ export default function AddItemToAuction(props: ConnectionProps) {
     const [itemIndex, setItemIndex] = useState<string | undefined>(undefined);
     const [itemIndexError, setItemIndexError] = useState<string | undefined>(undefined);
     const [showMessage, setShowMessage] = useState(false);
+    const [addItemTxHash, setAddItemTxHash] = useState<TransactionHash.Type | undefined>(undefined);
 
     function onSubmit(data: FormType) {
+        setAddItemTxHash(undefined);
         setTxHash(undefined);
         setTransactionError(undefined);
         setShowMessage(false);
@@ -69,7 +70,10 @@ export default function AddItemToAuction(props: ConnectionProps) {
         if (account) {
             const tx = addItem(connection, AccountAddress.fromBase58(account), addItemParameter);
 
-            tx.then(setTxHash)
+            tx.then((hash) => {
+                setTxHash(hash);
+                setAddItemTxHash(hash);
+            })
                 .catch((err: Error) => setTransactionError(err.message))
                 .finally(() => setShowMessage(true));
         }
@@ -79,9 +83,9 @@ export default function AddItemToAuction(props: ConnectionProps) {
     // Once the transaction is finalized, extract the
     // newly created ItemIndex from the event emitted within the transaction.
     useEffect(() => {
-        if (connection && grpcClient && txHash !== undefined) {
+        if (connection && grpcClient && addItemTxHash !== undefined) {
             grpcClient
-                .waitForTransactionFinalization(txHash)
+                .waitForTransactionFinalization(addItemTxHash)
                 .then((report) => {
                     if (
                         report.summary.type === TransactionSummaryType.AccountTransaction &&
@@ -105,7 +109,7 @@ export default function AddItemToAuction(props: ConnectionProps) {
                     setItemIndexError((e as Error).message);
                 });
         }
-    }, [connection, grpcClient, txHash]);
+    }, [connection, grpcClient, addItemTxHash]);
 
     return (
         <>
