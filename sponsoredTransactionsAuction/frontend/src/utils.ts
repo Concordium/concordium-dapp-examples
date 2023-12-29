@@ -1,18 +1,8 @@
-import { TransactionHash, ConcordiumGRPCClient, AccountAddress } from '@concordium/web-sdk';
+import { TransactionHash } from '@concordium/web-sdk';
 
 /*
- * This function gets the public key of an account.
- * This function works with a wallet account that has just one public-private key pair in its two-level key map.
- */
-export async function getPublicKey(rpcClient: ConcordiumGRPCClient, account: string) {
-    const res = await rpcClient.getAccountInfo(AccountAddress.fromBase58(account));
-    const publicKey = res?.accountCredentials[0].value.contents.credentialPublicKeys.keys[0].verifyKey;
-    return publicKey;
-}
-
-/*
- * This function sends the bidding signature to back end and other parameters.
- * The back end will then submit the sponsored transaction on behalf of the user.
+ * This function sends the bidding signature and other parameters to the back end.
+ * The back end will send the sponsored transaction on behalf of the user to the chain.
  */
 export async function submitBid(
     backend: string,

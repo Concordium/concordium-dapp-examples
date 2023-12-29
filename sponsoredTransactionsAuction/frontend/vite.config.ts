@@ -24,6 +24,9 @@ export default defineConfig({
         // wasm(),
         // topLevelAwait(), // For legacy browser compatibility
     ],
+    optimizeDeps: {
+        exclude: ['js-big-decimal'],
+    },
     define: {
         global: 'globalThis',
         'process.env': {
