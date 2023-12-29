@@ -1,10 +1,17 @@
-ARG node_base_image=node:16-slim
+ARG node_base_image=node:18-slim
 ARG rust_base_image=rust:1.65
 
 FROM ${node_base_image} AS frontend
 
 WORKDIR /app
-COPY ./sponsoredTransactionsAuction/frontend ./
+COPY ./sponsoredTransactionsAuction/frontend/package.json ./package.json
+COPY ./sponsoredTransactionsAuction/frontend/tsconfig.node.json ./tsconfig.node.json
+COPY ./sponsoredTransactionsAuction/frontend/tsconfig.json ./tsconfig.json
+COPY ./sponsoredTransactionsAuction/frontend/vite.config.ts ./vite.config.ts
+COPY ./sponsoredTransactionsAuction/frontend/public ./public
+COPY ./sponsoredTransactionsAuction/frontend/src ./src
+COPY ./sponsoredTransactionsAuction/frontend/index.html ./index.html
+COPY ./sponsoredTransactionsAuction/frontend/generated ./generated
 
 RUN yarn
 RUN yarn build

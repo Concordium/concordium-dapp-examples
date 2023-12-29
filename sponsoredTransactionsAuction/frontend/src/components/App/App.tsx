@@ -19,7 +19,6 @@ import { AccountLink, TxHashLink } from '../CCDScanLinks';
 import Footer from '../Footer';
 
 import { BROWSER_WALLET, REFRESH_INTERVAL } from '../../constants';
-import { getPublicKey } from '../../utils';
 
 import { nonceOf } from '../../cis2_token_contract';
 import * as Cis2MultiContract from '../../../generated/cis2_multi_cis2_multi'; // Code generated from a smart contract module.
@@ -73,22 +72,37 @@ export default function App(props: WalletConnectionProps) {
         return () => clearInterval(interval);
     }, [refreshNonce]);
 
+    /*
+     * This function gets the public key of an account.
+     * This function works with a wallet account that has just one public-private key pair in its two-level key map.
+     */
+    const getPublicKey = useCallback(
+        (account: string | undefined) => {
+            if (grpcClient && account) {
+                grpcClient
+                    .getAccountInfo(AccountAddress.fromBase58(account))
+                    .then((res) => {
+                        const publicKeyValue =
+                            res?.accountCredentials[0].value.contents.credentialPublicKeys.keys[0].verifyKey;
+
+                        if (publicKeyValue !== undefined) {
+                            setPublicKey(publicKeyValue);
+                        }
+                        setPublicKeyError(undefined);
+                    })
+                    .catch((e) => {
+                        setPublicKeyError((e as Error).message);
+                        setPublicKey(undefined);
+                    });
+            }
+        },
+        [grpcClient],
+    );
+
     useEffect(() => {
         // Get the publicKey record of an account from the chain.
-        if (grpcClient && account) {
-            getPublicKey(grpcClient, account)
-                .then((publicKeyValue) => {
-                    if (publicKeyValue !== undefined) {
-                        setPublicKey(publicKeyValue);
-                    }
-                    setPublicKeyError(undefined);
-                })
-                .catch((e) => {
-                    setPublicKeyError((e as Error).message);
-                    setPublicKey(undefined);
-                });
-        }
-    }, [grpcClient, account]);
+        getPublicKey(account);
+    }, [account, getPublicKey]);
 
     useEffect(() => {
         select();
@@ -98,13 +112,23 @@ export default function App(props: WalletConnectionProps) {
         <div className="black-card-style">
             <h2>Explore Sponsored Transactions</h2>
             <div>
-                {activeConnectorError && <Alert variant="danger">Connector Error: {activeConnectorError}.</Alert>}
+                {activeConnectorError && (
+                    <>
+                        <Alert variant="danger">Connector Error: {activeConnectorError}.</Alert>
+                        <br />
+                    </>
+                )}
                 {!activeConnectorError && activeConnectorType && !activeConnector && (
                     <p>
                         <i>Loading connector...</i>
                     </p>
                 )}
-                {connectError && <Alert variant="danger">Connect Error: {connectError}.</Alert>}
+                {connectError && (
+                    <>
+                        <Alert variant="danger">Connect Error: {connectError}.</Alert>
+                        <br />
+                    </>
+                )}
                 {!isConnected && (
                     <Button
                         variant="primary"

@@ -34,3 +34,7 @@ Hot-reload (useful for development) is enabled.
 -   Run `yarn build` in a terminal in this folder.
 
 This creates a `dist` folder which can be served via the backend. Start the backend server by following the instructions in the [README.md file](../backend/README.md).
+
+## Contribution
+
+Run `yarn fmt` and `yarn lint-fix` before committing to ensure consistent formatting and styling.
