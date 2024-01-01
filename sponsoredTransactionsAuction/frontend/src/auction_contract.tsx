@@ -12,8 +12,6 @@ import {
     TransactionHash,
     ContractAddress,
     ConcordiumGRPCWebClient,
-    deserializeTypeValue,
-    SmartContractTypeValues,
 } from '@concordium/web-sdk';
 import {
     ADD_ITEM_PARAMETER_SCHEMA,
@@ -24,7 +22,6 @@ import {
     EPSILON_ENERGY,
     NODE,
     PORT,
-    VIEW_ITEM_RETURN_VALUE_SCHEMA,
 } from './constants';
 import { TypedSmartContractParameters, WalletConnection } from '@concordium/wallet-connectors';
 
@@ -52,17 +49,17 @@ export async function addItem(
     accountAddress: AccountAddress.Type,
     addItemParameter: AuctionContract.AddItemParameter,
 ): Promise<TransactionHash.Type> {
-    const result = await AuctionContract.dryRunAddItem(contract, addItemParameter);
+    const dryRunResult = await AuctionContract.dryRunAddItem(contract, addItemParameter);
 
-    if (!result || result.tag === 'failure' || !result.returnValue) {
+    if (!dryRunResult || dryRunResult.tag === 'failure' || !dryRunResult.returnValue) {
         throw new Error(
             `RPC call 'invokeContract' on method '${AUCTION_CONTRACT_NAME.value}.addItem' of contract '${
                 process.env.AUCTION_CONTRACT_INDEX
-            }' failed. Response: ${JSONbig.stringify(result)}`,
+            }' failed. Response: ${JSONbig.stringify(dryRunResult)}`,
         );
     }
 
-    const maxContractExecutionEnergy = Energy.create(result.usedEnergy.value + EPSILON_ENERGY); // + EPSILON_ENERGY needs to be here, as there seems to be an issue with running out of energy 1 energy prior to reaching the execution limit
+    const maxContractExecutionEnergy = Energy.create(dryRunResult.usedEnergy.value + EPSILON_ENERGY); // + EPSILON_ENERGY needs to be here, as there seems to be an issue with running out of energy 1 energy prior to reaching the execution limit
 
     const payload: Omit<UpdateContractPayload, 'message'> = {
         amount: CcdAmount.zero(),
@@ -103,27 +100,24 @@ export async function addItem(
  */
 export async function viewItemState(
     viewItemState: AuctionContract.ViewItemStateParameter,
-): Promise<SmartContractTypeValues> {
-    const result = await AuctionContract.dryRunViewItemState(contract, Number(viewItemState));
+): Promise<AuctionContract.ReturnValueViewItemState> {
+    const dryRunResult = await AuctionContract.dryRunViewItemState(contract, Number(viewItemState));
 
-    if (!result || result.tag === 'failure' || !result.returnValue) {
+    if (!dryRunResult || dryRunResult.tag === 'failure' || !dryRunResult.returnValue) {
         throw new Error(
             `RPC call 'invokeContract' on method '${AUCTION_CONTRACT_NAME.value}.viewItemState' of contract '${
                 process.env.AUCTION_CONTRACT_INDEX
-            }' failed. Response: ${JSONbig.stringify(result)}`,
+            }' failed. Response: ${JSONbig.stringify(dryRunResult)}`,
         );
     }
 
-    const returnValues = deserializeTypeValue(
-        result.returnValue.buffer,
-        toBuffer(VIEW_ITEM_RETURN_VALUE_SCHEMA, 'base64'),
-    );
+    const parsedReturnValue = AuctionContract.parseReturnValueViewItemState(dryRunResult);
 
-    if (returnValues === undefined) {
+    if (parsedReturnValue === undefined) {
         throw new Error(
             `Deserializing the returnValue from the '${AUCTION_CONTRACT_NAME.value}.viewItemState' method of contract '${process.env.AUCTION_CONTRACT_INDEX}' failed`,
         );
     } else {
-        return returnValues;
+        return parsedReturnValue;
     }
 }

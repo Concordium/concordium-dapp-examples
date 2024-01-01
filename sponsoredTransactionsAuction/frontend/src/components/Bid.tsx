@@ -19,10 +19,6 @@ import { viewItemState } from '../auction_contract';
 
 import * as AuctionContract from '../../generated/sponsored_tx_enabled_auction_sponsored_tx_enabled_auction'; // Code generated from a smart contract module.
 
-interface PartialItemState {
-    token_id: string;
-}
-
 /*
  * This function generates the transfer message to be signed in the browser wallet.
  */
@@ -37,9 +33,7 @@ async function generateTransferMessage(
     try {
         const viewItemStateParam: AuctionContract.ViewItemStateParameter = itemIndexAuction as unknown as number;
 
-        const returnValue = await viewItemState(viewItemStateParam);
-
-        const itemState = returnValue as unknown as PartialItemState;
+        const itemState: AuctionContract.ReturnValueViewItemState = await viewItemState(viewItemStateParam);
 
         setTokenID(itemState.token_id);
 

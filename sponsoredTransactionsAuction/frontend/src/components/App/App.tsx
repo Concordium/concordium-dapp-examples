@@ -42,7 +42,7 @@ export default function App(props: WalletConnectionProps) {
     const [publicKey, setPublicKey] = useState<string | undefined>(undefined);
 
     const [nextNonceError, setNextNonceError] = useState<undefined | string>(undefined);
-    const [nextNonce, setNextNonce] = useState<number>(0);
+    const [nextNonce, setNextNonce] = useState<number | bigint>(0);
 
     const [txHash, setTxHash] = useState<undefined | TransactionHash.Type>(undefined);
     const [transactionError, setTransactionError] = useState<string | undefined>(undefined);
@@ -52,9 +52,9 @@ export default function App(props: WalletConnectionProps) {
             const nonceOfParam: Cis2MultiContract.NonceOfParameter = [AccountAddress.fromBase58(account)];
 
             nonceOf(nonceOfParam)
-                .then((nonceValue) => {
+                .then((nonceValue: Cis2MultiContract.ReturnValueNonceOf) => {
                     if (nonceValue !== undefined) {
-                        setNextNonce(nonceValue);
+                        setNextNonce(nonceValue[0]);
                     }
                     setNextNonceError(undefined);
                 })
