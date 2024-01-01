@@ -5,11 +5,13 @@ import { Alert, Button, Form } from 'react-bootstrap';
 import { ConcordiumGRPCClient } from '@concordium/web-sdk';
 import { viewItemState } from '../auction_contract';
 
+import JSONbig from 'json-bigint';
+
+import * as AuctionContract from '../../generated/sponsored_tx_enabled_auction_sponsored_tx_enabled_auction'; // Code generated from a smart contract module.
+
 interface ConnectionProps {
     grpcClient: ConcordiumGRPCClient | undefined;
 }
-
-import * as AuctionContract from '../../generated/sponsored_tx_enabled_auction_sponsored_tx_enabled_auction'; // Code generated from a smart contract module.
 
 /*
  * A component that manages the input fields and corresponding state to view an item in the auction contract.
@@ -35,7 +37,7 @@ export default function ViewItem(props: ConnectionProps) {
             viewItemState(viewItemStateParam)
                 .then((returnValue) => {
                     if (returnValue !== undefined) {
-                        setItemState(JSON.stringify(returnValue));
+                        setItemState(JSONbig.stringify(returnValue));
                     }
                 })
                 .catch((e) => {

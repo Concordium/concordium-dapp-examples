@@ -12,7 +12,6 @@ import {
     TransactionHash,
     ContractAddress,
     ConcordiumGRPCWebClient,
-    deserializeTypeValue,
 } from '@concordium/web-sdk';
 import {
     CONTRACT_SUB_INDEX,
@@ -20,7 +19,6 @@ import {
     METADATA_URL,
     MINT_PARAMETER_SCHEMA,
     NODE,
-    NONCE_OF_RETURN_VALUE_SCHEMA,
     PORT,
     SPONSORED_TX_CONTRACT_NAME,
 } from './constants';
@@ -50,17 +48,17 @@ export async function mint(
     accountAddress: AccountAddress.Type,
     mintParameter: Cis2MultiContract.MintParameter,
 ): Promise<TransactionHash.Type> {
-    const result = await Cis2MultiContract.dryRunMint(contract, mintParameter);
+    const dryRunResult = await Cis2MultiContract.dryRunMint(contract, mintParameter);
 
-    if (!result || result.tag === 'failure' || !result.returnValue) {
+    if (!dryRunResult || dryRunResult.tag === 'failure' || !dryRunResult.returnValue) {
         throw new Error(
             `RPC call 'invokeContract' on method '${SPONSORED_TX_CONTRACT_NAME.value}.nonceOf' of contract '${
                 process.env.CIS2_TOKEN_CONTRACT_INDEX
-            }' failed. Response: ${JSONbig.stringify(result)}`,
+            }' failed. Response: ${JSONbig.stringify(dryRunResult)}`,
         );
     }
 
-    const maxContractExecutionEnergy = Energy.create(result.usedEnergy.value + EPSILON_ENERGY); // + EPSILON_ENERGY needs to be here, as there seems to be an issue with running out of energy 1 energy prior to reaching the execution limit
+    const maxContractExecutionEnergy = Energy.create(dryRunResult.usedEnergy.value + EPSILON_ENERGY); // + EPSILON_ENERGY needs to be here, as there seems to be an issue with running out of energy 1 energy prior to reaching the execution limit
 
     const payload: Omit<UpdateContractPayload, 'message'> = {
         amount: CcdAmount.zero(),
@@ -111,28 +109,26 @@ export async function mint(
  * @throws If the contract could not be updated
  * @returns A promise resolving with the corresponding {@linkcode TransactionHash.Type}
  */
-export async function nonceOf(nonceOfParameter: Cis2MultiContract.NonceOfParameter): Promise<number> {
-    const result = await Cis2MultiContract.dryRunNonceOf(contract, nonceOfParameter);
+export async function nonceOf(
+    nonceOfParameter: Cis2MultiContract.NonceOfParameter,
+): Promise<Cis2MultiContract.ReturnValueNonceOf> {
+    const dryRunResult = await Cis2MultiContract.dryRunNonceOf(contract, nonceOfParameter);
 
-    if (!result || result.tag === 'failure' || !result.returnValue) {
+    if (!dryRunResult || dryRunResult.tag === 'failure' || !dryRunResult.returnValue) {
         throw new Error(
             `RPC call 'invokeContract' on method '${SPONSORED_TX_CONTRACT_NAME.value}.nonceOf' of contract '${
                 process.env.CIS2_TOKEN_CONTRACT_INDEX
-            }' failed. Response: ${JSONbig.stringify(result)}`,
+            }' failed. Response: ${JSONbig.stringify(dryRunResult)}`,
         );
     }
 
-    const returnValues = deserializeTypeValue(
-        result.returnValue.buffer,
-        toBuffer(NONCE_OF_RETURN_VALUE_SCHEMA, 'base64'),
-    ) as number[][];
+    const parsedReturnValue = Cis2MultiContract.parseReturnValueNonceOf(dryRunResult);
 
-    if (returnValues === undefined) {
+    if (parsedReturnValue === undefined) {
         throw new Error(
             `Deserializing the returnValue from the '${SPONSORED_TX_CONTRACT_NAME.value}.nonceOf' method of contract '${process.env.CIS2_TOKEN_CONTRACT_INDEX}' failed`,
         );
     } else {
-        // Return next nonce of a user
-        return returnValues[0][0];
+        return parsedReturnValue;
     }
 }

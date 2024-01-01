@@ -6,8 +6,9 @@ import { WalletConnection } from '@concordium/react-components';
 import { mint } from '../cis2_token_contract';
 import { AccountAddress, TransactionHash } from '@concordium/web-sdk';
 
-import * as Cis2MultiContract from '../../generated/cis2_multi_cis2_multi'; // Code generated from a smart contract module.
 import { METADATA_URL } from '../constants';
+
+import * as Cis2MultiContract from '../../generated/cis2_multi_cis2_multi'; // Code generated from a smart contract module.
 
 interface ConnectionProps {
     setTxHash: (hash: TransactionHash.Type | undefined) => void;
