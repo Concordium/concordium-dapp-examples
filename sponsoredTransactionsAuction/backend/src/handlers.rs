@@ -252,7 +252,7 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl warp::Reply, Infall
         let message = "Simulation invoke error.";
         Ok(mk_reply(message.into(), code))
     } else if let Some(LogError::TransactionSimulationError(e)) = err.find() {
-        let code = StatusCode::INTERNAL_SERVER_ERROR;
+        let code = StatusCode::BAD_REQUEST;
         let message = format!(
             "Transaction simulation error. Your transaction would revert with the given reject \
              reason: {:?}",

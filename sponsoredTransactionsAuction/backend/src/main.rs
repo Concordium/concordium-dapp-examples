@@ -59,7 +59,7 @@ struct IdVerifierConfig {
         env = "PUBLIC_FOLDER",
         help = "location of the folder to serve"
     )]
-    public_folder: String,
+    public_folder: PathBuf,
     #[structopt(
         long = "account-key-file",
         env = "ACCOUNT_KEY_FILE",
@@ -72,8 +72,8 @@ struct IdVerifierConfig {
 async fn main() -> anyhow::Result<()> {
     let app = IdVerifierConfig::parse();
     let mut log_builder = env_logger::Builder::new();
-    // only log the current module (main).
-    log_builder.filter_level(app.log_level); // filter filter_module(module_path!(), app.log_level);
+    // only log the modules (main, handler, and warp).
+    log_builder.filter_module("main", app.log_level).filter_module("handler", app.log_level).filter_module("warp", app.log_level);
     log_builder.init();
 
     let endpoint = if app
@@ -88,11 +88,6 @@ async fn main() -> anyhow::Result<()> {
     };
 
     let mut client_transfer = concordium_rust_sdk::v2::Client::new(endpoint).await?;
-
-    let cors = warp::cors()
-        .allow_any_origin()
-        .allow_header("Content-Type")
-        .allow_methods(vec!["POST", "GET"]);
 
     // load account keys and sender address from a file
     let keys: WalletAccount = serde_json::from_str(
@@ -140,7 +135,6 @@ async fn main() -> anyhow::Result<()> {
     let server = provide_submit_bid
         .or(serve_public_files)
         .recover(handle_rejection)
-        .with(cors)
         .with(warp::trace::request());
     warp::serve(server).run(([0, 0, 0, 0], app.port)).await;
     Ok(())
