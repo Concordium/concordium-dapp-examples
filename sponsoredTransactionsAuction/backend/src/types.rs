@@ -1,6 +1,6 @@
+use axum::{extract::rejection::JsonRejection, Json};
 use concordium_rust_sdk::{
     cis2::{TokenAmount, TokenId, Transfer},
-    endpoints::{QueryError, RPCError},
     smart_contracts::{
         common as concordium_std,
         common::{
@@ -8,43 +8,57 @@ use concordium_rust_sdk::{
             Timestamp,
         },
     },
-    types::{Nonce, RejectReason},
+    types::{CryptographicParameters, Nonce, RejectReason, WalletAccount},
+    v2::{self, QueryError, RPCError},
+    web3id::did::Network,
 };
+use hex::FromHexError;
+use http::StatusCode;
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::Mutex;
 
 #[derive(Debug, thiserror::Error)]
-pub enum LogError {
-    #[error("Nonce query error.")]
-    NonceQueryError,
-    #[error("Submit sponsored transaction error.")]
-    SubmitSponsoredTransactionError,
-    #[error("Simulation invoke error.")]
-    SimulationInvokeError,
-    #[error("Transaction simulation error.")]
-    TransactionSimulationError(RevertReason),
-    #[error("Rate limit error.")]
-    RateLimitError,
-    #[error("Parameter error.")]
+pub enum ServerError {
+    #[error("Unable to parse request: {0}")]
+    InvalidRequest(#[from] JsonRejection),
+    #[error("The passed signature from the front end is in a wrong format: {0}")]
+    SignatureError(#[from] FromHexError),
+    #[error("TODO:ParameterError.")]
     ParameterError,
-    #[error("Signature error.")]
-    SignatureError,
-    #[error("AdditionalData error.")]
-    AdditionalDataError,
-    #[error("Node access error: {0}")]
-    NodeAccess(#[from] QueryError),
+    #[error("TODO: SimulationInvokeError: {0}")]
+    SimulationInvokeError(#[from] QueryError),
+    #[error("TODO: Transaction simulation error.")]
+    TransactionSimulationError(RevertReason),
+    #[error("TODO: RateLimitError.")]
+    RateLimitError,
+    #[error("TODO: SubmitSponsoredTransactionError: {0}")]
+    SubmitSponsoredTransactionError(#[from] RPCError),
 }
 
-impl From<RPCError> for LogError {
-    fn from(err: RPCError) -> Self { Self::NodeAccess(err.into()) }
+// TODO: Assign correct error codes to errors.
+impl axum::response::IntoResponse for ServerError {
+    fn into_response(self) -> axum::response::Response {
+        let r = match self {
+            // Error::CredentialLookup(e) => {
+            //     tracing::debug!("Failed to look up credential: {e}");
+            //     (
+            //         StatusCode::NOT_FOUND,
+            //         Json(format!("One or more credentials were not found: {e}")),
+            //     )
+            // }
+            error => {
+                tracing::debug!("Bad request: {error}");
+                (StatusCode::BAD_REQUEST, Json(format!("{}", error)))
+            }
+        };
+        r.into_response()
+    }
 }
 
 #[derive(serde::Serialize, Debug)]
 pub struct RevertReason {
     pub reason: RejectReason,
 }
-
-impl warp::reject::Reject for LogError {}
 
 #[derive(serde::Serialize)]
 /// Response in case of an error. This is going to be encoded as a JSON body
@@ -121,10 +135,17 @@ pub struct PermitMessage {
 
 /// Server struct to keep track of the nonce of the sponsorer account and the
 /// rate_limits of user accounts.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Server {
+    pub http_client: reqwest::Client,
+    pub node_client: v2::Client,
+    pub network: Network,
+    pub key: Arc<WalletAccount>,
+    pub crypto_params: Arc<CryptographicParameters>,
+    pub auction_smart_contract: ContractAddress,
+    pub cis2_token_smart_contract: ContractAddress,
     /// Nonce of the sponsorer account.
-    pub nonce:       Arc<Mutex<Nonce>>,
+    pub nonce: Arc<Mutex<Nonce>>,
     /// The rate limit value for each user account is incremented
     /// every time this user account signs a `permit_message` at the front end
     /// and the signature is submitted to the `bid` entry point of this back
