@@ -9,14 +9,12 @@ import {
     TransactionSummaryType,
     ConcordiumGRPCClient,
     UpdatedEvent,
-    toBuffer,
-    deserializeTypeValue,
     TransactionHash,
     AccountAddress,
     Timestamp,
 } from '@concordium/web-sdk';
 
-import { AUCTION_END, AUCTION_START, EVENT_SCHEMA } from '../constants';
+import { AUCTION_END, AUCTION_START } from '../constants';
 import { addItem } from '../auction_contract';
 
 import * as AuctionContract from '../../generated/sponsored_tx_enabled_auction_sponsored_tx_enabled_auction'; // Code generated from a smart contract module.
@@ -27,12 +25,6 @@ interface ConnectionProps {
     account: string | undefined;
     connection: WalletConnection;
     grpcClient: ConcordiumGRPCClient | undefined;
-}
-
-interface ContractEvent {
-    AddItemEvent: {
-        item_index: string;
-    };
 }
 
 /*
@@ -48,7 +40,7 @@ export default function AddItemToAuction(props: ConnectionProps) {
     }
     const form = useForm<FormType>({ mode: 'all' });
 
-    const [itemIndex, setItemIndex] = useState<string | undefined>(undefined);
+    const [itemIndex, setItemIndex] = useState<number | undefined>(undefined);
     const [itemIndexError, setItemIndexError] = useState<string | undefined>(undefined);
     const [showMessage, setShowMessage] = useState(false);
     const [addItemTxHash, setAddItemTxHash] = useState<TransactionHash.Type | undefined>(undefined);
@@ -93,13 +85,9 @@ export default function AddItemToAuction(props: ConnectionProps) {
                     ) {
                         const eventList = report.summary.events[0] as UpdatedEvent;
 
-                        const returnValues = deserializeTypeValue(
-                            eventList.events[0].buffer,
-                            toBuffer(EVENT_SCHEMA, 'base64'),
-                        );
+                        const parsedEvent = AuctionContract.parseEvent(eventList.events[0]);
 
-                        const event = returnValues as unknown as ContractEvent;
-                        setItemIndex(event.AddItemEvent.item_index);
+                        setItemIndex(parsedEvent.content.item_index);
                     } else {
                         setItemIndexError('Tansaction failed or event decoding failed.');
                     }

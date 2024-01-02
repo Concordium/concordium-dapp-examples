@@ -23,8 +23,6 @@ export const AUCTION_END = '2050-01-01T12:00:00Z'; // Hardcoded value for simpli
 
 export const METADATA_URL = 'https://s3.eu-central-1.amazonaws.com/tokens.testnet.concordium.com/ft/wccd'; // We use the same metadat URL for every token_id for simplicity for this demo dApp. In production, you should consider using a different metadata file for each token_id.
 
-export const EVENT_SCHEMA = 'HwEAAAAADAAAAEFkZEl0ZW1FdmVudAABAAAACgAAAGl0ZW1faW5kZXgD';
-
 export const TRANSFER_SCHEMA =
     'EAEUAAUAAAAIAAAAdG9rZW5faWQdAAYAAABhbW91bnQbJQAAAAQAAABmcm9tFQIAAAAHAAAAQWNjb3VudAEBAAAACwgAAABDb250cmFjdAEBAAAADAIAAAB0bxUCAAAABwAAAEFjY291bnQBAQAAAAsIAAAAQ29udHJhY3QBAgAAAAwWAQQAAABkYXRhHQE=';
 
