@@ -5,7 +5,7 @@
     "type": "module",
     "engines": {
         "npm": ">=10.0.0",
-        "node": ">=18.19.0"
+        "node": ">=18.0.0"
     },
     "scripts": {
         "dev": "CIS2_TOKEN_CONTRACT_INDEX=7370 AUCTION_CONTRACT_INDEX=7415 vite",
