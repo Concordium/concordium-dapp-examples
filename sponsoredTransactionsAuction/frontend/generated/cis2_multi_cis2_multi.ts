@@ -2,7 +2,7 @@
 import * as SDK from "@concordium/web-sdk";
 
 /** The reference of the smart contract module supported by the provided client. */
-export const moduleReference: SDK.ModuleReference.Type = /*#__PURE__*/ SDK.ModuleReference.fromHexString('d4a3a3bf1fc4eec66c5407602fb7a30955136df4982436f2445773925a8baf75');
+export const moduleReference: SDK.ModuleReference.Type = /*#__PURE__*/ SDK.ModuleReference.fromHexString('e95d15e62c8f9d80e08de180a3c0188d602a5f5ed58b8c34daa82131b9940c3a');
 /** Name of the smart contract supported by this client. */
 export const contractName: SDK.ContractName.Type = /*#__PURE__*/ SDK.ContractName.fromStringUnchecked('cis2_multi');
 
@@ -1100,6 +1100,106 @@ export function parseReturnValueViewMessageHash(invokeResult: SDK.InvokeContract
     return schemaJson;
 }
 
+/** Error message for dry-running update transaction for 'viewMessageHash' entrypoint of the 'cis2_multi' contract. */
+export type ErrorMessageViewMessageHash = { type: 'InvalidTokenId'} | { type: 'InsufficientFunds'} | { type: 'Unauthorized'} | { type: 'Custom', content: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} };
+
+/**
+ * Get and parse the error message from dry-running update transaction for 'viewMessageHash' entrypoint of the 'cis2_multi' contract.
+ * Returns undefined if the result is not a failure.
+ * @param {SDK.InvokeContractResult} invokeResult The result from dry-running the transaction.
+ * @returns {ErrorMessageViewMessageHash | undefined} The structured error message or undefined if result was not a failure or failed for other reason than contract rejectedReceive.
+ */
+export function parseErrorMessageViewMessageHash(invokeResult: SDK.InvokeContractResult): ErrorMessageViewMessageHash | undefined {
+    if (invokeResult.tag !== 'failure' || invokeResult.reason.tag !== 'RejectedReceive') {
+        return undefined;
+    }
+    if (invokeResult.returnValue === undefined) {
+        throw new Error('Unexpected missing \'returnValue\' in result of invocation. Client expected a V1 smart contract.');
+    }
+    const schemaJson = <{'InvalidTokenId' : [] } | {'InsufficientFunds' : [] } | {'Unauthorized' : [] } | {'Custom' : [{'ParseParams' : [] } | {'LogFull' : [] } | {'LogMalformed' : [] } | {'InvalidContractName' : [] } | {'ContractOnly' : [] } | {'InvokeContractError' : [] } | {'MissingAccount' : [] } | {'MalformedData' : [] } | {'WrongSignature' : [] } | {'NonceMismatch' : [] } | {'WrongContract' : [] } | {'WrongEntryPoint' : [] } | {'Expired' : [] }] }>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'FQQAAAAOAAAASW52YWxpZFRva2VuSWQCEQAAAEluc3VmZmljaWVudEZ1bmRzAgwAAABVbmF1dGhvcml6ZWQCBgAAAEN1c3RvbQEBAAAAFQ0AAAALAAAAUGFyc2VQYXJhbXMCBwAAAExvZ0Z1bGwCDAAAAExvZ01hbGZvcm1lZAITAAAASW52YWxpZENvbnRyYWN0TmFtZQIMAAAAQ29udHJhY3RPbmx5AhMAAABJbnZva2VDb250cmFjdEVycm9yAg4AAABNaXNzaW5nQWNjb3VudAINAAAATWFsZm9ybWVkRGF0YQIOAAAAV3JvbmdTaWduYXR1cmUCDQAAAE5vbmNlTWlzbWF0Y2gCDQAAAFdyb25nQ29udHJhY3QCDwAAAFdyb25nRW50cnlQb2ludAIHAAAARXhwaXJlZAI=');
+    let match193: { type: 'InvalidTokenId'} | { type: 'InsufficientFunds'} | { type: 'Unauthorized'} | { type: 'Custom', content: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} };
+    if ('InvalidTokenId' in schemaJson) {
+       match193 = {
+           type: 'InvalidTokenId',
+       };
+    } else if ('InsufficientFunds' in schemaJson) {
+       match193 = {
+           type: 'InsufficientFunds',
+       };
+    } else if ('Unauthorized' in schemaJson) {
+       match193 = {
+           type: 'Unauthorized',
+       };
+    } else if ('Custom' in schemaJson) {
+       const variant197 = schemaJson.Custom;
+    let match198: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'};
+    if ('ParseParams' in variant197[0]) {
+       match198 = {
+           type: 'ParseParams',
+       };
+    } else if ('LogFull' in variant197[0]) {
+       match198 = {
+           type: 'LogFull',
+       };
+    } else if ('LogMalformed' in variant197[0]) {
+       match198 = {
+           type: 'LogMalformed',
+       };
+    } else if ('InvalidContractName' in variant197[0]) {
+       match198 = {
+           type: 'InvalidContractName',
+       };
+    } else if ('ContractOnly' in variant197[0]) {
+       match198 = {
+           type: 'ContractOnly',
+       };
+    } else if ('InvokeContractError' in variant197[0]) {
+       match198 = {
+           type: 'InvokeContractError',
+       };
+    } else if ('MissingAccount' in variant197[0]) {
+       match198 = {
+           type: 'MissingAccount',
+       };
+    } else if ('MalformedData' in variant197[0]) {
+       match198 = {
+           type: 'MalformedData',
+       };
+    } else if ('WrongSignature' in variant197[0]) {
+       match198 = {
+           type: 'WrongSignature',
+       };
+    } else if ('NonceMismatch' in variant197[0]) {
+       match198 = {
+           type: 'NonceMismatch',
+       };
+    } else if ('WrongContract' in variant197[0]) {
+       match198 = {
+           type: 'WrongContract',
+       };
+    } else if ('WrongEntryPoint' in variant197[0]) {
+       match198 = {
+           type: 'WrongEntryPoint',
+       };
+    } else if ('Expired' in variant197[0]) {
+       match198 = {
+           type: 'Expired',
+       };
+    }
+     else {
+       throw new Error("Unexpected enum variant");
+    }
+       match193 = {
+           type: 'Custom',
+           content: match198,
+       };
+    }
+     else {
+       throw new Error("Unexpected enum variant");
+    }
+    return match193
+}
+
 /** Parameter type for update transaction for 'permit' entrypoint of the 'cis2_multi' contract. */
 export type PermitParameter = {
     signature: Map<number, Map<number, { type: 'Ed25519', content: SDK.HexString }>>,
@@ -1119,43 +1219,43 @@ export type PermitParameter = {
  * @returns {SDK.Parameter.Type} The smart contract parameter.
  */
 export function createPermitParameter(parameter: PermitParameter): SDK.Parameter.Type {
-    const field194 = parameter.signature;
-    const map195: [number, [number, {'Ed25519' : [string] }][]][] = [...field194.entries()].map(([key196, value197]) => {
-    const map198: [number, {'Ed25519' : [string] }][] = [...value197.entries()].map(([key199, value200]) => {
-    let match201: {'Ed25519' : [string] };
-    switch (value200.type) {
+    const field213 = parameter.signature;
+    const map214: [number, [number, {'Ed25519' : [string] }][]][] = [...field213.entries()].map(([key215, value216]) => {
+    const map217: [number, {'Ed25519' : [string] }][] = [...value216.entries()].map(([key218, value219]) => {
+    let match220: {'Ed25519' : [string] };
+    switch (value219.type) {
         case 'Ed25519':
-            match201 = { Ed25519: [value200.content], };
+            match220 = { Ed25519: [value219.content], };
         break;
     }
-        return [key199, match201];
+        return [key218, match220];
     });
-        return [key196, map198];
+        return [key215, map217];
     });
-    const field202 = parameter.signer;
-    const accountAddress203 = SDK.AccountAddress.toSchemaValue(field202);
-    const field204 = parameter.message;
-    const field206 = field204.contract_address;
-    const contractAddress207 = SDK.ContractAddress.toSchemaValue(field206);
-    const field208 = field204.nonce;
-    const number209 = BigInt(field208);
-    const field210 = field204.timestamp;
-    const timestamp211 = SDK.Timestamp.toSchemaValue(field210);
-    const field212 = field204.entry_point;
-    const field213 = field204.payload;
-    const named205 = {
-    contract_address: contractAddress207,
-    nonce: number209,
-    timestamp: timestamp211,
-    entry_point: field212,
-    payload: field213,
+    const field221 = parameter.signer;
+    const accountAddress222 = SDK.AccountAddress.toSchemaValue(field221);
+    const field223 = parameter.message;
+    const field225 = field223.contract_address;
+    const contractAddress226 = SDK.ContractAddress.toSchemaValue(field225);
+    const field227 = field223.nonce;
+    const number228 = BigInt(field227);
+    const field229 = field223.timestamp;
+    const timestamp230 = SDK.Timestamp.toSchemaValue(field229);
+    const field231 = field223.entry_point;
+    const field232 = field223.payload;
+    const named224 = {
+    contract_address: contractAddress226,
+    nonce: number228,
+    timestamp: timestamp230,
+    entry_point: field231,
+    payload: field232,
     };
-    const named193 = {
-    signature: map195,
-    signer: accountAddress203,
-    message: named205,
+    const named212 = {
+    signature: map214,
+    signer: accountAddress222,
+    message: named224,
     };
-    const out = SDK.Parameter.fromBase64SchemaType('FAADAAAACQAAAHNpZ25hdHVyZRIAAhIAAhUBAAAABwAAAEVkMjU1MTkBAQAAAB5AAAAABgAAAHNpZ25lcgsHAAAAbWVzc2FnZRQABQAAABAAAABjb250cmFjdF9hZGRyZXNzDAUAAABub25jZQUJAAAAdGltZXN0YW1wDQsAAABlbnRyeV9wb2ludBYBBwAAAHBheWxvYWQQAQI=', named193);
+    const out = SDK.Parameter.fromBase64SchemaType('FAADAAAACQAAAHNpZ25hdHVyZRIAAhIAAhUBAAAABwAAAEVkMjU1MTkBAQAAAB5AAAAABgAAAHNpZ25lcgsHAAAAbWVzc2FnZRQABQAAABAAAABjb250cmFjdF9hZGRyZXNzDAUAAABub25jZQUJAAAAdGltZXN0YW1wDQsAAABlbnRyeV9wb2ludBYBBwAAAHBheWxvYWQQAQI=', named212);
     return out;
 }
 
@@ -1197,6 +1297,106 @@ export function dryRunPermit(contractClient: Cis2MultiContract, parameter: Permi
     );
 }
 
+/** Error message for dry-running update transaction for 'permit' entrypoint of the 'cis2_multi' contract. */
+export type ErrorMessagePermit = { type: 'InvalidTokenId'} | { type: 'InsufficientFunds'} | { type: 'Unauthorized'} | { type: 'Custom', content: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} };
+
+/**
+ * Get and parse the error message from dry-running update transaction for 'permit' entrypoint of the 'cis2_multi' contract.
+ * Returns undefined if the result is not a failure.
+ * @param {SDK.InvokeContractResult} invokeResult The result from dry-running the transaction.
+ * @returns {ErrorMessagePermit | undefined} The structured error message or undefined if result was not a failure or failed for other reason than contract rejectedReceive.
+ */
+export function parseErrorMessagePermit(invokeResult: SDK.InvokeContractResult): ErrorMessagePermit | undefined {
+    if (invokeResult.tag !== 'failure' || invokeResult.reason.tag !== 'RejectedReceive') {
+        return undefined;
+    }
+    if (invokeResult.returnValue === undefined) {
+        throw new Error('Unexpected missing \'returnValue\' in result of invocation. Client expected a V1 smart contract.');
+    }
+    const schemaJson = <{'InvalidTokenId' : [] } | {'InsufficientFunds' : [] } | {'Unauthorized' : [] } | {'Custom' : [{'ParseParams' : [] } | {'LogFull' : [] } | {'LogMalformed' : [] } | {'InvalidContractName' : [] } | {'ContractOnly' : [] } | {'InvokeContractError' : [] } | {'MissingAccount' : [] } | {'MalformedData' : [] } | {'WrongSignature' : [] } | {'NonceMismatch' : [] } | {'WrongContract' : [] } | {'WrongEntryPoint' : [] } | {'Expired' : [] }] }>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'FQQAAAAOAAAASW52YWxpZFRva2VuSWQCEQAAAEluc3VmZmljaWVudEZ1bmRzAgwAAABVbmF1dGhvcml6ZWQCBgAAAEN1c3RvbQEBAAAAFQ0AAAALAAAAUGFyc2VQYXJhbXMCBwAAAExvZ0Z1bGwCDAAAAExvZ01hbGZvcm1lZAITAAAASW52YWxpZENvbnRyYWN0TmFtZQIMAAAAQ29udHJhY3RPbmx5AhMAAABJbnZva2VDb250cmFjdEVycm9yAg4AAABNaXNzaW5nQWNjb3VudAINAAAATWFsZm9ybWVkRGF0YQIOAAAAV3JvbmdTaWduYXR1cmUCDQAAAE5vbmNlTWlzbWF0Y2gCDQAAAFdyb25nQ29udHJhY3QCDwAAAFdyb25nRW50cnlQb2ludAIHAAAARXhwaXJlZAI=');
+    let match235: { type: 'InvalidTokenId'} | { type: 'InsufficientFunds'} | { type: 'Unauthorized'} | { type: 'Custom', content: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} };
+    if ('InvalidTokenId' in schemaJson) {
+       match235 = {
+           type: 'InvalidTokenId',
+       };
+    } else if ('InsufficientFunds' in schemaJson) {
+       match235 = {
+           type: 'InsufficientFunds',
+       };
+    } else if ('Unauthorized' in schemaJson) {
+       match235 = {
+           type: 'Unauthorized',
+       };
+    } else if ('Custom' in schemaJson) {
+       const variant239 = schemaJson.Custom;
+    let match240: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'};
+    if ('ParseParams' in variant239[0]) {
+       match240 = {
+           type: 'ParseParams',
+       };
+    } else if ('LogFull' in variant239[0]) {
+       match240 = {
+           type: 'LogFull',
+       };
+    } else if ('LogMalformed' in variant239[0]) {
+       match240 = {
+           type: 'LogMalformed',
+       };
+    } else if ('InvalidContractName' in variant239[0]) {
+       match240 = {
+           type: 'InvalidContractName',
+       };
+    } else if ('ContractOnly' in variant239[0]) {
+       match240 = {
+           type: 'ContractOnly',
+       };
+    } else if ('InvokeContractError' in variant239[0]) {
+       match240 = {
+           type: 'InvokeContractError',
+       };
+    } else if ('MissingAccount' in variant239[0]) {
+       match240 = {
+           type: 'MissingAccount',
+       };
+    } else if ('MalformedData' in variant239[0]) {
+       match240 = {
+           type: 'MalformedData',
+       };
+    } else if ('WrongSignature' in variant239[0]) {
+       match240 = {
+           type: 'WrongSignature',
+       };
+    } else if ('NonceMismatch' in variant239[0]) {
+       match240 = {
+           type: 'NonceMismatch',
+       };
+    } else if ('WrongContract' in variant239[0]) {
+       match240 = {
+           type: 'WrongContract',
+       };
+    } else if ('WrongEntryPoint' in variant239[0]) {
+       match240 = {
+           type: 'WrongEntryPoint',
+       };
+    } else if ('Expired' in variant239[0]) {
+       match240 = {
+           type: 'Expired',
+       };
+    }
+     else {
+       throw new Error("Unexpected enum variant");
+    }
+       match235 = {
+           type: 'Custom',
+           content: match240,
+       };
+    }
+     else {
+       throw new Error("Unexpected enum variant");
+    }
+    return match235
+}
+
 /** Parameter type for update transaction for 'updateOperator' entrypoint of the 'cis2_multi' contract. */
 export type UpdateOperatorParameter = Array<{
     update: { type: 'Remove'} | { type: 'Add'},
@@ -1209,36 +1409,36 @@ export type UpdateOperatorParameter = Array<{
  * @returns {SDK.Parameter.Type} The smart contract parameter.
  */
 export function createUpdateOperatorParameter(parameter: UpdateOperatorParameter): SDK.Parameter.Type {
-    const list216 = parameter.map((item217) => {
-    const field219 = item217.update;
-    let match220: {'Remove' : [] } | {'Add' : [] };
-    switch (field219.type) {
+    const list254 = parameter.map((item255) => {
+    const field257 = item255.update;
+    let match258: {'Remove' : [] } | {'Add' : [] };
+    switch (field257.type) {
         case 'Remove':
-            match220 = { Remove: [], };
+            match258 = { Remove: [], };
         break;
         case 'Add':
-            match220 = { Add: [], };
+            match258 = { Add: [], };
         break;
     }
-    const field221 = item217.operator;
-    let match222: {'Account' : [SDK.AccountAddress.SchemaValue] } | {'Contract' : [SDK.ContractAddress.SchemaValue] };
-    switch (field221.type) {
+    const field259 = item255.operator;
+    let match260: {'Account' : [SDK.AccountAddress.SchemaValue] } | {'Contract' : [SDK.ContractAddress.SchemaValue] };
+    switch (field259.type) {
         case 'Account':
-    const accountAddress223 = SDK.AccountAddress.toSchemaValue(field221.content);
-            match222 = { Account: [accountAddress223], };
+    const accountAddress261 = SDK.AccountAddress.toSchemaValue(field259.content);
+            match260 = { Account: [accountAddress261], };
         break;
         case 'Contract':
-    const contractAddress224 = SDK.ContractAddress.toSchemaValue(field221.content);
-            match222 = { Contract: [contractAddress224], };
+    const contractAddress262 = SDK.ContractAddress.toSchemaValue(field259.content);
+            match260 = { Contract: [contractAddress262], };
         break;
     }
-    const named218 = {
-    update: match220,
-    operator: match222,
+    const named256 = {
+    update: match258,
+    operator: match260,
     };
-    return named218;
+    return named256;
     });
-    const out = SDK.Parameter.fromBase64SchemaType('EAEUAAIAAAAGAAAAdXBkYXRlFQIAAAAGAAAAUmVtb3ZlAgMAAABBZGQCCAAAAG9wZXJhdG9yFQIAAAAHAAAAQWNjb3VudAEBAAAACwgAAABDb250cmFjdAEBAAAADA==', list216);
+    const out = SDK.Parameter.fromBase64SchemaType('EAEUAAIAAAAGAAAAdXBkYXRlFQIAAAAGAAAAUmVtb3ZlAgMAAABBZGQCCAAAAG9wZXJhdG9yFQIAAAAHAAAAQWNjb3VudAEBAAAACwgAAABDb250cmFjdAEBAAAADA==', list254);
     return out;
 }
 
@@ -1297,87 +1497,87 @@ export function parseErrorMessageUpdateOperator(invokeResult: SDK.InvokeContract
         throw new Error('Unexpected missing \'returnValue\' in result of invocation. Client expected a V1 smart contract.');
     }
     const schemaJson = <{'InvalidTokenId' : [] } | {'InsufficientFunds' : [] } | {'Unauthorized' : [] } | {'Custom' : [{'ParseParams' : [] } | {'LogFull' : [] } | {'LogMalformed' : [] } | {'InvalidContractName' : [] } | {'ContractOnly' : [] } | {'InvokeContractError' : [] } | {'MissingAccount' : [] } | {'MalformedData' : [] } | {'WrongSignature' : [] } | {'NonceMismatch' : [] } | {'WrongContract' : [] } | {'WrongEntryPoint' : [] } | {'Expired' : [] }] }>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'FQQAAAAOAAAASW52YWxpZFRva2VuSWQCEQAAAEluc3VmZmljaWVudEZ1bmRzAgwAAABVbmF1dGhvcml6ZWQCBgAAAEN1c3RvbQEBAAAAFQ0AAAALAAAAUGFyc2VQYXJhbXMCBwAAAExvZ0Z1bGwCDAAAAExvZ01hbGZvcm1lZAITAAAASW52YWxpZENvbnRyYWN0TmFtZQIMAAAAQ29udHJhY3RPbmx5AhMAAABJbnZva2VDb250cmFjdEVycm9yAg4AAABNaXNzaW5nQWNjb3VudAINAAAATWFsZm9ybWVkRGF0YQIOAAAAV3JvbmdTaWduYXR1cmUCDQAAAE5vbmNlTWlzbWF0Y2gCDQAAAFdyb25nQ29udHJhY3QCDwAAAFdyb25nRW50cnlQb2ludAIHAAAARXhwaXJlZAI=');
-    let match225: { type: 'InvalidTokenId'} | { type: 'InsufficientFunds'} | { type: 'Unauthorized'} | { type: 'Custom', content: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} };
+    let match263: { type: 'InvalidTokenId'} | { type: 'InsufficientFunds'} | { type: 'Unauthorized'} | { type: 'Custom', content: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} };
     if ('InvalidTokenId' in schemaJson) {
-       match225 = {
+       match263 = {
            type: 'InvalidTokenId',
        };
     } else if ('InsufficientFunds' in schemaJson) {
-       match225 = {
+       match263 = {
            type: 'InsufficientFunds',
        };
     } else if ('Unauthorized' in schemaJson) {
-       match225 = {
+       match263 = {
            type: 'Unauthorized',
        };
     } else if ('Custom' in schemaJson) {
-       const variant229 = schemaJson.Custom;
-    let match230: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'};
-    if ('ParseParams' in variant229[0]) {
-       match230 = {
+       const variant267 = schemaJson.Custom;
+    let match268: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'};
+    if ('ParseParams' in variant267[0]) {
+       match268 = {
            type: 'ParseParams',
        };
-    } else if ('LogFull' in variant229[0]) {
-       match230 = {
+    } else if ('LogFull' in variant267[0]) {
+       match268 = {
            type: 'LogFull',
        };
-    } else if ('LogMalformed' in variant229[0]) {
-       match230 = {
+    } else if ('LogMalformed' in variant267[0]) {
+       match268 = {
            type: 'LogMalformed',
        };
-    } else if ('InvalidContractName' in variant229[0]) {
-       match230 = {
+    } else if ('InvalidContractName' in variant267[0]) {
+       match268 = {
            type: 'InvalidContractName',
        };
-    } else if ('ContractOnly' in variant229[0]) {
-       match230 = {
+    } else if ('ContractOnly' in variant267[0]) {
+       match268 = {
            type: 'ContractOnly',
        };
-    } else if ('InvokeContractError' in variant229[0]) {
-       match230 = {
+    } else if ('InvokeContractError' in variant267[0]) {
+       match268 = {
            type: 'InvokeContractError',
        };
-    } else if ('MissingAccount' in variant229[0]) {
-       match230 = {
+    } else if ('MissingAccount' in variant267[0]) {
+       match268 = {
            type: 'MissingAccount',
        };
-    } else if ('MalformedData' in variant229[0]) {
-       match230 = {
+    } else if ('MalformedData' in variant267[0]) {
+       match268 = {
            type: 'MalformedData',
        };
-    } else if ('WrongSignature' in variant229[0]) {
-       match230 = {
+    } else if ('WrongSignature' in variant267[0]) {
+       match268 = {
            type: 'WrongSignature',
        };
-    } else if ('NonceMismatch' in variant229[0]) {
-       match230 = {
+    } else if ('NonceMismatch' in variant267[0]) {
+       match268 = {
            type: 'NonceMismatch',
        };
-    } else if ('WrongContract' in variant229[0]) {
-       match230 = {
+    } else if ('WrongContract' in variant267[0]) {
+       match268 = {
            type: 'WrongContract',
        };
-    } else if ('WrongEntryPoint' in variant229[0]) {
-       match230 = {
+    } else if ('WrongEntryPoint' in variant267[0]) {
+       match268 = {
            type: 'WrongEntryPoint',
        };
-    } else if ('Expired' in variant229[0]) {
-       match230 = {
+    } else if ('Expired' in variant267[0]) {
+       match268 = {
            type: 'Expired',
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-       match225 = {
+       match263 = {
            type: 'Custom',
-           content: match230,
+           content: match268,
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-    return match225
+    return match263
 }
 
 /** Parameter type for update transaction for 'balanceOf' entrypoint of the 'cis2_multi' contract. */
@@ -1392,27 +1592,27 @@ export type BalanceOfParameter = Array<{
  * @returns {SDK.Parameter.Type} The smart contract parameter.
  */
 export function createBalanceOfParameter(parameter: BalanceOfParameter): SDK.Parameter.Type {
-    const list244 = parameter.map((item245) => {
-    const field247 = item245.token_id;
-    const field248 = item245.address;
-    let match249: {'Account' : [SDK.AccountAddress.SchemaValue] } | {'Contract' : [SDK.ContractAddress.SchemaValue] };
-    switch (field248.type) {
+    const list282 = parameter.map((item283) => {
+    const field285 = item283.token_id;
+    const field286 = item283.address;
+    let match287: {'Account' : [SDK.AccountAddress.SchemaValue] } | {'Contract' : [SDK.ContractAddress.SchemaValue] };
+    switch (field286.type) {
         case 'Account':
-    const accountAddress250 = SDK.AccountAddress.toSchemaValue(field248.content);
-            match249 = { Account: [accountAddress250], };
+    const accountAddress288 = SDK.AccountAddress.toSchemaValue(field286.content);
+            match287 = { Account: [accountAddress288], };
         break;
         case 'Contract':
-    const contractAddress251 = SDK.ContractAddress.toSchemaValue(field248.content);
-            match249 = { Contract: [contractAddress251], };
+    const contractAddress289 = SDK.ContractAddress.toSchemaValue(field286.content);
+            match287 = { Contract: [contractAddress289], };
         break;
     }
-    const named246 = {
-    token_id: field247,
-    address: match249,
+    const named284 = {
+    token_id: field285,
+    address: match287,
     };
-    return named246;
+    return named284;
     });
-    const out = SDK.Parameter.fromBase64SchemaType('EAEUAAIAAAAIAAAAdG9rZW5faWQdAAcAAABhZGRyZXNzFQIAAAAHAAAAQWNjb3VudAEBAAAACwgAAABDb250cmFjdAEBAAAADA==', list244);
+    const out = SDK.Parameter.fromBase64SchemaType('EAEUAAIAAAAIAAAAdG9rZW5faWQdAAcAAABhZGRyZXNzFQIAAAAHAAAAQWNjb3VudAEBAAAACwgAAABDb250cmFjdAEBAAAADA==', list282);
     return out;
 }
 
@@ -1471,10 +1671,10 @@ export function parseReturnValueBalanceOf(invokeResult: SDK.InvokeContractResult
         throw new Error('Unexpected missing \'returnValue\' in result of invocation. Client expected a V1 smart contract.');
     }
     const schemaJson = <Array<bigint>>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'EAEbJQAAAA==');
-    const list252 = schemaJson.map((item253) => {
-    return BigInt(item253);
+    const list290 = schemaJson.map((item291) => {
+    return BigInt(item291);
     });
-    return list252;
+    return list290;
 }
 
 /** Error message for dry-running update transaction for 'balanceOf' entrypoint of the 'cis2_multi' contract. */
@@ -1494,87 +1694,87 @@ export function parseErrorMessageBalanceOf(invokeResult: SDK.InvokeContractResul
         throw new Error('Unexpected missing \'returnValue\' in result of invocation. Client expected a V1 smart contract.');
     }
     const schemaJson = <{'InvalidTokenId' : [] } | {'InsufficientFunds' : [] } | {'Unauthorized' : [] } | {'Custom' : [{'ParseParams' : [] } | {'LogFull' : [] } | {'LogMalformed' : [] } | {'InvalidContractName' : [] } | {'ContractOnly' : [] } | {'InvokeContractError' : [] } | {'MissingAccount' : [] } | {'MalformedData' : [] } | {'WrongSignature' : [] } | {'NonceMismatch' : [] } | {'WrongContract' : [] } | {'WrongEntryPoint' : [] } | {'Expired' : [] }] }>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'FQQAAAAOAAAASW52YWxpZFRva2VuSWQCEQAAAEluc3VmZmljaWVudEZ1bmRzAgwAAABVbmF1dGhvcml6ZWQCBgAAAEN1c3RvbQEBAAAAFQ0AAAALAAAAUGFyc2VQYXJhbXMCBwAAAExvZ0Z1bGwCDAAAAExvZ01hbGZvcm1lZAITAAAASW52YWxpZENvbnRyYWN0TmFtZQIMAAAAQ29udHJhY3RPbmx5AhMAAABJbnZva2VDb250cmFjdEVycm9yAg4AAABNaXNzaW5nQWNjb3VudAINAAAATWFsZm9ybWVkRGF0YQIOAAAAV3JvbmdTaWduYXR1cmUCDQAAAE5vbmNlTWlzbWF0Y2gCDQAAAFdyb25nQ29udHJhY3QCDwAAAFdyb25nRW50cnlQb2ludAIHAAAARXhwaXJlZAI=');
-    let match254: { type: 'InvalidTokenId'} | { type: 'InsufficientFunds'} | { type: 'Unauthorized'} | { type: 'Custom', content: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} };
+    let match292: { type: 'InvalidTokenId'} | { type: 'InsufficientFunds'} | { type: 'Unauthorized'} | { type: 'Custom', content: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} };
     if ('InvalidTokenId' in schemaJson) {
-       match254 = {
+       match292 = {
            type: 'InvalidTokenId',
        };
     } else if ('InsufficientFunds' in schemaJson) {
-       match254 = {
+       match292 = {
            type: 'InsufficientFunds',
        };
     } else if ('Unauthorized' in schemaJson) {
-       match254 = {
+       match292 = {
            type: 'Unauthorized',
        };
     } else if ('Custom' in schemaJson) {
-       const variant258 = schemaJson.Custom;
-    let match259: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'};
-    if ('ParseParams' in variant258[0]) {
-       match259 = {
+       const variant296 = schemaJson.Custom;
+    let match297: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'};
+    if ('ParseParams' in variant296[0]) {
+       match297 = {
            type: 'ParseParams',
        };
-    } else if ('LogFull' in variant258[0]) {
-       match259 = {
+    } else if ('LogFull' in variant296[0]) {
+       match297 = {
            type: 'LogFull',
        };
-    } else if ('LogMalformed' in variant258[0]) {
-       match259 = {
+    } else if ('LogMalformed' in variant296[0]) {
+       match297 = {
            type: 'LogMalformed',
        };
-    } else if ('InvalidContractName' in variant258[0]) {
-       match259 = {
+    } else if ('InvalidContractName' in variant296[0]) {
+       match297 = {
            type: 'InvalidContractName',
        };
-    } else if ('ContractOnly' in variant258[0]) {
-       match259 = {
+    } else if ('ContractOnly' in variant296[0]) {
+       match297 = {
            type: 'ContractOnly',
        };
-    } else if ('InvokeContractError' in variant258[0]) {
-       match259 = {
+    } else if ('InvokeContractError' in variant296[0]) {
+       match297 = {
            type: 'InvokeContractError',
        };
-    } else if ('MissingAccount' in variant258[0]) {
-       match259 = {
+    } else if ('MissingAccount' in variant296[0]) {
+       match297 = {
            type: 'MissingAccount',
        };
-    } else if ('MalformedData' in variant258[0]) {
-       match259 = {
+    } else if ('MalformedData' in variant296[0]) {
+       match297 = {
            type: 'MalformedData',
        };
-    } else if ('WrongSignature' in variant258[0]) {
-       match259 = {
+    } else if ('WrongSignature' in variant296[0]) {
+       match297 = {
            type: 'WrongSignature',
        };
-    } else if ('NonceMismatch' in variant258[0]) {
-       match259 = {
+    } else if ('NonceMismatch' in variant296[0]) {
+       match297 = {
            type: 'NonceMismatch',
        };
-    } else if ('WrongContract' in variant258[0]) {
-       match259 = {
+    } else if ('WrongContract' in variant296[0]) {
+       match297 = {
            type: 'WrongContract',
        };
-    } else if ('WrongEntryPoint' in variant258[0]) {
-       match259 = {
+    } else if ('WrongEntryPoint' in variant296[0]) {
+       match297 = {
            type: 'WrongEntryPoint',
        };
-    } else if ('Expired' in variant258[0]) {
-       match259 = {
+    } else if ('Expired' in variant296[0]) {
+       match297 = {
            type: 'Expired',
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-       match254 = {
+       match292 = {
            type: 'Custom',
-           content: match259,
+           content: match297,
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-    return match254
+    return match292
 }
 
 /** Parameter type for update transaction for 'operatorOf' entrypoint of the 'cis2_multi' contract. */
@@ -1589,38 +1789,38 @@ export type OperatorOfParameter = Array<{
  * @returns {SDK.Parameter.Type} The smart contract parameter.
  */
 export function createOperatorOfParameter(parameter: OperatorOfParameter): SDK.Parameter.Type {
-    const list273 = parameter.map((item274) => {
-    const field276 = item274.owner;
-    let match277: {'Account' : [SDK.AccountAddress.SchemaValue] } | {'Contract' : [SDK.ContractAddress.SchemaValue] };
-    switch (field276.type) {
+    const list311 = parameter.map((item312) => {
+    const field314 = item312.owner;
+    let match315: {'Account' : [SDK.AccountAddress.SchemaValue] } | {'Contract' : [SDK.ContractAddress.SchemaValue] };
+    switch (field314.type) {
         case 'Account':
-    const accountAddress278 = SDK.AccountAddress.toSchemaValue(field276.content);
-            match277 = { Account: [accountAddress278], };
+    const accountAddress316 = SDK.AccountAddress.toSchemaValue(field314.content);
+            match315 = { Account: [accountAddress316], };
         break;
         case 'Contract':
-    const contractAddress279 = SDK.ContractAddress.toSchemaValue(field276.content);
-            match277 = { Contract: [contractAddress279], };
+    const contractAddress317 = SDK.ContractAddress.toSchemaValue(field314.content);
+            match315 = { Contract: [contractAddress317], };
         break;
     }
-    const field280 = item274.address;
-    let match281: {'Account' : [SDK.AccountAddress.SchemaValue] } | {'Contract' : [SDK.ContractAddress.SchemaValue] };
-    switch (field280.type) {
+    const field318 = item312.address;
+    let match319: {'Account' : [SDK.AccountAddress.SchemaValue] } | {'Contract' : [SDK.ContractAddress.SchemaValue] };
+    switch (field318.type) {
         case 'Account':
-    const accountAddress282 = SDK.AccountAddress.toSchemaValue(field280.content);
-            match281 = { Account: [accountAddress282], };
+    const accountAddress320 = SDK.AccountAddress.toSchemaValue(field318.content);
+            match319 = { Account: [accountAddress320], };
         break;
         case 'Contract':
-    const contractAddress283 = SDK.ContractAddress.toSchemaValue(field280.content);
-            match281 = { Contract: [contractAddress283], };
+    const contractAddress321 = SDK.ContractAddress.toSchemaValue(field318.content);
+            match319 = { Contract: [contractAddress321], };
         break;
     }
-    const named275 = {
-    owner: match277,
-    address: match281,
+    const named313 = {
+    owner: match315,
+    address: match319,
     };
-    return named275;
+    return named313;
     });
-    const out = SDK.Parameter.fromBase64SchemaType('EAEUAAIAAAAFAAAAb3duZXIVAgAAAAcAAABBY2NvdW50AQEAAAALCAAAAENvbnRyYWN0AQEAAAAMBwAAAGFkZHJlc3MVAgAAAAcAAABBY2NvdW50AQEAAAALCAAAAENvbnRyYWN0AQEAAAAM', list273);
+    const out = SDK.Parameter.fromBase64SchemaType('EAEUAAIAAAAFAAAAb3duZXIVAgAAAAcAAABBY2NvdW50AQEAAAALCAAAAENvbnRyYWN0AQEAAAAMBwAAAGFkZHJlc3MVAgAAAAcAAABBY2NvdW50AQEAAAALCAAAAENvbnRyYWN0AQEAAAAM', list311);
     return out;
 }
 
@@ -1699,87 +1899,87 @@ export function parseErrorMessageOperatorOf(invokeResult: SDK.InvokeContractResu
         throw new Error('Unexpected missing \'returnValue\' in result of invocation. Client expected a V1 smart contract.');
     }
     const schemaJson = <{'InvalidTokenId' : [] } | {'InsufficientFunds' : [] } | {'Unauthorized' : [] } | {'Custom' : [{'ParseParams' : [] } | {'LogFull' : [] } | {'LogMalformed' : [] } | {'InvalidContractName' : [] } | {'ContractOnly' : [] } | {'InvokeContractError' : [] } | {'MissingAccount' : [] } | {'MalformedData' : [] } | {'WrongSignature' : [] } | {'NonceMismatch' : [] } | {'WrongContract' : [] } | {'WrongEntryPoint' : [] } | {'Expired' : [] }] }>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'FQQAAAAOAAAASW52YWxpZFRva2VuSWQCEQAAAEluc3VmZmljaWVudEZ1bmRzAgwAAABVbmF1dGhvcml6ZWQCBgAAAEN1c3RvbQEBAAAAFQ0AAAALAAAAUGFyc2VQYXJhbXMCBwAAAExvZ0Z1bGwCDAAAAExvZ01hbGZvcm1lZAITAAAASW52YWxpZENvbnRyYWN0TmFtZQIMAAAAQ29udHJhY3RPbmx5AhMAAABJbnZva2VDb250cmFjdEVycm9yAg4AAABNaXNzaW5nQWNjb3VudAINAAAATWFsZm9ybWVkRGF0YQIOAAAAV3JvbmdTaWduYXR1cmUCDQAAAE5vbmNlTWlzbWF0Y2gCDQAAAFdyb25nQ29udHJhY3QCDwAAAFdyb25nRW50cnlQb2ludAIHAAAARXhwaXJlZAI=');
-    let match286: { type: 'InvalidTokenId'} | { type: 'InsufficientFunds'} | { type: 'Unauthorized'} | { type: 'Custom', content: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} };
+    let match324: { type: 'InvalidTokenId'} | { type: 'InsufficientFunds'} | { type: 'Unauthorized'} | { type: 'Custom', content: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} };
     if ('InvalidTokenId' in schemaJson) {
-       match286 = {
+       match324 = {
            type: 'InvalidTokenId',
        };
     } else if ('InsufficientFunds' in schemaJson) {
-       match286 = {
+       match324 = {
            type: 'InsufficientFunds',
        };
     } else if ('Unauthorized' in schemaJson) {
-       match286 = {
+       match324 = {
            type: 'Unauthorized',
        };
     } else if ('Custom' in schemaJson) {
-       const variant290 = schemaJson.Custom;
-    let match291: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'};
-    if ('ParseParams' in variant290[0]) {
-       match291 = {
+       const variant328 = schemaJson.Custom;
+    let match329: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'};
+    if ('ParseParams' in variant328[0]) {
+       match329 = {
            type: 'ParseParams',
        };
-    } else if ('LogFull' in variant290[0]) {
-       match291 = {
+    } else if ('LogFull' in variant328[0]) {
+       match329 = {
            type: 'LogFull',
        };
-    } else if ('LogMalformed' in variant290[0]) {
-       match291 = {
+    } else if ('LogMalformed' in variant328[0]) {
+       match329 = {
            type: 'LogMalformed',
        };
-    } else if ('InvalidContractName' in variant290[0]) {
-       match291 = {
+    } else if ('InvalidContractName' in variant328[0]) {
+       match329 = {
            type: 'InvalidContractName',
        };
-    } else if ('ContractOnly' in variant290[0]) {
-       match291 = {
+    } else if ('ContractOnly' in variant328[0]) {
+       match329 = {
            type: 'ContractOnly',
        };
-    } else if ('InvokeContractError' in variant290[0]) {
-       match291 = {
+    } else if ('InvokeContractError' in variant328[0]) {
+       match329 = {
            type: 'InvokeContractError',
        };
-    } else if ('MissingAccount' in variant290[0]) {
-       match291 = {
+    } else if ('MissingAccount' in variant328[0]) {
+       match329 = {
            type: 'MissingAccount',
        };
-    } else if ('MalformedData' in variant290[0]) {
-       match291 = {
+    } else if ('MalformedData' in variant328[0]) {
+       match329 = {
            type: 'MalformedData',
        };
-    } else if ('WrongSignature' in variant290[0]) {
-       match291 = {
+    } else if ('WrongSignature' in variant328[0]) {
+       match329 = {
            type: 'WrongSignature',
        };
-    } else if ('NonceMismatch' in variant290[0]) {
-       match291 = {
+    } else if ('NonceMismatch' in variant328[0]) {
+       match329 = {
            type: 'NonceMismatch',
        };
-    } else if ('WrongContract' in variant290[0]) {
-       match291 = {
+    } else if ('WrongContract' in variant328[0]) {
+       match329 = {
            type: 'WrongContract',
        };
-    } else if ('WrongEntryPoint' in variant290[0]) {
-       match291 = {
+    } else if ('WrongEntryPoint' in variant328[0]) {
+       match329 = {
            type: 'WrongEntryPoint',
        };
-    } else if ('Expired' in variant290[0]) {
-       match291 = {
+    } else if ('Expired' in variant328[0]) {
+       match329 = {
            type: 'Expired',
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-       match286 = {
+       match324 = {
            type: 'Custom',
-           content: match291,
+           content: match329,
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-    return match286
+    return match324
 }
 
 /** Parameter type for update transaction for 'publicKeyOf' entrypoint of the 'cis2_multi' contract. */
@@ -1791,11 +1991,11 @@ export type PublicKeyOfParameter = Array<SDK.AccountAddress.Type>;
  * @returns {SDK.Parameter.Type} The smart contract parameter.
  */
 export function createPublicKeyOfParameter(parameter: PublicKeyOfParameter): SDK.Parameter.Type {
-    const list305 = parameter.map((item306) => {
-    const accountAddress307 = SDK.AccountAddress.toSchemaValue(item306);
-    return accountAddress307;
+    const list343 = parameter.map((item344) => {
+    const accountAddress345 = SDK.AccountAddress.toSchemaValue(item344);
+    return accountAddress345;
     });
-    const out = SDK.Parameter.fromBase64SchemaType('EAEL', list305);
+    const out = SDK.Parameter.fromBase64SchemaType('EAEL', list343);
     return out;
 }
 
@@ -1866,65 +2066,65 @@ export function parseReturnValuePublicKeyOf(invokeResult: SDK.InvokeContractResu
     }][],
     threshold: number,
     }] }>>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'EAEVAgAAAAQAAABOb25lAgQAAABTb21lAQEAAAAUAAIAAAAEAAAAa2V5cxIAAhQAAgAAAAQAAABrZXlzEgACFQEAAAAHAAAARWQyNTUxOQEBAAAAHiAAAAAJAAAAdGhyZXNob2xkAgkAAAB0aHJlc2hvbGQC');
-    const list308 = schemaJson.map((item309) => {
-    let match310: { type: 'None'} | { type: 'Some', content: {
+    const list346 = schemaJson.map((item347) => {
+    let match348: { type: 'None'} | { type: 'Some', content: {
     keys: Map<number, {
     keys: Map<number, { type: 'Ed25519', content: SDK.HexString }>,
     threshold: number,
     }>,
     threshold: number,
     } };
-    if ('None' in item309) {
-       match310 = {
+    if ('None' in item347) {
+       match348 = {
            type: 'None',
        };
-    } else if ('Some' in item309) {
-       const variant312 = item309.Some;
-    const field313 = variant312[0].keys;
-    const entries315 = field313.map(([key316, value317]) => {
-    const field318 = value317.keys;
-    const entries320 = field318.map(([key321, value322]) => {
-    let match323: { type: 'Ed25519', content: SDK.HexString };
-    if ('Ed25519' in value322) {
-       const variant324 = value322.Ed25519;
-       match323 = {
+    } else if ('Some' in item347) {
+       const variant350 = item347.Some;
+    const field351 = variant350[0].keys;
+    const entries353 = field351.map(([key354, value355]) => {
+    const field356 = value355.keys;
+    const entries358 = field356.map(([key359, value360]) => {
+    let match361: { type: 'Ed25519', content: SDK.HexString };
+    if ('Ed25519' in value360) {
+       const variant362 = value360.Ed25519;
+       match361 = {
            type: 'Ed25519',
-           content: variant324[0],
+           content: variant362[0],
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-    return [key321, match323];
+    return [key359, match361];
     });
-    const map319: Map<number, { type: 'Ed25519', content: SDK.HexString }> = Map.fromEntries(entries320);
-    const field325 = value317.threshold;
-    const named326 = {
-    keys: map319,
-    threshold: field325,
+    const map357: Map<number, { type: 'Ed25519', content: SDK.HexString }> = Map.fromEntries(entries358);
+    const field363 = value355.threshold;
+    const named364 = {
+    keys: map357,
+    threshold: field363,
     };
-    return [key316, named326];
+    return [key354, named364];
     });
-    const map314: Map<number, {
+    const map352: Map<number, {
     keys: Map<number, { type: 'Ed25519', content: SDK.HexString }>,
     threshold: number,
-    }> = Map.fromEntries(entries315);
-    const field327 = variant312[0].threshold;
-    const named328 = {
-    keys: map314,
-    threshold: field327,
+    }> = Map.fromEntries(entries353);
+    const field365 = variant350[0].threshold;
+    const named366 = {
+    keys: map352,
+    threshold: field365,
     };
-       match310 = {
+       match348 = {
            type: 'Some',
-           content: named328,
+           content: named366,
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-    return match310;
+    return match348;
     });
-    return list308;
+    return list346;
 }
 
 /** Error message for dry-running update transaction for 'publicKeyOf' entrypoint of the 'cis2_multi' contract. */
@@ -1944,87 +2144,87 @@ export function parseErrorMessagePublicKeyOf(invokeResult: SDK.InvokeContractRes
         throw new Error('Unexpected missing \'returnValue\' in result of invocation. Client expected a V1 smart contract.');
     }
     const schemaJson = <{'InvalidTokenId' : [] } | {'InsufficientFunds' : [] } | {'Unauthorized' : [] } | {'Custom' : [{'ParseParams' : [] } | {'LogFull' : [] } | {'LogMalformed' : [] } | {'InvalidContractName' : [] } | {'ContractOnly' : [] } | {'InvokeContractError' : [] } | {'MissingAccount' : [] } | {'MalformedData' : [] } | {'WrongSignature' : [] } | {'NonceMismatch' : [] } | {'WrongContract' : [] } | {'WrongEntryPoint' : [] } | {'Expired' : [] }] }>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'FQQAAAAOAAAASW52YWxpZFRva2VuSWQCEQAAAEluc3VmZmljaWVudEZ1bmRzAgwAAABVbmF1dGhvcml6ZWQCBgAAAEN1c3RvbQEBAAAAFQ0AAAALAAAAUGFyc2VQYXJhbXMCBwAAAExvZ0Z1bGwCDAAAAExvZ01hbGZvcm1lZAITAAAASW52YWxpZENvbnRyYWN0TmFtZQIMAAAAQ29udHJhY3RPbmx5AhMAAABJbnZva2VDb250cmFjdEVycm9yAg4AAABNaXNzaW5nQWNjb3VudAINAAAATWFsZm9ybWVkRGF0YQIOAAAAV3JvbmdTaWduYXR1cmUCDQAAAE5vbmNlTWlzbWF0Y2gCDQAAAFdyb25nQ29udHJhY3QCDwAAAFdyb25nRW50cnlQb2ludAIHAAAARXhwaXJlZAI=');
-    let match329: { type: 'InvalidTokenId'} | { type: 'InsufficientFunds'} | { type: 'Unauthorized'} | { type: 'Custom', content: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} };
+    let match367: { type: 'InvalidTokenId'} | { type: 'InsufficientFunds'} | { type: 'Unauthorized'} | { type: 'Custom', content: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} };
     if ('InvalidTokenId' in schemaJson) {
-       match329 = {
+       match367 = {
            type: 'InvalidTokenId',
        };
     } else if ('InsufficientFunds' in schemaJson) {
-       match329 = {
+       match367 = {
            type: 'InsufficientFunds',
        };
     } else if ('Unauthorized' in schemaJson) {
-       match329 = {
+       match367 = {
            type: 'Unauthorized',
        };
     } else if ('Custom' in schemaJson) {
-       const variant333 = schemaJson.Custom;
-    let match334: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'};
-    if ('ParseParams' in variant333[0]) {
-       match334 = {
+       const variant371 = schemaJson.Custom;
+    let match372: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'};
+    if ('ParseParams' in variant371[0]) {
+       match372 = {
            type: 'ParseParams',
        };
-    } else if ('LogFull' in variant333[0]) {
-       match334 = {
+    } else if ('LogFull' in variant371[0]) {
+       match372 = {
            type: 'LogFull',
        };
-    } else if ('LogMalformed' in variant333[0]) {
-       match334 = {
+    } else if ('LogMalformed' in variant371[0]) {
+       match372 = {
            type: 'LogMalformed',
        };
-    } else if ('InvalidContractName' in variant333[0]) {
-       match334 = {
+    } else if ('InvalidContractName' in variant371[0]) {
+       match372 = {
            type: 'InvalidContractName',
        };
-    } else if ('ContractOnly' in variant333[0]) {
-       match334 = {
+    } else if ('ContractOnly' in variant371[0]) {
+       match372 = {
            type: 'ContractOnly',
        };
-    } else if ('InvokeContractError' in variant333[0]) {
-       match334 = {
+    } else if ('InvokeContractError' in variant371[0]) {
+       match372 = {
            type: 'InvokeContractError',
        };
-    } else if ('MissingAccount' in variant333[0]) {
-       match334 = {
+    } else if ('MissingAccount' in variant371[0]) {
+       match372 = {
            type: 'MissingAccount',
        };
-    } else if ('MalformedData' in variant333[0]) {
-       match334 = {
+    } else if ('MalformedData' in variant371[0]) {
+       match372 = {
            type: 'MalformedData',
        };
-    } else if ('WrongSignature' in variant333[0]) {
-       match334 = {
+    } else if ('WrongSignature' in variant371[0]) {
+       match372 = {
            type: 'WrongSignature',
        };
-    } else if ('NonceMismatch' in variant333[0]) {
-       match334 = {
+    } else if ('NonceMismatch' in variant371[0]) {
+       match372 = {
            type: 'NonceMismatch',
        };
-    } else if ('WrongContract' in variant333[0]) {
-       match334 = {
+    } else if ('WrongContract' in variant371[0]) {
+       match372 = {
            type: 'WrongContract',
        };
-    } else if ('WrongEntryPoint' in variant333[0]) {
-       match334 = {
+    } else if ('WrongEntryPoint' in variant371[0]) {
+       match372 = {
            type: 'WrongEntryPoint',
        };
-    } else if ('Expired' in variant333[0]) {
-       match334 = {
+    } else if ('Expired' in variant371[0]) {
+       match372 = {
            type: 'Expired',
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-       match329 = {
+       match367 = {
            type: 'Custom',
-           content: match334,
+           content: match372,
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-    return match329
+    return match367
 }
 
 /** Parameter type for update transaction for 'nonceOf' entrypoint of the 'cis2_multi' contract. */
@@ -2036,11 +2236,11 @@ export type NonceOfParameter = Array<SDK.AccountAddress.Type>;
  * @returns {SDK.Parameter.Type} The smart contract parameter.
  */
 export function createNonceOfParameter(parameter: NonceOfParameter): SDK.Parameter.Type {
-    const list348 = parameter.map((item349) => {
-    const accountAddress350 = SDK.AccountAddress.toSchemaValue(item349);
-    return accountAddress350;
+    const list386 = parameter.map((item387) => {
+    const accountAddress388 = SDK.AccountAddress.toSchemaValue(item387);
+    return accountAddress388;
     });
-    const out = SDK.Parameter.fromBase64SchemaType('EAEL', list348);
+    const out = SDK.Parameter.fromBase64SchemaType('EAEL', list386);
     return out;
 }
 
@@ -2119,87 +2319,87 @@ export function parseErrorMessageNonceOf(invokeResult: SDK.InvokeContractResult)
         throw new Error('Unexpected missing \'returnValue\' in result of invocation. Client expected a V1 smart contract.');
     }
     const schemaJson = <{'InvalidTokenId' : [] } | {'InsufficientFunds' : [] } | {'Unauthorized' : [] } | {'Custom' : [{'ParseParams' : [] } | {'LogFull' : [] } | {'LogMalformed' : [] } | {'InvalidContractName' : [] } | {'ContractOnly' : [] } | {'InvokeContractError' : [] } | {'MissingAccount' : [] } | {'MalformedData' : [] } | {'WrongSignature' : [] } | {'NonceMismatch' : [] } | {'WrongContract' : [] } | {'WrongEntryPoint' : [] } | {'Expired' : [] }] }>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'FQQAAAAOAAAASW52YWxpZFRva2VuSWQCEQAAAEluc3VmZmljaWVudEZ1bmRzAgwAAABVbmF1dGhvcml6ZWQCBgAAAEN1c3RvbQEBAAAAFQ0AAAALAAAAUGFyc2VQYXJhbXMCBwAAAExvZ0Z1bGwCDAAAAExvZ01hbGZvcm1lZAITAAAASW52YWxpZENvbnRyYWN0TmFtZQIMAAAAQ29udHJhY3RPbmx5AhMAAABJbnZva2VDb250cmFjdEVycm9yAg4AAABNaXNzaW5nQWNjb3VudAINAAAATWFsZm9ybWVkRGF0YQIOAAAAV3JvbmdTaWduYXR1cmUCDQAAAE5vbmNlTWlzbWF0Y2gCDQAAAFdyb25nQ29udHJhY3QCDwAAAFdyb25nRW50cnlQb2ludAIHAAAARXhwaXJlZAI=');
-    let match353: { type: 'InvalidTokenId'} | { type: 'InsufficientFunds'} | { type: 'Unauthorized'} | { type: 'Custom', content: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} };
+    let match391: { type: 'InvalidTokenId'} | { type: 'InsufficientFunds'} | { type: 'Unauthorized'} | { type: 'Custom', content: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} };
     if ('InvalidTokenId' in schemaJson) {
-       match353 = {
+       match391 = {
            type: 'InvalidTokenId',
        };
     } else if ('InsufficientFunds' in schemaJson) {
-       match353 = {
+       match391 = {
            type: 'InsufficientFunds',
        };
     } else if ('Unauthorized' in schemaJson) {
-       match353 = {
+       match391 = {
            type: 'Unauthorized',
        };
     } else if ('Custom' in schemaJson) {
-       const variant357 = schemaJson.Custom;
-    let match358: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'};
-    if ('ParseParams' in variant357[0]) {
-       match358 = {
+       const variant395 = schemaJson.Custom;
+    let match396: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'};
+    if ('ParseParams' in variant395[0]) {
+       match396 = {
            type: 'ParseParams',
        };
-    } else if ('LogFull' in variant357[0]) {
-       match358 = {
+    } else if ('LogFull' in variant395[0]) {
+       match396 = {
            type: 'LogFull',
        };
-    } else if ('LogMalformed' in variant357[0]) {
-       match358 = {
+    } else if ('LogMalformed' in variant395[0]) {
+       match396 = {
            type: 'LogMalformed',
        };
-    } else if ('InvalidContractName' in variant357[0]) {
-       match358 = {
+    } else if ('InvalidContractName' in variant395[0]) {
+       match396 = {
            type: 'InvalidContractName',
        };
-    } else if ('ContractOnly' in variant357[0]) {
-       match358 = {
+    } else if ('ContractOnly' in variant395[0]) {
+       match396 = {
            type: 'ContractOnly',
        };
-    } else if ('InvokeContractError' in variant357[0]) {
-       match358 = {
+    } else if ('InvokeContractError' in variant395[0]) {
+       match396 = {
            type: 'InvokeContractError',
        };
-    } else if ('MissingAccount' in variant357[0]) {
-       match358 = {
+    } else if ('MissingAccount' in variant395[0]) {
+       match396 = {
            type: 'MissingAccount',
        };
-    } else if ('MalformedData' in variant357[0]) {
-       match358 = {
+    } else if ('MalformedData' in variant395[0]) {
+       match396 = {
            type: 'MalformedData',
        };
-    } else if ('WrongSignature' in variant357[0]) {
-       match358 = {
+    } else if ('WrongSignature' in variant395[0]) {
+       match396 = {
            type: 'WrongSignature',
        };
-    } else if ('NonceMismatch' in variant357[0]) {
-       match358 = {
+    } else if ('NonceMismatch' in variant395[0]) {
+       match396 = {
            type: 'NonceMismatch',
        };
-    } else if ('WrongContract' in variant357[0]) {
-       match358 = {
+    } else if ('WrongContract' in variant395[0]) {
+       match396 = {
            type: 'WrongContract',
        };
-    } else if ('WrongEntryPoint' in variant357[0]) {
-       match358 = {
+    } else if ('WrongEntryPoint' in variant395[0]) {
+       match396 = {
            type: 'WrongEntryPoint',
        };
-    } else if ('Expired' in variant357[0]) {
-       match358 = {
+    } else if ('Expired' in variant395[0]) {
+       match396 = {
            type: 'Expired',
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-       match353 = {
+       match391 = {
            type: 'Custom',
-           content: match358,
+           content: match396,
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-    return match353
+    return match391
 }
 
 /** Parameter type for update transaction for 'tokenMetadata' entrypoint of the 'cis2_multi' contract. */
@@ -2276,31 +2476,31 @@ export function parseReturnValueTokenMetadata(invokeResult: SDK.InvokeContractRe
     url: string,
     hash: {'None' : [] } | {'Some' : [string] },
     }>>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'EAEUAAIAAAADAAAAdXJsFgEEAAAAaGFzaBUCAAAABAAAAE5vbmUCBAAAAFNvbWUBAQAAAB4gAAAA');
-    const list374 = schemaJson.map((item375) => {
-    const field376 = item375.url;
-    const field377 = item375.hash;
-    let match378: { type: 'None'} | { type: 'Some', content: SDK.HexString };
-    if ('None' in field377) {
-       match378 = {
+    const list412 = schemaJson.map((item413) => {
+    const field414 = item413.url;
+    const field415 = item413.hash;
+    let match416: { type: 'None'} | { type: 'Some', content: SDK.HexString };
+    if ('None' in field415) {
+       match416 = {
            type: 'None',
        };
-    } else if ('Some' in field377) {
-       const variant380 = field377.Some;
-       match378 = {
+    } else if ('Some' in field415) {
+       const variant418 = field415.Some;
+       match416 = {
            type: 'Some',
-           content: variant380[0],
+           content: variant418[0],
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-    const named381 = {
-    url: field376,
-    hash: match378,
+    const named419 = {
+    url: field414,
+    hash: match416,
     };
-    return named381;
+    return named419;
     });
-    return list374;
+    return list412;
 }
 
 /** Error message for dry-running update transaction for 'tokenMetadata' entrypoint of the 'cis2_multi' contract. */
@@ -2320,87 +2520,87 @@ export function parseErrorMessageTokenMetadata(invokeResult: SDK.InvokeContractR
         throw new Error('Unexpected missing \'returnValue\' in result of invocation. Client expected a V1 smart contract.');
     }
     const schemaJson = <{'InvalidTokenId' : [] } | {'InsufficientFunds' : [] } | {'Unauthorized' : [] } | {'Custom' : [{'ParseParams' : [] } | {'LogFull' : [] } | {'LogMalformed' : [] } | {'InvalidContractName' : [] } | {'ContractOnly' : [] } | {'InvokeContractError' : [] } | {'MissingAccount' : [] } | {'MalformedData' : [] } | {'WrongSignature' : [] } | {'NonceMismatch' : [] } | {'WrongContract' : [] } | {'WrongEntryPoint' : [] } | {'Expired' : [] }] }>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'FQQAAAAOAAAASW52YWxpZFRva2VuSWQCEQAAAEluc3VmZmljaWVudEZ1bmRzAgwAAABVbmF1dGhvcml6ZWQCBgAAAEN1c3RvbQEBAAAAFQ0AAAALAAAAUGFyc2VQYXJhbXMCBwAAAExvZ0Z1bGwCDAAAAExvZ01hbGZvcm1lZAITAAAASW52YWxpZENvbnRyYWN0TmFtZQIMAAAAQ29udHJhY3RPbmx5AhMAAABJbnZva2VDb250cmFjdEVycm9yAg4AAABNaXNzaW5nQWNjb3VudAINAAAATWFsZm9ybWVkRGF0YQIOAAAAV3JvbmdTaWduYXR1cmUCDQAAAE5vbmNlTWlzbWF0Y2gCDQAAAFdyb25nQ29udHJhY3QCDwAAAFdyb25nRW50cnlQb2ludAIHAAAARXhwaXJlZAI=');
-    let match382: { type: 'InvalidTokenId'} | { type: 'InsufficientFunds'} | { type: 'Unauthorized'} | { type: 'Custom', content: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} };
+    let match420: { type: 'InvalidTokenId'} | { type: 'InsufficientFunds'} | { type: 'Unauthorized'} | { type: 'Custom', content: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} };
     if ('InvalidTokenId' in schemaJson) {
-       match382 = {
+       match420 = {
            type: 'InvalidTokenId',
        };
     } else if ('InsufficientFunds' in schemaJson) {
-       match382 = {
+       match420 = {
            type: 'InsufficientFunds',
        };
     } else if ('Unauthorized' in schemaJson) {
-       match382 = {
+       match420 = {
            type: 'Unauthorized',
        };
     } else if ('Custom' in schemaJson) {
-       const variant386 = schemaJson.Custom;
-    let match387: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'};
-    if ('ParseParams' in variant386[0]) {
-       match387 = {
+       const variant424 = schemaJson.Custom;
+    let match425: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'};
+    if ('ParseParams' in variant424[0]) {
+       match425 = {
            type: 'ParseParams',
        };
-    } else if ('LogFull' in variant386[0]) {
-       match387 = {
+    } else if ('LogFull' in variant424[0]) {
+       match425 = {
            type: 'LogFull',
        };
-    } else if ('LogMalformed' in variant386[0]) {
-       match387 = {
+    } else if ('LogMalformed' in variant424[0]) {
+       match425 = {
            type: 'LogMalformed',
        };
-    } else if ('InvalidContractName' in variant386[0]) {
-       match387 = {
+    } else if ('InvalidContractName' in variant424[0]) {
+       match425 = {
            type: 'InvalidContractName',
        };
-    } else if ('ContractOnly' in variant386[0]) {
-       match387 = {
+    } else if ('ContractOnly' in variant424[0]) {
+       match425 = {
            type: 'ContractOnly',
        };
-    } else if ('InvokeContractError' in variant386[0]) {
-       match387 = {
+    } else if ('InvokeContractError' in variant424[0]) {
+       match425 = {
            type: 'InvokeContractError',
        };
-    } else if ('MissingAccount' in variant386[0]) {
-       match387 = {
+    } else if ('MissingAccount' in variant424[0]) {
+       match425 = {
            type: 'MissingAccount',
        };
-    } else if ('MalformedData' in variant386[0]) {
-       match387 = {
+    } else if ('MalformedData' in variant424[0]) {
+       match425 = {
            type: 'MalformedData',
        };
-    } else if ('WrongSignature' in variant386[0]) {
-       match387 = {
+    } else if ('WrongSignature' in variant424[0]) {
+       match425 = {
            type: 'WrongSignature',
        };
-    } else if ('NonceMismatch' in variant386[0]) {
-       match387 = {
+    } else if ('NonceMismatch' in variant424[0]) {
+       match425 = {
            type: 'NonceMismatch',
        };
-    } else if ('WrongContract' in variant386[0]) {
-       match387 = {
+    } else if ('WrongContract' in variant424[0]) {
+       match425 = {
            type: 'WrongContract',
        };
-    } else if ('WrongEntryPoint' in variant386[0]) {
-       match387 = {
+    } else if ('WrongEntryPoint' in variant424[0]) {
+       match425 = {
            type: 'WrongEntryPoint',
        };
-    } else if ('Expired' in variant386[0]) {
-       match387 = {
+    } else if ('Expired' in variant424[0]) {
+       match425 = {
            type: 'Expired',
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-       match382 = {
+       match420 = {
            type: 'Custom',
-           content: match387,
+           content: match425,
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-    return match382
+    return match420
 }
 
 /** Parameter type for update transaction for 'onReceivingCIS2' entrypoint of the 'cis2_multi' contract. */
@@ -2470,87 +2670,87 @@ export function parseErrorMessageOnReceivingCIS2(invokeResult: SDK.InvokeContrac
         throw new Error('Unexpected missing \'returnValue\' in result of invocation. Client expected a V1 smart contract.');
     }
     const schemaJson = <{'InvalidTokenId' : [] } | {'InsufficientFunds' : [] } | {'Unauthorized' : [] } | {'Custom' : [{'ParseParams' : [] } | {'LogFull' : [] } | {'LogMalformed' : [] } | {'InvalidContractName' : [] } | {'ContractOnly' : [] } | {'InvokeContractError' : [] } | {'MissingAccount' : [] } | {'MalformedData' : [] } | {'WrongSignature' : [] } | {'NonceMismatch' : [] } | {'WrongContract' : [] } | {'WrongEntryPoint' : [] } | {'Expired' : [] }] }>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'FQQAAAAOAAAASW52YWxpZFRva2VuSWQCEQAAAEluc3VmZmljaWVudEZ1bmRzAgwAAABVbmF1dGhvcml6ZWQCBgAAAEN1c3RvbQEBAAAAFQ0AAAALAAAAUGFyc2VQYXJhbXMCBwAAAExvZ0Z1bGwCDAAAAExvZ01hbGZvcm1lZAITAAAASW52YWxpZENvbnRyYWN0TmFtZQIMAAAAQ29udHJhY3RPbmx5AhMAAABJbnZva2VDb250cmFjdEVycm9yAg4AAABNaXNzaW5nQWNjb3VudAINAAAATWFsZm9ybWVkRGF0YQIOAAAAV3JvbmdTaWduYXR1cmUCDQAAAE5vbmNlTWlzbWF0Y2gCDQAAAFdyb25nQ29udHJhY3QCDwAAAFdyb25nRW50cnlQb2ludAIHAAAARXhwaXJlZAI=');
-    let match401: { type: 'InvalidTokenId'} | { type: 'InsufficientFunds'} | { type: 'Unauthorized'} | { type: 'Custom', content: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} };
+    let match439: { type: 'InvalidTokenId'} | { type: 'InsufficientFunds'} | { type: 'Unauthorized'} | { type: 'Custom', content: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} };
     if ('InvalidTokenId' in schemaJson) {
-       match401 = {
+       match439 = {
            type: 'InvalidTokenId',
        };
     } else if ('InsufficientFunds' in schemaJson) {
-       match401 = {
+       match439 = {
            type: 'InsufficientFunds',
        };
     } else if ('Unauthorized' in schemaJson) {
-       match401 = {
+       match439 = {
            type: 'Unauthorized',
        };
     } else if ('Custom' in schemaJson) {
-       const variant405 = schemaJson.Custom;
-    let match406: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'};
-    if ('ParseParams' in variant405[0]) {
-       match406 = {
+       const variant443 = schemaJson.Custom;
+    let match444: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'};
+    if ('ParseParams' in variant443[0]) {
+       match444 = {
            type: 'ParseParams',
        };
-    } else if ('LogFull' in variant405[0]) {
-       match406 = {
+    } else if ('LogFull' in variant443[0]) {
+       match444 = {
            type: 'LogFull',
        };
-    } else if ('LogMalformed' in variant405[0]) {
-       match406 = {
+    } else if ('LogMalformed' in variant443[0]) {
+       match444 = {
            type: 'LogMalformed',
        };
-    } else if ('InvalidContractName' in variant405[0]) {
-       match406 = {
+    } else if ('InvalidContractName' in variant443[0]) {
+       match444 = {
            type: 'InvalidContractName',
        };
-    } else if ('ContractOnly' in variant405[0]) {
-       match406 = {
+    } else if ('ContractOnly' in variant443[0]) {
+       match444 = {
            type: 'ContractOnly',
        };
-    } else if ('InvokeContractError' in variant405[0]) {
-       match406 = {
+    } else if ('InvokeContractError' in variant443[0]) {
+       match444 = {
            type: 'InvokeContractError',
        };
-    } else if ('MissingAccount' in variant405[0]) {
-       match406 = {
+    } else if ('MissingAccount' in variant443[0]) {
+       match444 = {
            type: 'MissingAccount',
        };
-    } else if ('MalformedData' in variant405[0]) {
-       match406 = {
+    } else if ('MalformedData' in variant443[0]) {
+       match444 = {
            type: 'MalformedData',
        };
-    } else if ('WrongSignature' in variant405[0]) {
-       match406 = {
+    } else if ('WrongSignature' in variant443[0]) {
+       match444 = {
            type: 'WrongSignature',
        };
-    } else if ('NonceMismatch' in variant405[0]) {
-       match406 = {
+    } else if ('NonceMismatch' in variant443[0]) {
+       match444 = {
            type: 'NonceMismatch',
        };
-    } else if ('WrongContract' in variant405[0]) {
-       match406 = {
+    } else if ('WrongContract' in variant443[0]) {
+       match444 = {
            type: 'WrongContract',
        };
-    } else if ('WrongEntryPoint' in variant405[0]) {
-       match406 = {
+    } else if ('WrongEntryPoint' in variant443[0]) {
+       match444 = {
            type: 'WrongEntryPoint',
        };
-    } else if ('Expired' in variant405[0]) {
-       match406 = {
+    } else if ('Expired' in variant443[0]) {
+       match444 = {
            type: 'Expired',
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-       match401 = {
+       match439 = {
            type: 'Custom',
-           content: match406,
+           content: match444,
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-    return match401
+    return match439
 }
 
 /** Parameter type for update transaction for 'supports' entrypoint of the 'cis2_multi' contract. */
@@ -2621,33 +2821,33 @@ export function parseReturnValueSupports(invokeResult: SDK.InvokeContractResult)
         throw new Error('Unexpected missing \'returnValue\' in result of invocation. Client expected a V1 smart contract.');
     }
     const schemaJson = <Array<{'NoSupport' : [] } | {'Support' : [] } | {'SupportBy' : [Array<SDK.ContractAddress.SchemaValue>] }>>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'EAEVAwAAAAkAAABOb1N1cHBvcnQCBwAAAFN1cHBvcnQCCQAAAFN1cHBvcnRCeQEBAAAAEAAM');
-    const list422 = schemaJson.map((item423) => {
-    let match424: { type: 'NoSupport'} | { type: 'Support'} | { type: 'SupportBy', content: Array<SDK.ContractAddress.Type> };
-    if ('NoSupport' in item423) {
-       match424 = {
+    const list460 = schemaJson.map((item461) => {
+    let match462: { type: 'NoSupport'} | { type: 'Support'} | { type: 'SupportBy', content: Array<SDK.ContractAddress.Type> };
+    if ('NoSupport' in item461) {
+       match462 = {
            type: 'NoSupport',
        };
-    } else if ('Support' in item423) {
-       match424 = {
+    } else if ('Support' in item461) {
+       match462 = {
            type: 'Support',
        };
-    } else if ('SupportBy' in item423) {
-       const variant427 = item423.SupportBy;
-    const list428 = variant427[0].map((item429) => {
-    const contractAddress430 = SDK.ContractAddress.fromSchemaValue(item429);
-    return contractAddress430;
+    } else if ('SupportBy' in item461) {
+       const variant465 = item461.SupportBy;
+    const list466 = variant465[0].map((item467) => {
+    const contractAddress468 = SDK.ContractAddress.fromSchemaValue(item467);
+    return contractAddress468;
     });
-       match424 = {
+       match462 = {
            type: 'SupportBy',
-           content: list428,
+           content: list466,
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-    return match424;
+    return match462;
     });
-    return list422;
+    return list460;
 }
 
 /** Error message for dry-running update transaction for 'supports' entrypoint of the 'cis2_multi' contract. */
@@ -2667,87 +2867,87 @@ export function parseErrorMessageSupports(invokeResult: SDK.InvokeContractResult
         throw new Error('Unexpected missing \'returnValue\' in result of invocation. Client expected a V1 smart contract.');
     }
     const schemaJson = <{'InvalidTokenId' : [] } | {'InsufficientFunds' : [] } | {'Unauthorized' : [] } | {'Custom' : [{'ParseParams' : [] } | {'LogFull' : [] } | {'LogMalformed' : [] } | {'InvalidContractName' : [] } | {'ContractOnly' : [] } | {'InvokeContractError' : [] } | {'MissingAccount' : [] } | {'MalformedData' : [] } | {'WrongSignature' : [] } | {'NonceMismatch' : [] } | {'WrongContract' : [] } | {'WrongEntryPoint' : [] } | {'Expired' : [] }] }>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'FQQAAAAOAAAASW52YWxpZFRva2VuSWQCEQAAAEluc3VmZmljaWVudEZ1bmRzAgwAAABVbmF1dGhvcml6ZWQCBgAAAEN1c3RvbQEBAAAAFQ0AAAALAAAAUGFyc2VQYXJhbXMCBwAAAExvZ0Z1bGwCDAAAAExvZ01hbGZvcm1lZAITAAAASW52YWxpZENvbnRyYWN0TmFtZQIMAAAAQ29udHJhY3RPbmx5AhMAAABJbnZva2VDb250cmFjdEVycm9yAg4AAABNaXNzaW5nQWNjb3VudAINAAAATWFsZm9ybWVkRGF0YQIOAAAAV3JvbmdTaWduYXR1cmUCDQAAAE5vbmNlTWlzbWF0Y2gCDQAAAFdyb25nQ29udHJhY3QCDwAAAFdyb25nRW50cnlQb2ludAIHAAAARXhwaXJlZAI=');
-    let match431: { type: 'InvalidTokenId'} | { type: 'InsufficientFunds'} | { type: 'Unauthorized'} | { type: 'Custom', content: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} };
+    let match469: { type: 'InvalidTokenId'} | { type: 'InsufficientFunds'} | { type: 'Unauthorized'} | { type: 'Custom', content: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} };
     if ('InvalidTokenId' in schemaJson) {
-       match431 = {
+       match469 = {
            type: 'InvalidTokenId',
        };
     } else if ('InsufficientFunds' in schemaJson) {
-       match431 = {
+       match469 = {
            type: 'InsufficientFunds',
        };
     } else if ('Unauthorized' in schemaJson) {
-       match431 = {
+       match469 = {
            type: 'Unauthorized',
        };
     } else if ('Custom' in schemaJson) {
-       const variant435 = schemaJson.Custom;
-    let match436: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'};
-    if ('ParseParams' in variant435[0]) {
-       match436 = {
+       const variant473 = schemaJson.Custom;
+    let match474: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'};
+    if ('ParseParams' in variant473[0]) {
+       match474 = {
            type: 'ParseParams',
        };
-    } else if ('LogFull' in variant435[0]) {
-       match436 = {
+    } else if ('LogFull' in variant473[0]) {
+       match474 = {
            type: 'LogFull',
        };
-    } else if ('LogMalformed' in variant435[0]) {
-       match436 = {
+    } else if ('LogMalformed' in variant473[0]) {
+       match474 = {
            type: 'LogMalformed',
        };
-    } else if ('InvalidContractName' in variant435[0]) {
-       match436 = {
+    } else if ('InvalidContractName' in variant473[0]) {
+       match474 = {
            type: 'InvalidContractName',
        };
-    } else if ('ContractOnly' in variant435[0]) {
-       match436 = {
+    } else if ('ContractOnly' in variant473[0]) {
+       match474 = {
            type: 'ContractOnly',
        };
-    } else if ('InvokeContractError' in variant435[0]) {
-       match436 = {
+    } else if ('InvokeContractError' in variant473[0]) {
+       match474 = {
            type: 'InvokeContractError',
        };
-    } else if ('MissingAccount' in variant435[0]) {
-       match436 = {
+    } else if ('MissingAccount' in variant473[0]) {
+       match474 = {
            type: 'MissingAccount',
        };
-    } else if ('MalformedData' in variant435[0]) {
-       match436 = {
+    } else if ('MalformedData' in variant473[0]) {
+       match474 = {
            type: 'MalformedData',
        };
-    } else if ('WrongSignature' in variant435[0]) {
-       match436 = {
+    } else if ('WrongSignature' in variant473[0]) {
+       match474 = {
            type: 'WrongSignature',
        };
-    } else if ('NonceMismatch' in variant435[0]) {
-       match436 = {
+    } else if ('NonceMismatch' in variant473[0]) {
+       match474 = {
            type: 'NonceMismatch',
        };
-    } else if ('WrongContract' in variant435[0]) {
-       match436 = {
+    } else if ('WrongContract' in variant473[0]) {
+       match474 = {
            type: 'WrongContract',
        };
-    } else if ('WrongEntryPoint' in variant435[0]) {
-       match436 = {
+    } else if ('WrongEntryPoint' in variant473[0]) {
+       match474 = {
            type: 'WrongEntryPoint',
        };
-    } else if ('Expired' in variant435[0]) {
-       match436 = {
+    } else if ('Expired' in variant473[0]) {
+       match474 = {
            type: 'Expired',
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-       match431 = {
+       match469 = {
            type: 'Custom',
-           content: match436,
+           content: match474,
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-    return match431
+    return match469
 }
 
 /** Parameter type for update transaction for 'supportsPermit' entrypoint of the 'cis2_multi' contract. */
@@ -2761,11 +2961,11 @@ export type SupportsPermitParameter = {
  * @returns {SDK.Parameter.Type} The smart contract parameter.
  */
 export function createSupportsPermitParameter(parameter: SupportsPermitParameter): SDK.Parameter.Type {
-    const field451 = parameter.queries;
-    const named450 = {
-    queries: field451,
+    const field489 = parameter.queries;
+    const named488 = {
+    queries: field489,
     };
-    const out = SDK.Parameter.fromBase64SchemaType('FAABAAAABwAAAHF1ZXJpZXMQARYB', named450);
+    const out = SDK.Parameter.fromBase64SchemaType('FAABAAAABwAAAHF1ZXJpZXMQARYB', named488);
     return out;
 }
 
@@ -2824,33 +3024,33 @@ export function parseReturnValueSupportsPermit(invokeResult: SDK.InvokeContractR
         throw new Error('Unexpected missing \'returnValue\' in result of invocation. Client expected a V1 smart contract.');
     }
     const schemaJson = <Array<{'NoSupport' : [] } | {'Support' : [] } | {'SupportBy' : [Array<SDK.ContractAddress.SchemaValue>] }>>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'EAEVAwAAAAkAAABOb1N1cHBvcnQCBwAAAFN1cHBvcnQCCQAAAFN1cHBvcnRCeQEBAAAAEAAM');
-    const list454 = schemaJson.map((item455) => {
-    let match456: { type: 'NoSupport'} | { type: 'Support'} | { type: 'SupportBy', content: Array<SDK.ContractAddress.Type> };
-    if ('NoSupport' in item455) {
-       match456 = {
+    const list492 = schemaJson.map((item493) => {
+    let match494: { type: 'NoSupport'} | { type: 'Support'} | { type: 'SupportBy', content: Array<SDK.ContractAddress.Type> };
+    if ('NoSupport' in item493) {
+       match494 = {
            type: 'NoSupport',
        };
-    } else if ('Support' in item455) {
-       match456 = {
+    } else if ('Support' in item493) {
+       match494 = {
            type: 'Support',
        };
-    } else if ('SupportBy' in item455) {
-       const variant459 = item455.SupportBy;
-    const list460 = variant459[0].map((item461) => {
-    const contractAddress462 = SDK.ContractAddress.fromSchemaValue(item461);
-    return contractAddress462;
+    } else if ('SupportBy' in item493) {
+       const variant497 = item493.SupportBy;
+    const list498 = variant497[0].map((item499) => {
+    const contractAddress500 = SDK.ContractAddress.fromSchemaValue(item499);
+    return contractAddress500;
     });
-       match456 = {
+       match494 = {
            type: 'SupportBy',
-           content: list460,
+           content: list498,
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-    return match456;
+    return match494;
     });
-    return list454;
+    return list492;
 }
 
 /** Error message for dry-running update transaction for 'supportsPermit' entrypoint of the 'cis2_multi' contract. */
@@ -2870,87 +3070,87 @@ export function parseErrorMessageSupportsPermit(invokeResult: SDK.InvokeContract
         throw new Error('Unexpected missing \'returnValue\' in result of invocation. Client expected a V1 smart contract.');
     }
     const schemaJson = <{'InvalidTokenId' : [] } | {'InsufficientFunds' : [] } | {'Unauthorized' : [] } | {'Custom' : [{'ParseParams' : [] } | {'LogFull' : [] } | {'LogMalformed' : [] } | {'InvalidContractName' : [] } | {'ContractOnly' : [] } | {'InvokeContractError' : [] } | {'MissingAccount' : [] } | {'MalformedData' : [] } | {'WrongSignature' : [] } | {'NonceMismatch' : [] } | {'WrongContract' : [] } | {'WrongEntryPoint' : [] } | {'Expired' : [] }] }>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'FQQAAAAOAAAASW52YWxpZFRva2VuSWQCEQAAAEluc3VmZmljaWVudEZ1bmRzAgwAAABVbmF1dGhvcml6ZWQCBgAAAEN1c3RvbQEBAAAAFQ0AAAALAAAAUGFyc2VQYXJhbXMCBwAAAExvZ0Z1bGwCDAAAAExvZ01hbGZvcm1lZAITAAAASW52YWxpZENvbnRyYWN0TmFtZQIMAAAAQ29udHJhY3RPbmx5AhMAAABJbnZva2VDb250cmFjdEVycm9yAg4AAABNaXNzaW5nQWNjb3VudAINAAAATWFsZm9ybWVkRGF0YQIOAAAAV3JvbmdTaWduYXR1cmUCDQAAAE5vbmNlTWlzbWF0Y2gCDQAAAFdyb25nQ29udHJhY3QCDwAAAFdyb25nRW50cnlQb2ludAIHAAAARXhwaXJlZAI=');
-    let match463: { type: 'InvalidTokenId'} | { type: 'InsufficientFunds'} | { type: 'Unauthorized'} | { type: 'Custom', content: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} };
+    let match501: { type: 'InvalidTokenId'} | { type: 'InsufficientFunds'} | { type: 'Unauthorized'} | { type: 'Custom', content: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} };
     if ('InvalidTokenId' in schemaJson) {
-       match463 = {
+       match501 = {
            type: 'InvalidTokenId',
        };
     } else if ('InsufficientFunds' in schemaJson) {
-       match463 = {
+       match501 = {
            type: 'InsufficientFunds',
        };
     } else if ('Unauthorized' in schemaJson) {
-       match463 = {
+       match501 = {
            type: 'Unauthorized',
        };
     } else if ('Custom' in schemaJson) {
-       const variant467 = schemaJson.Custom;
-    let match468: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'};
-    if ('ParseParams' in variant467[0]) {
-       match468 = {
+       const variant505 = schemaJson.Custom;
+    let match506: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'};
+    if ('ParseParams' in variant505[0]) {
+       match506 = {
            type: 'ParseParams',
        };
-    } else if ('LogFull' in variant467[0]) {
-       match468 = {
+    } else if ('LogFull' in variant505[0]) {
+       match506 = {
            type: 'LogFull',
        };
-    } else if ('LogMalformed' in variant467[0]) {
-       match468 = {
+    } else if ('LogMalformed' in variant505[0]) {
+       match506 = {
            type: 'LogMalformed',
        };
-    } else if ('InvalidContractName' in variant467[0]) {
-       match468 = {
+    } else if ('InvalidContractName' in variant505[0]) {
+       match506 = {
            type: 'InvalidContractName',
        };
-    } else if ('ContractOnly' in variant467[0]) {
-       match468 = {
+    } else if ('ContractOnly' in variant505[0]) {
+       match506 = {
            type: 'ContractOnly',
        };
-    } else if ('InvokeContractError' in variant467[0]) {
-       match468 = {
+    } else if ('InvokeContractError' in variant505[0]) {
+       match506 = {
            type: 'InvokeContractError',
        };
-    } else if ('MissingAccount' in variant467[0]) {
-       match468 = {
+    } else if ('MissingAccount' in variant505[0]) {
+       match506 = {
            type: 'MissingAccount',
        };
-    } else if ('MalformedData' in variant467[0]) {
-       match468 = {
+    } else if ('MalformedData' in variant505[0]) {
+       match506 = {
            type: 'MalformedData',
        };
-    } else if ('WrongSignature' in variant467[0]) {
-       match468 = {
+    } else if ('WrongSignature' in variant505[0]) {
+       match506 = {
            type: 'WrongSignature',
        };
-    } else if ('NonceMismatch' in variant467[0]) {
-       match468 = {
+    } else if ('NonceMismatch' in variant505[0]) {
+       match506 = {
            type: 'NonceMismatch',
        };
-    } else if ('WrongContract' in variant467[0]) {
-       match468 = {
+    } else if ('WrongContract' in variant505[0]) {
+       match506 = {
            type: 'WrongContract',
        };
-    } else if ('WrongEntryPoint' in variant467[0]) {
-       match468 = {
+    } else if ('WrongEntryPoint' in variant505[0]) {
+       match506 = {
            type: 'WrongEntryPoint',
        };
-    } else if ('Expired' in variant467[0]) {
-       match468 = {
+    } else if ('Expired' in variant505[0]) {
+       match506 = {
            type: 'Expired',
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-       match463 = {
+       match501 = {
            type: 'Custom',
-           content: match468,
+           content: match506,
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-    return match463
+    return match501
 }
 
 /** Parameter type for update transaction for 'setImplementors' entrypoint of the 'cis2_multi' contract. */
@@ -2965,17 +3165,17 @@ export type SetImplementorsParameter = {
  * @returns {SDK.Parameter.Type} The smart contract parameter.
  */
 export function createSetImplementorsParameter(parameter: SetImplementorsParameter): SDK.Parameter.Type {
-    const field483 = parameter.id;
-    const field484 = parameter.implementors;
-    const list485 = field484.map((item486) => {
-    const contractAddress487 = SDK.ContractAddress.toSchemaValue(item486);
-    return contractAddress487;
+    const field521 = parameter.id;
+    const field522 = parameter.implementors;
+    const list523 = field522.map((item524) => {
+    const contractAddress525 = SDK.ContractAddress.toSchemaValue(item524);
+    return contractAddress525;
     });
-    const named482 = {
-    id: field483,
-    implementors: list485,
+    const named520 = {
+    id: field521,
+    implementors: list523,
     };
-    const out = SDK.Parameter.fromBase64SchemaType('FAACAAAAAgAAAGlkFgAMAAAAaW1wbGVtZW50b3JzEAIM', named482);
+    const out = SDK.Parameter.fromBase64SchemaType('FAACAAAAAgAAAGlkFgAMAAAAaW1wbGVtZW50b3JzEAIM', named520);
     return out;
 }
 
@@ -3034,85 +3234,85 @@ export function parseErrorMessageSetImplementors(invokeResult: SDK.InvokeContrac
         throw new Error('Unexpected missing \'returnValue\' in result of invocation. Client expected a V1 smart contract.');
     }
     const schemaJson = <{'InvalidTokenId' : [] } | {'InsufficientFunds' : [] } | {'Unauthorized' : [] } | {'Custom' : [{'ParseParams' : [] } | {'LogFull' : [] } | {'LogMalformed' : [] } | {'InvalidContractName' : [] } | {'ContractOnly' : [] } | {'InvokeContractError' : [] } | {'MissingAccount' : [] } | {'MalformedData' : [] } | {'WrongSignature' : [] } | {'NonceMismatch' : [] } | {'WrongContract' : [] } | {'WrongEntryPoint' : [] } | {'Expired' : [] }] }>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'FQQAAAAOAAAASW52YWxpZFRva2VuSWQCEQAAAEluc3VmZmljaWVudEZ1bmRzAgwAAABVbmF1dGhvcml6ZWQCBgAAAEN1c3RvbQEBAAAAFQ0AAAALAAAAUGFyc2VQYXJhbXMCBwAAAExvZ0Z1bGwCDAAAAExvZ01hbGZvcm1lZAITAAAASW52YWxpZENvbnRyYWN0TmFtZQIMAAAAQ29udHJhY3RPbmx5AhMAAABJbnZva2VDb250cmFjdEVycm9yAg4AAABNaXNzaW5nQWNjb3VudAINAAAATWFsZm9ybWVkRGF0YQIOAAAAV3JvbmdTaWduYXR1cmUCDQAAAE5vbmNlTWlzbWF0Y2gCDQAAAFdyb25nQ29udHJhY3QCDwAAAFdyb25nRW50cnlQb2ludAIHAAAARXhwaXJlZAI=');
-    let match488: { type: 'InvalidTokenId'} | { type: 'InsufficientFunds'} | { type: 'Unauthorized'} | { type: 'Custom', content: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} };
+    let match526: { type: 'InvalidTokenId'} | { type: 'InsufficientFunds'} | { type: 'Unauthorized'} | { type: 'Custom', content: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} };
     if ('InvalidTokenId' in schemaJson) {
-       match488 = {
+       match526 = {
            type: 'InvalidTokenId',
        };
     } else if ('InsufficientFunds' in schemaJson) {
-       match488 = {
+       match526 = {
            type: 'InsufficientFunds',
        };
     } else if ('Unauthorized' in schemaJson) {
-       match488 = {
+       match526 = {
            type: 'Unauthorized',
        };
     } else if ('Custom' in schemaJson) {
-       const variant492 = schemaJson.Custom;
-    let match493: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'};
-    if ('ParseParams' in variant492[0]) {
-       match493 = {
+       const variant530 = schemaJson.Custom;
+    let match531: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'InvalidContractName'} | { type: 'ContractOnly'} | { type: 'InvokeContractError'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'};
+    if ('ParseParams' in variant530[0]) {
+       match531 = {
            type: 'ParseParams',
        };
-    } else if ('LogFull' in variant492[0]) {
-       match493 = {
+    } else if ('LogFull' in variant530[0]) {
+       match531 = {
            type: 'LogFull',
        };
-    } else if ('LogMalformed' in variant492[0]) {
-       match493 = {
+    } else if ('LogMalformed' in variant530[0]) {
+       match531 = {
            type: 'LogMalformed',
        };
-    } else if ('InvalidContractName' in variant492[0]) {
-       match493 = {
+    } else if ('InvalidContractName' in variant530[0]) {
+       match531 = {
            type: 'InvalidContractName',
        };
-    } else if ('ContractOnly' in variant492[0]) {
-       match493 = {
+    } else if ('ContractOnly' in variant530[0]) {
+       match531 = {
            type: 'ContractOnly',
        };
-    } else if ('InvokeContractError' in variant492[0]) {
-       match493 = {
+    } else if ('InvokeContractError' in variant530[0]) {
+       match531 = {
            type: 'InvokeContractError',
        };
-    } else if ('MissingAccount' in variant492[0]) {
-       match493 = {
+    } else if ('MissingAccount' in variant530[0]) {
+       match531 = {
            type: 'MissingAccount',
        };
-    } else if ('MalformedData' in variant492[0]) {
-       match493 = {
+    } else if ('MalformedData' in variant530[0]) {
+       match531 = {
            type: 'MalformedData',
        };
-    } else if ('WrongSignature' in variant492[0]) {
-       match493 = {
+    } else if ('WrongSignature' in variant530[0]) {
+       match531 = {
            type: 'WrongSignature',
        };
-    } else if ('NonceMismatch' in variant492[0]) {
-       match493 = {
+    } else if ('NonceMismatch' in variant530[0]) {
+       match531 = {
            type: 'NonceMismatch',
        };
-    } else if ('WrongContract' in variant492[0]) {
-       match493 = {
+    } else if ('WrongContract' in variant530[0]) {
+       match531 = {
            type: 'WrongContract',
        };
-    } else if ('WrongEntryPoint' in variant492[0]) {
-       match493 = {
+    } else if ('WrongEntryPoint' in variant530[0]) {
+       match531 = {
            type: 'WrongEntryPoint',
        };
-    } else if ('Expired' in variant492[0]) {
-       match493 = {
+    } else if ('Expired' in variant530[0]) {
+       match531 = {
            type: 'Expired',
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-       match488 = {
+       match526 = {
            type: 'Custom',
-           content: match493,
+           content: match531,
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-    return match488
+    return match526
 }

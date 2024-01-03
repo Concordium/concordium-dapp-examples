@@ -2,9 +2,9 @@
 import * as SDK from "@concordium/web-sdk";
 
 /** The reference of the smart contract module supported by the provided client. */
-export const moduleReference: SDK.ModuleReference.Type = /*#__PURE__*/ SDK.ModuleReference.fromHexString('782da60d4aaec2272dfb5a8e6d2c96f380b3722563ea4605912254103f5473bf');
+export const moduleReference: SDK.ModuleReference.Type = /*#__PURE__*/ SDK.ModuleReference.fromHexString('59166ebadaf1e4f13b4fc06727a3719b38482f57d5fbc64799eed97fd58debc5');
 
-/** Client for an on-chain smart contract module with module reference '782da60d4aaec2272dfb5a8e6d2c96f380b3722563ea4605912254103f5473bf', can be used for instantiating new smart contract instances. */
+/** Client for an on-chain smart contract module with module reference '59166ebadaf1e4f13b4fc06727a3719b38482f57d5fbc64799eed97fd58debc5', can be used for instantiating new smart contract instances. */
 class SponsoredTxEnabledAuctionModule {
     /** Having a private field prevents similar structured objects to be considered the same type (similar to nominal typing). */
     private __nominal = true;
@@ -17,7 +17,7 @@ class SponsoredTxEnabledAuctionModule {
     }
 }
 
-/** Client for an on-chain smart contract module with module reference '782da60d4aaec2272dfb5a8e6d2c96f380b3722563ea4605912254103f5473bf', can be used for instantiating new smart contract instances. */
+/** Client for an on-chain smart contract module with module reference '59166ebadaf1e4f13b4fc06727a3719b38482f57d5fbc64799eed97fd58debc5', can be used for instantiating new smart contract instances. */
 export type Type = SponsoredTxEnabledAuctionModule;
 
 /**
@@ -46,7 +46,7 @@ export function createUnchecked(grpcClient: SDK.ConcordiumGRPCClient): Sponsored
 /**
  * Construct a SponsoredTxEnabledAuctionModule client for interacting with a smart contract module on chain.
  * This function ensures the smart contract module is deployed on chain.
- * @param {SponsoredTxEnabledAuctionModule} moduleClient - The client of the on-chain smart contract module with referecence '782da60d4aaec2272dfb5a8e6d2c96f380b3722563ea4605912254103f5473bf'.
+ * @param {SponsoredTxEnabledAuctionModule} moduleClient - The client of the on-chain smart contract module with referecence '59166ebadaf1e4f13b4fc06727a3719b38482f57d5fbc64799eed97fd58debc5'.
  * @throws If failing to communicate with the concordium node or if the module reference is not present on chain.
  * @returns {SponsoredTxEnabledAuctionModule} A module client ensured to be deployed on chain.
  */
@@ -56,7 +56,7 @@ export function checkOnChain(moduleClient: SponsoredTxEnabledAuctionModule): Pro
 
 /**
  * Get the module source of the deployed smart contract module.
- * @param {SponsoredTxEnabledAuctionModule} moduleClient - The client of the on-chain smart contract module with referecence '782da60d4aaec2272dfb5a8e6d2c96f380b3722563ea4605912254103f5473bf'.
+ * @param {SponsoredTxEnabledAuctionModule} moduleClient - The client of the on-chain smart contract module with referecence '59166ebadaf1e4f13b4fc06727a3719b38482f57d5fbc64799eed97fd58debc5'.
  * @throws {SDK.RpcError} If failing to communicate with the concordium node or module not found.
  * @returns {SDK.VersionedModuleSource} Module source of the deployed smart contract module.
  */
@@ -73,14 +73,14 @@ export type SponsoredTxEnabledAuctionParameter = SDK.ContractAddress.Type;
  * @returns {SDK.Parameter.Type} The smart contract parameter.
  */
 export function createSponsoredTxEnabledAuctionParameter(parameter: SponsoredTxEnabledAuctionParameter): SDK.Parameter.Type {
-    const contractAddress507 = SDK.ContractAddress.toSchemaValue(parameter);
-    const out = SDK.Parameter.fromBase64SchemaType('DA==', contractAddress507);
+    const contractAddress545 = SDK.ContractAddress.toSchemaValue(parameter);
+    const out = SDK.Parameter.fromBase64SchemaType('DA==', contractAddress545);
     return out
 }
 
 /**
  * Send transaction for instantiating a new 'sponsored_tx_enabled_auction' smart contract instance.
- * @param {SponsoredTxEnabledAuctionModule} moduleClient - The client of the on-chain smart contract module with referecence '782da60d4aaec2272dfb5a8e6d2c96f380b3722563ea4605912254103f5473bf'.
+ * @param {SponsoredTxEnabledAuctionModule} moduleClient - The client of the on-chain smart contract module with referecence '59166ebadaf1e4f13b4fc06727a3719b38482f57d5fbc64799eed97fd58debc5'.
  * @param {SDK.ContractTransactionMetadata} transactionMetadata - Metadata related to constructing a transaction for a smart contract module.
  * @param {SponsoredTxEnabledAuctionParameter} parameter - Parameter to provide as part of the transaction for the instantiation of a new smart contract contract.
  * @param {SDK.AccountSigner} signer - The signer of the update contract transaction.
