@@ -22,10 +22,7 @@ use concordium_rust_sdk::{
         transactions, Energy, WalletAccount,
     },
     v2::{self, BlockIdentifier},
-    web3id::did::Network,
 };
-use handlebars::Handlebars;
-use serde_json::json;
 use std::{
     collections::{BTreeMap, HashMap},
     fs,
@@ -35,16 +32,15 @@ use tokio::sync::Mutex;
 use tonic::transport::ClientTlsConfig;
 use tower_http::services::ServeDir;
 
-const CONTRACT_NAME: &str = "cis2_multi";
-const ENERGY: u64 = 60000;
-const RATE_LIMIT_PER_ACCOUNT: u8 = 30;
-
 // Before submitting a transaction we simulate/dry-run the transaction to get an
 // estimate of the energy needed for executing the transaction. In addition, we
 // allow an additional small amount of energy `EPSILON_ENERGY` to be consumed by
 // the transaction to cover small variations (e.g. changes to the smart contract
 // state) caused by transactions that have been executed meanwhile.
 const EPSILON_ENERGY: u64 = 1000;
+const CONTRACT_NAME: &str = "cis2_multi";
+const ENERGY: u64 = 60000;
+const RATE_LIMIT_PER_ACCOUNT: u8 = 30;
 
 #[derive(clap::Parser, Debug)]
 #[clap(version, author)]
@@ -56,13 +52,6 @@ struct App {
         env = "NODE"
     )]
     endpoint: v2::Endpoint,
-    #[clap(
-        long = "network",
-        help = "Network to which the verifier is connected.",
-        default_value = "testnet",
-        env = "NETWORK"
-    )]
-    network: Network,
     #[clap(
         long = "log-level",
         default_value = "info",
@@ -163,54 +152,42 @@ async fn main() -> anyhow::Result<()> {
         .await
         .context("Unable to establish connection to the node.")?;
 
-    let http_client = reqwest::Client::new();
-
-    let crypto_params = node_client
-        .get_cryptographic_parameters(BlockIdentifier::LastFinal)
-        .await
-        .context("Unable to get cryptographic parameters.")?
-        .response;
-
-    // load account keys and sender address from a file
+    // Load account keys and sender address from a file
     let keys: WalletAccount = serde_json::from_str(
         &std::fs::read_to_string(app.keys_path).context("Could not read the keys file.")?,
     )
     .context("Could not parse the keys file.")?;
 
-    let key_transfer = Arc::new(keys);
-
-    // log::debug!("Acquire nonce of wallet account.");
+    let sponsorer_key = Arc::new(keys);
 
     let nonce_response = node_client
-        .get_next_account_sequence_number(&key_transfer.address)
+        .get_next_account_sequence_number(&sponsorer_key.address)
         .await
         .context("NonceQueryError.")?;
 
+    tracing::debug!(
+        "Starting server with sponsorer {:?}. Current sponsorer nonce: {:?}.",
+        sponsorer_key.address,
+        nonce_response
+    );
+
     let state = Server {
-        http_client,
         node_client,
         nonce: Arc::new(Mutex::new(nonce_response.nonce)),
         rate_limits: Arc::new(Mutex::new(HashMap::new())),
         auction_smart_contract: ContractAddress::new(app.auction_smart_contract_index, 0),
         cis2_token_smart_contract: ContractAddress::new(app.cis2_token_smart_contract_index, 0),
-        key: key_transfer,
-        network: app.network,
-        crypto_params: Arc::new(crypto_params),
+        key: sponsorer_key,
     };
 
-    // Render index.html with config
+    // Render index.html
     let index_template = fs::read_to_string(app.frontend_assets.join("index.html"))
-        .context("Frontend was not built.")?;
-    let mut reg = Handlebars::new();
-    // Prevent handlebars from escaping inserted object
-    reg.register_escape_fn(|s| s.into());
-
-    let index_html = reg.render_template(&index_template, &json!(""))?;
+        .context("Frontend was not built or wrong path to the frontend files.")?;
 
     tracing::info!("Starting server...");
     let serve_dir_service = ServeDir::new(app.frontend_assets.join("assets"));
     let router = Router::new()
-        .route("/", get(|| async { Html(index_html) }))
+        .route("/", get(|| async { Html(index_template) }))
         .nest_service("/assets", serve_dir_service)
         .route("/api/bid", post(handle_signature_bid))
         .route("/health", get(health))
@@ -243,7 +220,7 @@ async fn handle_signature_bid(
     State(mut state): State<Server>,
     request: Result<Json<BidParams>, JsonRejection>,
 ) -> Result<Json<TransactionHash>, ServerError> {
-    let request = request.map_err(ServerError::InvalidRequest)?;
+    let Json(request) = request?;
 
     tracing::debug!("Request: {:?}", request);
 
@@ -255,8 +232,8 @@ async fn handle_signature_bid(
             state.auction_smart_contract,
             OwnedReceiveName::new_unchecked("bid".to_owned()),
         ),
-        token_id: request.token_id.clone(),
-        amount:   request.token_amount.clone(),
+        token_id: request.token_id,
+        amount:   request.token_amount,
         data:     AdditionalData::new_unchecked(to_bytes(&request.item_index_auction)),
     };
 
@@ -264,7 +241,7 @@ async fn handle_signature_bid(
 
     tracing::debug!("Created payload: {:?}", payload);
 
-    tracing::debug!("Create PermitMessage ...");
+    tracing::debug!("Create permitMessage ...");
 
     let message: PermitMessage = PermitMessage {
         contract_address: state.cis2_token_smart_contract,
@@ -274,13 +251,12 @@ async fn handle_signature_bid(
         payload:          concordium_rust_sdk::smart_contracts::common::to_bytes(&payload),
     };
 
-    tracing::debug!("Create message {:?}", message);
+    tracing::debug!("Created {:?}", message);
 
     tracing::debug!("Create signature map ...");
 
     let mut signature = [0; 64];
-    hex::decode_to_slice(request.signature.clone(), &mut signature)
-        .map_err(ServerError::SignatureError)?;
+    hex::decode_to_slice(request.signature, &mut signature).map_err(ServerError::SignatureError)?;
 
     let mut inner_signature_map = BTreeMap::new();
     inner_signature_map.insert(0, Signature::Ed25519(SignatureEd25519(signature)));
@@ -305,18 +281,18 @@ async fn handle_signature_bid(
     let parameter = smart_contracts::OwnedParameter::from_serial(&param)
         .map_err(|_| ServerError::ParameterError)?;
 
-    tracing::debug!("Created parameter {:?}", parameter);
-
-    let receive_name =
-        smart_contracts::OwnedReceiveName::new_unchecked(format!("{}.permit", CONTRACT_NAME));
+    tracing::debug!("Created {:?}", parameter);
 
     tracing::debug!("Simulate transaction to check its validity ...");
 
     let payload = transactions::UpdateContractPayload {
-        amount: Amount::from_micro_ccd(0),
-        address: state.cis2_token_smart_contract,
-        receive_name,
-        message: parameter,
+        amount:       Amount::from_micro_ccd(0),
+        address:      state.cis2_token_smart_contract,
+        receive_name: smart_contracts::OwnedReceiveName::new_unchecked(format!(
+            "{}.permit",
+            CONTRACT_NAME
+        )),
+        message:      parameter,
     };
 
     let context = ContractContext::new_from_payload(
@@ -344,7 +320,10 @@ async fn handle_signature_bid(
             events: _,
             used_energy,
         } => {
-            tracing::debug!("TransactionSimulationSuccess with used energy: {:#?}.", used_energy);
+            tracing::debug!(
+                "TransactionSimulationSuccess with used energy: {:#?}.",
+                used_energy
+            );
             used_energy
         }
         InvokeContractResult::Failure {
@@ -358,8 +337,6 @@ async fn handle_signature_bid(
             }));
         }
     };
-
-    tracing::debug!("Create transaction ...");
 
     // Transaction should expiry after one hour.
     let transaction_expiry = TransactionTime::hours_after(1);
@@ -384,7 +361,7 @@ async fn handle_signature_bid(
     // that the server can be restarted and reload the rate_limit values from the
     // database.
 
-    tracing::debug!("Check rate limit ...");
+    tracing::debug!("Check rate limit of account {} ...", request.signer);
 
     let mut rate_limits = state.rate_limits.lock().await;
 
@@ -396,6 +373,8 @@ async fn handle_signature_bid(
     }
 
     *limit += 1;
+
+    tracing::debug!("Create transaction ...");
 
     let tx = transactions::send::make_and_sign_transaction(
         &state.key.keys,
@@ -411,9 +390,9 @@ async fn handle_signature_bid(
         concordium_rust_sdk::types::transactions::Payload::Update { payload },
     );
 
-    let bi = transactions::BlockItem::AccountTransaction(tx);
+    tracing::debug!("Submit transaction {:?} ...", tx.clone());
 
-    tracing::debug!("Submit transaction ...");
+    let bi = transactions::BlockItem::AccountTransaction(tx);
 
     match state.node_client.send_block_item(&bi).await {
         Ok(hash) => {

@@ -12,21 +12,15 @@ anyhow = "1.0"
 axum = "0.6"
 clap = { version = "4.3", features = ["derive", "env"] }
 serde_json = "1.0"
-tokio = { version = "1.29", features = ["rt-multi-thread", "macros", "signal"] }
-tokio-postgres = { version = "0.7", features = [
-  "with-serde_json-1",
-  "array-impls",
-] }
+tokio = { version = "1.29", features = ["rt-multi-thread", "signal"] }
 tracing = "0.1"
 tracing-subscriber = "0.3"
 serde = { version = "1.0", features = ["derive"] }
 futures = "0.3"
 axum-macros = "0.3"
-reqwest = { version = "0.11", features = ["json"] }
 tower-http = { version = "0.4", features = [
   "trace",
   "limit",
-  "cors",
   "timeout",
   "fs",
   "compression-br",
@@ -35,10 +29,6 @@ tower-http = { version = "0.4", features = [
 http = "0.2"
 tonic = { version = "0.8", features = ["tls-roots", "tls"] }
 thiserror = "1.0"
-chrono = { version = "0.4", features = ["serde"] }
-sha2 = "0.10"
-handlebars = "4.4"
-url = { version = "2.4.1", features = ["serde"] }
 hex = "0.4.3"
 
 [dependencies.concordium-rust-sdk]
