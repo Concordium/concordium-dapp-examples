@@ -8,9 +8,8 @@ use concordium_rust_sdk::{
             Timestamp,
         },
     },
-    types::{CryptographicParameters, Nonce, RejectReason, WalletAccount},
+    types::{Nonce, RejectReason, WalletAccount},
     v2::{self, QueryError, RPCError},
-    web3id::did::Network,
 };
 use hex::FromHexError;
 use http::StatusCode;
@@ -21,31 +20,44 @@ use tokio::sync::Mutex;
 pub enum ServerError {
     #[error("Unable to parse request: {0}")]
     InvalidRequest(#[from] JsonRejection),
-    #[error("The passed signature from the front end is in a wrong format: {0}")]
+    #[error("Unable to parse signature into a hex string: {0}")]
     SignatureError(#[from] FromHexError),
-    #[error("TODO:ParameterError.")]
+    #[error("Unable to create parameter.")]
     ParameterError,
-    #[error("TODO: SimulationInvokeError: {0}")]
+    #[error("Unable to invoke the node to simulate the transaction: {0}")]
     SimulationInvokeError(#[from] QueryError),
-    #[error("TODO: Transaction simulation error.")]
+    #[error("Simulation of transaction reverted in smart contract with reason: {0:?}")]
     TransactionSimulationError(RevertReason),
-    #[error("TODO: RateLimitError.")]
+    #[error("The signer account reached its rate limit.")]
     RateLimitError,
-    #[error("TODO: SubmitSponsoredTransactionError: {0}")]
+    #[error("Unable to submit transaction on chain successfully: {0}")]
     SubmitSponsoredTransactionError(#[from] RPCError),
 }
 
-// TODO: Assign correct error codes to errors.
 impl axum::response::IntoResponse for ServerError {
     fn into_response(self) -> axum::response::Response {
         let r = match self {
-            // Error::CredentialLookup(e) => {
-            //     tracing::debug!("Failed to look up credential: {e}");
-            //     (
-            //         StatusCode::NOT_FOUND,
-            //         Json(format!("One or more credentials were not found: {e}")),
-            //     )
-            // }
+            ServerError::ParameterError => {
+                tracing::error!("Internal error: Unable to create parameter.");
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json("Unable to create parameter.".to_string()),
+                )
+            }
+            ServerError::SimulationInvokeError(error) => {
+                tracing::error!("Internal error: {error}");
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(format!("{}", error)),
+                )
+            }
+            ServerError::SubmitSponsoredTransactionError(error) => {
+                tracing::error!("Internal error: {error}");
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(format!("{}", error)),
+                )
+            }
             error => {
                 tracing::debug!("Bad request: {error}");
                 (StatusCode::BAD_REQUEST, Json(format!("{}", error)))
@@ -55,19 +67,11 @@ impl axum::response::IntoResponse for ServerError {
     }
 }
 
+/// Struct to store the revert reason.
 #[derive(serde::Serialize, Debug)]
 pub struct RevertReason {
+    /// Smart contract revert reason.
     pub reason: RejectReason,
-}
-
-#[derive(serde::Serialize)]
-/// Response in case of an error. This is going to be encoded as a JSON body
-/// with fields 'code' and 'message'.
-pub struct ErrorResponse {
-    /// Code of the error.
-    pub code:    u16,
-    /// Error message.
-    pub message: String,
 }
 
 /// Paramters passed from the front end to this back end when calling the API
@@ -133,16 +137,18 @@ pub struct PermitMessage {
     pub payload:          Vec<u8>,
 }
 
-/// Server struct to keep track of the nonce of the sponsorer account and the
+/// Server struct to store the contract addresses, the node client,
+/// the nonce and key of the sponsorer account, and the
 /// rate_limits of user accounts.
 #[derive(Clone, Debug)]
 pub struct Server {
-    pub http_client: reqwest::Client,
+    /// Client to interact with the node.
     pub node_client: v2::Client,
-    pub network: Network,
+    /// Key and address of the sponsorer account.
     pub key: Arc<WalletAccount>,
-    pub crypto_params: Arc<CryptographicParameters>,
+    /// Contract address of the auction contract.
     pub auction_smart_contract: ContractAddress,
+    /// Contract address of the token contract.
     pub cis2_token_smart_contract: ContractAddress,
     /// Nonce of the sponsorer account.
     pub nonce: Arc<Mutex<Nonce>>,
