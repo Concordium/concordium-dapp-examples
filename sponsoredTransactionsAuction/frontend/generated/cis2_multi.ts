@@ -2,9 +2,9 @@
 import * as SDK from "@concordium/web-sdk";
 
 /** The reference of the smart contract module supported by the provided client. */
-export const moduleReference: SDK.ModuleReference.Type = /*#__PURE__*/ SDK.ModuleReference.fromHexString('d4a3a3bf1fc4eec66c5407602fb7a30955136df4982436f2445773925a8baf75');
+export const moduleReference: SDK.ModuleReference.Type = /*#__PURE__*/ SDK.ModuleReference.fromHexString('e95d15e62c8f9d80e08de180a3c0188d602a5f5ed58b8c34daa82131b9940c3a');
 
-/** Client for an on-chain smart contract module with module reference 'd4a3a3bf1fc4eec66c5407602fb7a30955136df4982436f2445773925a8baf75', can be used for instantiating new smart contract instances. */
+/** Client for an on-chain smart contract module with module reference 'e95d15e62c8f9d80e08de180a3c0188d602a5f5ed58b8c34daa82131b9940c3a', can be used for instantiating new smart contract instances. */
 class Cis2MultiModule {
     /** Having a private field prevents similar structured objects to be considered the same type (similar to nominal typing). */
     private __nominal = true;
@@ -17,7 +17,7 @@ class Cis2MultiModule {
     }
 }
 
-/** Client for an on-chain smart contract module with module reference 'd4a3a3bf1fc4eec66c5407602fb7a30955136df4982436f2445773925a8baf75', can be used for instantiating new smart contract instances. */
+/** Client for an on-chain smart contract module with module reference 'e95d15e62c8f9d80e08de180a3c0188d602a5f5ed58b8c34daa82131b9940c3a', can be used for instantiating new smart contract instances. */
 export type Type = Cis2MultiModule;
 
 /**
@@ -46,7 +46,7 @@ export function createUnchecked(grpcClient: SDK.ConcordiumGRPCClient): Cis2Multi
 /**
  * Construct a Cis2MultiModule client for interacting with a smart contract module on chain.
  * This function ensures the smart contract module is deployed on chain.
- * @param {Cis2MultiModule} moduleClient - The client of the on-chain smart contract module with referecence 'd4a3a3bf1fc4eec66c5407602fb7a30955136df4982436f2445773925a8baf75'.
+ * @param {Cis2MultiModule} moduleClient - The client of the on-chain smart contract module with referecence 'e95d15e62c8f9d80e08de180a3c0188d602a5f5ed58b8c34daa82131b9940c3a'.
  * @throws If failing to communicate with the concordium node or if the module reference is not present on chain.
  * @returns {Cis2MultiModule} A module client ensured to be deployed on chain.
  */
@@ -56,7 +56,7 @@ export function checkOnChain(moduleClient: Cis2MultiModule): Promise<void> {
 
 /**
  * Get the module source of the deployed smart contract module.
- * @param {Cis2MultiModule} moduleClient - The client of the on-chain smart contract module with referecence 'd4a3a3bf1fc4eec66c5407602fb7a30955136df4982436f2445773925a8baf75'.
+ * @param {Cis2MultiModule} moduleClient - The client of the on-chain smart contract module with referecence 'e95d15e62c8f9d80e08de180a3c0188d602a5f5ed58b8c34daa82131b9940c3a'.
  * @throws {SDK.RpcError} If failing to communicate with the concordium node or module not found.
  * @returns {SDK.VersionedModuleSource} Module source of the deployed smart contract module.
  */
@@ -80,7 +80,7 @@ export function createCis2MultiParameter(parameter: Cis2MultiParameter): SDK.Par
 
 /**
  * Send transaction for instantiating a new 'cis2_multi' smart contract instance.
- * @param {Cis2MultiModule} moduleClient - The client of the on-chain smart contract module with referecence 'd4a3a3bf1fc4eec66c5407602fb7a30955136df4982436f2445773925a8baf75'.
+ * @param {Cis2MultiModule} moduleClient - The client of the on-chain smart contract module with referecence 'e95d15e62c8f9d80e08de180a3c0188d602a5f5ed58b8c34daa82131b9940c3a'.
  * @param {SDK.ContractTransactionMetadata} transactionMetadata - Metadata related to constructing a transaction for a smart contract module.
  * @param {Cis2MultiParameter} parameter - Parameter to provide as part of the transaction for the instantiation of a new smart contract contract.
  * @param {SDK.AccountSigner} signer - The signer of the update contract transaction.

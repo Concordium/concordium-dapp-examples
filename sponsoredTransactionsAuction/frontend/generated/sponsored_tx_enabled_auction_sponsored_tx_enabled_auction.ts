@@ -2,7 +2,7 @@
 import * as SDK from "@concordium/web-sdk";
 
 /** The reference of the smart contract module supported by the provided client. */
-export const moduleReference: SDK.ModuleReference.Type = /*#__PURE__*/ SDK.ModuleReference.fromHexString('782da60d4aaec2272dfb5a8e6d2c96f380b3722563ea4605912254103f5473bf');
+export const moduleReference: SDK.ModuleReference.Type = /*#__PURE__*/ SDK.ModuleReference.fromHexString('59166ebadaf1e4f13b4fc06727a3719b38482f57d5fbc64799eed97fd58debc5');
 /** Name of the smart contract supported by this client. */
 export const contractName: SDK.ContractName.Type = /*#__PURE__*/ SDK.ContractName.fromStringUnchecked('sponsored_tx_enabled_auction');
 
@@ -86,24 +86,24 @@ export function parseEvent(event: SDK.ContractEvent.Type): Event {
     const schemaJson = <{'AddItemEvent' : {
     item_index: number,
     } }>SDK.ContractEvent.parseWithSchemaTypeBase64(event, 'HwEAAAAADAAAAEFkZEl0ZW1FdmVudAABAAAACgAAAGl0ZW1faW5kZXgD');
-    let match508: { type: 'AddItemEvent', content: {
+    let match546: { type: 'AddItemEvent', content: {
     item_index: number,
     } };
     if ('AddItemEvent' in schemaJson) {
-       const variant509 = schemaJson.AddItemEvent;
-    const field510 = variant509.item_index;
-    const named511 = {
-    item_index: field510,
+       const variant547 = schemaJson.AddItemEvent;
+    const field548 = variant547.item_index;
+    const named549 = {
+    item_index: field548,
     };
-       match508 = {
+       match546 = {
            type: 'AddItemEvent',
-           content: named511,
+           content: named549,
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-    return match508;
+    return match546;
 }
 
 /** Parameter type for update transaction for 'addItem' entrypoint of the 'sponsored_tx_enabled_auction' contract. */
@@ -121,22 +121,22 @@ export type AddItemParameter = {
  * @returns {SDK.Parameter.Type} The smart contract parameter.
  */
 export function createAddItemParameter(parameter: AddItemParameter): SDK.Parameter.Type {
-    const field513 = parameter.name;
-    const field514 = parameter.end;
-    const timestamp515 = SDK.Timestamp.toSchemaValue(field514);
-    const field516 = parameter.start;
-    const timestamp517 = SDK.Timestamp.toSchemaValue(field516);
-    const field518 = parameter.minimum_bid;
-    const number519 = BigInt(field518).toString();
-    const field520 = parameter.token_id;
-    const named512 = {
-    name: field513,
-    end: timestamp515,
-    start: timestamp517,
-    minimum_bid: number519,
-    token_id: field520,
+    const field551 = parameter.name;
+    const field552 = parameter.end;
+    const timestamp553 = SDK.Timestamp.toSchemaValue(field552);
+    const field554 = parameter.start;
+    const timestamp555 = SDK.Timestamp.toSchemaValue(field554);
+    const field556 = parameter.minimum_bid;
+    const number557 = BigInt(field556).toString();
+    const field558 = parameter.token_id;
+    const named550 = {
+    name: field551,
+    end: timestamp553,
+    start: timestamp555,
+    minimum_bid: number557,
+    token_id: field558,
     };
-    const out = SDK.Parameter.fromBase64SchemaType('FAAFAAAABAAAAG5hbWUWAgMAAABlbmQNBQAAAHN0YXJ0DQsAAABtaW5pbXVtX2JpZBslAAAACAAAAHRva2VuX2lkHQA=', named512);
+    const out = SDK.Parameter.fromBase64SchemaType('FAAFAAAABAAAAG5hbWUWAgMAAABlbmQNBQAAAHN0YXJ0DQsAAABtaW5pbXVtX2JpZBslAAAACAAAAHRva2VuX2lkHQA=', named550);
     return out;
 }
 
@@ -178,6 +178,123 @@ export function dryRunAddItem(contractClient: SponsoredTxEnabledAuctionContract,
     );
 }
 
+/** Error message for dry-running update transaction for 'addItem' entrypoint of the 'sponsored_tx_enabled_auction' contract. */
+export type ErrorMessageAddItem = { type: 'ParseParams'} | { type: 'StartEndTimeError'} | { type: 'EndTimeError'} | { type: 'OnlyAccount'} | { type: 'BidNotGreaterCurrentBid'} | { type: 'BidTooLate'} | { type: 'AuctionAlreadyFinalized'} | { type: 'NoItem'} | { type: 'AuctionStillActive'} | { type: 'NotTokenContract'} | { type: 'WrongTokenID'} | { type: 'InvokeContractError'} | { type: 'ParseResult'} | { type: 'InvalidResponse'} | { type: 'AmountTooLarge'} | { type: 'MissingAccount'} | { type: 'MissingContract'} | { type: 'MissingEntrypoint'} | { type: 'MessageFailed'} | { type: 'LogicReject'} | { type: 'Trap'} | { type: 'LogFull'} | { type: 'LogMalformed'};
+
+/**
+ * Get and parse the error message from dry-running update transaction for 'addItem' entrypoint of the 'sponsored_tx_enabled_auction' contract.
+ * Returns undefined if the result is not a failure.
+ * @param {SDK.InvokeContractResult} invokeResult The result from dry-running the transaction.
+ * @returns {ErrorMessageAddItem | undefined} The structured error message or undefined if result was not a failure or failed for other reason than contract rejectedReceive.
+ */
+export function parseErrorMessageAddItem(invokeResult: SDK.InvokeContractResult): ErrorMessageAddItem | undefined {
+    if (invokeResult.tag !== 'failure' || invokeResult.reason.tag !== 'RejectedReceive') {
+        return undefined;
+    }
+    if (invokeResult.returnValue === undefined) {
+        throw new Error('Unexpected missing \'returnValue\' in result of invocation. Client expected a V1 smart contract.');
+    }
+    const schemaJson = <{'ParseParams' : [] } | {'StartEndTimeError' : [] } | {'EndTimeError' : [] } | {'OnlyAccount' : [] } | {'BidNotGreaterCurrentBid' : [] } | {'BidTooLate' : [] } | {'AuctionAlreadyFinalized' : [] } | {'NoItem' : [] } | {'AuctionStillActive' : [] } | {'NotTokenContract' : [] } | {'WrongTokenID' : [] } | {'InvokeContractError' : [] } | {'ParseResult' : [] } | {'InvalidResponse' : [] } | {'AmountTooLarge' : [] } | {'MissingAccount' : [] } | {'MissingContract' : [] } | {'MissingEntrypoint' : [] } | {'MessageFailed' : [] } | {'LogicReject' : [] } | {'Trap' : [] } | {'LogFull' : [] } | {'LogMalformed' : [] }>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'FRcAAAALAAAAUGFyc2VQYXJhbXMCEQAAAFN0YXJ0RW5kVGltZUVycm9yAgwAAABFbmRUaW1lRXJyb3ICCwAAAE9ubHlBY2NvdW50AhcAAABCaWROb3RHcmVhdGVyQ3VycmVudEJpZAIKAAAAQmlkVG9vTGF0ZQIXAAAAQXVjdGlvbkFscmVhZHlGaW5hbGl6ZWQCBgAAAE5vSXRlbQISAAAAQXVjdGlvblN0aWxsQWN0aXZlAhAAAABOb3RUb2tlbkNvbnRyYWN0AgwAAABXcm9uZ1Rva2VuSUQCEwAAAEludm9rZUNvbnRyYWN0RXJyb3ICCwAAAFBhcnNlUmVzdWx0Ag8AAABJbnZhbGlkUmVzcG9uc2UCDgAAAEFtb3VudFRvb0xhcmdlAg4AAABNaXNzaW5nQWNjb3VudAIPAAAATWlzc2luZ0NvbnRyYWN0AhEAAABNaXNzaW5nRW50cnlwb2ludAINAAAATWVzc2FnZUZhaWxlZAILAAAATG9naWNSZWplY3QCBAAAAFRyYXACBwAAAExvZ0Z1bGwCDAAAAExvZ01hbGZvcm1lZAI=');
+    let match559: { type: 'ParseParams'} | { type: 'StartEndTimeError'} | { type: 'EndTimeError'} | { type: 'OnlyAccount'} | { type: 'BidNotGreaterCurrentBid'} | { type: 'BidTooLate'} | { type: 'AuctionAlreadyFinalized'} | { type: 'NoItem'} | { type: 'AuctionStillActive'} | { type: 'NotTokenContract'} | { type: 'WrongTokenID'} | { type: 'InvokeContractError'} | { type: 'ParseResult'} | { type: 'InvalidResponse'} | { type: 'AmountTooLarge'} | { type: 'MissingAccount'} | { type: 'MissingContract'} | { type: 'MissingEntrypoint'} | { type: 'MessageFailed'} | { type: 'LogicReject'} | { type: 'Trap'} | { type: 'LogFull'} | { type: 'LogMalformed'};
+    if ('ParseParams' in schemaJson) {
+       match559 = {
+           type: 'ParseParams',
+       };
+    } else if ('StartEndTimeError' in schemaJson) {
+       match559 = {
+           type: 'StartEndTimeError',
+       };
+    } else if ('EndTimeError' in schemaJson) {
+       match559 = {
+           type: 'EndTimeError',
+       };
+    } else if ('OnlyAccount' in schemaJson) {
+       match559 = {
+           type: 'OnlyAccount',
+       };
+    } else if ('BidNotGreaterCurrentBid' in schemaJson) {
+       match559 = {
+           type: 'BidNotGreaterCurrentBid',
+       };
+    } else if ('BidTooLate' in schemaJson) {
+       match559 = {
+           type: 'BidTooLate',
+       };
+    } else if ('AuctionAlreadyFinalized' in schemaJson) {
+       match559 = {
+           type: 'AuctionAlreadyFinalized',
+       };
+    } else if ('NoItem' in schemaJson) {
+       match559 = {
+           type: 'NoItem',
+       };
+    } else if ('AuctionStillActive' in schemaJson) {
+       match559 = {
+           type: 'AuctionStillActive',
+       };
+    } else if ('NotTokenContract' in schemaJson) {
+       match559 = {
+           type: 'NotTokenContract',
+       };
+    } else if ('WrongTokenID' in schemaJson) {
+       match559 = {
+           type: 'WrongTokenID',
+       };
+    } else if ('InvokeContractError' in schemaJson) {
+       match559 = {
+           type: 'InvokeContractError',
+       };
+    } else if ('ParseResult' in schemaJson) {
+       match559 = {
+           type: 'ParseResult',
+       };
+    } else if ('InvalidResponse' in schemaJson) {
+       match559 = {
+           type: 'InvalidResponse',
+       };
+    } else if ('AmountTooLarge' in schemaJson) {
+       match559 = {
+           type: 'AmountTooLarge',
+       };
+    } else if ('MissingAccount' in schemaJson) {
+       match559 = {
+           type: 'MissingAccount',
+       };
+    } else if ('MissingContract' in schemaJson) {
+       match559 = {
+           type: 'MissingContract',
+       };
+    } else if ('MissingEntrypoint' in schemaJson) {
+       match559 = {
+           type: 'MissingEntrypoint',
+       };
+    } else if ('MessageFailed' in schemaJson) {
+       match559 = {
+           type: 'MessageFailed',
+       };
+    } else if ('LogicReject' in schemaJson) {
+       match559 = {
+           type: 'LogicReject',
+       };
+    } else if ('Trap' in schemaJson) {
+       match559 = {
+           type: 'Trap',
+       };
+    } else if ('LogFull' in schemaJson) {
+       match559 = {
+           type: 'LogFull',
+       };
+    } else if ('LogMalformed' in schemaJson) {
+       match559 = {
+           type: 'LogMalformed',
+       };
+    }
+     else {
+       throw new Error("Unexpected enum variant");
+    }
+    return match559
+}
+
 /** Parameter type for update transaction for 'bid' entrypoint of the 'sponsored_tx_enabled_auction' contract. */
 export type BidParameter = {
     token_id: SDK.HexString,
@@ -192,29 +309,29 @@ export type BidParameter = {
  * @returns {SDK.Parameter.Type} The smart contract parameter.
  */
 export function createBidParameter(parameter: BidParameter): SDK.Parameter.Type {
-    const field522 = parameter.token_id;
-    const field523 = parameter.amount;
-    const number524 = BigInt(field523).toString();
-    const field525 = parameter.from;
-    let match526: {'Account' : [SDK.AccountAddress.SchemaValue] } | {'Contract' : [SDK.ContractAddress.SchemaValue] };
-    switch (field525.type) {
+    const field584 = parameter.token_id;
+    const field585 = parameter.amount;
+    const number586 = BigInt(field585).toString();
+    const field587 = parameter.from;
+    let match588: {'Account' : [SDK.AccountAddress.SchemaValue] } | {'Contract' : [SDK.ContractAddress.SchemaValue] };
+    switch (field587.type) {
         case 'Account':
-    const accountAddress527 = SDK.AccountAddress.toSchemaValue(field525.content);
-            match526 = { Account: [accountAddress527], };
+    const accountAddress589 = SDK.AccountAddress.toSchemaValue(field587.content);
+            match588 = { Account: [accountAddress589], };
         break;
         case 'Contract':
-    const contractAddress528 = SDK.ContractAddress.toSchemaValue(field525.content);
-            match526 = { Contract: [contractAddress528], };
+    const contractAddress590 = SDK.ContractAddress.toSchemaValue(field587.content);
+            match588 = { Contract: [contractAddress590], };
         break;
     }
-    const field529 = parameter.data;
-    const named521 = {
-    token_id: field522,
-    amount: number524,
-    from: match526,
-    data: field529,
+    const field591 = parameter.data;
+    const named583 = {
+    token_id: field584,
+    amount: number586,
+    from: match588,
+    data: field591,
     };
-    const out = SDK.Parameter.fromBase64SchemaType('FAAEAAAACAAAAHRva2VuX2lkHQAGAAAAYW1vdW50GyUAAAAEAAAAZnJvbRUCAAAABwAAAEFjY291bnQBAQAAAAsIAAAAQ29udHJhY3QBAQAAAAwEAAAAZGF0YQM=', named521);
+    const out = SDK.Parameter.fromBase64SchemaType('FAAEAAAACAAAAHRva2VuX2lkHQAGAAAAYW1vdW50GyUAAAAEAAAAZnJvbRUCAAAABwAAAEFjY291bnQBAQAAAAsIAAAAQ29udHJhY3QBAQAAAAwEAAAAZGF0YQM=', named583);
     return out;
 }
 
@@ -273,104 +390,104 @@ export function parseErrorMessageBid(invokeResult: SDK.InvokeContractResult): Er
         throw new Error('Unexpected missing \'returnValue\' in result of invocation. Client expected a V1 smart contract.');
     }
     const schemaJson = <{'ParseParams' : [] } | {'StartEndTimeError' : [] } | {'EndTimeError' : [] } | {'OnlyAccount' : [] } | {'BidNotGreaterCurrentBid' : [] } | {'BidTooLate' : [] } | {'AuctionAlreadyFinalized' : [] } | {'NoItem' : [] } | {'AuctionStillActive' : [] } | {'NotTokenContract' : [] } | {'WrongTokenID' : [] } | {'InvokeContractError' : [] } | {'ParseResult' : [] } | {'InvalidResponse' : [] } | {'AmountTooLarge' : [] } | {'MissingAccount' : [] } | {'MissingContract' : [] } | {'MissingEntrypoint' : [] } | {'MessageFailed' : [] } | {'LogicReject' : [] } | {'Trap' : [] } | {'LogFull' : [] } | {'LogMalformed' : [] }>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'FRcAAAALAAAAUGFyc2VQYXJhbXMCEQAAAFN0YXJ0RW5kVGltZUVycm9yAgwAAABFbmRUaW1lRXJyb3ICCwAAAE9ubHlBY2NvdW50AhcAAABCaWROb3RHcmVhdGVyQ3VycmVudEJpZAIKAAAAQmlkVG9vTGF0ZQIXAAAAQXVjdGlvbkFscmVhZHlGaW5hbGl6ZWQCBgAAAE5vSXRlbQISAAAAQXVjdGlvblN0aWxsQWN0aXZlAhAAAABOb3RUb2tlbkNvbnRyYWN0AgwAAABXcm9uZ1Rva2VuSUQCEwAAAEludm9rZUNvbnRyYWN0RXJyb3ICCwAAAFBhcnNlUmVzdWx0Ag8AAABJbnZhbGlkUmVzcG9uc2UCDgAAAEFtb3VudFRvb0xhcmdlAg4AAABNaXNzaW5nQWNjb3VudAIPAAAATWlzc2luZ0NvbnRyYWN0AhEAAABNaXNzaW5nRW50cnlwb2ludAINAAAATWVzc2FnZUZhaWxlZAILAAAATG9naWNSZWplY3QCBAAAAFRyYXACBwAAAExvZ0Z1bGwCDAAAAExvZ01hbGZvcm1lZAI=');
-    let match530: { type: 'ParseParams'} | { type: 'StartEndTimeError'} | { type: 'EndTimeError'} | { type: 'OnlyAccount'} | { type: 'BidNotGreaterCurrentBid'} | { type: 'BidTooLate'} | { type: 'AuctionAlreadyFinalized'} | { type: 'NoItem'} | { type: 'AuctionStillActive'} | { type: 'NotTokenContract'} | { type: 'WrongTokenID'} | { type: 'InvokeContractError'} | { type: 'ParseResult'} | { type: 'InvalidResponse'} | { type: 'AmountTooLarge'} | { type: 'MissingAccount'} | { type: 'MissingContract'} | { type: 'MissingEntrypoint'} | { type: 'MessageFailed'} | { type: 'LogicReject'} | { type: 'Trap'} | { type: 'LogFull'} | { type: 'LogMalformed'};
+    let match592: { type: 'ParseParams'} | { type: 'StartEndTimeError'} | { type: 'EndTimeError'} | { type: 'OnlyAccount'} | { type: 'BidNotGreaterCurrentBid'} | { type: 'BidTooLate'} | { type: 'AuctionAlreadyFinalized'} | { type: 'NoItem'} | { type: 'AuctionStillActive'} | { type: 'NotTokenContract'} | { type: 'WrongTokenID'} | { type: 'InvokeContractError'} | { type: 'ParseResult'} | { type: 'InvalidResponse'} | { type: 'AmountTooLarge'} | { type: 'MissingAccount'} | { type: 'MissingContract'} | { type: 'MissingEntrypoint'} | { type: 'MessageFailed'} | { type: 'LogicReject'} | { type: 'Trap'} | { type: 'LogFull'} | { type: 'LogMalformed'};
     if ('ParseParams' in schemaJson) {
-       match530 = {
+       match592 = {
            type: 'ParseParams',
        };
     } else if ('StartEndTimeError' in schemaJson) {
-       match530 = {
+       match592 = {
            type: 'StartEndTimeError',
        };
     } else if ('EndTimeError' in schemaJson) {
-       match530 = {
+       match592 = {
            type: 'EndTimeError',
        };
     } else if ('OnlyAccount' in schemaJson) {
-       match530 = {
+       match592 = {
            type: 'OnlyAccount',
        };
     } else if ('BidNotGreaterCurrentBid' in schemaJson) {
-       match530 = {
+       match592 = {
            type: 'BidNotGreaterCurrentBid',
        };
     } else if ('BidTooLate' in schemaJson) {
-       match530 = {
+       match592 = {
            type: 'BidTooLate',
        };
     } else if ('AuctionAlreadyFinalized' in schemaJson) {
-       match530 = {
+       match592 = {
            type: 'AuctionAlreadyFinalized',
        };
     } else if ('NoItem' in schemaJson) {
-       match530 = {
+       match592 = {
            type: 'NoItem',
        };
     } else if ('AuctionStillActive' in schemaJson) {
-       match530 = {
+       match592 = {
            type: 'AuctionStillActive',
        };
     } else if ('NotTokenContract' in schemaJson) {
-       match530 = {
+       match592 = {
            type: 'NotTokenContract',
        };
     } else if ('WrongTokenID' in schemaJson) {
-       match530 = {
+       match592 = {
            type: 'WrongTokenID',
        };
     } else if ('InvokeContractError' in schemaJson) {
-       match530 = {
+       match592 = {
            type: 'InvokeContractError',
        };
     } else if ('ParseResult' in schemaJson) {
-       match530 = {
+       match592 = {
            type: 'ParseResult',
        };
     } else if ('InvalidResponse' in schemaJson) {
-       match530 = {
+       match592 = {
            type: 'InvalidResponse',
        };
     } else if ('AmountTooLarge' in schemaJson) {
-       match530 = {
+       match592 = {
            type: 'AmountTooLarge',
        };
     } else if ('MissingAccount' in schemaJson) {
-       match530 = {
+       match592 = {
            type: 'MissingAccount',
        };
     } else if ('MissingContract' in schemaJson) {
-       match530 = {
+       match592 = {
            type: 'MissingContract',
        };
     } else if ('MissingEntrypoint' in schemaJson) {
-       match530 = {
+       match592 = {
            type: 'MissingEntrypoint',
        };
     } else if ('MessageFailed' in schemaJson) {
-       match530 = {
+       match592 = {
            type: 'MessageFailed',
        };
     } else if ('LogicReject' in schemaJson) {
-       match530 = {
+       match592 = {
            type: 'LogicReject',
        };
     } else if ('Trap' in schemaJson) {
-       match530 = {
+       match592 = {
            type: 'Trap',
        };
     } else if ('LogFull' in schemaJson) {
-       match530 = {
+       match592 = {
            type: 'LogFull',
        };
     } else if ('LogMalformed' in schemaJson) {
-       match530 = {
+       match592 = {
            type: 'LogMalformed',
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-    return match530
+    return match592
 }
 
 /** Parameter type for update transaction for 'finalize' entrypoint of the 'sponsored_tx_enabled_auction' contract. */
@@ -441,104 +558,104 @@ export function parseErrorMessageFinalize(invokeResult: SDK.InvokeContractResult
         throw new Error('Unexpected missing \'returnValue\' in result of invocation. Client expected a V1 smart contract.');
     }
     const schemaJson = <{'ParseParams' : [] } | {'StartEndTimeError' : [] } | {'EndTimeError' : [] } | {'OnlyAccount' : [] } | {'BidNotGreaterCurrentBid' : [] } | {'BidTooLate' : [] } | {'AuctionAlreadyFinalized' : [] } | {'NoItem' : [] } | {'AuctionStillActive' : [] } | {'NotTokenContract' : [] } | {'WrongTokenID' : [] } | {'InvokeContractError' : [] } | {'ParseResult' : [] } | {'InvalidResponse' : [] } | {'AmountTooLarge' : [] } | {'MissingAccount' : [] } | {'MissingContract' : [] } | {'MissingEntrypoint' : [] } | {'MessageFailed' : [] } | {'LogicReject' : [] } | {'Trap' : [] } | {'LogFull' : [] } | {'LogMalformed' : [] }>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'FRcAAAALAAAAUGFyc2VQYXJhbXMCEQAAAFN0YXJ0RW5kVGltZUVycm9yAgwAAABFbmRUaW1lRXJyb3ICCwAAAE9ubHlBY2NvdW50AhcAAABCaWROb3RHcmVhdGVyQ3VycmVudEJpZAIKAAAAQmlkVG9vTGF0ZQIXAAAAQXVjdGlvbkFscmVhZHlGaW5hbGl6ZWQCBgAAAE5vSXRlbQISAAAAQXVjdGlvblN0aWxsQWN0aXZlAhAAAABOb3RUb2tlbkNvbnRyYWN0AgwAAABXcm9uZ1Rva2VuSUQCEwAAAEludm9rZUNvbnRyYWN0RXJyb3ICCwAAAFBhcnNlUmVzdWx0Ag8AAABJbnZhbGlkUmVzcG9uc2UCDgAAAEFtb3VudFRvb0xhcmdlAg4AAABNaXNzaW5nQWNjb3VudAIPAAAATWlzc2luZ0NvbnRyYWN0AhEAAABNaXNzaW5nRW50cnlwb2ludAINAAAATWVzc2FnZUZhaWxlZAILAAAATG9naWNSZWplY3QCBAAAAFRyYXACBwAAAExvZ0Z1bGwCDAAAAExvZ01hbGZvcm1lZAI=');
-    let match554: { type: 'ParseParams'} | { type: 'StartEndTimeError'} | { type: 'EndTimeError'} | { type: 'OnlyAccount'} | { type: 'BidNotGreaterCurrentBid'} | { type: 'BidTooLate'} | { type: 'AuctionAlreadyFinalized'} | { type: 'NoItem'} | { type: 'AuctionStillActive'} | { type: 'NotTokenContract'} | { type: 'WrongTokenID'} | { type: 'InvokeContractError'} | { type: 'ParseResult'} | { type: 'InvalidResponse'} | { type: 'AmountTooLarge'} | { type: 'MissingAccount'} | { type: 'MissingContract'} | { type: 'MissingEntrypoint'} | { type: 'MessageFailed'} | { type: 'LogicReject'} | { type: 'Trap'} | { type: 'LogFull'} | { type: 'LogMalformed'};
+    let match616: { type: 'ParseParams'} | { type: 'StartEndTimeError'} | { type: 'EndTimeError'} | { type: 'OnlyAccount'} | { type: 'BidNotGreaterCurrentBid'} | { type: 'BidTooLate'} | { type: 'AuctionAlreadyFinalized'} | { type: 'NoItem'} | { type: 'AuctionStillActive'} | { type: 'NotTokenContract'} | { type: 'WrongTokenID'} | { type: 'InvokeContractError'} | { type: 'ParseResult'} | { type: 'InvalidResponse'} | { type: 'AmountTooLarge'} | { type: 'MissingAccount'} | { type: 'MissingContract'} | { type: 'MissingEntrypoint'} | { type: 'MessageFailed'} | { type: 'LogicReject'} | { type: 'Trap'} | { type: 'LogFull'} | { type: 'LogMalformed'};
     if ('ParseParams' in schemaJson) {
-       match554 = {
+       match616 = {
            type: 'ParseParams',
        };
     } else if ('StartEndTimeError' in schemaJson) {
-       match554 = {
+       match616 = {
            type: 'StartEndTimeError',
        };
     } else if ('EndTimeError' in schemaJson) {
-       match554 = {
+       match616 = {
            type: 'EndTimeError',
        };
     } else if ('OnlyAccount' in schemaJson) {
-       match554 = {
+       match616 = {
            type: 'OnlyAccount',
        };
     } else if ('BidNotGreaterCurrentBid' in schemaJson) {
-       match554 = {
+       match616 = {
            type: 'BidNotGreaterCurrentBid',
        };
     } else if ('BidTooLate' in schemaJson) {
-       match554 = {
+       match616 = {
            type: 'BidTooLate',
        };
     } else if ('AuctionAlreadyFinalized' in schemaJson) {
-       match554 = {
+       match616 = {
            type: 'AuctionAlreadyFinalized',
        };
     } else if ('NoItem' in schemaJson) {
-       match554 = {
+       match616 = {
            type: 'NoItem',
        };
     } else if ('AuctionStillActive' in schemaJson) {
-       match554 = {
+       match616 = {
            type: 'AuctionStillActive',
        };
     } else if ('NotTokenContract' in schemaJson) {
-       match554 = {
+       match616 = {
            type: 'NotTokenContract',
        };
     } else if ('WrongTokenID' in schemaJson) {
-       match554 = {
+       match616 = {
            type: 'WrongTokenID',
        };
     } else if ('InvokeContractError' in schemaJson) {
-       match554 = {
+       match616 = {
            type: 'InvokeContractError',
        };
     } else if ('ParseResult' in schemaJson) {
-       match554 = {
+       match616 = {
            type: 'ParseResult',
        };
     } else if ('InvalidResponse' in schemaJson) {
-       match554 = {
+       match616 = {
            type: 'InvalidResponse',
        };
     } else if ('AmountTooLarge' in schemaJson) {
-       match554 = {
+       match616 = {
            type: 'AmountTooLarge',
        };
     } else if ('MissingAccount' in schemaJson) {
-       match554 = {
+       match616 = {
            type: 'MissingAccount',
        };
     } else if ('MissingContract' in schemaJson) {
-       match554 = {
+       match616 = {
            type: 'MissingContract',
        };
     } else if ('MissingEntrypoint' in schemaJson) {
-       match554 = {
+       match616 = {
            type: 'MissingEntrypoint',
        };
     } else if ('MessageFailed' in schemaJson) {
-       match554 = {
+       match616 = {
            type: 'MessageFailed',
        };
     } else if ('LogicReject' in schemaJson) {
-       match554 = {
+       match616 = {
            type: 'LogicReject',
        };
     } else if ('Trap' in schemaJson) {
-       match554 = {
+       match616 = {
            type: 'Trap',
        };
     } else if ('LogFull' in schemaJson) {
-       match554 = {
+       match616 = {
            type: 'LogFull',
        };
     } else if ('LogMalformed' in schemaJson) {
-       match554 = {
+       match616 = {
            type: 'LogMalformed',
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-    return match554
+    return match616
 }
 
 /** Parameter type for update transaction for 'view' entrypoint of the 'sponsored_tx_enabled_auction' contract. */
@@ -634,62 +751,62 @@ export function parseReturnValueView(invokeResult: SDK.InvokeContractResult): Re
     cis2_contract: SDK.ContractAddress.SchemaValue,
     counter: number,
     }>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'FAADAAAACwAAAGl0ZW1fc3RhdGVzEAIPAxQACAAAAA0AAABhdWN0aW9uX3N0YXRlFQIAAAAKAAAATm90U29sZFlldAIEAAAAU29sZAEBAAAACw4AAABoaWdoZXN0X2JpZGRlchUCAAAABAAAAE5vbmUCBAAAAFNvbWUBAQAAAAsEAAAAbmFtZRYCAwAAAGVuZA0FAAAAc3RhcnQNCwAAAGhpZ2hlc3RfYmlkGyUAAAAIAAAAdG9rZW5faWQdAAcAAABjcmVhdG9yCw0AAABjaXMyX2NvbnRyYWN0DAcAAABjb3VudGVyAw==');
-    const field578 = schemaJson.item_states;
-    const list579 = field578.map((item580) => {
-    const field582 = item580[1].auction_state;
-    let match583: { type: 'NotSoldYet'} | { type: 'Sold', content: SDK.AccountAddress.Type };
-    if ('NotSoldYet' in field582) {
-       match583 = {
+    const field640 = schemaJson.item_states;
+    const list641 = field640.map((item642) => {
+    const field644 = item642[1].auction_state;
+    let match645: { type: 'NotSoldYet'} | { type: 'Sold', content: SDK.AccountAddress.Type };
+    if ('NotSoldYet' in field644) {
+       match645 = {
            type: 'NotSoldYet',
        };
-    } else if ('Sold' in field582) {
-       const variant585 = field582.Sold;
-    const accountAddress586 = SDK.AccountAddress.fromSchemaValue(variant585[0]);
-       match583 = {
+    } else if ('Sold' in field644) {
+       const variant647 = field644.Sold;
+    const accountAddress648 = SDK.AccountAddress.fromSchemaValue(variant647[0]);
+       match645 = {
            type: 'Sold',
-           content: accountAddress586,
+           content: accountAddress648,
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-    const field587 = item580[1].highest_bidder;
-    let match588: { type: 'None'} | { type: 'Some', content: SDK.AccountAddress.Type };
-    if ('None' in field587) {
-       match588 = {
+    const field649 = item642[1].highest_bidder;
+    let match650: { type: 'None'} | { type: 'Some', content: SDK.AccountAddress.Type };
+    if ('None' in field649) {
+       match650 = {
            type: 'None',
        };
-    } else if ('Some' in field587) {
-       const variant590 = field587.Some;
-    const accountAddress591 = SDK.AccountAddress.fromSchemaValue(variant590[0]);
-       match588 = {
+    } else if ('Some' in field649) {
+       const variant652 = field649.Some;
+    const accountAddress653 = SDK.AccountAddress.fromSchemaValue(variant652[0]);
+       match650 = {
            type: 'Some',
-           content: accountAddress591,
+           content: accountAddress653,
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-    const field592 = item580[1].name;
-    const field593 = item580[1].end;
-    const timestamp594 = SDK.Timestamp.fromSchemaValue(field593);
-    const field595 = item580[1].start;
-    const timestamp596 = SDK.Timestamp.fromSchemaValue(field595);
-    const field597 = item580[1].highest_bid;
-    const field598 = item580[1].token_id;
-    const field599 = item580[1].creator;
-    const accountAddress600 = SDK.AccountAddress.fromSchemaValue(field599);
-    const named601 = {
-    auction_state: match583,
-    highest_bidder: match588,
-    name: field592,
-    end: timestamp594,
-    start: timestamp596,
-    highest_bid: BigInt(field597),
-    token_id: field598,
-    creator: accountAddress600,
+    const field654 = item642[1].name;
+    const field655 = item642[1].end;
+    const timestamp656 = SDK.Timestamp.fromSchemaValue(field655);
+    const field657 = item642[1].start;
+    const timestamp658 = SDK.Timestamp.fromSchemaValue(field657);
+    const field659 = item642[1].highest_bid;
+    const field660 = item642[1].token_id;
+    const field661 = item642[1].creator;
+    const accountAddress662 = SDK.AccountAddress.fromSchemaValue(field661);
+    const named663 = {
+    auction_state: match645,
+    highest_bidder: match650,
+    name: field654,
+    end: timestamp656,
+    start: timestamp658,
+    highest_bid: BigInt(field659),
+    token_id: field660,
+    creator: accountAddress662,
     };
-    const pair581: [number, {
+    const pair643: [number, {
     auction_state: { type: 'NotSoldYet'} | { type: 'Sold', content: SDK.AccountAddress.Type },
     highest_bidder: { type: 'None'} | { type: 'Some', content: SDK.AccountAddress.Type },
     name: string,
@@ -698,18 +815,18 @@ export function parseReturnValueView(invokeResult: SDK.InvokeContractResult): Re
     highest_bid: number | bigint,
     token_id: SDK.HexString,
     creator: SDK.AccountAddress.Type,
-    }] = [item580[0], named601];
-    return pair581;
+    }] = [item642[0], named663];
+    return pair643;
     });
-    const field602 = schemaJson.cis2_contract;
-    const contractAddress603 = SDK.ContractAddress.fromSchemaValue(field602);
-    const field604 = schemaJson.counter;
-    const named605 = {
-    item_states: list579,
-    cis2_contract: contractAddress603,
-    counter: field604,
+    const field664 = schemaJson.cis2_contract;
+    const contractAddress665 = SDK.ContractAddress.fromSchemaValue(field664);
+    const field666 = schemaJson.counter;
+    const named667 = {
+    item_states: list641,
+    cis2_contract: contractAddress665,
+    counter: field666,
     };
-    return named605;
+    return named667;
 }
 
 /** Parameter type for update transaction for 'viewItemState' entrypoint of the 'sponsored_tx_enabled_auction' contract. */
@@ -798,60 +915,177 @@ export function parseReturnValueViewItemState(invokeResult: SDK.InvokeContractRe
     token_id: string,
     creator: SDK.AccountAddress.SchemaValue,
     }>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'FAAIAAAADQAAAGF1Y3Rpb25fc3RhdGUVAgAAAAoAAABOb3RTb2xkWWV0AgQAAABTb2xkAQEAAAALDgAAAGhpZ2hlc3RfYmlkZGVyFQIAAAAEAAAATm9uZQIEAAAAU29tZQEBAAAACwQAAABuYW1lFgIDAAAAZW5kDQUAAABzdGFydA0LAAAAaGlnaGVzdF9iaWQbJQAAAAgAAAB0b2tlbl9pZB0ABwAAAGNyZWF0b3IL');
-    const field606 = schemaJson.auction_state;
-    let match607: { type: 'NotSoldYet'} | { type: 'Sold', content: SDK.AccountAddress.Type };
-    if ('NotSoldYet' in field606) {
-       match607 = {
+    const field668 = schemaJson.auction_state;
+    let match669: { type: 'NotSoldYet'} | { type: 'Sold', content: SDK.AccountAddress.Type };
+    if ('NotSoldYet' in field668) {
+       match669 = {
            type: 'NotSoldYet',
        };
-    } else if ('Sold' in field606) {
-       const variant609 = field606.Sold;
-    const accountAddress610 = SDK.AccountAddress.fromSchemaValue(variant609[0]);
-       match607 = {
+    } else if ('Sold' in field668) {
+       const variant671 = field668.Sold;
+    const accountAddress672 = SDK.AccountAddress.fromSchemaValue(variant671[0]);
+       match669 = {
            type: 'Sold',
-           content: accountAddress610,
+           content: accountAddress672,
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-    const field611 = schemaJson.highest_bidder;
-    let match612: { type: 'None'} | { type: 'Some', content: SDK.AccountAddress.Type };
-    if ('None' in field611) {
-       match612 = {
+    const field673 = schemaJson.highest_bidder;
+    let match674: { type: 'None'} | { type: 'Some', content: SDK.AccountAddress.Type };
+    if ('None' in field673) {
+       match674 = {
            type: 'None',
        };
-    } else if ('Some' in field611) {
-       const variant614 = field611.Some;
-    const accountAddress615 = SDK.AccountAddress.fromSchemaValue(variant614[0]);
-       match612 = {
+    } else if ('Some' in field673) {
+       const variant676 = field673.Some;
+    const accountAddress677 = SDK.AccountAddress.fromSchemaValue(variant676[0]);
+       match674 = {
            type: 'Some',
-           content: accountAddress615,
+           content: accountAddress677,
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-    const field616 = schemaJson.name;
-    const field617 = schemaJson.end;
-    const timestamp618 = SDK.Timestamp.fromSchemaValue(field617);
-    const field619 = schemaJson.start;
-    const timestamp620 = SDK.Timestamp.fromSchemaValue(field619);
-    const field621 = schemaJson.highest_bid;
-    const field622 = schemaJson.token_id;
-    const field623 = schemaJson.creator;
-    const accountAddress624 = SDK.AccountAddress.fromSchemaValue(field623);
-    const named625 = {
-    auction_state: match607,
-    highest_bidder: match612,
-    name: field616,
-    end: timestamp618,
-    start: timestamp620,
-    highest_bid: BigInt(field621),
-    token_id: field622,
-    creator: accountAddress624,
+    const field678 = schemaJson.name;
+    const field679 = schemaJson.end;
+    const timestamp680 = SDK.Timestamp.fromSchemaValue(field679);
+    const field681 = schemaJson.start;
+    const timestamp682 = SDK.Timestamp.fromSchemaValue(field681);
+    const field683 = schemaJson.highest_bid;
+    const field684 = schemaJson.token_id;
+    const field685 = schemaJson.creator;
+    const accountAddress686 = SDK.AccountAddress.fromSchemaValue(field685);
+    const named687 = {
+    auction_state: match669,
+    highest_bidder: match674,
+    name: field678,
+    end: timestamp680,
+    start: timestamp682,
+    highest_bid: BigInt(field683),
+    token_id: field684,
+    creator: accountAddress686,
     };
-    return named625;
+    return named687;
+}
+
+/** Error message for dry-running update transaction for 'viewItemState' entrypoint of the 'sponsored_tx_enabled_auction' contract. */
+export type ErrorMessageViewItemState = { type: 'ParseParams'} | { type: 'StartEndTimeError'} | { type: 'EndTimeError'} | { type: 'OnlyAccount'} | { type: 'BidNotGreaterCurrentBid'} | { type: 'BidTooLate'} | { type: 'AuctionAlreadyFinalized'} | { type: 'NoItem'} | { type: 'AuctionStillActive'} | { type: 'NotTokenContract'} | { type: 'WrongTokenID'} | { type: 'InvokeContractError'} | { type: 'ParseResult'} | { type: 'InvalidResponse'} | { type: 'AmountTooLarge'} | { type: 'MissingAccount'} | { type: 'MissingContract'} | { type: 'MissingEntrypoint'} | { type: 'MessageFailed'} | { type: 'LogicReject'} | { type: 'Trap'} | { type: 'LogFull'} | { type: 'LogMalformed'};
+
+/**
+ * Get and parse the error message from dry-running update transaction for 'viewItemState' entrypoint of the 'sponsored_tx_enabled_auction' contract.
+ * Returns undefined if the result is not a failure.
+ * @param {SDK.InvokeContractResult} invokeResult The result from dry-running the transaction.
+ * @returns {ErrorMessageViewItemState | undefined} The structured error message or undefined if result was not a failure or failed for other reason than contract rejectedReceive.
+ */
+export function parseErrorMessageViewItemState(invokeResult: SDK.InvokeContractResult): ErrorMessageViewItemState | undefined {
+    if (invokeResult.tag !== 'failure' || invokeResult.reason.tag !== 'RejectedReceive') {
+        return undefined;
+    }
+    if (invokeResult.returnValue === undefined) {
+        throw new Error('Unexpected missing \'returnValue\' in result of invocation. Client expected a V1 smart contract.');
+    }
+    const schemaJson = <{'ParseParams' : [] } | {'StartEndTimeError' : [] } | {'EndTimeError' : [] } | {'OnlyAccount' : [] } | {'BidNotGreaterCurrentBid' : [] } | {'BidTooLate' : [] } | {'AuctionAlreadyFinalized' : [] } | {'NoItem' : [] } | {'AuctionStillActive' : [] } | {'NotTokenContract' : [] } | {'WrongTokenID' : [] } | {'InvokeContractError' : [] } | {'ParseResult' : [] } | {'InvalidResponse' : [] } | {'AmountTooLarge' : [] } | {'MissingAccount' : [] } | {'MissingContract' : [] } | {'MissingEntrypoint' : [] } | {'MessageFailed' : [] } | {'LogicReject' : [] } | {'Trap' : [] } | {'LogFull' : [] } | {'LogMalformed' : [] }>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'FRcAAAALAAAAUGFyc2VQYXJhbXMCEQAAAFN0YXJ0RW5kVGltZUVycm9yAgwAAABFbmRUaW1lRXJyb3ICCwAAAE9ubHlBY2NvdW50AhcAAABCaWROb3RHcmVhdGVyQ3VycmVudEJpZAIKAAAAQmlkVG9vTGF0ZQIXAAAAQXVjdGlvbkFscmVhZHlGaW5hbGl6ZWQCBgAAAE5vSXRlbQISAAAAQXVjdGlvblN0aWxsQWN0aXZlAhAAAABOb3RUb2tlbkNvbnRyYWN0AgwAAABXcm9uZ1Rva2VuSUQCEwAAAEludm9rZUNvbnRyYWN0RXJyb3ICCwAAAFBhcnNlUmVzdWx0Ag8AAABJbnZhbGlkUmVzcG9uc2UCDgAAAEFtb3VudFRvb0xhcmdlAg4AAABNaXNzaW5nQWNjb3VudAIPAAAATWlzc2luZ0NvbnRyYWN0AhEAAABNaXNzaW5nRW50cnlwb2ludAINAAAATWVzc2FnZUZhaWxlZAILAAAATG9naWNSZWplY3QCBAAAAFRyYXACBwAAAExvZ0Z1bGwCDAAAAExvZ01hbGZvcm1lZAI=');
+    let match688: { type: 'ParseParams'} | { type: 'StartEndTimeError'} | { type: 'EndTimeError'} | { type: 'OnlyAccount'} | { type: 'BidNotGreaterCurrentBid'} | { type: 'BidTooLate'} | { type: 'AuctionAlreadyFinalized'} | { type: 'NoItem'} | { type: 'AuctionStillActive'} | { type: 'NotTokenContract'} | { type: 'WrongTokenID'} | { type: 'InvokeContractError'} | { type: 'ParseResult'} | { type: 'InvalidResponse'} | { type: 'AmountTooLarge'} | { type: 'MissingAccount'} | { type: 'MissingContract'} | { type: 'MissingEntrypoint'} | { type: 'MessageFailed'} | { type: 'LogicReject'} | { type: 'Trap'} | { type: 'LogFull'} | { type: 'LogMalformed'};
+    if ('ParseParams' in schemaJson) {
+       match688 = {
+           type: 'ParseParams',
+       };
+    } else if ('StartEndTimeError' in schemaJson) {
+       match688 = {
+           type: 'StartEndTimeError',
+       };
+    } else if ('EndTimeError' in schemaJson) {
+       match688 = {
+           type: 'EndTimeError',
+       };
+    } else if ('OnlyAccount' in schemaJson) {
+       match688 = {
+           type: 'OnlyAccount',
+       };
+    } else if ('BidNotGreaterCurrentBid' in schemaJson) {
+       match688 = {
+           type: 'BidNotGreaterCurrentBid',
+       };
+    } else if ('BidTooLate' in schemaJson) {
+       match688 = {
+           type: 'BidTooLate',
+       };
+    } else if ('AuctionAlreadyFinalized' in schemaJson) {
+       match688 = {
+           type: 'AuctionAlreadyFinalized',
+       };
+    } else if ('NoItem' in schemaJson) {
+       match688 = {
+           type: 'NoItem',
+       };
+    } else if ('AuctionStillActive' in schemaJson) {
+       match688 = {
+           type: 'AuctionStillActive',
+       };
+    } else if ('NotTokenContract' in schemaJson) {
+       match688 = {
+           type: 'NotTokenContract',
+       };
+    } else if ('WrongTokenID' in schemaJson) {
+       match688 = {
+           type: 'WrongTokenID',
+       };
+    } else if ('InvokeContractError' in schemaJson) {
+       match688 = {
+           type: 'InvokeContractError',
+       };
+    } else if ('ParseResult' in schemaJson) {
+       match688 = {
+           type: 'ParseResult',
+       };
+    } else if ('InvalidResponse' in schemaJson) {
+       match688 = {
+           type: 'InvalidResponse',
+       };
+    } else if ('AmountTooLarge' in schemaJson) {
+       match688 = {
+           type: 'AmountTooLarge',
+       };
+    } else if ('MissingAccount' in schemaJson) {
+       match688 = {
+           type: 'MissingAccount',
+       };
+    } else if ('MissingContract' in schemaJson) {
+       match688 = {
+           type: 'MissingContract',
+       };
+    } else if ('MissingEntrypoint' in schemaJson) {
+       match688 = {
+           type: 'MissingEntrypoint',
+       };
+    } else if ('MessageFailed' in schemaJson) {
+       match688 = {
+           type: 'MessageFailed',
+       };
+    } else if ('LogicReject' in schemaJson) {
+       match688 = {
+           type: 'LogicReject',
+       };
+    } else if ('Trap' in schemaJson) {
+       match688 = {
+           type: 'Trap',
+       };
+    } else if ('LogFull' in schemaJson) {
+       match688 = {
+           type: 'LogFull',
+       };
+    } else if ('LogMalformed' in schemaJson) {
+       match688 = {
+           type: 'LogMalformed',
+       };
+    }
+     else {
+       throw new Error("Unexpected enum variant");
+    }
+    return match688
 }
 
 /** Parameter type for update transaction for 'serializationHelper' entrypoint of the 'sponsored_tx_enabled_auction' contract. */

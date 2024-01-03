@@ -344,7 +344,7 @@ async fn handle_signature_bid(
             events: _,
             used_energy,
         } => {
-            tracing::debug!("TransactionSimulationSuccess");
+            tracing::debug!("TransactionSimulationSuccess with used energy: {:#?}.", used_energy);
             used_energy
         }
         InvokeContractResult::Failure {
@@ -352,7 +352,7 @@ async fn handle_signature_bid(
             reason,
             used_energy: _,
         } => {
-            tracing::warn!("TransactionSimulationError {:#?}.", reason);
+            tracing::warn!("TransactionSimulationError with reason: {:#?}.", reason);
             return Err(ServerError::TransactionSimulationError(RevertReason {
                 reason,
             }));
