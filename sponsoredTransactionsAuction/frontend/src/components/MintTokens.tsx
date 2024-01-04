@@ -9,6 +9,7 @@ import { AccountAddress, TransactionHash } from '@concordium/web-sdk';
 import { METADATA_URL } from '../constants';
 
 import * as Cis2MultiContract from '../../generated/cis2_multi_cis2_multi'; // Code generated from a smart contract module.
+import { validateAccountAddress } from '../utils';
 
 interface ConnectionProps {
     setTxHash: (hash: TransactionHash.Type | undefined) => void;
@@ -82,11 +83,7 @@ export default function MintTokens(props: ConnectionProps) {
                     <Form.Control
                         {...form.register('toAddress', {
                             required: 'To address is required.',
-                            pattern: {
-                                value: /^[1-9A-HJ-NP-Za-km-z]{50}$/,
-                                message:
-                                    'Please enter a valid account address. It is a base58 string with a fixed length of 50 characters.',
-                            },
+                            validate: validateAccountAddress,
                         })}
                     />
                     {form.formState.errors.toAddress && (

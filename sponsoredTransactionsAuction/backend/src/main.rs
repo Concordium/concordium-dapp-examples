@@ -255,6 +255,11 @@ async fn handle_signature_bid(
     tracing::debug!("Create signature map ...");
 
     let mut signature = [0; 64];
+
+    if request.signature.len() != 128 {
+        return Err(ServerError::SignatureLengthError);
+    }
+
     hex::decode_to_slice(request.signature, &mut signature).map_err(ServerError::SignatureError)?;
 
     let mut inner_signature_map = BTreeMap::new();
