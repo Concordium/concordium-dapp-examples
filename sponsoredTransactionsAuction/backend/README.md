@@ -6,27 +6,28 @@ This page describes the sponsored transactions backend for this dapp example.
 
 The following parameters are supported
 - `node` the URL of the node's GRPC V2 interface, e.g., `http://node.testnet.concordium.com:20000`
-- `port` the port on which the server will listen for incoming requests
-- `log-level` maximum log level (defaults to `debug` if not given)
-- `public-folder` the path to the folder, which should be served, defaults to the `public` folder in the current directory.
+- `port` the port on which the server will listen for incoming requests, e.g., 127.0.0.1:8080.
+- `log-level` maximum log level (defaults to `debug` if not given).
+- `frontend` the path to the folder, which should be served, defaults to the `public` folder in the current directory.
 - `account-key-file` the path to a file which contains the key credentials.
 - `cis2-token-smart-contract-index` the smart contract index which the sponsored transaction is submitted to.
 - `auction-smart-contract-index` the smart contract index of the auction smart contract.
+- `request-timeout` the request timeout (both of request to the node and server requests) in milliseconds. The node timeout is 500 ms less than the request-timeout to make sure we can fail properly in the server in case of connection timeout due to node connectivity problems.
 
 All of the above is available by using `--help` to get usage information.
 
 An example to run the backend with basic settings and testnet node would be:
 ```shell
-cargo run -- --node http://node.testnet.concordium.com:20000 --account-key-file <YourAccountPathToYourKeys> --cis2-token-smart-contract-index 7370 --auction-smart-contract-index 7415
+cargo run -- --node http://node.testnet.concordium.com:20000 --account-key-file <YourAccountPathToYourKeys> --cis2-token-smart-contract-index 7370 --auction-smart-contract-index 7415 --log-level debug
 ```
 
 An example to run the backend with some filled in example settings would be:
 
 ```shell
-cargo run -- --node http://node.testnet.concordium.com:20000 --cis2-token-smart-contract-index 7370 --auction-smart-contract-index 7415 --account-key-file ./4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export --log-level debug 
+cargo run -- --node http://node.testnet.concordium.com:20000 --account-key-file ./4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export --cis2-token-smart-contract-index 7370 --auction-smart-contract-index 7415 --log-level debug 
 ```
 
-To get your account file (the `3PXwJYYPf6fyVb4GJquxSZU8puxrHfzc4XogdMVot8MUQK53tW.export` file in the above example), export it from the Concordium Browser wallet for web.
+To get your account file (the `4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export` file in the above example), export it from the Concordium Browser wallet for web.
 
 <img src="./pic/pic1.png"  width="200" />
 <img src="./pic/pic2.png"  width="200" />
@@ -46,7 +47,7 @@ The smart contract code at {index: CIS2_TOKEN_CONTRACT_INDEX, subindex: 0} can b
 The smart contract code at {index: AUCTION_CONTRACT_INDEX, subindex: 0} can be found [here](https://github.com/Concordium/concordium-rust-smart-contracts/tree/main/examples/sponsored-tx-enabled-auction).
 
 See [src/main.rs](./src/main.rs) for the formats of requests and responses. Both
-requests and responses are JSON encoded. The requests are handled by handlers in [src/handlers.rs](./src/handlers.rs).
+requests and responses are JSON encoded.
 
 # Contributing
 

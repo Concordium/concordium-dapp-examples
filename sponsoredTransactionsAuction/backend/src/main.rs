@@ -62,7 +62,7 @@ struct App {
     #[clap(
         long = "request-timeout",
         help = "Request timeout (both of request to the node and server requests) in milliseconds.",
-        default_value = "5000",
+        default_value = "10000",
         env = "REQUEST_TIMEOUT"
     )]
     request_timeout: u64,
@@ -183,7 +183,6 @@ async fn main() -> anyhow::Result<()> {
     // Render index.html
     let index_template = fs::read_to_string(app.frontend_assets.join("index.html"))
         .context("Frontend was not built or wrong path to the frontend files.")?;
-
     tracing::info!("Starting server...");
     let serve_dir_service = ServeDir::new(app.frontend_assets.join("assets"));
     let router = Router::new()
@@ -365,7 +364,14 @@ async fn handle_signature_bid(
 
     let mut rate_limits = state.rate_limits.lock().await;
 
-    let limit = rate_limits.entry(request.signer).or_insert(0u8);
+    // Account addresses on Concordium have account aliases. We track the
+    // rate-limits by using the alias 0 for every account. https://developer.concordium.software/en/mainnet/net/references/transactions.html#account-aliases
+    let alias_account_0 = request
+        .signer
+        .get_alias(0)
+        .ok_or_else(|| ServerError::NoAliasAccount)?;
+
+    let limit = rate_limits.entry(alias_account_0).or_insert(0u8);
 
     if *limit >= RATE_LIMIT_PER_ACCOUNT {
         tracing::warn!("Rate limit for account {} reached.", request.signer);

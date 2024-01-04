@@ -33,16 +33,20 @@ export default function ViewItem(props: ConnectionProps) {
 
         const viewItemStateParam: AuctionContract.ViewItemStateParameter = Number(data.itemIndex);
 
-        if (grpcClient) {
-            viewItemState(viewItemStateParam)
-                .then((returnValue) => {
-                    if (returnValue !== undefined) {
-                        setItemState(JSONbig.stringify(returnValue));
-                    }
-                })
-                .catch((e) => {
-                    setItemStateError((e as Error).message);
-                });
+        if (Number.isNaN(viewItemStateParam)) {
+            setItemStateError('ItemIndex is NaN.');
+        } else {
+            if (grpcClient) {
+                viewItemState(viewItemStateParam)
+                    .then((returnValue) => {
+                        if (returnValue !== undefined) {
+                            setItemState(JSONbig.stringify(returnValue));
+                        }
+                    })
+                    .catch((e) => {
+                        setItemStateError((e as Error).message);
+                    });
+            }
         }
     }
 
