@@ -31,7 +31,11 @@ async function generateTransferMessage(
     itemIndexAuction: string,
 ) {
     try {
-        const viewItemStateParam: AuctionContract.ViewItemStateParameter = itemIndexAuction as unknown as number;
+        const viewItemStateParam: AuctionContract.ViewItemStateParameter = Number(itemIndexAuction);
+
+        if (Number.isNaN(viewItemStateParam)) {
+            throw new Error(`ItemIndex is NaN.`);
+        }
 
         const itemState: AuctionContract.ReturnValueViewItemState = await viewItemState(viewItemStateParam);
 

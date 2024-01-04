@@ -32,6 +32,8 @@ pub enum ServerError {
     RateLimitError,
     #[error("Unable to submit transaction on chain successfully: {0}")]
     SubmitSponsoredTransactionError(#[from] RPCError),
+    #[error("Unable to derive alias account of signer.")]
+    NoAliasAccount,
 }
 
 impl axum::response::IntoResponse for ServerError {
