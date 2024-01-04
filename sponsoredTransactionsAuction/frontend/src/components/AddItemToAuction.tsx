@@ -1,4 +1,3 @@
-// TODO: FIX that event is only searched for if txHash is updated by this component.
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Alert, Button, Form } from 'react-bootstrap';

@@ -18,19 +18,21 @@ use tokio::sync::Mutex;
 
 #[derive(Debug, thiserror::Error)]
 pub enum ServerError {
-    #[error("Unable to parse request: {0}")]
+    #[error("Unable to parse request: {0}.")]
     InvalidRequest(#[from] JsonRejection),
-    #[error("Unable to parse signature into a hex string: {0}")]
+    #[error("Unable to parse signature into a hex string: {0}.")]
     SignatureError(#[from] FromHexError),
+    #[error("Unable to parse signature because of wrong length.")]
+    SignatureLengthError,
     #[error("Unable to create parameter.")]
     ParameterError,
-    #[error("Unable to invoke the node to simulate the transaction: {0}")]
+    #[error("Unable to invoke the node to simulate the transaction: {0}.")]
     SimulationInvokeError(#[from] QueryError),
-    #[error("Simulation of transaction reverted in smart contract with reason: {0:?}")]
+    #[error("Simulation of transaction reverted in smart contract with reason: {0:?}.")]
     TransactionSimulationError(RevertReason),
     #[error("The signer account reached its rate limit.")]
     RateLimitError,
-    #[error("Unable to submit transaction on chain successfully: {0}")]
+    #[error("Unable to submit transaction on chain successfully: {0}.")]
     SubmitSponsoredTransactionError(#[from] RPCError),
     #[error("Unable to derive alias account of signer.")]
     NoAliasAccount,
@@ -47,21 +49,21 @@ impl axum::response::IntoResponse for ServerError {
                 )
             }
             ServerError::SimulationInvokeError(error) => {
-                tracing::error!("Internal error: {error}");
+                tracing::error!("Internal error: {error}.");
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     Json(format!("{}", error)),
                 )
             }
             ServerError::SubmitSponsoredTransactionError(error) => {
-                tracing::error!("Internal error: {error}");
+                tracing::error!("Internal error: {error}.");
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     Json(format!("{}", error)),
                 )
             }
             error => {
-                tracing::debug!("Bad request: {error}");
+                tracing::debug!("Bad request: {error}.");
                 (StatusCode::BAD_REQUEST, Json(format!("{}", error)))
             }
         };

@@ -14,7 +14,7 @@ import {
     VERIFIER_URL,
 } from '../constants';
 
-import { submitBid } from '../utils';
+import { submitBid, validateAccountAddress } from '../utils';
 import { viewItemState } from '../auction_contract';
 
 import * as AuctionContract from '../../generated/sponsored_tx_enabled_auction_sponsored_tx_enabled_auction'; // Code generated from a smart contract module.
@@ -262,11 +262,7 @@ export default function Bid(props: ConnectionProps) {
                     <Form.Control
                         {...formBid.register('signer', {
                             required: 'Signer is required.',
-                            pattern: {
-                                value: /^[1-9A-HJ-NP-Za-km-z]{50}$/,
-                                message:
-                                    'Please enter a valid account address. It is a base58 string with a fixed length of 50 characters.',
-                            },
+                            validate: validateAccountAddress,
                         })}
                     />
                     {formBid.formState.errors.signer && (

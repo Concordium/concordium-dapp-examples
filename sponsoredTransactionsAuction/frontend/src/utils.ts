@@ -1,4 +1,4 @@
-import { TransactionHash } from '@concordium/web-sdk';
+import { AccountAddress, TransactionHash } from '@concordium/web-sdk';
 
 /*
  * This function sends the bidding signature and other parameters to the back end.
@@ -39,4 +39,14 @@ export async function submitBid(
         return TransactionHash.fromHexString(body);
     }
     throw new Error('Unable to submit bid');
+}
+
+export function validateAccountAddress(accountAddress: string) {
+    try {
+        AccountAddress.fromBase58(accountAddress);
+    } catch (e) {
+        return `Please enter a valid account address. It is a base58 string with a fixed length of 50 characters. Original error: ${
+            (e as Error).message
+        }.`;
+    }
 }
