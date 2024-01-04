@@ -105,7 +105,7 @@ export async function addItem(
 export async function viewItemState(
     viewItemState: AuctionContract.ViewItemStateParameter,
 ): Promise<AuctionContract.ReturnValueViewItemState> {
-    const dryRunResult = await AuctionContract.dryRunViewItemState(contract, Number(viewItemState));
+    const dryRunResult = await AuctionContract.dryRunViewItemState(contract, viewItemState);
 
     if (!dryRunResult || dryRunResult.tag === 'failure' || !dryRunResult.returnValue) {
         const parsedErrorCode = AuctionContract.parseErrorMessageViewItemState(dryRunResult)?.type;
