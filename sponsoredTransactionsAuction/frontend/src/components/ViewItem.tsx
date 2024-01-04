@@ -31,7 +31,7 @@ export default function ViewItem(props: ConnectionProps) {
         setItemStateError(undefined);
         setItemState(undefined);
 
-        const viewItemStateParam: AuctionContract.ViewItemStateParameter = data.itemIndex as unknown as number;
+        const viewItemStateParam: AuctionContract.ViewItemStateParameter = Number(data.itemIndex);
 
         if (grpcClient) {
             viewItemState(viewItemStateParam)
