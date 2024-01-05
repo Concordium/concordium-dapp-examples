@@ -21,9 +21,9 @@ import Footer from '../Footer';
 import { BROWSER_WALLET, REFRESH_INTERVAL } from '../../constants';
 
 import { nonceOf } from '../../cis2_token_contract';
-import * as Cis2MultiContract from '../../../generated/cis2_multi_cis2_multi'; // Code generated from a smart contract module.
+import * as Cis2MultiContract from '../../../generated/cis2_multi_cis2_multi';
 
-/*
+/**
  * The main component that manages the wallet connection.
  * It imports and displays the four components `MintTokens`, `AddItemToAuction`, `ViewItem`, and `Bid`.
  */
@@ -47,6 +47,9 @@ export default function App(props: WalletConnectionProps) {
     const [txHash, setTxHash] = useState<undefined | TransactionHash.Type>(undefined);
     const [transactionError, setTransactionError] = useState<string | undefined>(undefined);
 
+    /**
+     * This function querries the nonce (CIS3 standard) of an acccount in the cis2_multi contract.
+     */
     const refreshNonce = useCallback(() => {
         if (grpcClient && account) {
             const nonceOfParam: Cis2MultiContract.NonceOfParameter = [AccountAddress.fromBase58(account)];
@@ -72,9 +75,10 @@ export default function App(props: WalletConnectionProps) {
         return () => clearInterval(interval);
     }, [refreshNonce]);
 
-    /*
-     * This function gets the public key of an account.
-     * This function works with a wallet account that has just one public-private key pair in its two-level key map.
+    /**
+     * This function gets the public key of an account. The function can be used
+     * for accounts generated in the browser and mobile wallets
+     * that have just one public-private key pair in their two-level key map.
      */
     const getPublicKey = useCallback(
         (account: string | undefined) => {

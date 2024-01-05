@@ -1,4 +1,4 @@
-import * as AuctionContract from '../generated/sponsored_tx_enabled_auction_sponsored_tx_enabled_auction'; // Code generated from a smart contract module.
+import * as AuctionContract from '../generated/sponsored_tx_enabled_auction_sponsored_tx_enabled_auction'; // Code generated from a smart contract module. The naming convention of the generated file is `moduleName_smartContractName`.
 
 import {
     AccountTransactionType,
@@ -34,14 +34,15 @@ const contract = AuctionContract.createUnchecked(
     ContractAddress.create(Number(process.env.AUCTION_CONTRACT_INDEX), CONTRACT_SUB_INDEX),
 );
 
-// This function submits a transaction to add an item to the auction contract.
+export const AUCTION_CONTRACT = contract;
+
 /**
- * Add new item to the auction contract.
+ * This function submits a transaction to add an item to the auction contract.
  *
- * @param connection - The wallet connection to use for sending the transaction
- * @param accountAddress - The account address to send from
- * @param addItemParameter - The parameter for the add item function
- * @throws If the contract could not be updated
+ * @param connection - The wallet connection to use for sending the transaction.
+ * @param accountAddress - The account address to send from.
+ * @param addItemParameter - The parameter for the addItem function.
+ * @throws If simulating the contract update fails.
  * @returns A promise resolving with the corresponding {@linkcode TransactionHash.Type}
  */
 export async function addItem(
@@ -63,11 +64,11 @@ export async function addItem(
         );
     }
 
-    const maxContractExecutionEnergy = Energy.create(dryRunResult.usedEnergy.value + EPSILON_ENERGY); // + EPSILON_ENERGY needs to be here, as there seems to be an issue with running out of energy 1 energy prior to reaching the execution limit
+    const maxContractExecutionEnergy = Energy.create(dryRunResult.usedEnergy.value + EPSILON_ENERGY);
 
     const payload: Omit<UpdateContractPayload, 'message'> = {
         amount: CcdAmount.zero(),
-        address: ContractAddress.create(Number(process.env.AUCTION_CONTRACT_INDEX), CONTRACT_SUB_INDEX),
+        address: contract.contractAddress,
         receiveName: ReceiveName.create(AuctionContract.contractName, EntrypointName.fromString('addItem')),
         maxContractExecutionEnergy,
     };
@@ -94,13 +95,11 @@ export async function addItem(
 }
 
 /**
- * TODO: update comment
- * View item state.
- * @param connection - The wallet connection to use for sending the transaction
- * @param accountAddress - The account address to send from
- * @param mintParameter - The parameter for the mint function
- * @throws If the contract could not be updated
- * @returns A promise resolving with the corresponding {@linkcode TransactionHash.Type}
+ * This function views the item state in the auction contract.
+ *
+ * @param viewItemState - The parameter for the viewItemState function.
+ * @throws If the communicate with the Concordium node fails, the smart contract reverts, or parsing the returnValue fails.
+ * @returns A promise resolving with the corresponding {@linkcode AuctionContract.ReturnValueViewItemState}
  */
 export async function viewItemState(
     viewItemState: AuctionContract.ViewItemStateParameter,

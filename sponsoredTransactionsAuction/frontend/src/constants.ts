@@ -16,6 +16,11 @@ export const AUCTION_CONTRACT_NAME = ContractName.fromString('sponsored_tx_enabl
 
 export const CONTRACT_SUB_INDEX = 0n;
 
+// Before submitting a transaction we simulate/dry-run the transaction to get an
+// estimate of the energy needed for executing the transaction. In addition, we
+// allow an additional small amount of energy `EPSILON_ENERGY` to be consumed by
+// the transaction to cover small variations (e.g. changes to the smart contract
+// state) caused by transactions that have been executed meanwhile.
 export const EPSILON_ENERGY = 1000n;
 
 export const AUCTION_START = '2000-01-01T12:00:00Z'; // Hardcoded value for simplicity for this demo dApp.

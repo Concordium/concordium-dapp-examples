@@ -13,7 +13,7 @@ interface ConnectionProps {
     grpcClient: ConcordiumGRPCClient | undefined;
 }
 
-/*
+/**
  * A component that manages the input fields and corresponding state to view an item in the auction contract.
  */
 export default function ViewItem(props: ConnectionProps) {
