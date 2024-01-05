@@ -68,7 +68,7 @@ struct App {
     request_timeout: u64,
     #[clap(
         long = "port",
-        default_value = "127.0.0.1:8080",
+        default_value = "0.0.0.0:8080",
         help = "Address where the server will listen on.",
         env = "LISTEN_ADDRESS"
     )]
