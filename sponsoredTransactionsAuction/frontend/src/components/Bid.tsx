@@ -11,15 +11,13 @@ import {
     SERIALIZATION_HELPER_SCHEMA_ADDITIONAL_DATA,
     SERIALIZATION_HELPER_SCHEMA_PERMIT_MESSAGE,
     TRANSFER_SCHEMA,
-    VERIFIER_URL,
 } from '../constants';
-
 import { submitBid, validateAccountAddress } from '../utils';
-import { viewItemState } from '../auction_contract';
 
+import { viewItemState } from '../auction_contract';
 import * as AuctionContract from '../../generated/sponsored_tx_enabled_auction_sponsored_tx_enabled_auction'; // Code generated from a smart contract module.
 
-/*
+/**
  * This function generates the transfer message to be signed in the browser wallet.
  */
 async function generateTransferMessage(
@@ -37,6 +35,7 @@ async function generateTransferMessage(
             throw new Error(`ItemIndex is NaN.`);
         }
 
+        // Figure out the `tokenId` that the item is up for auction.
         const itemState: AuctionContract.ReturnValueViewItemState = await viewItemState(viewItemStateParam);
 
         setTokenID(itemState.token_id);
@@ -48,10 +47,13 @@ async function generateTransferMessage(
 
         const hexStringData = [...data.buffer].map((b) => b.toString(16).padStart(2, '0')).join('');
 
+        // Generate transfer parameter.
         const transfer = [
             {
                 amount,
-                data: hexStringData, // e.g. 0100 (for item with index 1)
+                // The item index in the auction contract is of type u16.
+                // A little endian hex string of 2 bytes represents the index here. E.g. `0100` for item with index 1.
+                data: hexStringData,
                 from: {
                     Account: [account],
                 },
@@ -99,7 +101,7 @@ interface ConnectionProps {
     setTransactionError: (error: string | undefined) => void;
 }
 
-/*
+/**
  * A component that manages the input fields and corresponding state to sign a bid message and submit the signature to the backend.
  */
 export default function Bid(props: ConnectionProps) {
@@ -129,6 +131,9 @@ export default function Bid(props: ConnectionProps) {
     }
     const formBid = useForm<FormTypeBid>({ mode: 'all' });
 
+    /**
+     * When submitting the form, the browser wallet is prompt to sign the transferMessage.
+     */
     async function onSubmitSigning(data: FormTypeGenerateSignature) {
         setSigningError(undefined);
         setSignature(undefined);
@@ -165,6 +170,9 @@ export default function Bid(props: ConnectionProps) {
         }
     }
 
+    /**
+     * When submitting the form, the generated signature from the previous step is sent to the backend.
+     */
     function onSubmitBid(data: FormTypeBid, accountAddress: string | undefined) {
         setTxHash(undefined);
         setTransactionError(undefined);
@@ -172,7 +180,6 @@ export default function Bid(props: ConnectionProps) {
 
         if (accountAddress && signature) {
             const tx = submitBid(
-                VERIFIER_URL,
                 data.signer,
                 nonce,
                 signature,

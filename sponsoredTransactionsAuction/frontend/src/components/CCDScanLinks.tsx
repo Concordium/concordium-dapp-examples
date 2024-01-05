@@ -4,7 +4,7 @@ interface TxHashLinkProps {
     txHash: TransactionHash.Type;
 }
 
-/*
+/**
  * A component that displays the CCDScan link of a transaction hash.
  */
 export const TxHashLink = function TxHashLink(props: TxHashLinkProps) {
@@ -30,7 +30,7 @@ interface AccountLinkProps {
     account: string;
 }
 
-/*
+/**
  * A component that displays the CCDScan link to an account address.
  */
 export const AccountLink = function AccountLink(props: AccountLinkProps) {

@@ -1,4 +1,4 @@
-import * as Cis2MultiContract from '../generated/cis2_multi_cis2_multi'; // Code generated from a smart contract module.
+import * as Cis2MultiContract from '../generated/cis2_multi_cis2_multi'; // Code generated from a smart contract module. The naming convention of the generated file is `moduleName_smartContractName`.
 
 import {
     AccountTransactionType,
@@ -33,14 +33,15 @@ const contract = Cis2MultiContract.createUnchecked(
     ContractAddress.create(Number(process.env.CIS2_TOKEN_CONTRACT_INDEX), CONTRACT_SUB_INDEX),
 );
 
-// This function submits a transaction to mint/airdrop tokens to an account.
+export const CIS2_TOKEN_CONTRACT = contract;
+
 /**
- * Mints new cis2 tokens to the account specified in the mintParameter.
+ * This function submits a transaction to mint/airdrop cis2_multi tokens to an account.
  *
- * @param connection - The wallet connection to use for sending the transaction
- * @param accountAddress - The account address to send from
- * @param mintParameter - The parameter for the mint function
- * @throws If the contract could not be updated
+ * @param connection - The wallet connection to use for sending the transaction.
+ * @param accountAddress - The account address to send from.
+ * @param mintParameter - The parameter for the mint function.
+ * @throws If simulating the contract update fails or the `mintParameter.owner` is not an account.
  * @returns A promise resolving with the corresponding {@linkcode TransactionHash.Type}
  */
 export async function mint(
@@ -62,11 +63,11 @@ export async function mint(
         );
     }
 
-    const maxContractExecutionEnergy = Energy.create(dryRunResult.usedEnergy.value + EPSILON_ENERGY); // + EPSILON_ENERGY needs to be here, as there seems to be an issue with running out of energy 1 energy prior to reaching the execution limit
+    const maxContractExecutionEnergy = Energy.create(dryRunResult.usedEnergy.value + EPSILON_ENERGY);
 
     const payload: Omit<UpdateContractPayload, 'message'> = {
         amount: CcdAmount.zero(),
-        address: ContractAddress.create(Number(process.env.CIS2_TOKEN_CONTRACT_INDEX), CONTRACT_SUB_INDEX),
+        address: contract.contractAddress,
         receiveName: ReceiveName.create(Cis2MultiContract.contractName, EntrypointName.fromString('mint')),
         maxContractExecutionEnergy,
     };
@@ -105,13 +106,11 @@ export async function mint(
 }
 
 /**
- * Mints new cis2 tokens to the account specified in the mintParameter.
+ * This function views the nonce (CIS3 standard) of an acccount in the cis2_multi contract.
  *
- * @param connection - The wallet connection to use for sending the transaction
- * @param accountAddress - The account address to send from
- * @param mintParameter - The parameter for the mint function
- * @throws If the contract could not be updated
- * @returns A promise resolving with the corresponding {@linkcode TransactionHash.Type}
+ * @param nonceOfParameter - The parameter for the nonceOf function.
+ * @throws If the communicate with the Concordium node fails, the smart contract reverts, or parsing the returnValue fails.
+ * @returns A promise resolving with the corresponding {@linkcode Cis2MultiContract.ReturnValueNonceOf}
  */
 export async function nonceOf(
     nonceOfParameter: Cis2MultiContract.NonceOfParameter,

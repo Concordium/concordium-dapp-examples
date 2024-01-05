@@ -14,8 +14,8 @@ import {
 } from '@concordium/web-sdk';
 
 import { AUCTION_END, AUCTION_START } from '../constants';
-import { addItem } from '../auction_contract';
 
+import { addItem } from '../auction_contract';
 import * as AuctionContract from '../../generated/sponsored_tx_enabled_auction_sponsored_tx_enabled_auction'; // Code generated from a smart contract module.
 
 interface ConnectionProps {
@@ -88,7 +88,7 @@ export default function AddItemToAuction(props: ConnectionProps) {
 
                         setItemIndex(parsedEvent.content.item_index);
                     } else {
-                        setItemIndexError('Tansaction failed or event decoding failed.');
+                        setItemIndexError('Tansaction failed and event decoding failed.');
                     }
                 })
                 .catch((e) => {

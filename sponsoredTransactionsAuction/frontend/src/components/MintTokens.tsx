@@ -3,13 +3,13 @@ import { useForm } from 'react-hook-form';
 import { Alert, Button, Form } from 'react-bootstrap';
 
 import { WalletConnection } from '@concordium/react-components';
-import { mint } from '../cis2_token_contract';
 import { AccountAddress, TransactionHash } from '@concordium/web-sdk';
 
 import { METADATA_URL } from '../constants';
-
-import * as Cis2MultiContract from '../../generated/cis2_multi_cis2_multi'; // Code generated from a smart contract module.
 import { validateAccountAddress } from '../utils';
+
+import { mint } from '../cis2_token_contract';
+import * as Cis2MultiContract from '../../generated/cis2_multi_cis2_multi'; // Code generated from a smart contract module.
 
 interface ConnectionProps {
     setTxHash: (hash: TransactionHash.Type | undefined) => void;
@@ -18,7 +18,7 @@ interface ConnectionProps {
     connection: WalletConnection;
 }
 
-/*
+/**
  * A component that manages the input fields and corresponding state to mint/airdrop some cis2 tokens to the user.
  * This component creates an `Update` transaction.
  */
@@ -48,6 +48,9 @@ export default function MintTokens(props: ConnectionProps) {
                     hash: { type: 'None' },
                     url: METADATA_URL, // In production, you should consider using a different metadata file for each token_id.
                 },
+                // The token id in the cis2 token contract is of type u8.
+                // A hex string of 1 byte represents the token id here. E.g. `01` for token id 1.
+                // The input field has a max/min value validation, so that `data.tokenID` is not greater than 255.
                 token_id: `0${Number(data.tokenID).toString(16)}`.slice(-2),
             };
 

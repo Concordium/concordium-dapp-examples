@@ -7,8 +7,8 @@ This page describes the sponsored transactions backend for this dapp example.
 The following parameters are supported
 - `node` the URL of the node's GRPC V2 interface, e.g., `http://node.testnet.concordium.com:20000`
 - `port` the port on which the server will listen for incoming requests, e.g., 127.0.0.1:8080.
-- `log-level` maximum log level (defaults to `debug` if not given).
-- `frontend` the path to the folder, which should be served, defaults to the `public` folder in the current directory.
+- `log-level` maximum log level (defaults to `info` if not given).
+- `frontend` the path to the folder, which should be served, defaults to the `../frontent/dist` folder.
 - `account-key-file` the path to a file which contains the key credentials.
 - `cis2-token-smart-contract-index` the smart contract index which the sponsored transaction is submitted to.
 - `auction-smart-contract-index` the smart contract index of the auction smart contract.
