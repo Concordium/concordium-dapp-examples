@@ -1,9 +1,9 @@
 import { SmartContractParameters, WalletApi } from "@concordium/browser-wallet-api-helpers";
 import {
+  BlockItemSummaryInBlock,
   ConcordiumGRPCClient,
   ContractAddress,
   deserializeReceiveReturnValue,
-  TransactionSummary,
 } from "@concordium/web-sdk";
 
 import {
@@ -42,15 +42,15 @@ export async function list(
 
   const tokens = retValueDe[0].map(
     (t: any) =>
-      ({
-        contract: t.contract,
-        owner: t.owner,
-        price: BigInt(t.price),
-        primaryOwner: t.primary_owner,
-        quantity: BigInt(t.quantity),
-        royalty: t.royalty,
-        tokenId: t.token_id,
-      } as TokenListItem),
+    ({
+      contract: t.contract,
+      owner: t.owner,
+      price: BigInt(t.price),
+      primaryOwner: t.primary_owner,
+      quantity: BigInt(t.quantity),
+      royalty: t.royalty,
+      tokenId: t.token_id,
+    } as TokenListItem),
   );
   return tokens;
 }
@@ -71,7 +71,7 @@ export async function add(
   paramJson: AddParams,
   contractInfo: ContractInfo,
   maxContractExecutionEnergy = BigInt(9999),
-): Promise<Record<string, TransactionSummary>> {
+): Promise<{ txnHash: string; outcomes: BlockItemSummaryInBlock }> {
   return updateContract(
     provider,
     contractInfo,
@@ -80,6 +80,7 @@ export async function add(
     marketContractAddress,
     MethodNames.add,
     maxContractExecutionEnergy,
+    BigInt(0),
   );
 }
 
@@ -105,7 +106,7 @@ export async function transfer(
   quantity: bigint,
   contractInfo: ContractInfo,
   maxContractExecutionEnergy = BigInt(9999),
-): Promise<Record<string, TransactionSummary>> {
+): Promise<{ txnHash: string; outcomes: BlockItemSummaryInBlock }> {
   const paramJson: TransferParams = {
     cis_contract_address: toParamContractAddress(nftContractAddress),
     token_id: tokenId,
