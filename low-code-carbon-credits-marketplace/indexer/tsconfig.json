@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+        "rootDir": ".",
+        "resolveJsonModule": true,
+        "composite": true,
+        "strict": true,
+        "declaration": true,
+        "esModuleInterop": true
+    },
+    "files": [],
+    "references": [
+        { "path": "./server" },
+    ],
+    "exclude": ["node_modules", "data", "deps"]
+}

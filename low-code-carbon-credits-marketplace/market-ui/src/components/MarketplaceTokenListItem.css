@@ -1,0 +1,14 @@
+.project_token .price {
+    color: brown;
+}
+.project_token .attributes {
+    border-radius: 1px;
+    border-color: brown;
+}
+.carbon_credits .price{
+    color: green;
+}
+.carbon_credits .attributes {
+    border-radius: 1px;
+    border-color: green;
+}

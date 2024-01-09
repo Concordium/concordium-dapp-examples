@@ -1,0 +1,23 @@
+[package]
+name = "server-rust-bindings"
+version = "0.1.0"
+edition = "2018"
+
+[profile.dev]
+opt-level = 3
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+wasm-bindgen = { version = "0.2.80", features = ["serde-serialize"] }
+anyhow = "1.0"
+hex = "0.4"
+either = "1.6"
+thiserror = "1.0"
+rand = "0.7"
+concordium_base = { path = "../../../deps/concordium-rust-sdk/concordium-base/rust-src/concordium_base" }
+
+[lib]
+name = "server_rust_bindings"
+crate-type = ["cdylib"]
+path = "src/lib.rs"
