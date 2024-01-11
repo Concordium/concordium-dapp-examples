@@ -78,7 +78,7 @@ pub struct RevertReason {
     pub reason: RejectReason,
 }
 
-/// Paramters passed from the front end to this back end when calling the API
+/// Parameters passed from the front end to this back end when calling the API
 /// endpoint `/bid`.
 #[derive(serde::Deserialize, serde::Serialize, Debug, Clone)]
 pub struct BidParams {
