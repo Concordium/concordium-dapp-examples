@@ -153,10 +153,8 @@ async fn main() -> anyhow::Result<()> {
         .context("Unable to establish connection to the node.")?;
 
     // Load account keys and sender address from a file
-    let keys: WalletAccount = serde_json::from_str(
-        &std::fs::read_to_string(app.keys_path).context("Could not read the keys file.")?,
-    )
-    .context("Could not parse the keys file.")?;
+    let keys: WalletAccount =
+        WalletAccount::from_json_file(app.keys_path).context("Could not read the keys file.")?;
 
     let sponsorer_key = Arc::new(keys);
 
@@ -166,9 +164,9 @@ async fn main() -> anyhow::Result<()> {
         .context("NonceQueryError.")?;
 
     tracing::debug!(
-        "Starting server with sponsorer {:?}. Current sponsorer nonce: {:?}.",
+        "Starting server with sponsorer {}. Current sponsorer nonce: {}.",
         sponsorer_key.address,
-        nonce_response
+        nonce_response.nonce
     );
 
     let state = Server {
@@ -221,10 +219,6 @@ async fn handle_signature_bid(
 ) -> Result<Json<TransactionHash>, ServerError> {
     let Json(request) = request?;
 
-    tracing::debug!("Request: {:?}", request);
-
-    tracing::debug!("Create payload ...");
-
     let transfer = Transfer {
         from:     Address::Account(request.from),
         to:       Receiver::Contract(
@@ -240,8 +234,6 @@ async fn handle_signature_bid(
 
     tracing::debug!("Created payload: {:?}", payload);
 
-    tracing::debug!("Create permitMessage ...");
-
     let message: PermitMessage = PermitMessage {
         contract_address: state.cis2_token_smart_contract,
         nonce:            request.nonce,
@@ -251,8 +243,6 @@ async fn handle_signature_bid(
     };
 
     tracing::debug!("Created {:?}", message);
-
-    tracing::debug!("Create signature map ...");
 
     let mut signature = [0; 64];
 
@@ -272,8 +262,6 @@ async fn handle_signature_bid(
 
     tracing::debug!("Created signature_map {:?}", signature_map);
 
-    tracing::debug!("Create parameter ...");
-
     let param: PermitParam = PermitParam {
         message,
         signature: AccountSignatures {
@@ -286,8 +274,6 @@ async fn handle_signature_bid(
         .map_err(|_| ServerError::ParameterError)?;
 
     tracing::debug!("Created {:?}", parameter);
-
-    tracing::debug!("Simulate transaction to check its validity ...");
 
     let payload = transactions::UpdateContractPayload {
         amount:       Amount::from_micro_ccd(0),
@@ -385,8 +371,6 @@ async fn handle_signature_bid(
 
     *limit += 1;
 
-    tracing::debug!("Create transaction ...");
-
     let tx = transactions::send::make_and_sign_transaction(
         &state.key.keys,
         state.key.address,
@@ -401,12 +385,12 @@ async fn handle_signature_bid(
         concordium_rust_sdk::types::transactions::Payload::Update { payload },
     );
 
-    tracing::debug!("Submit transaction {:?} ...", tx.clone());
-
     let bi = transactions::BlockItem::AccountTransaction(tx);
 
     match state.node_client.send_block_item(&bi).await {
         Ok(hash) => {
+            tracing::debug!("Submit transaction {} ...", hash);
+
             *nonce = nonce.next();
 
             Ok(hash.into())

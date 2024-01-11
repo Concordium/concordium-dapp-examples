@@ -9,7 +9,7 @@ The following parameters are supported
 - `port` the port on which the server will listen for incoming requests, e.g., 127.0.0.1:8080.
 - `log-level` maximum log level (defaults to `info` if not given).
 - `frontend` the path to the folder, which should be served, defaults to the `../frontent/dist` folder.
-- `account-key-file` the path to a file which contains the key credentials.
+- `account-key-file` the path to a file which contains the key credentials for the sponsorer account.
 - `cis2-token-smart-contract-index` the smart contract index which the sponsored transaction is submitted to.
 - `auction-smart-contract-index` the smart contract index of the auction smart contract.
 - `request-timeout` the request timeout (both of request to the node and server requests) in milliseconds. The node timeout is 500 ms less than the request-timeout to make sure we can fail properly in the server in case of connection timeout due to node connectivity problems.
@@ -59,7 +59,7 @@ Changes to any of the packages must be such that
 - ```cargo clippy --all``` produces no warnings
 - ```rust fmt``` makes no changes.
 
-Everything in this repository should build with rust version 1.65 however the `fmt` tool must be from a nightly release since some of the configuration options are not stable. One way to run the `fmt` tool is
+Everything in this repository should build with rust version 1.70 however the `fmt` tool must be from a nightly release since some of the configuration options are not stable. One way to run the `fmt` tool is
 ```
 cargo +nightly-2023-04-01 fmt
 ```

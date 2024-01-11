@@ -9,7 +9,7 @@ export const NODE = 'http://node.testnet.concordium.com';
 
 export const PORT = 20000;
 
-export const REFRESH_INTERVAL = moment.duration(5, 'seconds');
+export const REFRESH_INTERVAL = moment.duration(2, 'seconds');
 
 export const SPONSORED_TX_CONTRACT_NAME = ContractName.fromString('cis2_multi');
 export const AUCTION_CONTRACT_NAME = ContractName.fromString('sponsored_tx_enabled_auction');
@@ -21,7 +21,7 @@ export const CONTRACT_SUB_INDEX = 0n;
 // allow an additional small amount of energy `EPSILON_ENERGY` to be consumed by
 // the transaction to cover small variations (e.g. changes to the smart contract
 // state) caused by transactions that have been executed meanwhile.
-export const EPSILON_ENERGY = 1000n;
+export const EPSILON_ENERGY = 200n;
 
 export const AUCTION_START = '2000-01-01T12:00:00Z'; // Hardcoded value for simplicity for this demo dApp.
 export const AUCTION_END = '2050-01-01T12:00:00Z'; // Hardcoded value for simplicity for this demo dApp.
