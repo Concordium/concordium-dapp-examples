@@ -1,5 +1,11 @@
 # Sponsored Transactions Web Application
 
+## Hosted front end
+
+[Hosted front end link](https://sponsored.testnet.concordium.com/)
+
+## Build locally
+
 The example project included in this repository serves as a working example of how to integrate sponsored transactions with smart contracts on the Concordium blockchain. The project has a frontend and a backend.
 
 Clone the root repo with the following command:
@@ -38,7 +44,7 @@ docker run -p 8080:8080 --mount type=bind,source="$(pwd)"/3PXwJYYPf6fyVb4GJquxSZ
 
 Note: To get your `ACCOUNT_KEY_FILE` (the `3PXwJYYPf6fyVb4GJquxSZU8puxrHfzc4XogdMVot8MUQK53tW.export` file), export it from the Concordium Browser Wallet for Web.
 This account should be only used for this service. No transactions should be sent from the account by any other means to ensure the account nonce is tracked 
-correctly in the service (e.g. don't use the `4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX` account in the browser wallet to send transactions via the front end).
+correctly in the service (e.g. don't use the `3PXwJYYPf6fyVb4GJquxSZU8puxrHfzc4XogdMVot8MUQK53tW` account in the browser wallet to send transactions via the front end).
 
 <img src="./backend/pic/pic1.png"  width="200" />
 <img src="./backend/pic/pic2.png"  width="200" />

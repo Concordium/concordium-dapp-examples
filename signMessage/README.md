@@ -2,6 +2,10 @@
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+## Hosted front end
+
+[Hosted front end link](https://signmessage.testnet.concordium.com/)
+
 ## Available Scripts
 
 In the project directory, you can run:

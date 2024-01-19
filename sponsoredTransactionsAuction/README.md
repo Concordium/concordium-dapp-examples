@@ -1,5 +1,11 @@
 # Sponsored Transactions Auction Web Application
 
+## Hosted front end
+
+[Hosted front end link](https://cis2-sponsored.testnet.concordium.com/)
+
+## Build locally
+
 This repository includes a dApp example of an auction. Users can bid for the items in the auction contract by using a sponsored-transaction-enabled token as a payment method (no CCD required in the user's wallet). The project has a front end and a back end.
 
 Clone the root repo with the following command:
