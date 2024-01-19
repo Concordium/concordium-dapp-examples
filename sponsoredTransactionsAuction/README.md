@@ -37,7 +37,8 @@ e.g.
 docker run -p 8080:8080 --mount type=bind,source="$(pwd)"/4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export,target=/KEY,readonly -e ACCOUNT_KEY_FILE=/KEY -e PORT=8080 -e NODE=http://node.testnet.concordium.com:20000 -e LOG_LEVEL=debug -e CIS2_TOKEN_CONTRACT_INDEX=7723 -e AUCTION_CONTRACT_INDEX=7724 sponsored_transactions
 ```
 
-Note: To get your `ACCOUNT_KEY_FILE` (the `4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export` file), export it from the Concordium Browser Wallet for Web.
+Note: To get your `ACCOUNT_KEY_FILE` (the `4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export` file), export it from the Concordium Browser Wallet for Web. This account should be only used for this service. No transactions should be sent from the account by any other means to ensure the account nonce is tracked 
+correctly in the service (e.g. don't use the `4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX` account in the browser wallet to send transactions via the front end).
 
 <img src="./backend/pic/pic1.png"  width="200" />
 <img src="./backend/pic/pic2.png"  width="200" />
