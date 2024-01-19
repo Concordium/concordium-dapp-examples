@@ -8,13 +8,13 @@
         "node": ">=18.0.0"
     },
     "scripts": {
-        "dev": "CIS2_TOKEN_CONTRACT_INDEX=7370 AUCTION_CONTRACT_INDEX=7415 vite",
-        "build": "tsc && CIS2_TOKEN_CONTRACT_INDEX=7370 AUCTION_CONTRACT_INDEX=7415 vite build",
+        "dev": "CIS2_TOKEN_CONTRACT_INDEX=7723 AUCTION_CONTRACT_INDEX=7724 vite",
+        "build": "tsc && CIS2_TOKEN_CONTRACT_INDEX=7723 AUCTION_CONTRACT_INDEX=7724 vite build",
         "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
         "lint-fix": "yarn lint --fix",
         "generate-client": "tsx ./scripts/generate-client.ts",
         "fmt": "prettier -w .",
-        "preview": "CIS2_TOKEN_CONTRACT_INDEX=7370 AUCTION_CONTRACT_INDEX=7415 vite preview"
+        "preview": "CIS2_TOKEN_CONTRACT_INDEX=7723 AUCTION_CONTRACT_INDEX=7724 vite preview"
     },
     "dependencies": {
         "@concordium/react-components": "^0.4.0",

@@ -82,7 +82,7 @@ struct App {
     frontend_assets: std::path::PathBuf,
     #[clap(
         long = "cis2-token-smart-contract-index",
-        default_value = "7370",
+        default_value = "7723",
         env = "CIS2_TOKEN_CONTRACT_INDEX",
         help = "The cis2 token smart contract index which the sponsored transaction is submitted \
                 to."
@@ -90,7 +90,7 @@ struct App {
     cis2_token_smart_contract_index: u64,
     #[clap(
         long = "auction-smart-contract-index",
-        default_value = "7399",
+        default_value = "7724",
         env = "AUCTION_CONTRACT_INDEX",
         help = "The auction smart contract index which the sponsored transaction is submitted to."
     )]

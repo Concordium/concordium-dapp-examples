@@ -18,13 +18,13 @@ All of the above is available by using `--help` to get usage information.
 
 An example to run the backend with basic settings and testnet node would be:
 ```shell
-cargo run -- --node http://node.testnet.concordium.com:20000 --account-key-file <YourAccountPathToYourKeys> --cis2-token-smart-contract-index 7370 --auction-smart-contract-index 7415 --log-level debug
+cargo run -- --node http://node.testnet.concordium.com:20000 --account-key-file <YourAccountPathToYourKeys> --cis2-token-smart-contract-index 7723 --auction-smart-contract-index 7724 --log-level debug
 ```
 
 An example to run the backend with some filled in example settings would be:
 
 ```shell
-cargo run -- --node http://node.testnet.concordium.com:20000 --account-key-file ./4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export --cis2-token-smart-contract-index 7370 --auction-smart-contract-index 7415 --log-level debug 
+cargo run -- --node http://node.testnet.concordium.com:20000 --account-key-file ./4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export --cis2-token-smart-contract-index 7723 --auction-smart-contract-index 7724 --log-level debug 
 ```
 
 To get your account file (the `4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export` file in the above example), export it from the Concordium Browser wallet for web.
