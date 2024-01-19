@@ -26,7 +26,8 @@ export const EPSILON_ENERGY = 200n;
 export const AUCTION_START = '2000-01-01T12:00:00Z'; // Hardcoded value for simplicity for this demo dApp.
 export const AUCTION_END = '2050-01-01T12:00:00Z'; // Hardcoded value for simplicity for this demo dApp.
 
-export const METADATA_URL = 'https://s3.eu-central-1.amazonaws.com/tokens.testnet.concordium.com/ft/wccd'; // We use the same metadat URL for every token_id for simplicity for this demo dApp. In production, you should consider using a different metadata file for each token_id.
+export const METADATA_URL =
+    'https://gist.githubusercontent.com/DOBEN/e035ef44705cdf8919f72c98a25d54eb/raw/8c6b375a2dff448e7bbd12a27fc420d41f268f12/gistfile1.txt'; // We use the same metadat URL for every token_id for simplicity for this demo dApp. In production, you should consider using a different metadata file for each token_id.
 
 export const TRANSFER_SCHEMA =
     'EAEUAAUAAAAIAAAAdG9rZW5faWQdAAYAAABhbW91bnQbJQAAAAQAAABmcm9tFQIAAAAHAAAAQWNjb3VudAEBAAAACwgAAABDb250cmFjdAEBAAAADAIAAAB0bxUCAAAABwAAAEFjY291bnQBAQAAAAsIAAAAQ29udHJhY3QBAgAAAAwWAQQAAABkYXRhHQE=';
