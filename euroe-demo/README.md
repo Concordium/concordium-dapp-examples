@@ -35,3 +35,7 @@ docker build -f scripts/Dockerfile .
 ```
 
 from this directory (i.e., directory the README file is located in).
+
+## Hosted front end
+
+[Hosted front end link](https://euroe-demo.testnet.concordium.com/)

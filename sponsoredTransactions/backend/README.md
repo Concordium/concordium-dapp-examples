@@ -27,7 +27,7 @@ cargo run -- --node http://node.testnet.concordium.com:20000 --port 8080 --accou
 
 To get your account file (the `3PXwJYYPf6fyVb4GJquxSZU8puxrHfzc4XogdMVot8MUQK53tW.export` file in the above example), export it from the Concordium Browser wallet for web.
 This account should be only used for this service. No transactions should be sent from the account by any other means to ensure the account nonce is tracked 
-correctly in the service (e.g. don't use the `4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX` account in the browser wallet to send transactions via the front end).
+correctly in the service (e.g. don't use the `3PXwJYYPf6fyVb4GJquxSZU8puxrHfzc4XogdMVot8MUQK53tW` account in the browser wallet to send transactions via the front end).
 
 <img src="./pic/pic1.png"  width="200" />
 <img src="./pic/pic2.png"  width="200" />

@@ -5,6 +5,11 @@ The webpage will only display the gallery items' images if the user has provided
 
 The backend for this demo can be found in the [verifier](./verifier/) folder:
 
+## Hosted front end
+
+[Hosted front end link testnet](https://gallery.testnet.concordium.com/)
+[Hosted front end link mainnet](https://gallery.mainnet.concordium.software/)
+
 ## Prerequisites
 
 -   Browser wallet extension must be installed in google chrome and have an account, in order to connect and authorize.
