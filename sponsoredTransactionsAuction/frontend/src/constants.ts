@@ -5,7 +5,7 @@ import moment from 'moment';
 
 export const VERIFIER_URL = '/api';
 
-export const NODE = 'http://node.testnet.concordium.com';
+export const NODE = 'https://grpc.testnet.concordium.com';
 
 export const PORT = 20000;
 
