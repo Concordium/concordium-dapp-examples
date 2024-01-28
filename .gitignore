@@ -29,3 +29,6 @@ target
 dist
 gallery/public
 .eslintcache
+
+# Key files exported from the Concordium browser wallet 
+*/**/*.export

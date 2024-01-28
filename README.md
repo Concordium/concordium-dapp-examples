@@ -26,6 +26,8 @@ The following examples are available.
   interactions of a store that sells restricted items, and supports payment in
   EUROe tokens (or generally any CIS2 token).
 
+- [track-and-trace](./track-and-trace/) demonstrates an example frontend, backend, and event indexer to track items along the supply chain.
+
 ## Setup
 
 Some projects use submodules, to initialize or update those, run:
