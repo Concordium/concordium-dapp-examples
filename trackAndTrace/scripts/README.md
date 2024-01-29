@@ -4,20 +4,19 @@ This package contains a test script to facilitate filling the track and trace co
 
 There are a few options to configure the script:
 
-- `--node` is the endpoint to the Concordium node grpc v2 API.
+- `--node` is the endpoint to the Concordium node grpc v2 API. If not specified the default value `https://grpc.testnet.concordium.com:20000` is used.
 
-- `--module` must point to a compiled track-and-trace smart contract module with the name `track_and_trace.wasm.v1`.
-  This module will be used to create a new instance of the track-and-trace smart contract and fill it with data.
+- `--module` should point to a compiled track-and-trace smart contract module with e.g. the name `module.wasm.v1`. If not specified the default value `../smart-contract/concordium-out/module.wasm.v1` is used. The given module will be used to create a new instance of the track-and-trace smart contract and fill it with data.
  
-    You can generate the `track-and-trace.wasm.v1` file as follows:
-    - Navigate into the folder `https://github.com/Concordium/concordium-rust-smart-contracts/tree/main/examples/track-and-trace`.
-    - Compile the track-and-trace contract: `cargo concordium build -e -o ./concordium-out/track_and_trace.wasm.v1`.
-    - You can find the file `track_and_trace.wasm.v1` in `./concordium-out/track_and_trace.wasm.v1`.
+    You can generate the `module.wasm.v1` file as follows:
+    - Navigate into the folder `../smart-contract`.
+    - Compile the track-and-trace contract: `cargo concordium build -e -o ./concordium-out/module.wasm.v1`.
+    - You can find the file `module.wasm.v1` in `./concordium-out/module.wasm.v1`.
 
 - `--admin-key-file` **directory** with one key in the
   browser wallet export format. This key is used for all transactions executed by the script.
 
-- `--num-items` optional value to specify the number of items to be created in the track-and-trace smart contract. The default value is 1. The states of these items will be updated from 'Produced' -> 'InTransit' -> 'InStore' -> 'Sold'.
+- `--num-items` is the number of items to be created in the track-and-trace smart contract. The states of these items will be updated from 'Produced' -> 'InTransit' -> 'InStore' -> 'Sold'.
 
 ## Build
 
@@ -42,17 +41,14 @@ which can be run.
 To run the script use for example the following command in this folder:
 
 ```
-cargo run --release -- --node http://node.testnet.concordium.com:20000 --admin-key-file ./4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export --module ./track_and_trace.wasm.v1 --num-items 2
+cargo run --release -- --node https://grpc.testnet.concordium.com:20000 --admin-key-file ./4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export --module ../smart-contract/concordium-out/module.wasm.v1 --num-items 2
 ```
 
 assuming the wallet export file `/4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export` is in this directory.
 
  
-To get your account file (the `4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export` file in the above example), export it from the Concordium Browser wallet for web.
+To get your account file (the `4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export` file in the above example), export it from the [Concordium Browser wallet for web](http://developer.concordium.software/en/mainnet/net/guides/export-key.html).
 
-<img src="./pic/pic1.png"  width="200" />
-<img src="./pic/pic2.png"  width="200" />
-<img src="./pic/pic3.png"  width="200" />
 
 ###
 

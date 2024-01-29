@@ -13,7 +13,6 @@ use concordium_rust_sdk::{
     },
     v2::{self as sdk, BlockIdentifier},
 };
-use std::sync::Arc;
 use track_and_trace::*;
 
 pub enum TrackAndTraceContract {}
@@ -23,20 +22,19 @@ pub enum TrackAndTraceContract {}
 struct Args {
     #[arg(
         long = "node",
-        default_value = "http://node.testnet.concordium.com:20000",
+        default_value = "https://grpc.testnet.concordium.com:20000",
         help = "The endpoints are expected to point to concordium node grpc v2 API's.",
         global = true
     )]
     node_endpoint:   concordium_rust_sdk::v2::Endpoint,
     #[arg(
         long = "module",
-        default_value = "./track-and-trace.wasm.v1",
+        default_value = "../smart-contract/concordium-out/module.wasm.v1",
         help = "Source module from which to initialize the contract instances."
     )]
     module:          std::path::PathBuf,
     #[arg(
         long = "num-items",
-        default_value = "1",
         help = "Number of items to be created in the contract."
     )]
     num_items:       usize,
@@ -68,10 +66,8 @@ async fn main() -> anyhow::Result<()> {
         .context("Unable to establish connection to the node.")?;
 
     // Load account keys and sender address from a file
-    let keys: WalletAccount = WalletAccount::from_json_file(args.admin_keys_path)
+    let admin_key: WalletAccount = WalletAccount::from_json_file(args.admin_keys_path)
         .context("Could not read the keys file.")?;
-
-    let admin_key = Arc::new(keys);
 
     eprintln!("Starting script with admin account {}.", admin_key.address);
 
