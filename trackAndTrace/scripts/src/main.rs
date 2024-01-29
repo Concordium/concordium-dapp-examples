@@ -1,3 +1,4 @@
+use crate::contract_client::MetadataUrl;
 use anyhow::Context;
 use clap::Parser as _;
 use concordium_rust_sdk::{
@@ -13,8 +14,9 @@ use concordium_rust_sdk::{
     v2::{self as sdk, BlockIdentifier},
 };
 use std::sync::Arc;
-mod types;
-use types::*;
+use track_and_trace::*;
+
+pub enum TrackAndTraceContract {}
 
 /// Command line configuration of the application.
 #[derive(Debug, clap::Parser)]
