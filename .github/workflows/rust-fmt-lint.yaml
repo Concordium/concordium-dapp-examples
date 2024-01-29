@@ -13,11 +13,12 @@ on:
 
 env:
   RUST_FMT: nightly-2023-04-01-x86_64-unknown-linux-gnu
-  RUST_CLIPPY: 1.67
+  RUST_VERSION: 1.67
+  CARGO_CONCORDIUM_VERSION: "3.0.0"
 
 jobs:
-  "lint_fmt":
-    name: lint:fmt
+  lint_fmt:
+    name: Running formatting
     # Don't run on draft pull requests
     if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
@@ -27,10 +28,11 @@ jobs:
           - gallery/verifier/Cargo.toml
           - sponsoredTransactions/backend/Cargo.toml
           - sponsoredTransactionsAuction/backend/Cargo.toml
+          - trackAndTrace/smart-contract/Cargo.toml
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
@@ -44,9 +46,9 @@ jobs:
           command: fmt
           args: --manifest-path=${{ matrix.crates }} -- --check
 
-  "lint_clippy":
-    name: lint:clippy
-    needs: "lint_fmt"
+  lint_clippy:
+    name: Running clippy
+    needs: lint_fmt
     # Don't run on draft pull requests
     if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
@@ -56,17 +58,18 @@ jobs:
           - gallery/verifier/Cargo.toml
           - sponsoredTransactions/backend/Cargo.toml
           - sponsoredTransactionsAuction/backend/Cargo.toml
+          - trackAndTrace/smart-contract/Cargo.toml
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           submodules: recursive
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: ${{ env.RUST_CLIPPY }}
+          toolchain: ${{ env.RUST_VERSION }}
           override: true
           target: ${{ env.TARGET }}
           components: rustfmt, clippy
@@ -75,3 +78,41 @@ jobs:
         with:
           command: clippy
           args: --manifest-path ${{ matrix.crates }} -- -D warnings
+
+  test:
+    name: Running tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          - x86_64-unknown-linux-gnu
+
+        crates:
+          - trackAndTrace/smart-contract
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ env.RUST_VERSION }}
+          target: ${{ matrix.target }}
+          override: true
+
+      - name: Install Wasm target
+        run: rustup target install wasm32-unknown-unknown
+
+      - name: Download and install Cargo Concordium
+        run: |
+          CARGO_CCD=cargo-concordium_${{ env.CARGO_CONCORDIUM_VERSION }}
+          wget https://distribution.concordium.software/tools/linux/$CARGO_CCD
+          chmod +x $CARGO_CCD
+          sudo mv $CARGO_CCD /usr/bin/cargo-concordium
+
+      - name: Run cargo concordium test
+        run: cargo concordium test --out "${{ matrix.crates }}/concordium-out/module.wasm.v1" -- --manifest-path "${{ matrix.crates }}/Cargo.toml"
