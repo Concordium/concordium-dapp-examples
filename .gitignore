@@ -25,6 +25,7 @@ yarn-debug.log*
 yarn-error.log*
 
 target
+/**/concordium-out
 dist
 gallery/public
 .eslintcache
