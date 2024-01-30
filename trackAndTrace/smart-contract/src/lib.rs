@@ -1,26 +1,26 @@
 //! # Implementation of a simple track-and-trace contract.
 //!
 //! ## Grant and Revoke roles:
-//! The contract has access control roles. The available roles are ADMIN (can
+//! The contract has access control roles. The available roles are Admin (can
 //! grant/revoke roles, create a new item, and update the status of an item),
-//! PRODUCER (can update the status of an item from `Produced` to `InTransit`),
-//! TRANSPORTER (can update the status of an item from `InTransit` to
-//! `InStore`), and SELLER (can update the status of an item from `InStore` to
+//! Producer (can update the status of an item from `Produced` to `InTransit`),
+//! Transporter (can update the status of an item from `InTransit` to
+//! `InStore`), and Seller (can update the status of an item from `InStore` to
 //! `Sold`). Several addresses can have the same role and an address can have
 //! several roles.
 //!
 //! ## State machine:
 //! The track-and-trace contract is modeled based on a state machine. The flow
-//! of the state machine is as follows: The ADMIN creates a new item with status
+//! of the state machine is as follows: The Admin creates a new item with status
 //! `Produced`. Each new item is assigned the `next_item_id`. The `next_item_id`
 //! value is sequentially increased by 1 in the contract's state. The different
 //! roles can update the item's status based on the rules of the state machine
-//! as follows: Produced -> InTransit -> InStore -> Sold. The ADMIN role is an
+//! as follows: Produced -> InTransit -> InStore -> Sold. The Admin role is an
 //! exception and can set an item's status to any value at any time ignoring the
 //! state machine rules.
 #![cfg_attr(not(feature = "std"), no_std)]
 use concordium_cis2::*;
-use concordium_std::{collections::BTreeMap, *};
+use concordium_std::*;
 
 /// Event tags.
 pub const ITEM_CREATED_EVENT_TAG: u8 = 0;
@@ -29,10 +29,10 @@ pub const GRANT_ROLE_EVENT_TAG: u8 = 2;
 pub const REVOKE_ROLE_EVENT_TAG: u8 = 3;
 
 /// Custom type for the item id.
-type ItemID = u64;
+pub type ItemID = u64;
 
 /// Tagged events to be serialized for the event log.
-#[derive(Debug, Serial, Deserial, PartialEq, Eq)]
+#[derive(Debug, Serial, Deserial, PartialEq, Eq, SchemaType)]
 pub enum Event {
     /// The event tracks when an item is created.
     ItemCreated(ItemCreatedEvent),
@@ -44,7 +44,7 @@ pub enum Event {
     RevokeRole(RevokeRoleEvent),
 }
 
-/// The ItemCreatedEvent is logged when an item is created.
+/// The [`ItemCreatedEvent`] is logged when an item is created.
 #[derive(Serialize, SchemaType, Debug, PartialEq, Eq)]
 pub struct ItemCreatedEvent {
     /// The item's id.
@@ -53,7 +53,8 @@ pub struct ItemCreatedEvent {
     pub metadata_url: Option<MetadataUrl>,
 }
 
-/// The ItemStatusChangedEvent is logged when the status of an item is updated.
+/// The [`ItemStatusChangedEvent`] is logged when the status of an item is
+/// updated.
 #[derive(Serialize, SchemaType, Debug, PartialEq, Eq)]
 pub struct ItemStatusChangedEvent {
     /// The item's id.
@@ -65,7 +66,7 @@ pub struct ItemStatusChangedEvent {
     pub additional_data: AdditionalData,
 }
 
-/// The GrantRoleEvent is logged when a new role is granted to an address.
+/// The [`GrantRoleEvent`] is logged when a new role is granted to an address.
 #[derive(Serialize, SchemaType, Debug, PartialEq, Eq)]
 pub struct GrantRoleEvent {
     /// The address that has been its role granted.
@@ -74,7 +75,7 @@ pub struct GrantRoleEvent {
     pub role:    Roles,
 }
 
-/// The RevokeRoleEvent is logged when a role is revoked from an address.
+/// The [`RevokeRoleEvent`] is logged when a role is revoked from an address.
 #[derive(Serialize, SchemaType, Debug, PartialEq, Eq)]
 pub struct RevokeRoleEvent {
     /// Address that has been its role revoked.
@@ -96,13 +97,13 @@ struct AddressRoleState<S> {
 #[derive(Serialize, PartialEq, Eq, Reject, SchemaType, Clone, Copy, Debug)]
 pub enum Roles {
     /// Admin role.
-    ADMIN,
+    Admin,
     /// Producer role.
-    PRODUCER,
+    Producer,
     /// Transporter role.
-    TRANSPORTER,
+    Transporter,
     /// Seller role.
-    SELLER,
+    Seller,
 }
 
 /// Enum of the statuses that an item can have.
@@ -116,66 +117,6 @@ pub enum Status {
     InStore,
     /// Item is sold.
     Sold,
-}
-
-impl Status {
-    fn new() -> Self { Status::Produced }
-}
-
-// Implementing a custom schemaType for the `Event` struct containing all
-// events. This custom implementation flattens the fields to avoid one
-// level of nesting. Deriving the schemaType would result in e.g.: {"Nonce":
-// [{...fields}] }. In contrast, this custom schemaType implementation results
-// in e.g.: {"Nonce": {...fields} }
-impl schema::SchemaType for Event {
-    fn get_type() -> schema::Type {
-        let mut event_map = BTreeMap::new();
-        event_map.insert(
-            ITEM_CREATED_EVENT_TAG,
-            (
-                "ItemCreated".to_string(),
-                schema::Fields::Named(vec![
-                    (String::from("itemId"), ItemID::get_type()),
-                    (
-                        String::from("metadataURL"),
-                        Option::<MetadataUrl>::get_type(),
-                    ),
-                ]),
-            ),
-        );
-        event_map.insert(
-            ITEM_STATUS_CHANGED_EVENT_TAG,
-            (
-                "ItemStatusChanged".to_string(),
-                schema::Fields::Named(vec![
-                    (String::from("itemId"), ItemID::get_type()),
-                    (String::from("newStatus"), Status::get_type()),
-                    (String::from("additionalData"), AdditionalData::get_type()),
-                ]),
-            ),
-        );
-        event_map.insert(
-            GRANT_ROLE_EVENT_TAG,
-            (
-                "GrantRole".to_string(),
-                schema::Fields::Named(vec![
-                    (String::from("address"), Address::get_type()),
-                    (String::from("role"), Roles::get_type()),
-                ]),
-            ),
-        );
-        event_map.insert(
-            REVOKE_ROLE_EVENT_TAG,
-            (
-                "RevokeRole".to_string(),
-                schema::Fields::Named(vec![
-                    (String::from("address"), Address::get_type()),
-                    (String::from("role"), Roles::get_type()),
-                ]),
-            ),
-        );
-        schema::Type::TaggedEnum(event_map)
-    }
 }
 
 /// A struct containing a state of one item.
@@ -304,68 +245,80 @@ fn init(
         items:        state_builder.new_map(),
     };
 
-    // Grant ADMIN role.
-    state.grant_role(&invoker, Roles::ADMIN, state_builder);
+    // Grant Admin role.
+    state.grant_role(&invoker, Roles::Admin, state_builder);
     logger.log(&Event::GrantRole(GrantRoleEvent {
         address: invoker,
-        role:    Roles::ADMIN,
+        role:    Roles::Admin,
     }))?;
 
     Ok(state)
 }
 
-/// Return_value of the `view` function contains the content of the state.
-#[derive(Serialize, SchemaType, PartialEq, Eq, Debug)]
-pub struct ViewState {
-    /// The next item id that will be assigned to an item when the admin creates
-    /// it.
-    pub next_item_id: ItemID,
-    /// A vector containing all roles granted to addresses.
-    pub roles:        Vec<(Address, Vec<Roles>)>,
-    /// A vector containing all items with their states.
-    pub items:        Vec<(ItemID, ItemState)>,
-}
-
-/// View function for testing. This function reports on the entire state of the
-/// contract for testing purposes.
+/// View the next item id from the state.
 #[receive(
     contract = "track_and_trace",
-    name = "view",
-    return_value = "ViewState"
+    name = "getNextItemId",
+    return_value = "ItemID"
 )]
-fn contract_view(_ctx: &ReceiveContext, host: &Host<State>) -> ReceiveResult<ViewState> {
-    let state = host.state();
-
-    let roles: Vec<(Address, Vec<Roles>)> = state
-        .roles
-        .iter()
-        .map(|(key, value)| {
-            let mut roles_vec = Vec::new();
-            for role in value.roles.iter() {
-                roles_vec.push(*role);
-            }
-            (*key, roles_vec)
-        })
-        .collect();
-
-    let items: Vec<(ItemID, ItemState)> = state
-        .items
-        .iter()
-        .map(|(key, value)| (*key, (*value).clone()))
-        .collect();
-
-    Ok(ViewState {
-        roles,
-        items,
-        next_item_id: state.next_item_id,
-    })
+fn contract_get_next_item_id(_ctx: &ReceiveContext, host: &Host<State>) -> ReceiveResult<ItemID> {
+    Ok(host.state().next_item_id)
 }
 
-/// Receive function for the ADMIN to create a new item.
+/// View the roles that an address has.
+#[receive(
+    contract = "track_and_trace",
+    name = "getRoles",
+    parameter = "Address",
+    return_value = "Vec<Roles>"
+)]
+fn contract_get_roles(ctx: &ReceiveContext, host: &Host<State>) -> ReceiveResult<Vec<Roles>> {
+    // Parse the parameter.
+    let address: Address = ctx.parameter_cursor().get()?;
+
+    let roles = host
+        .state()
+        .roles
+        .get(&address)
+        .map(|x| {
+            let mut roles_vec = Vec::new();
+
+            for role in x.roles.iter() {
+                roles_vec.push(*role);
+            }
+
+            roles_vec
+        })
+        .ok_or(CustomContractError::ItemDoesNotExist)?;
+
+    Ok(roles)
+}
+
+/// View the state of an item.
+#[receive(
+    contract = "track_and_trace",
+    name = "getItemState",
+    parameter = "ItemID",
+    return_value = "ItemState"
+)]
+fn contract_get_item_state(ctx: &ReceiveContext, host: &Host<State>) -> ReceiveResult<ItemState> {
+    // Parse the parameter.
+    let item_id: ItemID = ctx.parameter_cursor().get()?;
+
+    let item = host
+        .state()
+        .items
+        .get(&item_id)
+        .map(|x| (*x).clone())
+        .ok_or(CustomContractError::ItemDoesNotExist)?;
+    Ok(item)
+}
+
+/// Receive function for the Admin to create a new item.
 ///
 /// It rejects if:
 /// - It fails to parse the parameter.
-/// - The sender is not the ADMIN of the contract instance.
+/// - The sender is not the Admin of the contract instance.
 /// - The item already exists in the state which should technically not happen.
 /// - It fails to log the `ItemCreatedEvent`.
 #[receive(
@@ -384,9 +337,9 @@ fn create_item(
     // Parse the parameter.
     let metadata_url: Option<MetadataUrl> = ctx.parameter_cursor().get()?;
 
-    // Check that only the ADMIN is authorized to create a new item.
+    // Check that only the Admin is authorized to create a new item.
     ensure!(
-        host.state().has_role(&ctx.sender(), Roles::ADMIN),
+        host.state().has_role(&ctx.sender(), Roles::Admin),
         CustomContractError::Unauthorized
     );
 
@@ -398,7 +351,7 @@ fn create_item(
     // Create the item in state.
     let previous_item = host.state_mut().items.insert(next_item_id, ItemState {
         metadata_url: metadata_url.clone(),
-        status:       Status::new(),
+        status:       Status::Produced,
     });
 
     ensure_eq!(previous_item, None, CustomContractError::ItemAlreadyExists);
@@ -422,20 +375,12 @@ pub struct AdditionalData {
 }
 
 /// The parameter type for the contract function `changeItemStatusByAdmin` which
-/// updates the status of an item.
-#[derive(Serialize, SchemaType)]
-pub struct ChangeItemStatusParamsByAdmin {
-    /// The item's id.
-    pub item_id:         ItemID,
-    /// The item's new status.
-    pub new_status:      Status,
-    /// Any additional data encoded as generic bytes. Usecase-specific data can
-    /// be included here such as temperature, longitude, latitude, ... .
-    pub additional_data: AdditionalData,
-}
+/// updates the status of an item. The `ChangeItemStatusParamsByAdmin` is a type
+/// alias to the `ItemStatusChangedEvent` type.
+type ChangeItemStatusParamsByAdmin = ItemStatusChangedEvent;
 
-/// Receive function for the ADMIN to change the
-/// status of an item. The ADMIN can set the item's status
+/// Receive function for the Admin to change the
+/// status of an item. The Admin can set the item's status
 /// to any value at any time.
 ///
 /// It rejects if:
@@ -459,9 +404,9 @@ fn change_item_status_by_admin(
     // Parse the parameter.
     let param: ChangeItemStatusParamsByAdmin = ctx.parameter_cursor().get()?;
 
-    // Check that only the ADMIN is authorized.
+    // Check that only the Admin is authorized.
     ensure!(
-        host.state().has_role(&ctx.sender(), Roles::ADMIN),
+        host.state().has_role(&ctx.sender(), Roles::Admin),
         CustomContractError::Unauthorized
     );
 
@@ -512,7 +457,7 @@ fn update_state_machine(
 
             // Check that only the correct role is authorized.
             ensure!(
-                host.state().has_role(&sender, Roles::PRODUCER),
+                host.state().has_role(&sender, Roles::Producer),
                 CustomContractError::Unauthorized
             );
             Ok(Status::InTransit)
@@ -523,7 +468,7 @@ fn update_state_machine(
 
             // Check that only the correct role is authorized.
             ensure!(
-                host.state().has_role(&sender, Roles::TRANSPORTER),
+                host.state().has_role(&sender, Roles::Transporter),
                 CustomContractError::Unauthorized
             );
             Ok(Status::InStore)
@@ -534,7 +479,7 @@ fn update_state_machine(
 
             // Check that only the correct role is authorized.
             ensure!(
-                host.state().has_role(&sender, Roles::SELLER),
+                host.state().has_role(&sender, Roles::Seller),
                 CustomContractError::Unauthorized
             );
             Ok(Status::Sold)
@@ -543,7 +488,7 @@ fn update_state_machine(
     }
 }
 
-/// Receive function for the other ROLES (all roles except for the ADMIN role)
+/// Receive function for the other ROLES (all roles except for the Admin role)
 /// to change the status of an item. The other ROLES can update the item's
 /// status based on the rules of the state machine.
 ///
@@ -595,7 +540,7 @@ pub struct GrantRoleParams {
 ///
 /// It rejects if:
 /// - It fails to parse the parameter.
-/// - The sender is not the ADMIN of the contract instance.
+/// - The sender is not the Admin of the contract instance.
 /// - The `address` is already holding the specified role to be granted.
 #[receive(
     contract = "track_and_trace",
@@ -617,9 +562,9 @@ fn contract_grant_role(
 
     // Get the sender who invoked this contract function.
     let sender = ctx.sender();
-    // Check that only the ADMIN is authorized to grant roles.
+    // Check that only the Admin is authorized to grant roles.
     ensure!(
-        state.has_role(&sender, Roles::ADMIN),
+        state.has_role(&sender, Roles::Admin),
         CustomContractError::Unauthorized
     );
 
@@ -653,7 +598,7 @@ pub struct RevokeRoleParams {
 ///
 /// It rejects if:
 /// - It fails to parse the parameter.
-/// - The sender is not the ADMIN of the contract instance.
+/// - The sender is not the Admin of the contract instance.
 /// - The `address` does not hold the specified role to be revoked.
 #[receive(
     contract = "track_and_trace",
@@ -675,9 +620,9 @@ fn contract_revoke_role(
 
     // Get the sender who invoked this contract function.
     let sender = ctx.sender();
-    // Check that only the ADMIN is authorized to revoke roles.
+    // Check that only the Admin is authorized to revoke roles.
     ensure!(
-        state.has_role(&sender, Roles::ADMIN),
+        state.has_role(&sender, Roles::Admin),
         CustomContractError::Unauthorized
     );
 

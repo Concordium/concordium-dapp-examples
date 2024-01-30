@@ -142,7 +142,9 @@ fn test_create_item_and_update_item_status() {
         .expect("CustomContractError return value");
     assert_eq!(error, CustomContractError::Unauthorized);
 
-    let parameter = ChangeItemStatusParamsByAdmin {
+    // The `ChangeItemStatusParamsByAdmin` is a type alias to the
+    // `ItemStatusChangedEvent` type.
+    let parameter = ItemStatusChangedEvent {
         item_id:         0u64,
         new_status:      Status::Sold,
         additional_data: AdditionalData { bytes: vec![] },
@@ -187,8 +189,8 @@ fn test_create_item_and_update_item_status() {
     );
 }
 
-// Invoke the `view` function and check that the contract state is as expected.
-// Exactly one item is expected to be in the state.
+// Invoke the several getter functions and check that the contract state is as
+// expected. Exactly one item is expected to be in the state.
 fn check_state(
     chain: &Chain,
     track_and_trace_contract_address: ContractAddress,
@@ -202,29 +204,62 @@ fn check_state(
             Energy::from(10000),
             UpdateContractPayload {
                 amount:       Amount::zero(),
-                receive_name: OwnedReceiveName::new_unchecked("track_and_trace.view".to_string()),
+                receive_name: OwnedReceiveName::new_unchecked(
+                    "track_and_trace.getRoles".to_string(),
+                ),
+                address:      track_and_trace_contract_address,
+                message:      OwnedParameter::from_serial(&ADMIN_ADDR)
+                    .expect("Serialize parameter"),
+            },
+        )
+        .expect("Invoke view");
+
+    let return_value: Vec<Roles> = invoke.parse_return_value().expect("ViewState return value");
+
+    assert_eq!(return_value, vec![Roles::Admin]);
+
+    let invoke = chain
+        .contract_invoke(
+            ADMIN,
+            ADMIN_ADDR,
+            Energy::from(10000),
+            UpdateContractPayload {
+                amount:       Amount::zero(),
+                receive_name: OwnedReceiveName::new_unchecked(
+                    "track_and_trace.getItemState".to_string(),
+                ),
+                address:      track_and_trace_contract_address,
+                message:      OwnedParameter::from_serial(&0u64).expect("Serialize parameter"),
+            },
+        )
+        .expect("Invoke view");
+
+    let return_value: ItemState = invoke.parse_return_value().expect("ViewState return value");
+
+    assert_eq!(return_value, ItemState {
+        status,
+        metadata_url
+    });
+
+    let invoke = chain
+        .contract_invoke(
+            ADMIN,
+            ADMIN_ADDR,
+            Energy::from(10000),
+            UpdateContractPayload {
+                amount:       Amount::zero(),
+                receive_name: OwnedReceiveName::new_unchecked(
+                    "track_and_trace.getNextItemId".to_string(),
+                ),
                 address:      track_and_trace_contract_address,
                 message:      OwnedParameter::empty(),
             },
         )
         .expect("Invoke view");
 
-    let return_value: ViewState = invoke.parse_return_value().expect("ViewState return value");
+    let return_value: ItemID = invoke.parse_return_value().expect("ViewState return value");
 
-    // Check that the status of the item is correct.
-    assert_eq!(return_value, ViewState {
-        next_item_id: 1,
-        roles:        vec![
-            (ADMIN_ADDR, vec![Roles::ADMIN]),
-            (PRODUCER_ADDR, vec![Roles::PRODUCER]),
-            (TRANSPORTER_ADDR, vec![Roles::TRANSPORTER]),
-            (SELLER_ADDR, vec![Roles::SELLER]),
-        ],
-        items:        vec![(0, ItemState {
-            status,
-            metadata_url
-        })],
-    });
+    assert_eq!(return_value, 1);
 }
 
 /// Setup chain and contract.
@@ -258,7 +293,7 @@ fn initialize_chain_and_contract() -> (Chain, ContractAddress) {
     // Grant PRODUCER role
     let grant_role_params = GrantRoleParams {
         address: PRODUCER_ADDR,
-        role:    Roles::PRODUCER,
+        role:    Roles::Producer,
     };
 
     let _update = chain
@@ -282,7 +317,7 @@ fn initialize_chain_and_contract() -> (Chain, ContractAddress) {
     // Grant TRANSPORTER role
     let grant_role_params = GrantRoleParams {
         address: TRANSPORTER_ADDR,
-        role:    Roles::TRANSPORTER,
+        role:    Roles::Transporter,
     };
 
     let _update = chain
@@ -306,7 +341,7 @@ fn initialize_chain_and_contract() -> (Chain, ContractAddress) {
     // Grant SELLER role
     let grant_role_params = GrantRoleParams {
         address: SELLER_ADDR,
-        role:    Roles::SELLER,
+        role:    Roles::Seller,
     };
 
     let _update = chain
