@@ -16,7 +16,7 @@ concordium-std = { version = "9.0", default-features = false }
 concordium-cis2 = { version = "6.0", default-features = false }
 
 [dev-dependencies]
-concordium-smart-contract-testing = { version = "4.0" }
+concordium-smart-contract-testing = { version = "4.1" }
 
 [lib]
 crate-type=["cdylib", "rlib"]
