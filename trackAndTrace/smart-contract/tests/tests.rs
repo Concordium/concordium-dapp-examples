@@ -72,6 +72,7 @@ fn test_create_item_and_update_item_status() {
     let parameter = ChangeItemStatusParams {
         item_id:         0u64,
         additional_data: AdditionalData { bytes: vec![] },
+        new_status:      Status::InTransit,
     };
 
     // Check the PRODUCER can update the item based on the state machine rules.
@@ -115,6 +116,7 @@ fn test_create_item_and_update_item_status() {
     let parameter = ChangeItemStatusParams {
         item_id:         0u64,
         additional_data: AdditionalData { bytes: vec![] },
+        new_status:      Status::Sold,
     };
 
     // Check the SELLER can NOT update the item because of the rules of the state
@@ -142,9 +144,7 @@ fn test_create_item_and_update_item_status() {
         .expect("CustomContractError return value");
     assert_eq!(error, CustomContractError::Unauthorized);
 
-    // The `ChangeItemStatusParamsByAdmin` is a type alias to the
-    // `ItemStatusChangedEvent` type.
-    let parameter = ItemStatusChangedEvent {
+    let parameter = ChangeItemStatusParams {
         item_id:         0u64,
         new_status:      Status::Sold,
         additional_data: AdditionalData { bytes: vec![] },
@@ -161,7 +161,7 @@ fn test_create_item_and_update_item_status() {
                 amount:       Amount::from_ccd(0),
                 address:      track_and_trace_contract_address,
                 receive_name: OwnedReceiveName::new_unchecked(
-                    "track_and_trace.changeItemStatusByAdmin".to_string(),
+                    "track_and_trace.changeItemStatus".to_string(),
                 ),
                 message:      OwnedParameter::from_serial(&parameter).expect("Serialize parameter"),
             },
@@ -280,13 +280,52 @@ fn initialize_chain_and_contract() -> (Chain, ContractAddress) {
         .module_deploy_v1(SIGNER, ADMIN, module)
         .expect("Deploy valid module");
 
+    let params: Vec<TransitionEdges> = vec![
+        TransitionEdges {
+            from:               Status::Produced,
+            to:                 vec![Status::InTransit],
+            authorized_account: PRODUCER,
+        },
+        TransitionEdges {
+            from:               Status::InTransit,
+            to:                 vec![Status::InStore],
+            authorized_account: TRANSPORTER,
+        },
+        TransitionEdges {
+            from:               Status::InStore,
+            to:                 vec![Status::Sold],
+            authorized_account: SELLER,
+        },
+        // Admin transitions (The admin can change the status of the item to any value)
+        TransitionEdges {
+            from:               Status::Produced,
+            to:                 vec![Status::InTransit, Status::InStore, Status::Sold],
+            authorized_account: ADMIN,
+        },
+        TransitionEdges {
+            from:               Status::InTransit,
+            to:                 vec![Status::Produced, Status::InStore, Status::Sold],
+            authorized_account: ADMIN,
+        },
+        TransitionEdges {
+            from:               Status::InStore,
+            to:                 vec![Status::InTransit, Status::Produced, Status::Sold],
+            authorized_account: ADMIN,
+        },
+        TransitionEdges {
+            from:               Status::Sold,
+            to:                 vec![Status::InTransit, Status::InStore, Status::Produced],
+            authorized_account: ADMIN,
+        },
+    ];
+
     // Initialize the track_and_trace contract.
     let track_and_trace = chain
         .contract_init(SIGNER, ADMIN, Energy::from(10000), InitContractPayload {
             amount:    Amount::zero(),
             mod_ref:   deployment.module_reference,
             init_name: OwnedContractName::new_unchecked("init_track_and_trace".to_string()),
-            param:     OwnedParameter::empty(),
+            param:     OwnedParameter::from_serial(&params).expect("GrantRole params"),
         })
         .expect("Initialize track_and_trace contract");
 

@@ -10,14 +10,43 @@
 //! several roles.
 //!
 //! ## State machine:
-//! The track-and-trace contract is modeled based on a state machine. The flow
-//! of the state machine is as follows: The Admin creates a new item with status
+//! The track-and-trace contract is modeled based on a state machine. The state
+//! machine is initialized when the contract is initialized. The flow of the
+//! state machine is as follows: The Admin creates a new item with status
 //! `Produced`. Each new item is assigned the `next_item_id`. The `next_item_id`
 //! value is sequentially increased by 1 in the contract's state. The different
-//! roles can update the item's status based on the rules of the state machine
-//! as follows: Produced -> InTransit -> InStore -> Sold. The Admin role is an
-//! exception and can set an item's status to any value at any time ignoring the
-//! state machine rules.
+//! roles can update the item's status based on the rules of the state machine.
+//!
+//! For example to initilize the state machine with a linear supply chain use
+//! the following input parameter when the contract is initialized:
+//!
+//! ```
+//!     use track_and_trace::{Status,TransitionEdges};
+//!     use concordium_std::AccountAddress;
+//!
+//!     const ADMIN: AccountAddress = AccountAddress([0; 32]); // insert the ADMIN wallet account here
+//!     const PRODUCER: AccountAddress = AccountAddress([1; 32]); // insert the PRODUCER wallet account here
+//!     const TRANSPORTER: AccountAddress = AccountAddress([2; 32]); // insert the TRANSPORTER wallet account here
+//!     const SELLER: AccountAddress = AccountAddress([3; 32]); // insert the SELLER wallet account here
+//!
+//!     let params: Vec<TransitionEdges> = vec![
+//!         TransitionEdges {
+//!             from:               Status::Produced,
+//!             to:                 vec![Status::InTransit],
+//!             authorized_account: PRODUCER,
+//!         },
+//!         TransitionEdges {
+//!             from:               Status::InTransit,
+//!             to:                 vec![Status::InStore],
+//!             authorized_account: TRANSPORTER,
+//!         },
+//!         TransitionEdges {
+//!             from:               Status::InStore,
+//!             to:                 vec![Status::Sold],
+//!             authorized_account: SELLER,
+//!         },
+//!     ];
+//! ```
 #![cfg_attr(not(feature = "std"), no_std)]
 use concordium_cis2::*;
 use concordium_std::*;
@@ -141,6 +170,11 @@ struct State<S = StateApi> {
     roles:        StateMap<Address, AddressRoleState<S>, S>,
     /// A map containing all items with their states.
     items:        StateMap<ItemID, ItemState, S>,
+    /// A map containing all allowed transitions of the state machine.
+    /// The first `Status` maps to a map of `AccountAddresses` that are allowed
+    /// to update the given `Status`. The The last set specifies to which
+    /// `Statuses` the `AccountAddress` is allowed to update the first `Status.`
+    transitions:  StateMap<Status, StateMap<AccountAddress, StateSet<Status, S>, S>, S>,
 }
 
 /// The different errors the contract can produce.
@@ -166,6 +200,8 @@ pub enum CustomContractError {
     /// The item is already in the final state and cannot be updated based on
     /// the state machine rules.
     FinalState, // -9
+    /// Contract address should not invoke entry point.
+    NoContract, // -10
 }
 
 /// Mapping the logging errors to CustomContractError.
@@ -181,9 +217,59 @@ impl From<LogError> for CustomContractError {
 /// Custom type for the contract result.
 pub type ContractResult<A> = Result<A, CustomContractError>;
 
-impl State {
+impl<S: HasStateApi> State<S> {
+    /// Add a new transition. Return if the transition was fresh.
+    pub fn add(
+        &mut self,
+        builder: &mut StateBuilder<S>,
+        from: Status,
+        address: AccountAddress,
+        to: Status,
+    ) -> bool {
+        let mut transition = self
+            .transitions
+            .entry(from)
+            .or_insert_with(|| builder.new_map());
+        let mut targets = transition
+            .entry(address)
+            .or_insert_with(|| builder.new_set());
+        targets.insert(to)
+    }
+
+    /// Check if a transition is allowed.
+    pub fn check(&self, from: &Status, address: &AccountAddress, to: &Status) -> bool {
+        let Some(transition) = self.transitions.get(from) else {
+            return false;
+        };
+        let Some(targets) = transition.get(address) else {
+            return false;
+        };
+        targets.contains(to)
+    }
+
+    /// Create the state and state machine from a vector of transition edges.
+    pub fn from_iter(state_builder: &mut StateBuilder<S>, i: Vec<TransitionEdges>) -> Self {
+        let mut r = Self {
+            next_item_id: 0u64,
+            roles:        state_builder.new_map(),
+            items:        state_builder.new_map(),
+            transitions:  state_builder.new_map(),
+        };
+        for transition_edge in i {
+            for to in transition_edge.to {
+                r.add(
+                    state_builder,
+                    transition_edge.from,
+                    transition_edge.authorized_account,
+                    to,
+                );
+            }
+        }
+        r
+    }
+
     /// Grant role to an address.
-    fn grant_role(&mut self, account: &Address, role: Roles, state_builder: &mut StateBuilder) {
+    fn grant_role(&mut self, account: &Address, role: Roles, state_builder: &mut StateBuilder<S>) {
         self.roles
             .entry(*account)
             .or_insert_with(|| AddressRoleState {
@@ -209,41 +295,40 @@ impl State {
             Some(roles) => roles.roles.contains(&role),
         };
     }
+}
 
-    /// Change the item status to the given new status. The function reverts if
-    /// the item does not exist.
-    fn change_item_status(
-        &mut self,
-        item_index: ItemID,
-        new_state: Status,
-    ) -> Result<(), CustomContractError> {
-        let mut previous_state = self
-            .items
-            .entry(item_index)
-            .occupied_or(CustomContractError::ItemDoesNotExist)?;
-
-        previous_state.status = new_state;
-
-        Ok(())
-    }
+/// The parameter type for the contract function `init` which
+/// initilizes a new instance of the contract.
+#[derive(Serialize, SchemaType)]
+pub struct TransitionEdges {
+    /// The status of the `from` node of the transition edges.
+    pub from:               Status,
+    /// A vector of statuses of the `to` node of the transition edges.
+    pub to:                 Vec<Status>,
+    /// The account that is allowed to execute the state transitions described
+    /// above.
+    pub authorized_account: AccountAddress,
 }
 
 /// Init function that creates a new contract.
-#[init(contract = "track_and_trace", event = "Event", enable_logger)]
+#[init(
+    contract = "track_and_trace",
+    parameter = "Vec<TransitionEdges>",
+    event = "Event",
+    enable_logger
+)]
 fn init(
     ctx: &InitContext,
     state_builder: &mut StateBuilder,
     logger: &mut impl HasLogger,
 ) -> InitResult<State> {
+    // Parse the parameter.
+    let iter: Vec<TransitionEdges> = ctx.parameter_cursor().get()?;
+
+    let mut state = State::from_iter(state_builder, iter);
+
     // Get the instantiater of this contract instance.
     let invoker = Address::Account(ctx.init_origin());
-
-    // Creating `State`
-    let mut state = State {
-        next_item_id: 0u64,
-        roles:        state_builder.new_map(),
-        items:        state_builder.new_map(),
-    };
 
     // Grant Admin role.
     state.grant_role(&invoker, Roles::Admin, state_builder);
@@ -374,129 +459,27 @@ pub struct AdditionalData {
     pub bytes: Vec<u8>,
 }
 
-/// The parameter type for the contract function `changeItemStatusByAdmin` which
-/// updates the status of an item. The `ChangeItemStatusParamsByAdmin` is a type
-/// alias to the `ItemStatusChangedEvent` type.
-type ChangeItemStatusParamsByAdmin = ItemStatusChangedEvent;
-
-/// Receive function for the Admin to change the
-/// status of an item. The Admin can set the item's status
-/// to any value at any time.
-///
-/// It rejects if:
-/// - It fails to parse the parameter.
-/// - Sender is not an authorized role.
-/// - The item does not exist in the state.
-/// - It fails to log the `ItemStatusChangedEvent`.
-#[receive(
-    contract = "track_and_trace",
-    name = "changeItemStatusByAdmin",
-    parameter = "ChangeItemStatusParamsByAdmin",
-    error = "CustomContractError",
-    mutable,
-    enable_logger
-)]
-fn change_item_status_by_admin(
-    ctx: &ReceiveContext,
-    host: &mut Host<State>,
-    logger: &mut impl HasLogger,
-) -> Result<(), CustomContractError> {
-    // Parse the parameter.
-    let param: ChangeItemStatusParamsByAdmin = ctx.parameter_cursor().get()?;
-
-    // Check that only the Admin is authorized.
-    ensure!(
-        host.state().has_role(&ctx.sender(), Roles::Admin),
-        CustomContractError::Unauthorized
-    );
-
-    // The admin can set the item's status to any value at any time.
-    host.state_mut()
-        .change_item_status(param.item_id, param.new_status)?;
-
-    // Log an ItemStatusChangedEvent.
-    logger.log(&Event::ItemStatusChanged(ItemStatusChangedEvent {
-        item_id:         param.item_id,
-        new_status:      param.new_status,
-        additional_data: param.additional_data,
-    }))?;
-
-    Ok(())
-}
-
 /// The parameter type for the contract function `changeItemStatus` which
 /// updates the status of an item.
 #[derive(Serialize, SchemaType)]
 pub struct ChangeItemStatusParams {
     /// The item's id.
     pub item_id:         ItemID,
+    /// The item's new status.
+    pub new_status:      Status,
     /// Any additional data encoded as generic bytes. Usecase-specific data can
     /// be included here such as temperature, longitude, latitude, ... .
     pub additional_data: AdditionalData,
 }
 
-/// Function to update the item's status based on the rules of the state
-/// machine.
-fn update_state_machine(
-    host: &mut Host<State>,
-    sender: Address,
-    item_id: ItemID,
-) -> Result<Status, CustomContractError> {
-    // Get the item from the state.
-    let mut item = host
-        .state_mut()
-        .items
-        .entry(item_id)
-        .occupied_or(CustomContractError::ItemDoesNotExist)?;
-
-    // Model the state transition based on the rules of the state machine.
-    match item.status {
-        Status::Produced => {
-            item.status = Status::InTransit;
-            drop(item);
-
-            // Check that only the correct role is authorized.
-            ensure!(
-                host.state().has_role(&sender, Roles::Producer),
-                CustomContractError::Unauthorized
-            );
-            Ok(Status::InTransit)
-        }
-        Status::InTransit => {
-            item.status = Status::InStore;
-            drop(item);
-
-            // Check that only the correct role is authorized.
-            ensure!(
-                host.state().has_role(&sender, Roles::Transporter),
-                CustomContractError::Unauthorized
-            );
-            Ok(Status::InStore)
-        }
-        Status::InStore => {
-            item.status = Status::Sold;
-            drop(item);
-
-            // Check that only the correct role is authorized.
-            ensure!(
-                host.state().has_role(&sender, Roles::Seller),
-                CustomContractError::Unauthorized
-            );
-            Ok(Status::Sold)
-        }
-        Status::Sold => bail!(CustomContractError::FinalState),
-    }
-}
-
-/// Receive function for the other ROLES (all roles except for the Admin role)
-/// to change the status of an item. The other ROLES can update the item's
+/// Receive function to update the item's
 /// status based on the rules of the state machine.
 ///
 /// It rejects if:
 /// - It fails to parse the parameter.
 /// - Sender is not an authorized role to update the item to the next state.
 /// - The item does not exist in the state.
-/// - The item is already in the `Sold` state (final state).
+/// - A contract is invoking the function.
 /// - It fails to log the `ItemStatusChangedEvent`.
 #[receive(
     contract = "track_and_trace",
@@ -514,12 +497,33 @@ fn change_item_status(
     // Parse the parameter.
     let param: ChangeItemStatusParams = ctx.parameter_cursor().get()?;
 
-    let new_status = update_state_machine(host, ctx.sender(), param.item_id)?;
+    let mut item = host
+        .state_mut()
+        .items
+        .entry(param.item_id)
+        .occupied_or(CustomContractError::ItemDoesNotExist)?;
+
+    let account = match ctx.sender() {
+        Address::Account(account) => account,
+        Address::Contract(_) => bail!(CustomContractError::NoContract),
+    };
+
+    // Update the state of the item.
+    let old_item_status = item.status;
+    item.status = param.new_status;
+    drop(item);
+
+    let verify = host
+        .state()
+        .check(&old_item_status, &account, &param.new_status);
+
+    // Check that transition adheres to the state machine rules.
+    ensure!(verify, CustomContractError::Unauthorized);
 
     // Log an ItemStatusChangedEvent.
     logger.log(&Event::ItemStatusChanged(ItemStatusChangedEvent {
-        item_id: param.item_id,
-        new_status,
+        item_id:         param.item_id,
+        new_status:      param.new_status,
         additional_data: param.additional_data,
     }))?;
 
