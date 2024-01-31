@@ -2,12 +2,10 @@
 //!
 //! ## Grant and Revoke roles:
 //! The contract has access control roles. The available roles are Admin (can
-//! grant/revoke roles, create a new item, and update the status of an item),
-//! Producer (can update the status of an item from `Produced` to `InTransit`),
-//! Transporter (can update the status of an item from `InTransit` to
-//! `InStore`), and Seller (can update the status of an item from `InStore` to
-//! `Sold`). Several addresses can have the same role and an address can have
-//! several roles.
+//! grant/revoke roles, create a new item), Producer, Transporter, and Seller.
+//! The state machine defines which roles are authorized to update an item given
+//! its current status. Several addresses can have the same role and an address
+//! can have several roles.
 //!
 //! ## State machine:
 //! The track-and-trace contract is modeled based on a state machine. The state
@@ -17,7 +15,7 @@
 //! value is sequentially increased by 1 in the contract's state. The different
 //! roles can update the item's status based on the rules of the state machine.
 //!
-//! For example to initilize the state machine with a linear supply chain use
+//! For example to initialize the state machine with a linear supply chain use
 //! the following input parameter when the contract is initialized:
 //!
 //! ```
@@ -172,7 +170,7 @@ struct State<S = StateApi> {
     items:        StateMap<ItemID, ItemState, S>,
     /// A map containing all allowed transitions of the state machine.
     /// The first `Status` maps to a map of `AccountAddresses` that are allowed
-    /// to update the given `Status`. The The last set specifies to which
+    /// to update the given `Status`. The last `StateSet` specifies to which
     /// `Statuses` the `AccountAddress` is allowed to update the first `Status.`
     transitions:  StateMap<Status, StateMap<AccountAddress, StateSet<Status, S>, S>, S>,
 }
@@ -451,7 +449,7 @@ fn create_item(
 }
 
 /// Partial parameter type for the contract function
-/// `changeItemStatus/changeItemStatusByAdmin`.
+/// `changeItemStatus`.
 #[derive(Serialize, SchemaType, Debug, PartialEq, Eq)]
 pub struct AdditionalData {
     /// Any additional data encoded as generic bytes. Usecase-specific data can
