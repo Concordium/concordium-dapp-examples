@@ -187,19 +187,15 @@ pub enum CustomContractError {
     LogMalformed, // -3
     /// Failed because the actor is not authorized to invoke the entry point.
     Unauthorized, // -4
-    /// Failed to revoke role because it was not granted in the first place.
-    RoleWasNotGranted, // -5
-    /// Failed to grant role because it was granted already in the first place.
-    RoleWasAlreadyGranted, // -6
     /// Item with given item id already exists in the state.
-    ItemAlreadyExists, // -7
+    ItemAlreadyExists, // -5
     /// Item with given item id does not exist in the state.
-    ItemDoesNotExist, // -8
+    ItemDoesNotExist, // -6
     /// The item is already in the final state and cannot be updated based on
     /// the state machine rules.
-    FinalState, // -9
+    FinalState, // -7
     /// Contract address should not invoke entry point.
-    NoContract, // -10
+    NoContract, // -8
 }
 
 /// Mapping the logging errors to CustomContractError.
@@ -388,13 +384,11 @@ fn contract_get_item_state(ctx: &ReceiveContext, host: &Host<State>) -> ReceiveR
     // Parse the parameter.
     let item_id: ItemID = ctx.parameter_cursor().get()?;
 
-    let item = host
-        .state()
+    host.state()
         .items
         .get(&item_id)
         .map(|x| (*x).clone())
-        .ok_or(CustomContractError::ItemDoesNotExist)?;
-    Ok(item)
+        .ok_or(CustomContractError::ItemDoesNotExist.into())
 }
 
 /// Receive function for the Admin to create a new item.
@@ -511,6 +505,9 @@ fn change_item_status(
     item.status = param.new_status;
     drop(item);
 
+    // Smart contract best practice is: "Revert early by doing all the checks first,
+    // then do state changes". Nonetheless, we have the opposite order here due
+    // to issues with mutable references.
     let verify = host
         .state()
         .check(&old_item_status, &account, &param.new_status);
@@ -543,7 +540,6 @@ pub struct GrantRoleParams {
 /// It rejects if:
 /// - It fails to parse the parameter.
 /// - The sender is not the Admin of the contract instance.
-/// - The `address` is already holding the specified role to be granted.
 #[receive(
     contract = "track_and_trace",
     name = "grantRole",
@@ -568,12 +564,6 @@ fn contract_grant_role(
     ensure!(
         state.has_role(&sender, Roles::Admin),
         CustomContractError::Unauthorized
-    );
-
-    // Check that the `address` had previously not held the specified role.
-    ensure!(
-        !state.has_role(&params.address, params.role),
-        CustomContractError::RoleWasAlreadyGranted
     );
 
     // Grant role.
@@ -601,7 +591,6 @@ pub struct RevokeRoleParams {
 /// It rejects if:
 /// - It fails to parse the parameter.
 /// - The sender is not the Admin of the contract instance.
-/// - The `address` does not hold the specified role to be revoked.
 #[receive(
     contract = "track_and_trace",
     name = "revokeRole",
@@ -626,12 +615,6 @@ fn contract_revoke_role(
     ensure!(
         state.has_role(&sender, Roles::Admin),
         CustomContractError::Unauthorized
-    );
-
-    // Check that the `address` had previously held the specified role.
-    ensure!(
-        state.has_role(&params.address, params.role),
-        CustomContractError::RoleWasNotGranted
     );
 
     // Revoke role.
