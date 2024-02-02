@@ -10,6 +10,9 @@ use concordium_rust_sdk::{
 use indicatif::{ProgressBar, ProgressStyle};
 use track_and_trace as contract;
 
+mod db;
+use crate::db::*;
+
 /// Command line configuration of the application.
 #[derive(Debug, clap::Parser)]
 #[command(author, version, about)]
@@ -19,22 +22,34 @@ struct Args {
         short = 'n',
         help = "The node endpoint.",
         default_value = "https://grpc.testnet.concordium.com:20000",
-        global = true
+        global = true,
+        env = "CCD_INDEXER_NODE"
     )]
     node_endpoint:    concordium_rust_sdk::v2::Endpoint,
     #[arg(
         long = "start",
         short = 's',
         help = "The start time when the track and trace contract was initialized. The format is \
-                ISO-8601, e.g. 2024-01-23T12:13:14Z."
+                ISO-8601, e.g. 2024-01-23T12:13:14Z.",
+        env = "CCD_INDEXER_START"
     )]
     start:            chrono::DateTime<chrono::Utc>,
     #[arg(
         long = "contract",
         short = 'c',
-        help = "The track and trace contract address."
+        help = "The track and trace contract address.",
+        env = "CCD_INDEXER_CONTRACT"
     )]
     contract_address: ContractAddress,
+    /// Database connection string.
+    #[arg(
+        long = "db-connection",
+        default_value = "host=localhost dbname=indexer user=postgres password=password port=5432",
+        help = "A connection string detailing the connection to the database used by the \
+                application.",
+        env = "CCD_INDEXER_DB_CONNECTION"
+    )]
+    db_connection:    tokio_postgres::config::Config,
 }
 
 #[tokio::main]
@@ -55,10 +70,36 @@ async fn main() -> anyhow::Result<()> {
     .connect_timeout(std::time::Duration::from_secs(5))
     .timeout(std::time::Duration::from_secs(10));
 
-    handle_index(endpoint, app.start, app.contract_address).await
+    let db_pool = DatabasePool::create(app.db_connection.clone(), 2, true)
+        .await
+        .context("Could not create database pool")?;
+    let db = db_pool
+        .get()
+        .await
+        .context("Could not get database connection from pool")?;
+    db.init_settings(&app.contract_address)
+        .await
+        .context("Could not init settings for database")?;
+    let settings = db
+        .get_settings()
+        .await
+        .context("Could not get settings from database")?;
+
+    anyhow::ensure!(
+        settings.contract_address == app.contract_address,
+        "Contract address does not match the contract address found in the database"
+    );
+    eprintln!("Settings: {:?}", settings);
+
+    // height_sender
+    //     .send(settings.latest_height)
+    //     .map_err(|_| anyhow!("Best block height could not be sent to node
+    // process"))?;
+
+    handle_indexing(db, endpoint, app.start, app.contract_address).await
 }
 
-/// Figure out which blocks to use as start block given the start time.
+/// Figure out which block to use as start block given the start time.
 /// The return block is the first block no earlier than the start time.
 async fn get_first_block(
     client: &mut sdk::Client,
@@ -78,7 +119,8 @@ async fn get_first_block(
 // enum TrackAndTraceContract {}
 
 /// Handle indexing events.
-async fn handle_index(
+async fn handle_indexing(
+    mut db: Database,
     endpoint: sdk::Endpoint,
     start: chrono::DateTime<chrono::Utc>,
     contract_address: ContractAddress,
@@ -110,41 +152,71 @@ async fn handle_index(
         bar.inc(1);
 
         for tx in contract_update_infos {
-            for (contract_invoked, entry_point_name, events) in tx.execution_tree.events() {
+            for (contract_invoked, _entry_point_name, events) in tx.execution_tree.events() {
                 anyhow::ensure!(
                     contract_invoked == contract_address,
-                    "The contract entry point `changeItemStatusByAdmin` can only be invoke by an \
-                     account and the entry point does not invoke other contracts. 
+                    "The contract entry point `changeItemStatus` can only be invoke by an account \
+                     and the entry point does not invoke other contracts. 
                     As a result, the event picked up by the indexer should be from contract `{}` \
                      but following contract address was found while indexing `{}`.",
                     contract_address,
                     contract_invoked
                 );
 
-                anyhow::ensure!(
-                    entry_point_name == "changeItemStatusByAdmin",
-                    "The contract entry point `changeItemStatusByAdmin` can only be invoke by an \
-                     account and the entry point does not invoke other contracts. 
-                    As a result, the event picked up by the indexer should be from entrypoint \
-                     `changeItemStatusByAdmin` but following entrypoint was found while indexing \
-                     `{}`.",
-                    entry_point_name
-                );
+                // anyhow::ensure!(
+                //     entry_point_name == "changeItemStatus",
+                //     "The contract entry point `changeItemStatus` can only be invoke by an \
+                //      account and the entry point does not invoke other contracts.
+                //     As a result, the event picked up by the indexer should be from entrypoint
+                // \      `changeItemStatus` but following entrypoint was found
+                // while indexing \      `{}`.",
+                //     entry_point_name
+                // );
 
                 anyhow::ensure!(
                     events.len() == 1,
-                    "The contract entry point `changeItemStatusByAdmin` can only be invoke by an \
+                    "The contract entry point `changeItemStatus` can only be invoke by an \
                      account. As a result, only one event at max can be logged by the contract."
                 );
 
                 // We know exactly one event is logged.
-                let _event = events[0].clone();
+                let event = events[0].clone();
 
-                // let parsed_event: contract::ItemStatusChangedEvent =
-                // event.parse()?;
+                let parsed_event: contract::Event = event.parse()?;
 
-                // TODO: INSERT EVENT INTO POSTGRESQL
-                // eprintln!("a: {:?}", parsed_event);
+                if let contract::Event::ItemStatusChanged(event) = parsed_event {
+                    // let start = chrono::Utc::now();
+                    let transaction = db
+                        .client
+                        .transaction()
+                        .await
+                        .context("Failed to build DB transaction")?;
+
+                    let transaction = Transaction::from(transaction);
+
+                    transaction
+                        .insert_event(
+                            tx.transaction_hash,
+                            event.item_id,
+                            event.new_status,
+                            event.additional_data,
+                        )
+                        .await?;
+
+                    // let now = tokio::time::Instant::now();
+                    transaction
+                        .inner
+                        .commit()
+                        .await
+                        .context("Failed to commit DB transaction.")?;
+                } else {
+                    anyhow::bail!("Wrong event")
+                }
+
+                // tracing::debug!("Commit completed in {}ms.",
+                // now.elapsed().as_millis());
+
+                // let end = chrono::Utc::now().signed_duration_since(start);
             }
         }
     }
