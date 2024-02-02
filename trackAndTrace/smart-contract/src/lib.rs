@@ -265,7 +265,7 @@ impl<S: HasStateApi> State<S> {
         targets.insert(to)
     }
 
-    /// Get the items and the possible state transitions for that item in its
+    /// Get the item and the possible state transitions for that item in its
     /// current state.
     pub fn get_item_and_transitions(
         &mut self,
