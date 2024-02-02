@@ -1,8 +1,8 @@
 ## Track and trace indexer
 
-./target/debug/indexer --node https://grpc.testnet.concordium.com:20000 --start 2024-01-28T10:12:54Z --contract "<7835,0>"
+cargo run -- --node https://grpc.testnet.concordium.com:20000 --start 2024-01-28T10:12:54Z --contract "<7835,0>"
 
-./target/debug/indexer --node https://grpc.testnet.concordium.com:20000 --start 2024-02-01T19:01:00Z --contract "<7835,0>"
+cargo run -- --node https://grpc.testnet.concordium.com:20000 --start 2024-02-01T19:01:00Z --contract "<7835,0>"
 
 ## Build and run
 
