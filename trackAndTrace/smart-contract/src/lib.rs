@@ -172,7 +172,7 @@ struct State<S = StateApi> {
     /// The first `Status` maps to a map of `AccountAddresses` that are allowed
     /// to update the given `Status`. The last `StateSet` specifies to which
     /// `Statuses` the `AccountAddress` is allowed to update the first `Status.`
-    transitions:  StateMap<Status, StateMap<AccountAddress, StateSet<Status, S>, S>, S>,
+    transitions:  StateMap<Status, StatusTransitions<S>, S>,
 }
 
 /// The different errors the contract can produce.
@@ -211,6 +211,41 @@ impl From<LogError> for CustomContractError {
 /// Custom type for the contract result.
 pub type ContractResult<A> = Result<A, CustomContractError>;
 
+#[derive(Serial, DeserialWithState)]
+#[concordium(state_parameter = "S")]
+#[repr(transparent)]
+/// Transitions for a given status.
+struct StatusTransitions<S> {
+    transitions: StateMap<AccountAddress, StateSet<Status, S>, S>,
+}
+
+impl<S: HasStateApi> StatusTransitions<S> {
+    /// Check if a transition is allowed.
+    pub fn check(&self, address: &AccountAddress, to: &Status) -> bool {
+        let Some(targets) = self.transitions.get(address) else {
+            return false;
+        };
+        targets.contains(to)
+    }
+
+    /// Get the targets of a transition from the status using the given address.
+    pub fn targets(
+        &mut self,
+        builder: &mut StateBuilder<S>,
+        address: AccountAddress,
+    ) -> OccupiedEntry<AccountAddress, StateSet<Status, S>, S> {
+        self.transitions
+            .entry(address)
+            .or_insert_with(|| builder.new_set())
+    }
+}
+
+/// An updatable item with the transitions it allows when it was looked up.
+type UpdatableItemWithTransitions<'a, S> = (
+    StateRefMut<'a, ItemState, S>,
+    StateRef<'a, StatusTransitions<S>>,
+);
+
 impl<S: HasStateApi> State<S> {
     /// Add a new transition. Return if the transition was fresh.
     pub fn add(
@@ -223,22 +258,28 @@ impl<S: HasStateApi> State<S> {
         let mut transition = self
             .transitions
             .entry(from)
-            .or_insert_with(|| builder.new_map());
-        let mut targets = transition
-            .entry(address)
-            .or_insert_with(|| builder.new_set());
+            .or_insert_with(|| StatusTransitions {
+                transitions: builder.new_map(),
+            });
+        let mut targets = transition.targets(builder, address);
         targets.insert(to)
     }
 
-    /// Check if a transition is allowed.
-    pub fn check(&self, from: &Status, address: &AccountAddress, to: &Status) -> bool {
-        let Some(transition) = self.transitions.get(from) else {
-            return false;
-        };
-        let Some(targets) = transition.get(address) else {
-            return false;
-        };
-        targets.contains(to)
+    /// Get the items and the possible state transitions for that item in its
+    /// current state.
+    pub fn get_item_and_transitions(
+        &mut self,
+        item_id: &ItemID,
+    ) -> Result<UpdatableItemWithTransitions<S>, CustomContractError> {
+        let item = self
+            .items
+            .get_mut(item_id)
+            .ok_or(CustomContractError::ItemDoesNotExist)?;
+        let transitions = self
+            .transitions
+            .get(&item.status)
+            .ok_or(CustomContractError::Unauthorized)?;
+        Ok((item, transitions))
     }
 
     /// Create the state and state machine from a vector of transition edges.
@@ -489,31 +530,23 @@ fn change_item_status(
     // Parse the parameter.
     let param: ChangeItemStatusParams = ctx.parameter_cursor().get()?;
 
-    let mut item = host
-        .state_mut()
-        .items
-        .entry(param.item_id)
-        .occupied_or(CustomContractError::ItemDoesNotExist)?;
+    let state = host.state_mut();
 
     let account = match ctx.sender() {
         Address::Account(account) => account,
         Address::Contract(_) => bail!(CustomContractError::NoContract),
     };
 
-    // Update the state of the item.
-    let old_item_status = item.status;
-    item.status = param.new_status;
-    drop(item);
+    let (mut item, allowed_transitions) = state.get_item_and_transitions(&param.item_id)?;
 
-    // Smart contract best practice is: "Revert early by doing all the checks first,
-    // then do state changes". Nonetheless, we have the opposite order here due
-    // to issues with mutable references.
-    let verify = host
-        .state()
-        .check(&old_item_status, &account, &param.new_status);
+    let verify = allowed_transitions.check(&account, &param.new_status);
 
     // Check that transition adheres to the state machine rules.
     ensure!(verify, CustomContractError::Unauthorized);
+
+    // Update the state of the item.
+    item.status = param.new_status;
+    drop(item);
 
     // Log an ItemStatusChangedEvent.
     logger.log(&Event::ItemStatusChanged(ItemStatusChangedEvent {
