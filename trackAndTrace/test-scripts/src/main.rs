@@ -22,24 +22,27 @@ pub enum TrackAndTraceContract {}
 struct Args {
     #[arg(
         long = "node",
+        short = 'n',
         default_value = "https://grpc.testnet.concordium.com:20000",
         help = "The endpoints are expected to point to concordium node grpc v2 API's.",
         global = true
     )]
-    node_endpoint:   concordium_rust_sdk::v2::Endpoint,
+    node_endpoint:    concordium_rust_sdk::v2::Endpoint,
     #[arg(
         long = "module",
+        short = 'm',
         default_value = "../smart-contract/concordium-out/module.wasm.v1",
         help = "Source module from which to initialize the contract instances."
     )]
-    module:          std::path::PathBuf,
+    module:           std::path::PathBuf,
     #[arg(
         long = "num-items",
+        short = 'i',
         help = "Number of items to be created in the contract."
     )]
-    num_items:       usize,
+    num_items:        usize,
     #[structopt(long = "admin-key-file", help = "Path to the admin key file.")]
-    admin_keys_path: std::path::PathBuf,
+    admin_keys_path:  std::path::PathBuf,
 }
 
 #[tokio::main]
@@ -104,19 +107,43 @@ async fn main() -> anyhow::Result<()> {
                 anyhow::bail!("Failed to deploy module: {err:#?}");
             }
 
-            eprintln!("Deployed module with reference {mod_ref} in block {block_hash}");
+            eprintln!("Deployed module with reference {mod_ref} in block {block_hash}.");
         }
         mod_ref
     };
 
     // Initialize new instance
+    let params: Vec<TransitionEdges> = vec![
+        // The `admin_key_address` can change the status of the item to any value.
+        TransitionEdges {
+            from:               Status::Produced,
+            to:                 vec![Status::InTransit, Status::InStore, Status::Sold],
+            authorized_account: admin_key.address,
+        },
+        TransitionEdges {
+            from:               Status::InTransit,
+            to:                 vec![Status::Produced, Status::InStore, Status::Sold],
+            authorized_account: admin_key.address,
+        },
+        TransitionEdges {
+            from:               Status::InStore,
+            to:                 vec![Status::InTransit, Status::Produced, Status::Sold],
+            authorized_account: admin_key.address,
+        },
+        TransitionEdges {
+            from:               Status::Sold,
+            to:                 vec![Status::InTransit, Status::InStore, Status::Produced],
+            authorized_account: admin_key.address,
+        },
+    ];
+
     let mut contract_client = {
         let expiry = TransactionTime::hours_after(1);
         let payload = InitContractPayload {
             amount: Amount::zero(),
             mod_ref,
             init_name: OwnedContractName::new_unchecked("init_track_and_trace".into()),
-            param: OwnedParameter::empty(),
+            param: OwnedParameter::from_serial(&params).expect("Init params"),
         };
         let energy = Energy::from(10000);
 
@@ -170,7 +197,7 @@ async fn main() -> anyhow::Result<()> {
 
         let tx_hash = tx_dry_run.send(&admin_key).await?;
 
-        eprintln!("Submitted create item with index {i} in transaction hash {tx_hash}");
+        eprintln!("Submitted create item with index {i} in transaction hash {tx_hash}.");
 
         if let Err(err) = tx_hash.wait_for_finalization().await {
             anyhow::bail!("Creating item failed: {err:#?}");
@@ -179,15 +206,15 @@ async fn main() -> anyhow::Result<()> {
 
     // Update items from `Produced` to `InTransit`
     for i in 0..args.num_items {
-        let param: ChangeItemStatusParamsByAdmin = ChangeItemStatusParamsByAdmin {
+        let param: ChangeItemStatusParams = ChangeItemStatusParams {
             item_id:         i as u64,
             new_status:      Status::InTransit,
-            additional_data: AdditionalData { bytes: vec![] },
+            additional_data: AdditionalData::empty(),
         };
 
         let tx_dry_run = contract_client
-            .dry_run_update::<ChangeItemStatusParamsByAdmin, ViewError>(
-                "changeItemStatusByAdmin",
+            .dry_run_update::<ChangeItemStatusParams, ViewError>(
+                "changeItemStatus",
                 Amount::zero(),
                 admin_key.address,
                 &param,
@@ -198,25 +225,25 @@ async fn main() -> anyhow::Result<()> {
 
         eprintln!(
             "Submitted update item status with index {i} to `InTransit` in transaction hash \
-             {tx_hash}"
+             {tx_hash}."
         );
 
         if let Err(err) = tx_hash.wait_for_finalization().await {
-            anyhow::bail!("Update item status failed: {err:#?}");
+            anyhow::bail!("Update item status failed: {err:#?}.");
         }
     }
 
     // Update items from `InTransit` to `InStore`
     for i in 0..args.num_items {
-        let param: ChangeItemStatusParamsByAdmin = ChangeItemStatusParamsByAdmin {
+        let param: ChangeItemStatusParams = ChangeItemStatusParams {
             item_id:         i as u64,
             new_status:      Status::InStore,
-            additional_data: AdditionalData { bytes: vec![] },
+            additional_data: AdditionalData::empty(),
         };
 
         let tx_dry_run = contract_client
-            .dry_run_update::<ChangeItemStatusParamsByAdmin, ViewError>(
-                "changeItemStatusByAdmin",
+            .dry_run_update::<ChangeItemStatusParams, ViewError>(
+                "changeItemStatus",
                 Amount::zero(),
                 admin_key.address,
                 &param,
@@ -227,25 +254,25 @@ async fn main() -> anyhow::Result<()> {
 
         eprintln!(
             "Submitted update item status with index {i} to `InStore` in transaction hash \
-             {tx_hash}"
+             {tx_hash}."
         );
 
         if let Err(err) = tx_hash.wait_for_finalization().await {
-            anyhow::bail!("Update item status failed: {err:#?}");
+            anyhow::bail!("Update item status failed: {err:#?}.");
         }
     }
 
     // Update items from `InStore` to `Sold`
     for i in 0..args.num_items {
-        let param: ChangeItemStatusParamsByAdmin = ChangeItemStatusParamsByAdmin {
+        let param: ChangeItemStatusParams = ChangeItemStatusParams {
             item_id:         i as u64,
             new_status:      Status::Sold,
-            additional_data: AdditionalData { bytes: vec![] },
+            additional_data: AdditionalData::empty(),
         };
 
         let tx_dry_run = contract_client
-            .dry_run_update::<ChangeItemStatusParamsByAdmin, ViewError>(
-                "changeItemStatusByAdmin",
+            .dry_run_update::<ChangeItemStatusParams, ViewError>(
+                "changeItemStatus",
                 Amount::zero(),
                 admin_key.address,
                 &param,
@@ -255,11 +282,11 @@ async fn main() -> anyhow::Result<()> {
         let tx_hash = tx_dry_run.send(&admin_key).await?;
 
         eprintln!(
-            "Submitted update item status with index {i} to `Sold` in transaction hash {tx_hash}"
+            "Submitted update item status with index {i} to `Sold` in transaction hash {tx_hash}."
         );
 
         if let Err(err) = tx_hash.wait_for_finalization().await {
-            anyhow::bail!("Update item status failed: {err:#?}");
+            anyhow::bail!("Update item status failed: {err:#?}.");
         }
     }
 

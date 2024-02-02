@@ -8,7 +8,6 @@ anyhow = "1.0"
 chrono = "0.4"
 clap = { version = "4.4", features = ["env", "derive"] }
 concordium-rust-sdk = { version = "4.0"}
-serde = { version = "1.0", features = ["derive"] }
 tokio = { version = "1.35", features = ["rt-multi-thread", ] }
 tonic = { version = "0.10", features = ["tls", "tls-roots"] }
 track-and-trace = { path = "../smart-contract/"}

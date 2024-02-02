@@ -492,6 +492,10 @@ pub struct AdditionalData {
     pub bytes: Vec<u8>,
 }
 
+impl AdditionalData {
+    pub fn empty() -> Self { AdditionalData { bytes: vec![] } }
+}
+
 /// The parameter type for the contract function `changeItemStatus` which
 /// updates the status of an item.
 #[derive(Serialize, SchemaType)]
