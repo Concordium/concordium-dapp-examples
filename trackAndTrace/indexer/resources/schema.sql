@@ -8,13 +8,21 @@ CREATE TABLE IF NOT EXISTS settings (
   contract_subindex INT8 NOT NULL
 );
 
--- Table containing events successfully submitted to the contract monitored.
-CREATE TABLE IF NOT EXISTS events (
+-- Table containing item_status_changed_events successfully submitted to the database from the contract monitored.
+CREATE TABLE IF NOT EXISTS item_status_changed_events (
   id INT8 PRIMARY KEY,
   transaction_hash BYTEA NOT NULL,
   item_id INT8 NOT NULL,
   new_status INT8 NOT NULL,
   additional_data BYTEA NOT NULL
+);
+
+-- Table containing item_created_events successfully submitted to the database from the contract monitored.
+CREATE TABLE IF NOT EXISTS item_created_events (
+  id INT8 PRIMARY KEY,
+  transaction_hash BYTEA NOT NULL,
+  item_id INT8 NOT NULL,
+  metadata_url BYTEA NOT NULL
 );
 
 -- Improve performance on queries for events within id range for an account.
