@@ -57,7 +57,7 @@ struct Args {
         default_value = "info",
         help = "The maximum log level. Possible values are: `trace`, `debug`, `info`, `warn`, and \
                 `debug`.",
-        env = "CCD_INDEXER_DB_CONNECTION_LOG_LEVEL"
+        env = "CCD_INDEXER_LOG_LEVEL"
     )]
     log_level:        tracing_subscriber::filter::LevelFilter,
 }
@@ -116,7 +116,7 @@ async fn main() -> anyhow::Result<()> {
     );
     eprintln!("Settings: {:?}", settings);
 
-    handle_indexing(db, endpoint, app.start, app.contract_address).await
+    handle_indexing(db, db_pool, endpoint, app.start, app.contract_address).await
 }
 
 /// Figure out which block to use as start block given the start time.
@@ -141,6 +141,7 @@ async fn get_first_block(
 /// Handle indexing events.
 async fn handle_indexing(
     mut db: Database,
+    db_pool: DatabasePool,
     endpoint: sdk::Endpoint,
     start: chrono::DateTime<chrono::Utc>,
     contract_address: ContractAddress,
@@ -204,68 +205,73 @@ async fn handle_indexing(
 
                 let parsed_event: contract::Event = event.parse()?;
 
-                if let contract::Event::ItemStatusChanged(event) = parsed_event {
-                    match db_insert_item_status_changed_event(
-                        &mut db,
-                        tx.transaction_hash,
-                        event,
-                        block.block_height,
-                    )
-                    .await
-                    {
-                        Ok(time) => {
-                            // successive_db_errors = 0;
-                            // tracing::info!(
-                            //     "Processed block {} at height {} transactions
-                            // in {}ms",
-                            //     block_data.block_hash,
-                            //     block_data.height.height,
-                            //     time.num_milliseconds()
-                            // );
-                            // retry_block_data = None;
-                        }
-                        Err(e) => {
-                            // successive_db_errors += 1;
-                            // // wait for 2^(min(successive_errors - 1, 7))
-                            // seconds before attempting.
-                            // // The reason for the min is that we bound the
-                            // time between reconnects.
-                            // let delay = std::time::Duration::from_millis(
-                            //     500 * (1 <<
-                            // std::cmp::min(successive_db_errors, 8)),
-                            // );
-                            // tracing::warn!(
-                            //     "Database connection lost due to {:#}. Will
-                            // attempt to reconnect in {}ms.",
-                            //     e,
-                            //     delay.as_millis()
-                            // );
-                            // tokio::time::sleep(delay).await;
+                if let contract::Event::ItemStatusChanged(item_status_changed_event) = parsed_event
+                {
+                    // In case of DB errors, we will reconnect and retry to insert the event into
+                    // the database.
+                    let mut retry = true;
+                    // How many successive insertion errors were encountered.
+                    // This is used to slow down attempts to not spam the database.
+                    let mut reconnecting_db_errors_count = 0;
 
-                            // // Get new db connection from the pool
-                            // db = match db_pool
-                            //     .get()
-                            //     .await
-                            //     .context("Failed to get new database
-                            // connection from pool")
-                            // {
-                            //     Ok(db) => db,
-                            //     Err(e) => {
-                            //         block_receiver.close();
-                            //         return Err(e);
-                            //     }
-                            // };
-                            // retry_block_data = Some(block_data);
-                        }
+                    while retry {
+                        retry = match db_insert_item_status_changed_event(
+                            &mut db,
+                            tx.transaction_hash,
+                            item_status_changed_event.clone(),
+                            block.block_height,
+                        )
+                        .await
+                        {
+                            Ok(time) => {
+                                reconnecting_db_errors_count = 0;
+                                tracing::info!(
+                                    "Processed item_status_changed_event at index {} in transaction {} in block {} \
+                                     transactions in {}ms",
+                                    // TODO: add event indexes
+                                    1,
+                                    tx.transaction_hash,
+                                    block.block_hash,
+                                    time.num_milliseconds()
+                                );
+                                false
+                            }
+                            Err(e) => {
+                                reconnecting_db_errors_count += 1;
+                                // wait for 500 * 2^(min(successive_errors - 1, 8))
+                                // seconds before attempting.
+                                // The reason for the min is that we bound the
+                                // time between reconnects.
+                                let delay = std::time::Duration::from_millis(
+                                    500 * (1 << std::cmp::min(reconnecting_db_errors_count, 8)),
+                                );
+                                tracing::warn!(
+                                    "Database connection lost due to {:#}. Will
+                            attempt to reconnect in {}ms. Reconnecting database error count: {}",
+                                    e,
+                                    delay.as_millis(),
+                                    reconnecting_db_errors_count
+                                );
+                                tokio::time::sleep(delay).await;
+
+                                // Get new db connection from the pool
+                                db = match db_pool.get().await.context(
+                                    "Failed to get new database
+                            connection from pool",
+                                ) {
+                                    Ok(db) => db,
+                                    Err(e) => {
+                                        receiver.close();
+                                        return Err(e);
+                                    }
+                                };
+                                true
+                            }
+                        };
                     }
                 } else {
                     anyhow::bail!("Wrong event")
                 }
-
-                // tracing::debug!("Commit completed in {}ms.",
-                // now.elapsed().as_millis());
-
-                // let end = chrono::Utc::now().signed_duration_since(start);
             }
         }
     }

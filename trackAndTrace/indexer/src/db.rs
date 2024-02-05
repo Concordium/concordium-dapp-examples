@@ -65,7 +65,7 @@ impl TryFrom<tokio_postgres::Row> for StoredConfiguration {
         let settings = Self {
             latest_block_height: raw_latest_block_height.map(|v| (v as u64).into()),
             latest_transaction_hash,
-            latest_event_index: raw_latest_event_index.map(|v| (v as u16).into()),
+            latest_event_index: raw_latest_event_index.map(|v| (v as u16)),
             contract_address,
         };
         Ok(settings)
