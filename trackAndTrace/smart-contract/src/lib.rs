@@ -66,9 +66,8 @@ pub const NONCE_EVENT_TAG: u8 = 250;
 pub type ItemID = u64;
 
 /// Tagged events to be serialized for the event log.
-#[derive(Debug, Serial, Deserial, PartialEq, Eq, SchemaType)]
-#[concordium(repr(u8))]
-pub enum Event {
+#[derive(Debug, Serial, Deserial, PartialEq, Eq, SchemaType, Clone)]
+#[concordium(repr(u8))]pub enum Event {
     /// The event tracks when an item is created.
     #[concordium(tag = 0)]
     ItemCreated(ItemCreatedEvent),
@@ -87,8 +86,8 @@ pub enum Event {
     Nonce(NonceEvent),
 }
 
-/// The [`ItemCreatedEvent`] is logged when an item is created.
-#[derive(Serialize, SchemaType, Debug, PartialEq, Eq)]
+/// The ItemCreatedEvent is logged when an item is created.
+#[derive(Serialize, SchemaType, Debug, PartialEq, Eq, Clone)]
 pub struct ItemCreatedEvent {
     /// The item's id.
     pub item_id:      ItemID,
@@ -98,7 +97,7 @@ pub struct ItemCreatedEvent {
 
 /// The [`ItemStatusChangedEvent`] is logged when the status of an item is
 /// updated.
-#[derive(Serialize, SchemaType, Debug, PartialEq, Eq)]
+#[derive(Serialize, SchemaType, Debug, PartialEq, Eq, Clone)]
 pub struct ItemStatusChangedEvent {
     /// The item's id.
     pub item_id:         ItemID,
@@ -110,7 +109,7 @@ pub struct ItemStatusChangedEvent {
 }
 
 /// The [`GrantRoleEvent`] is logged when a new role is granted to an address.
-#[derive(Serialize, SchemaType, Debug, PartialEq, Eq)]
+#[derive(Serialize, SchemaType, Debug, PartialEq, Eq, Clone)]
 pub struct GrantRoleEvent {
     /// The address that has been its role granted.
     pub address: Address,
@@ -119,7 +118,7 @@ pub struct GrantRoleEvent {
 }
 
 /// The [`RevokeRoleEvent`] is logged when a role is revoked from an address.
-#[derive(Serialize, SchemaType, Debug, PartialEq, Eq)]
+#[derive(Serialize, SchemaType, Debug, PartialEq, Eq, Clone)]
 pub struct RevokeRoleEvent {
     /// Address that has been its role revoked.
     pub address: Address,
@@ -548,7 +547,7 @@ fn create_item(
 
 /// Partial parameter type for the contract function
 /// `changeItemStatus`.
-#[derive(Serialize, SchemaType, Debug, PartialEq, Eq)]
+#[derive(Serialize, SchemaType, Debug, PartialEq, Eq, Clone)]
 pub struct AdditionalData {
     /// Any additional data encoded as generic bytes. Usecase-specific data can
     /// be included here such as temperature, longitude, latitude, ... .
