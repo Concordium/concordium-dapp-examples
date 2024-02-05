@@ -1,5 +1,8 @@
 use anyhow::Context;
-use concordium_rust_sdk::types::{hashes::TransactionHash, AbsoluteBlockHeight, ContractAddress};
+use concordium_rust_sdk::{
+    smart_contracts::common::to_bytes,
+    types::{hashes::TransactionHash, AbsoluteBlockHeight, ContractAddress},
+};
 use deadpool_postgres::{GenericClient, Object};
 use serde::Serialize;
 use tokio_postgres::{types::ToSql, NoTls};
@@ -130,8 +133,8 @@ impl<'a> From<deadpool_postgres::Transaction<'a>> for Transaction<'a> {
 }
 
 impl<'a> Transaction<'a> {
-    // Set the latest height in the DB.
-    pub async fn set_latest_height(
+    // Set the latest checkpoint in the DB.
+    pub async fn set_latest_checkpoint(
         &self,
         height: AbsoluteBlockHeight,
         transaction_hash: TransactionHash,
@@ -153,27 +156,50 @@ impl<'a> Transaction<'a> {
         Ok(())
     }
 
-    /// Insert a contract event submission into the DB.
-    pub async fn insert_event(
+    /// Insert an item created event submission into the DB.
+    pub async fn insert_item_created_event(
         &self,
         transaction_hash: TransactionHash,
-        item_id: u64,
-        new_status: Status,
-        additional_data: AdditionalData,
+        event: ItemCreatedEvent,
     ) -> DatabaseResult<()> {
         let insert_event = self
             .inner
             .prepare_cached(
-                "INSERT INTO events (id, transaction_hash, item_id, new_status, additional_data) \
-                 SELECT COALESCE(MAX(id) + 1, 0), $1, $2, $3, $4 FROM events;",
+                "INSERT INTO item_created_events (id, transaction_hash, item_id, metadata_url) \
+                 SELECT COALESCE(MAX(id) + 1, 0), $1, $2, $3 FROM item_created_events;",
+            )
+            .await?;
+
+        let params: [&(dyn ToSql + Sync); 3] = [
+            &transaction_hash.as_ref(),
+            &(event.item_id as i64),
+            &to_bytes(&event.metadata_url),
+        ];
+
+        self.inner.execute(&insert_event, &params).await?;
+        Ok(())
+    }
+
+    /// Insert an item status changed event submission into the DB.
+    pub async fn insert_item_status_changed_event(
+        &self,
+        transaction_hash: TransactionHash,
+        event: ItemStatusChangedEvent,
+    ) -> DatabaseResult<()> {
+        let insert_event = self
+            .inner
+            .prepare_cached(
+                "INSERT INTO item_status_changed_events (id, transaction_hash, item_id, \
+                 new_status, additional_data) SELECT COALESCE(MAX(id) + 1, 0), $1, $2, $3, $4 \
+                 FROM item_status_changed_events;",
             )
             .await?;
 
         let params: [&(dyn ToSql + Sync); 4] = [
             &transaction_hash.as_ref(),
-            &(item_id as i64),
-            &(new_status as i64),
-            &additional_data.bytes,
+            &(event.item_id as i64),
+            &(event.new_status as i64),
+            &event.additional_data.bytes,
         ];
 
         self.inner.execute(&insert_event, &params).await?;

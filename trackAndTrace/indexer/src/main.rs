@@ -2,13 +2,13 @@
 use anyhow::Context;
 use clap::Parser;
 use concordium_rust_sdk::{
-    indexer,
-    smart_contracts::common::OwnedEntrypointName,
+    indexer::{self},
     types::{hashes::TransactionHash, queries::BlockInfo, AbsoluteBlockHeight, ContractAddress},
     v2 as sdk,
 };
-use contract::ItemStatusChangedEvent;
+use contract::{ItemCreatedEvent, ItemStatusChangedEvent};
 use indicatif::{ProgressBar, ProgressStyle};
+use std::collections::BTreeSet;
 use track_and_trace as contract;
 
 mod db;
@@ -45,7 +45,7 @@ struct Args {
     /// Database connection string.
     #[arg(
         long = "db-connection",
-        default_value = "host=localhost dbname=indexer3 user=postgres password=password port=5432",
+        default_value = "host=localhost dbname=indexer user=postgres password=password port=5432",
         help = "A connection string detailing the connection to the database used by the \
                 application.",
         env = "CCD_INDEXER_DB_CONNECTION"
@@ -114,7 +114,8 @@ async fn main() -> anyhow::Result<()> {
         settings.contract_address == app.contract_address,
         "Contract address does not match the contract address found in the database"
     );
-    eprintln!("Settings: {:?}", settings);
+
+    tracing::info!("Settings: {:?}", settings);
 
     handle_indexing(db, db_pool, endpoint, app.start, app.contract_address).await
 }
@@ -129,10 +130,12 @@ async fn get_first_block(
         .find_first_finalized_block_no_earlier_than(.., start)
         .await?;
 
-    eprintln!(
+    tracing::info!(
         "Indexing from block {} at {}.",
-        first_block.block_hash, first_block.block_slot_time,
+        first_block.block_height,
+        first_block.block_slot_time,
     );
+
     Ok(first_block)
 }
 
@@ -151,29 +154,28 @@ async fn handle_indexing(
         .context("Unable to connect.")?;
     let first_block = get_first_block(&mut client, start).await?;
 
-    // TODO: FIX PROGRESS BAR
-    let bar = ProgressBar::new(100000000 - first_block.block_height.height).with_style(
-        ProgressStyle::with_template("{spinner} {msg} {wide_bar} {pos}/{len}")?,
-    );
+    let spinner =
+        ProgressBar::new_spinner().with_style(ProgressStyle::with_template("{spinner} {msg}")?);
+
+    let mut contrat_set = BTreeSet::new();
+    contrat_set.insert(contract_address);
 
     let traverse_config = indexer::TraverseConfig::new_single(endpoint, first_block.block_height);
     let (sender, mut receiver) = tokio::sync::mpsc::channel(20);
     let cancel_handle = tokio::spawn(traverse_config.traverse(
-        indexer::ContractUpdateIndexer {
-            target_address: contract_address,
-            entrypoint:     OwnedEntrypointName::new_unchecked(
-                "changeItemStatusByAdmin".to_string(),
-            ),
+        indexer::AffectedContractIndexer {
+            addresses: contrat_set,
+            all:       true,
         },
         sender,
     ));
 
     while let Some((block, contract_update_infos)) = receiver.recv().await {
-        bar.set_message(block.block_slot_time.to_string());
-        bar.inc(1);
+        spinner.set_message(block.block_slot_time.to_string());
+        spinner.inc(1);
 
         for tx in contract_update_infos {
-            for (contract_invoked, _entry_point_name, events) in tx.execution_tree.events() {
+            for (contract_invoked, _entry_point_name, events) in tx.0.execution_tree.events() {
                 anyhow::ensure!(
                     contract_invoked == contract_address,
                     "The contract entry point `changeItemStatus` can only be invoke by an account \
@@ -205,8 +207,7 @@ async fn handle_indexing(
 
                 let parsed_event: contract::Event = event.parse()?;
 
-                if let contract::Event::ItemStatusChanged(item_status_changed_event) = parsed_event
-                {
+                if let contract::Event::ItemStatusChanged(item_status_change_event) = parsed_event {
                     // In case of DB errors, we will reconnect and retry to insert the event into
                     // the database.
                     let mut retry = true;
@@ -217,8 +218,8 @@ async fn handle_indexing(
                     while retry {
                         retry = match db_insert_item_status_changed_event(
                             &mut db,
-                            tx.transaction_hash,
-                            item_status_changed_event.clone(),
+                            tx.0.transaction_hash,
+                            item_status_change_event.clone(),
                             block.block_height,
                         )
                         .await
@@ -226,12 +227,12 @@ async fn handle_indexing(
                             Ok(time) => {
                                 reconnecting_db_errors_count = 0;
                                 tracing::info!(
-                                    "Processed item_status_changed_event at index {} in transaction {} in block {} \
-                                     transactions in {}ms",
+                                    "Processed `item_status_change_event` at event index {} in \
+                                     transaction {} in block {}. Database transaction took {}ms.",
                                     // TODO: add event indexes
                                     1,
-                                    tx.transaction_hash,
-                                    block.block_hash,
+                                    tx.0.transaction_hash,
+                                    block.block_height,
                                     time.num_milliseconds()
                                 );
                                 false
@@ -269,8 +270,69 @@ async fn handle_indexing(
                             }
                         };
                     }
-                } else {
-                    anyhow::bail!("Wrong event")
+                } else if let contract::Event::ItemCreated(item_created_event) = parsed_event {
+                    // In case of DB errors, we will reconnect and retry to insert the event into
+                    // the database.
+                    let mut retry = true;
+                    // How many successive insertion errors were encountered.
+                    // This is used to slow down attempts to not spam the database.
+                    let mut reconnecting_db_errors_count = 0;
+
+                    while retry {
+                        retry = match db_insert_created_event(
+                            &mut db,
+                            tx.0.transaction_hash,
+                            item_created_event.clone(),
+                            block.block_height,
+                        )
+                        .await
+                        {
+                            Ok(time) => {
+                                reconnecting_db_errors_count = 0;
+                                tracing::info!(
+                                    "Processed `item_created_event` at event index {} in \
+                                     transaction {} in block {}. Database transaction took {}ms.",
+                                    // TODO: add event indexes
+                                    1,
+                                    tx.0.transaction_hash,
+                                    block.block_height,
+                                    time.num_milliseconds()
+                                );
+                                false
+                            }
+                            Err(e) => {
+                                reconnecting_db_errors_count += 1;
+                                // wait for 500 * 2^(min(successive_errors - 1, 8))
+                                // seconds before attempting.
+                                // The reason for the min is that we bound the
+                                // time between reconnects.
+                                let delay = std::time::Duration::from_millis(
+                                    500 * (1 << std::cmp::min(reconnecting_db_errors_count, 8)),
+                                );
+                                tracing::warn!(
+                                    "Database connection lost due to {:#}. Will
+                            attempt to reconnect in {}ms. Reconnecting database error count: {}",
+                                    e,
+                                    delay.as_millis(),
+                                    reconnecting_db_errors_count
+                                );
+                                tokio::time::sleep(delay).await;
+
+                                // Get new db connection from the pool
+                                db = match db_pool.get().await.context(
+                                    "Failed to get new database
+                            connection from pool",
+                                ) {
+                                    Ok(db) => db,
+                                    Err(e) => {
+                                        receiver.close();
+                                        return Err(e);
+                                    }
+                                };
+                                true
+                            }
+                        };
+                    }
                 }
             }
         }
@@ -279,13 +341,55 @@ async fn handle_indexing(
     // Indexer will not stop after finishing syncing but instead continue to
     // listening for new blocks.
     cancel_handle.abort();
-    bar.finish_and_clear();
+    spinner.finish_and_clear();
 
     Ok(())
 }
 
+/// Inserts data related to the `ItemCreatedEvent` into the database.
+/// Everything is commited as a single transactions allowing
+/// for easy restoration from the last recorded block (by height) inserted into
+/// the database. Returns the duration it took to process the transaction.
+#[tracing::instrument(skip(db))]
+async fn db_insert_created_event<'a>(
+    db: &mut Database,
+    tx_hash: TransactionHash,
+    event: ItemCreatedEvent,
+    block_height: AbsoluteBlockHeight,
+) -> anyhow::Result<chrono::Duration> {
+    let start = chrono::Utc::now();
+    let transaction = db
+        .client
+        .transaction()
+        .await
+        .context("Failed to build DB transaction")?;
+
+    let transaction = Transaction::from(transaction);
+
+    // TODO: Add event index
+    transaction
+        .set_latest_checkpoint(block_height, tx_hash, 1)
+        .await?;
+
+    transaction
+        .insert_item_created_event(tx_hash, event)
+        .await?;
+
+    let now = tokio::time::Instant::now();
+    transaction
+        .inner
+        .commit()
+        .await
+        .context("Failed to commit DB transaction.")?;
+
+    tracing::debug!("Commit completed in {}ms.", now.elapsed().as_millis());
+
+    let end = chrono::Utc::now().signed_duration_since(start);
+    Ok(end)
+}
+
 /// Inserts data related to the `ItemStatusChangedEvent` into the database.
-///  Everything is commited as a single transactions allowing
+/// Everything is commited as a single transactions allowing
 /// for easy restoration from the last recorded block (by height) inserted into
 /// the database. Returns the duration it took to process the transaction.
 #[tracing::instrument(skip(db))]
@@ -303,17 +407,14 @@ async fn db_insert_item_status_changed_event<'a>(
         .context("Failed to build DB transaction")?;
 
     let transaction = Transaction::from(transaction);
+
+    // TODO: Add event index
     transaction
-        .set_latest_height(block_height, tx_hash, 1)
+        .set_latest_checkpoint(block_height, tx_hash, 1)
         .await?;
 
     transaction
-        .insert_event(
-            tx_hash,
-            event.item_id,
-            event.new_status,
-            event.additional_data,
-        )
+        .insert_item_status_changed_event(tx_hash, event)
         .await?;
 
     let now = tokio::time::Instant::now();
