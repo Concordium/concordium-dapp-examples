@@ -4,9 +4,10 @@ use clap::Parser;
 use concordium_rust_sdk::{
     indexer,
     smart_contracts::common::OwnedEntrypointName,
-    types::{queries::BlockInfo, ContractAddress},
-    v2::{self as sdk},
+    types::{hashes::TransactionHash, queries::BlockInfo, AbsoluteBlockHeight, ContractAddress},
+    v2 as sdk,
 };
+use contract::ItemStatusChangedEvent;
 use indicatif::{ProgressBar, ProgressStyle};
 use track_and_trace as contract;
 
@@ -44,17 +45,40 @@ struct Args {
     /// Database connection string.
     #[arg(
         long = "db-connection",
-        default_value = "host=localhost dbname=indexer user=postgres password=password port=5432",
+        default_value = "host=localhost dbname=indexer3 user=postgres password=password port=5432",
         help = "A connection string detailing the connection to the database used by the \
                 application.",
         env = "CCD_INDEXER_DB_CONNECTION"
     )]
     db_connection:    tokio_postgres::config::Config,
+    /// Maximum log level
+    #[clap(
+        long = "log-level",
+        default_value = "info",
+        help = "The maximum log level. Possible values are: `trace`, `debug`, `info`, `warn`, and \
+                `debug`.",
+        env = "CCD_INDEXER_DB_CONNECTION_LOG_LEVEL"
+    )]
+    log_level:        tracing_subscriber::filter::LevelFilter,
 }
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let app: Args = Args::parse();
+
+    {
+        use tracing_subscriber::prelude::*;
+        let log_filter = tracing_subscriber::filter::Targets::new()
+            .with_target(module_path!(), app.log_level)
+            .with_target("indexer", app.log_level);
+
+        tracing_subscriber::registry()
+            .with(tracing_subscriber::fmt::layer())
+            .with(log_filter)
+            .init();
+    }
+
+    // Establish connection to the node.
     let endpoint = if app
         .node_endpoint
         .uri()
@@ -70,6 +94,7 @@ async fn main() -> anyhow::Result<()> {
     .connect_timeout(std::time::Duration::from_secs(5))
     .timeout(std::time::Duration::from_secs(10));
 
+    // Establish connection to the postgres database.
     let db_pool = DatabasePool::create(app.db_connection.clone(), 2, true)
         .await
         .context("Could not create database pool")?;
@@ -90,11 +115,6 @@ async fn main() -> anyhow::Result<()> {
         "Contract address does not match the contract address found in the database"
     );
     eprintln!("Settings: {:?}", settings);
-
-    // height_sender
-    //     .send(settings.latest_height)
-    //     .map_err(|_| anyhow!("Best block height could not be sent to node
-    // process"))?;
 
     handle_indexing(db, endpoint, app.start, app.contract_address).await
 }
@@ -185,30 +205,59 @@ async fn handle_indexing(
                 let parsed_event: contract::Event = event.parse()?;
 
                 if let contract::Event::ItemStatusChanged(event) = parsed_event {
-                    // let start = chrono::Utc::now();
-                    let transaction = db
-                        .client
-                        .transaction()
-                        .await
-                        .context("Failed to build DB transaction")?;
+                    match db_insert_item_status_changed_event(
+                        &mut db,
+                        tx.transaction_hash,
+                        event,
+                        block.block_height,
+                    )
+                    .await
+                    {
+                        Ok(time) => {
+                            // successive_db_errors = 0;
+                            // tracing::info!(
+                            //     "Processed block {} at height {} transactions
+                            // in {}ms",
+                            //     block_data.block_hash,
+                            //     block_data.height.height,
+                            //     time.num_milliseconds()
+                            // );
+                            // retry_block_data = None;
+                        }
+                        Err(e) => {
+                            // successive_db_errors += 1;
+                            // // wait for 2^(min(successive_errors - 1, 7))
+                            // seconds before attempting.
+                            // // The reason for the min is that we bound the
+                            // time between reconnects.
+                            // let delay = std::time::Duration::from_millis(
+                            //     500 * (1 <<
+                            // std::cmp::min(successive_db_errors, 8)),
+                            // );
+                            // tracing::warn!(
+                            //     "Database connection lost due to {:#}. Will
+                            // attempt to reconnect in {}ms.",
+                            //     e,
+                            //     delay.as_millis()
+                            // );
+                            // tokio::time::sleep(delay).await;
 
-                    let transaction = Transaction::from(transaction);
-
-                    transaction
-                        .insert_event(
-                            tx.transaction_hash,
-                            event.item_id,
-                            event.new_status,
-                            event.additional_data,
-                        )
-                        .await?;
-
-                    // let now = tokio::time::Instant::now();
-                    transaction
-                        .inner
-                        .commit()
-                        .await
-                        .context("Failed to commit DB transaction.")?;
+                            // // Get new db connection from the pool
+                            // db = match db_pool
+                            //     .get()
+                            //     .await
+                            //     .context("Failed to get new database
+                            // connection from pool")
+                            // {
+                            //     Ok(db) => db,
+                            //     Err(e) => {
+                            //         block_receiver.close();
+                            //         return Err(e);
+                            //     }
+                            // };
+                            // retry_block_data = Some(block_data);
+                        }
+                    }
                 } else {
                     anyhow::bail!("Wrong event")
                 }
@@ -227,4 +276,49 @@ async fn handle_indexing(
     bar.finish_and_clear();
 
     Ok(())
+}
+
+/// Inserts data related to the `ItemStatusChangedEvent` into the database.
+///  Everything is commited as a single transactions allowing
+/// for easy restoration from the last recorded block (by height) inserted into
+/// the database. Returns the duration it took to process the transaction.
+#[tracing::instrument(skip(db))]
+async fn db_insert_item_status_changed_event<'a>(
+    db: &mut Database,
+    tx_hash: TransactionHash,
+    event: ItemStatusChangedEvent,
+    block_height: AbsoluteBlockHeight,
+) -> anyhow::Result<chrono::Duration> {
+    let start = chrono::Utc::now();
+    let transaction = db
+        .client
+        .transaction()
+        .await
+        .context("Failed to build DB transaction")?;
+
+    let transaction = Transaction::from(transaction);
+    transaction
+        .set_latest_height(block_height, tx_hash, 1)
+        .await?;
+
+    transaction
+        .insert_event(
+            tx_hash,
+            event.item_id,
+            event.new_status,
+            event.additional_data,
+        )
+        .await?;
+
+    let now = tokio::time::Instant::now();
+    transaction
+        .inner
+        .commit()
+        .await
+        .context("Failed to commit DB transaction.")?;
+
+    tracing::debug!("Commit completed in {}ms.", now.elapsed().as_millis());
+
+    let end = chrono::Utc::now().signed_duration_since(start);
+    Ok(end)
 }

@@ -30,22 +30,42 @@ type DatabaseResult<T> = Result<T, DatabaseError>;
 #[derive(Debug, Serialize)]
 pub struct StoredConfiguration {
     /// The latest recorded block height.
-    pub latest_height:    Option<AbsoluteBlockHeight>,
-    /// The contract address of the election contract monitored.
-    pub contract_address: ContractAddress,
+    pub latest_block_height:     Option<AbsoluteBlockHeight>,
+    ///  The latest recorded transaction hash.
+    pub latest_transaction_hash: Option<TransactionHash>,
+    /// The latest recorded event index.
+    pub latest_event_index:      Option<u16>,
+    /// The contract address of the track and trace contract monitored.
+    pub contract_address:        ContractAddress,
 }
 
 impl TryFrom<tokio_postgres::Row> for StoredConfiguration {
     type Error = DatabaseError;
 
     fn try_from(value: tokio_postgres::Row) -> DatabaseResult<Self> {
-        let raw_latest_height: Option<i64> = value.try_get(0)?;
-        let raw_contract_index: i64 = value.try_get(1)?;
-        let raw_contract_subindex: i64 = value.try_get(2)?;
+        let raw_latest_block_height: Option<i64> = value.try_get(0)?;
+        let raw_latest_transaction_hash: Option<&[u8]> = value.try_get(1)?;
+        let raw_latest_event_index: Option<i64> = value.try_get(2)?;
+        let raw_contract_index: i64 = value.try_get(3)?;
+        let raw_contract_subindex: i64 = value.try_get(4)?;
         let contract_address =
             ContractAddress::new(raw_contract_index as u64, raw_contract_subindex as u64);
+
+        let latest_transaction_hash: Option<TransactionHash> = match raw_latest_transaction_hash {
+            Some(bytes) => {
+                let latest_transaction_hash: TransactionHash = bytes
+                    .try_into()
+                    .map_err(|_| DatabaseError::TypeConversion)?;
+
+                Some(latest_transaction_hash)
+            }
+            None => None,
+        };
+
         let settings = Self {
-            latest_height: raw_latest_height.map(|v| (v as u64).into()),
+            latest_block_height: raw_latest_block_height.map(|v| (v as u64).into()),
+            latest_transaction_hash,
+            latest_event_index: raw_latest_event_index.map(|v| (v as u16).into()),
             contract_address,
         };
         Ok(settings)
@@ -85,11 +105,15 @@ impl Database {
         Ok(())
     }
 
-    /// Get the latest block height recorded in the DB.
+    /// Get the latest block height, latest transaction hash, and latest event
+    /// index recorded in the DB.
     pub async fn get_settings(&self) -> DatabaseResult<StoredConfiguration> {
         let get_settings = self
             .client
-            .prepare_cached("SELECT latest_height, contract_index, contract_subindex FROM settings")
+            .prepare_cached(
+                "SELECT latest_block_height, latest_transaction_hash, latest_event_index, \
+                 contract_index, contract_subindex FROM settings",
+            )
             .await?;
         self.client.query_one(&get_settings, &[]).await?.try_into()
     }
@@ -106,16 +130,28 @@ impl<'a> From<deadpool_postgres::Transaction<'a>> for Transaction<'a> {
 }
 
 impl<'a> Transaction<'a> {
-    /// Set the latest height in the DB.
-    // pub async fn set_latest_height(&self, height: AbsoluteBlockHeight) -> DatabaseResult<()> {
-    //     let set_latest_height = self
-    //         .inner
-    //         .prepare_cached("UPDATE settings SET latest_height = $1 WHERE id = true")
-    //         .await?;
-    //     let params: [&(dyn ToSql + Sync); 1] = [&(height.height as i64)];
-    //     self.inner.execute(&set_latest_height, &params).await?;
-    //     Ok(())
-    // }
+    // Set the latest height in the DB.
+    pub async fn set_latest_height(
+        &self,
+        height: AbsoluteBlockHeight,
+        transaction_hash: TransactionHash,
+        event_index: u16,
+    ) -> DatabaseResult<()> {
+        let set_latest_height = self
+            .inner
+            .prepare_cached(
+                "UPDATE settings SET latest_block_height = $1, latest_transaction_hash = $2, \
+                 latest_event_index = $3 WHERE id = true",
+            )
+            .await?;
+        let params: [&(dyn ToSql + Sync); 3] = [
+            &(height.height as i64),
+            &transaction_hash.as_ref(),
+            &(event_index as i64),
+        ];
+        self.inner.execute(&set_latest_height, &params).await?;
+        Ok(())
+    }
 
     /// Insert a contract event submission into the DB.
     pub async fn insert_event(
