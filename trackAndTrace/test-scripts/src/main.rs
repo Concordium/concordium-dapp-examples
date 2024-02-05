@@ -27,22 +27,32 @@ struct Args {
         help = "The endpoints are expected to point to concordium node grpc v2 API's.",
         global = true
     )]
-    node_endpoint:    concordium_rust_sdk::v2::Endpoint,
+    node_endpoint:             concordium_rust_sdk::v2::Endpoint,
     #[arg(
         long = "module",
         short = 'm',
         default_value = "../smart-contract/concordium-out/module.wasm.v1",
         help = "Source module from which to initialize the contract instances."
     )]
-    module:           std::path::PathBuf,
+    module:                    std::path::PathBuf,
+    #[arg(
+        long = "input-parameter-file",
+        short = 'i',
+        help = "A JSON file containing the input parameter."
+    )]
+    input_parameter_json_file: std::path::PathBuf,
     #[arg(
         long = "num-items",
         short = 'i',
         help = "Number of items to be created in the contract."
     )]
-    num_items:        usize,
-    #[structopt(long = "admin-key-file", help = "Path to the admin key file.")]
-    admin_keys_path:  std::path::PathBuf,
+    num_items:                 usize,
+    #[structopt(
+        long = "admin-key-file",
+        short = 'a',
+        help = "Path to the admin key file."
+    )]
+    admin_keys_path:           std::path::PathBuf,
 }
 
 #[tokio::main]
@@ -113,29 +123,11 @@ async fn main() -> anyhow::Result<()> {
     };
 
     // Initialize new instance
-    let params: Vec<TransitionEdges> = vec![
-        // The `admin_key_address` can change the status of the item to any value.
-        TransitionEdges {
-            from:               Status::Produced,
-            to:                 vec![Status::InTransit, Status::InStore, Status::Sold],
-            authorized_account: admin_key.address,
-        },
-        TransitionEdges {
-            from:               Status::InTransit,
-            to:                 vec![Status::Produced, Status::InStore, Status::Sold],
-            authorized_account: admin_key.address,
-        },
-        TransitionEdges {
-            from:               Status::InStore,
-            to:                 vec![Status::InTransit, Status::Produced, Status::Sold],
-            authorized_account: admin_key.address,
-        },
-        TransitionEdges {
-            from:               Status::Sold,
-            to:                 vec![Status::InTransit, Status::InStore, Status::Produced],
-            authorized_account: admin_key.address,
-        },
-    ];
+    let params: Vec<TransitionEdges> = serde_json::from_reader(
+        std::fs::File::open(&args.input_parameter_json_file)
+            .context("Unable to open input parameter file.")?,
+    )
+    .context("Unable to parse input parameter.")?;
 
     let mut contract_client = {
         let expiry = TransactionTime::hours_after(1);

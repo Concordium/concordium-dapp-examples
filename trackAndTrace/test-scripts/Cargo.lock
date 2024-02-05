@@ -2623,7 +2623,9 @@ name = "track-and-trace"
 version = "0.1.0"
 dependencies = [
  "concordium-cis2",
+ "concordium-contracts-common",
  "concordium-std",
+ "serde",
 ]
 
 [[package]]
@@ -2634,6 +2636,7 @@ dependencies = [
  "chrono",
  "clap",
  "concordium-rust-sdk",
+ "serde_json",
  "tokio",
  "tonic",
  "track-and-trace",
