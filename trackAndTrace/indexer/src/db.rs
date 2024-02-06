@@ -1,14 +1,14 @@
-// TODO: add block height to the event databases
+// TODO: add block height, event index, to the event databases
 
 use anyhow::Context;
 use concordium_rust_sdk::{
-    smart_contracts::common::to_bytes,
+    smart_contracts::common::{from_bytes, to_bytes},
     types::{hashes::TransactionHash, AbsoluteBlockHeight, ContractAddress},
 };
 use deadpool_postgres::{GenericClient, Object};
 use serde::Serialize;
 use tokio_postgres::{types::ToSql, NoTls};
-use track_and_trace::*;
+use track_and_trace::{MetadataUrl, *};
 
 /// Represents possible errors returned from [`Database`] or [`DatabasePool`]
 /// functions
@@ -78,7 +78,7 @@ impl TryFrom<tokio_postgres::Row> for StoredConfiguration {
 }
 
 /// An StoredItemStatusChanged event stored in the DB.
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
 pub struct StoredItemStatusChangedEvent {
     /// The transaction hash that the event was recorded in.
     pub transaction_hash: TransactionHash,
@@ -105,18 +105,48 @@ impl TryFrom<tokio_postgres::Row> for StoredItemStatusChangedEvent {
     type Error = DatabaseError;
 
     fn try_from(value: tokio_postgres::Row) -> DatabaseResult<Self> {
-        let raw_latest_transaction_hash: &[u8] = value.try_get(0)?;
+        let raw_transaction_hash: &[u8] = value.try_get(0)?;
         let raw_item_id: i64 = value.try_get(1)?;
         let raw_new_status: i64 = value.try_get(2)?;
         let raw_additional_data: &[u8] = value.try_get(3)?;
 
         let events = Self {
-            transaction_hash: raw_latest_transaction_hash
+            transaction_hash: raw_transaction_hash
                 .try_into()
                 .map_err(|_| DatabaseError::TypeConversion)?,
             new_status:       status_from_i64(raw_new_status)?,
             item_id:          raw_item_id as u64,
             additional_data:  AdditionalData::from_bytes(raw_additional_data.into()),
+        };
+        Ok(events)
+    }
+}
+
+/// An StoredItemCreated event stored in the DB.
+#[derive(Debug)]
+pub struct StoredItemCreatedEvent {
+    /// The transaction hash that the event was recorded in.
+    pub transaction_hash: TransactionHash,
+    /// The item's id from the event.
+    pub item_id:          u64,
+    /// The item's metadata_url from the event.
+    pub metadata_url:     Option<MetadataUrl>,
+}
+
+impl TryFrom<tokio_postgres::Row> for StoredItemCreatedEvent {
+    type Error = DatabaseError;
+
+    fn try_from(value: tokio_postgres::Row) -> DatabaseResult<Self> {
+        let raw_transaction_hash: &[u8] = value.try_get(0)?;
+        let raw_item_id: i64 = value.try_get(1)?;
+        let raw_metadata_url: &[u8] = value.try_get(2)?;
+
+        let events = Self {
+            transaction_hash: raw_transaction_hash
+                .try_into()
+                .map_err(|_| DatabaseError::TypeConversion)?,
+            item_id:          raw_item_id as u64,
+            metadata_url:     from_bytes(raw_metadata_url).unwrap(),
         };
         Ok(events)
     }
@@ -193,6 +223,26 @@ impl Database {
 
         Ok(result)
     }
+
+    /// Get ItemCreatedEvent.
+    pub async fn get_item_created_event_submission(
+        &self,
+        item_id: u64,
+    ) -> DatabaseResult<StoredItemCreatedEvent> {
+        let get_item_created_event_submissions = self
+            .client
+            .prepare_cached(
+                "SELECT transaction_hash, item_id, metadata_url from item_created_events WHERE \
+                 item_id = $1",
+            )
+            .await?;
+        let params: [&(dyn ToSql + Sync); 1] = [&(item_id as i64)];
+
+        self.client
+            .query_one(&get_item_created_event_submissions, &params)
+            .await?
+            .try_into()
+    }
 }
 
 /// Wrapper around a database transaction
@@ -239,7 +289,8 @@ impl<'a> Transaction<'a> {
             .inner
             .prepare_cached(
                 "INSERT INTO item_created_events (id, transaction_hash, item_id, metadata_url) \
-                 SELECT COALESCE(MAX(id) + 1, 0), $1, $2, $3 FROM item_created_events;",
+                 SELECT COALESCE(MAX(id) + 1, 0), $1, $2, $3 FROM item_created_events 
+                 ON CONFLICT (transaction_hash, item_id, metadata_url) DO NOTHING;",
             )
             .await?;
 
@@ -264,7 +315,8 @@ impl<'a> Transaction<'a> {
             .prepare_cached(
                 "INSERT INTO item_status_changed_events (id, transaction_hash, item_id, \
                  new_status, additional_data) SELECT COALESCE(MAX(id) + 1, 0), $1, $2, $3, $4 \
-                 FROM item_status_changed_events;",
+                 FROM item_status_changed_events
+                 ON CONFLICT (transaction_hash, item_id, new_status, additional_data) DO NOTHING;",
             )
             .await?;
 

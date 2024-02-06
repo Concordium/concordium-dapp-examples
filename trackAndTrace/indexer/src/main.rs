@@ -379,6 +379,10 @@ async fn handle_indexing(
 
     // let test = db.get_item_status_changed_events_submissions(1).await?;
     // tracing::warn!("{test:#?}");
+    // tracing::warn!("ssssssssssss");
+
+    // let test = db.get_item_created_event_submission(1).await?;
+    // tracing::warn!("{test:#?}");
 
     db_handle.abort();
     spinner.finish_and_clear();
