@@ -11,24 +11,26 @@ CREATE TABLE IF NOT EXISTS settings (
 -- Table containing item_status_changed_events successfully submitted to the database from the contract monitored.
 CREATE TABLE IF NOT EXISTS item_status_changed_events (
   id INT8 PRIMARY KEY,
+  block_height INT8 NOT NULL,
   transaction_hash BYTEA NOT NULL,
+  event_index INT8 NOT NULL,
   item_id INT8 NOT NULL,
   new_status INT8 NOT NULL,
   additional_data BYTEA NOT NULL,
-  -- Define composite unique constraint on 
-  -- // TODO: make entries unique based on `block_height`, `transaction_hash`, `event_index`
-  CONSTRAINT unique_item_status_changed UNIQUE (transaction_hash, item_id, new_status, additional_data)
+  -- Define composite unique constraint to ensure each event exists at most once in the database
+  CONSTRAINT unique_item_status_changed UNIQUE (block_height, transaction_hash, event_index)
 );
 
 -- Table containing item_created_events successfully submitted to the database from the contract monitored.
 CREATE TABLE IF NOT EXISTS item_created_events (
   id INT8 PRIMARY KEY,
+  block_height INT8 NOT NULL,
   transaction_hash BYTEA NOT NULL,
+  event_index INT8 NOT NULL,
   item_id INT8 NOT NULL,
   metadata_url BYTEA NOT NULL,
-  -- Define composite unique constraint on 
-  -- // TODO: make entries unique based on `block_height`, `transaction_hash`, `event_index`
-  CONSTRAINT unique_item_created UNIQUE (transaction_hash, item_id, metadata_url)
+  -- Define composite unique constraint to ensure each event exists at most once in the database
+  CONSTRAINT unique_item_created UNIQUE (block_height, transaction_hash, event_index)
 );
 
 -- Improve performance on queries for events within id range for an account.
