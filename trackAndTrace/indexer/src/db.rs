@@ -1,3 +1,5 @@
+// TODO: add block height to the event databases
+
 use anyhow::Context;
 use concordium_rust_sdk::{
     smart_contracts::common::to_bytes,
@@ -75,6 +77,51 @@ impl TryFrom<tokio_postgres::Row> for StoredConfiguration {
     }
 }
 
+/// An StoredItemStatusChanged event stored in the DB.
+#[derive(Debug, Serialize)]
+pub struct StoredItemStatusChangedEvent {
+    /// The transaction hash that the event was recorded in.
+    pub transaction_hash: TransactionHash,
+    /// The item's id from the event.
+    pub item_id:          u64,
+    /// The item's new status.
+    pub new_status:       Status,
+    /// Any additional data encoded as generic bytes. Usecase-specific data can
+    /// be included here such as temperature, longitude, latitude, ... .
+    pub additional_data:  AdditionalData,
+}
+
+fn status_from_i64(value: i64) -> Result<Status, DatabaseError> {
+    match value {
+        0 => Ok(Status::Produced),
+        1 => Ok(Status::InTransit),
+        2 => Ok(Status::InStore),
+        3 => Ok(Status::Sold),
+        _ => Err(DatabaseError::TypeConversion),
+    }
+}
+
+impl TryFrom<tokio_postgres::Row> for StoredItemStatusChangedEvent {
+    type Error = DatabaseError;
+
+    fn try_from(value: tokio_postgres::Row) -> DatabaseResult<Self> {
+        let raw_latest_transaction_hash: &[u8] = value.try_get(0)?;
+        let raw_item_id: i64 = value.try_get(1)?;
+        let raw_new_status: i64 = value.try_get(2)?;
+        let raw_additional_data: &[u8] = value.try_get(3)?;
+
+        let events = Self {
+            transaction_hash: raw_latest_transaction_hash
+                .try_into()
+                .map_err(|_| DatabaseError::TypeConversion)?,
+            new_status:       status_from_i64(raw_new_status)?,
+            item_id:          raw_item_id as u64,
+            additional_data:  AdditionalData::from_bytes(raw_additional_data.into()),
+        };
+        Ok(events)
+    }
+}
+
 /// Database client wrapper
 pub struct Database {
     /// The database client
@@ -119,6 +166,32 @@ impl Database {
             )
             .await?;
         self.client.query_one(&get_settings, &[]).await?.try_into()
+    }
+
+    /// Get all StoredItemStatusChangedEvents by item id.
+    pub async fn get_item_status_changed_events_submissions(
+        &self,
+        item_id: u64,
+    ) -> DatabaseResult<Vec<StoredItemStatusChangedEvent>> {
+        let get_item_status_changed_event_submissions = self
+            .client
+            .prepare_cached(
+                "SELECT transaction_hash, item_id, new_status, additional_data from \
+                 item_status_changed_events WHERE item_id = $1",
+            )
+            .await?;
+        let params: [&(dyn ToSql + Sync); 1] = [&(item_id as i64)];
+        let rows = self
+            .client
+            .query(&get_item_status_changed_event_submissions, &params)
+            .await?;
+
+        let mut result: Vec<StoredItemStatusChangedEvent> = Vec::with_capacity(rows.len());
+        for row in rows {
+            result.push(StoredItemStatusChangedEvent::try_from(row)?)
+        }
+
+        Ok(result)
     }
 }
 
