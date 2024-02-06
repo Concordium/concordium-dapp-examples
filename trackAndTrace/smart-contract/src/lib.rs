@@ -86,11 +86,11 @@ pub type ItemID = u64;
     Nonce(NonceEvent),
 }
 
-/// The ItemCreatedEvent is logged when an item is created.
+/// The [`ItemCreatedEvent`] is logged when an item is created.
 #[derive(Serialize, SchemaType, Debug, PartialEq, Eq, Clone)]
 pub struct ItemCreatedEvent {
     /// The item's id.
-    pub item_id:      ItemID,
+    pub item_id: ItemID,
     /// The item's metadata_url.
     pub metadata_url: Option<MetadataUrl>,
 }
@@ -100,9 +100,9 @@ pub struct ItemCreatedEvent {
 #[derive(Serialize, SchemaType, Debug, PartialEq, Eq, Clone)]
 pub struct ItemStatusChangedEvent {
     /// The item's id.
-    pub item_id:         ItemID,
+    pub item_id: ItemID,
     /// The item's new status.
-    pub new_status:      Status,
+    pub new_status: Status,
     /// Any additional data encoded as generic bytes. Usecase-specific data can
     /// be included here such as temperature, longitude, latitude, ... .
     pub additional_data: AdditionalData,
@@ -114,7 +114,7 @@ pub struct GrantRoleEvent {
     /// The address that has been its role granted.
     pub address: Address,
     /// The role that was granted to the above address.
-    pub role:    Roles,
+    pub role: Roles,
 }
 
 /// The [`RevokeRoleEvent`] is logged when a role is revoked from an address.
@@ -123,7 +123,7 @@ pub struct RevokeRoleEvent {
     /// Address that has been its role revoked.
     pub address: Address,
     /// The role that was revoked from the above address.
-    pub role:    Roles,
+    pub role: Roles,
 }
 
 /// The NonceEvent is logged when the `permit` function is invoked. The event
@@ -176,7 +176,7 @@ pub enum Status {
 #[derive(Debug, Serialize, SchemaType, Clone, PartialEq, Eq)]
 pub struct ItemState {
     /// The status of the item.
-    pub status:       Status,
+    pub status: Status,
     /// The metadata_url of the item.
     pub metadata_url: Option<MetadataUrl>,
 }
@@ -399,9 +399,9 @@ impl<S: HasStateApi> State<S> {
 #[cfg_attr(feature = "derive-serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct TransitionEdges {
     /// The status of the `from` node of the transition edges.
-    pub from:               Status,
+    pub from: Status,
     /// A vector of statuses of the `to` node of the transition edges.
-    pub to:                 Vec<Status>,
+    pub to: Vec<Status>,
     /// The account that is allowed to execute the state transitions described
     /// above.
     pub authorized_account: AccountAddress,
@@ -431,7 +431,7 @@ fn init(
     state.grant_role(&invoker, Roles::Admin, state_builder);
     logger.log(&Event::GrantRole(GrantRoleEvent {
         address: invoker,
-        role:    Roles::Admin,
+        role: Roles::Admin,
     }))?;
 
     Ok(state)
@@ -548,6 +548,7 @@ fn create_item(
 /// Partial parameter type for the contract function
 /// `changeItemStatus`.
 #[derive(Serialize, SchemaType, Debug, PartialEq, Eq, Clone)]
+#[cfg_attr(feature = "derive-serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct AdditionalData {
     /// Any additional data encoded as generic bytes. Usecase-specific data can
     /// be included here such as temperature, longitude, latitude, ... .
@@ -555,7 +556,13 @@ pub struct AdditionalData {
 }
 
 impl AdditionalData {
-    pub fn empty() -> Self { AdditionalData { bytes: vec![] } }
+    pub fn empty() -> Self {
+        AdditionalData { bytes: vec![] }
+    }
+
+    pub fn from_bytes(bytes: Vec<u8>) -> Self {
+        AdditionalData { bytes }
+    }
 }
 
 /// The parameter type for the contract function `changeItemStatus` which
@@ -563,9 +570,9 @@ impl AdditionalData {
 #[derive(Serialize, SchemaType)]
 pub struct ChangeItemStatusParams {
     /// The item's id.
-    pub item_id:         ItemID,
+    pub item_id: ItemID,
     /// The item's new status.
-    pub new_status:      Status,
+    pub new_status: Status,
     /// Any additional data encoded as generic bytes. Usecase-specific data can
     /// be included here such as temperature, longitude, latitude, ... .
     pub additional_data: AdditionalData,
@@ -639,7 +646,7 @@ pub struct GrantRoleParams {
     /// The address that has been its role granted.
     pub address: Address,
     /// The role that has been granted to the above address.
-    pub role:    Roles,
+    pub role: Roles,
 }
 
 /// Add role to an address.
@@ -678,7 +685,7 @@ fn contract_grant_role(
     // Log a GrantRoleEvent.
     logger.log(&Event::GrantRole(GrantRoleEvent {
         address: params.address,
-        role:    params.role,
+        role: params.role,
     }))?;
     Ok(())
 }
@@ -690,7 +697,7 @@ pub struct RevokeRoleParams {
     /// The address that has been its role revoked.
     pub address: Address,
     /// The role that has been revoked from the above address.
-    pub role:    Roles,
+    pub role: Roles,
 }
 
 /// Revoke role from an address.
@@ -729,7 +736,7 @@ fn contract_revoke_role(
     // Log a RevokeRoleEvent.
     logger.log(&Event::RevokeRole(RevokeRoleEvent {
         address: params.address,
-        role:    params.role,
+        role: params.role,
     }))?;
     Ok(())
 }
