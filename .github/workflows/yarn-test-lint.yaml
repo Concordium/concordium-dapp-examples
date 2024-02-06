@@ -40,13 +40,13 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Install dependencies
+      - name: Install Dependencies
         if: ${{ matrix.packages == 'low-code-nft-marketplace/market-ui' || matrix.packages == 'low-code-nft-marketplace/mint-ui' }}
         run: yarn --cwd low-code-nft-marketplace/common-ui install
 
       - name: Run install
-        run: yarn --cwd ${{ matrix.packages }} install
+        run: cd ${{ matrix.packages }} && yarn install
 
       - name: Run Lint
-        run: yarn --cwd ${{ matrix.packages }} lint
+        run: yarn lint
       
