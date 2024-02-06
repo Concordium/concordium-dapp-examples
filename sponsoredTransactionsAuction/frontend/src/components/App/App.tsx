@@ -110,7 +110,7 @@ export default function App(props: WalletConnectionProps) {
 
     useEffect(() => {
         select();
-    }, []);
+    }, [select]);
 
     return (
         <div className="black-card-style">

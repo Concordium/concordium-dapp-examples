@@ -19,12 +19,12 @@ listening. Use `yarn fmt` and `yarn lint` before committing to ensure consistent
 formatting and adherence to common style.
 
 To build for production run
+
 ```
 yarn build
 ```
 
 which will produce the artifacts in the `dist` folder.
-
 
 ## Docker image
 
