@@ -1,4 +1,4 @@
-name: Test and Lint Frontends
+name: Build, Format and Lint Frontends
 
 on:
   push:
@@ -41,6 +41,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+          cache-dependency-path: ${{ matrix.packages }}/yarn.lock
 
       - name: Install Dependencies
         if: ${{ matrix.packages == 'low-code-nft-marketplace/market-ui' || matrix.packages == 'low-code-nft-marketplace/mint-ui' }}
@@ -55,7 +57,7 @@ jobs:
   prettier:
     name: Running Prettier
     # Don't run on draft pull requests
-    # if: ${{ !github.event.pull_request.draft }}
+    if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -82,6 +84,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+          cache-dependency-path: ${{ matrix.packages }}/yarn.lock
 
       - name: Install Dependencies
         if: ${{ matrix.packages == 'low-code-nft-marketplace/market-ui' || matrix.packages == 'low-code-nft-marketplace/mint-ui' }}
@@ -92,3 +96,46 @@ jobs:
 
       - name: Run Prettier
         run: cd ${{ matrix.packages }} && yarn run prettier -c .
+  
+  build:
+    name: Building Frontend
+    # Don't run on draft pull requests
+    # if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        packages:
+          - dapp-template/frontend
+          - euroe-demo
+          - gallery
+          - low-code-nft-marketplace/common-ui
+          - low-code-nft-marketplace/market-ui
+          - low-code-nft-marketplace/mint-ui
+          - signMessage
+          - simpleAgeVerification
+          - sponsoredTransactions/frontend
+          - sponsoredTransactionsAuction/frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+          cache-dependency-path: ${{ matrix.packages }}/yarn.lock
+
+      - name: Install Dependencies
+        if: ${{ matrix.packages == 'low-code-nft-marketplace/market-ui' || matrix.packages == 'low-code-nft-marketplace/mint-ui' }}
+        run: cd low-code-nft-marketplace && yarn install
+
+      - name: Run install
+        run: cd ${{ matrix.packages }} && yarn install
+
+      - name: Build
+        run: cd ${{ matrix.packages }} && yarn build
