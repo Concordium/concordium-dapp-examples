@@ -1,0 +1,38 @@
+name: Test and Lint Frontends
+
+on:
+  push:
+    branches: main
+
+  pull_request:
+    branches: main
+  
+env:
+  NODE_VERSION: "lts/*"
+
+jobs:
+  lint:
+    name: Running linter
+    # Don't run on draft pull requests
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        packages:
+          - gallery
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Run install
+        run: yarn --cwd ${{ matrix.packages }} install
+
+      - name: Run Lint
+        run: yarn --cwd ${{ matrix.packages }} lint
+      
