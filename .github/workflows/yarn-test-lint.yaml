@@ -19,7 +19,14 @@ jobs:
     strategy:
       matrix:
         packages:
+          - dapp-template/frontend
+          - euroe-demo
           - gallery
+          - low-code-nft-marketplace/common-ui
+          - low-code-nft-marketplace/market-ui
+          - low-code-nft-marketplace/mint-ui
+          - sponsoredTransactions/frontend
+          - sponsoredTransactionsAuction/frontend
 
     steps:
       - name: Checkout
