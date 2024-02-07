@@ -1,4 +1,19 @@
-//! A tool for indexing event data from the track and trace contract.
+//! A tool for indexing event data from the track and trace contract into a
+//! postgres database. The database is configured with the tables from the file
+//! `../rescourcs/schema.sql`. The events `ItemStatusChangedEvent` and
+//! `ItemCreatedEvent` are indexed in their respective tables. A third table
+//! `settings` exists to store global configurations and checkpoints.
+//!
+//! Each event can be uniquely identified by the triple (`block_height`,
+//! `transaction_hash`, and `event_inex`) and will be uniquely inserted into the
+//! table. Meaning even after restarting the indexer, an event will only be
+//! inserted into the database if it does not exist in the database yet.
+//! Whenever an event is inserted into the database, the checkpoint in the
+//! `settings` table is updated to reflect the latest block height, the latest
+//! transaction hash, and the latest event index processed by the indexer.
+//!
+//! The indexer has some retry logic to re-connect to the database in case
+//! connection is lost.
 use anyhow::Context;
 use clap::Parser;
 use concordium_rust_sdk::{
@@ -16,7 +31,6 @@ use std::{
     },
 };
 use track_and_trace as contract;
-
 mod db;
 use crate::db::*;
 
@@ -62,16 +76,63 @@ struct Args {
         long = "log-level",
         default_value = "info",
         help = "The maximum log level. Possible values are: `trace`, `debug`, `info`, `warn`, and \
-                `debug`.",
+                `error`.",
         env = "CCD_INDEXER_LOG_LEVEL"
     )]
     log_level:        tracing_subscriber::filter::LevelFilter,
+}
+
+/// Construct a future for shutdown signals (for unix: SIGINT and SIGTERM) (for
+/// windows: ctrl c and ctrl break). The signal handler is set when the future
+/// is polled and until then the default signal handler.
+async fn set_shutdown(flag: Arc<AtomicBool>) -> anyhow::Result<()> {
+    #[cfg(unix)]
+    {
+        use tokio::signal::unix as unix_signal;
+        let mut terminate_stream = unix_signal::signal(unix_signal::SignalKind::terminate())?;
+        let mut interrupt_stream = unix_signal::signal(unix_signal::SignalKind::interrupt())?;
+        let terminate = Box::pin(terminate_stream.recv());
+        let interrupt = Box::pin(interrupt_stream.recv());
+        futures::future::select(terminate, interrupt).await;
+        flag.store(true, Ordering::Release);
+    }
+    #[cfg(windows)]
+    {
+        use tokio::signal::windows as windows_signal;
+        let mut ctrl_break_stream = windows_signal::ctrl_break()?;
+        let mut ctrl_c_stream = windows_signal::ctrl_c()?;
+        let ctrl_break = Box::pin(ctrl_break_stream.recv());
+        let ctrl_c = Box::pin(ctrl_c_stream.recv());
+        futures::future::select(ctrl_break, ctrl_c).await;
+        flag.store(true, Ordering::Release);
+    }
+    Ok(())
+}
+
+/// Figure out which block to use as start block given the start time.
+/// The return block is the first block no earlier than the start time.
+async fn get_first_block(
+    client: &mut sdk::Client,
+    start: chrono::DateTime<chrono::Utc>,
+) -> anyhow::Result<BlockInfo> {
+    let first_block = client
+        .find_first_finalized_block_no_earlier_than(.., start)
+        .await?;
+
+    tracing::info!(
+        "Indexing from block {} at {}.",
+        first_block.block_height,
+        first_block.block_slot_time,
+    );
+
+    Ok(first_block)
 }
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let app: Args = Args::parse();
 
+    // Tracing configuration.
     {
         use tracing_subscriber::prelude::*;
         let log_filter = tracing_subscriber::filter::Targets::new()
@@ -84,7 +145,7 @@ async fn main() -> anyhow::Result<()> {
             .init();
     }
 
-    // Establish connection to the node.
+    // Set up endpoint to the node.
     let endpoint = if app
         .node_endpoint
         .uri()
@@ -126,52 +187,6 @@ async fn main() -> anyhow::Result<()> {
     handle_indexing(db, db_pool, endpoint, app.start, app.contract_address).await
 }
 
-/// Figure out which block to use as start block given the start time.
-/// The return block is the first block no earlier than the start time.
-async fn get_first_block(
-    client: &mut sdk::Client,
-    start: chrono::DateTime<chrono::Utc>,
-) -> anyhow::Result<BlockInfo> {
-    let first_block = client
-        .find_first_finalized_block_no_earlier_than(.., start)
-        .await?;
-
-    tracing::info!(
-        "Indexing from block {} at {}.",
-        first_block.block_height,
-        first_block.block_slot_time,
-    );
-
-    Ok(first_block)
-}
-
-/// Construct a future for shutdown signals (for unix: SIGINT and SIGTERM) (for
-/// windows: ctrl c and ctrl break). The signal handler is set when the future
-/// is polled and until then the default signal handler.
-async fn set_shutdown(flag: Arc<AtomicBool>) -> anyhow::Result<()> {
-    #[cfg(unix)]
-    {
-        use tokio::signal::unix as unix_signal;
-        let mut terminate_stream = unix_signal::signal(unix_signal::SignalKind::terminate())?;
-        let mut interrupt_stream = unix_signal::signal(unix_signal::SignalKind::interrupt())?;
-        let terminate = Box::pin(terminate_stream.recv());
-        let interrupt = Box::pin(interrupt_stream.recv());
-        futures::future::select(terminate, interrupt).await;
-        flag.store(true, Ordering::Release);
-    }
-    #[cfg(windows)]
-    {
-        use tokio::signal::windows as windows_signal;
-        let mut ctrl_break_stream = windows_signal::ctrl_break()?;
-        let mut ctrl_c_stream = windows_signal::ctrl_c()?;
-        let ctrl_break = Box::pin(ctrl_break_stream.recv());
-        let ctrl_c = Box::pin(ctrl_c_stream.recv());
-        futures::future::select(ctrl_break, ctrl_c).await;
-        flag.store(true, Ordering::Release);
-    }
-    Ok(())
-}
-
 /// Handle indexing events.
 async fn handle_indexing(
     mut db: Database,
@@ -180,24 +195,27 @@ async fn handle_indexing(
     start: chrono::DateTime<chrono::Utc>,
     contract_address: ContractAddress,
 ) -> anyhow::Result<()> {
+    // Establish connection to the node.
     let mut client = sdk::Client::new(endpoint.clone())
         .await
         .context("Unable to connect.")?;
     let first_block = get_first_block(&mut client, start).await?;
 
+    // Set up progress bar.
     let spinner =
         ProgressBar::new_spinner().with_style(ProgressStyle::with_template("{spinner} {msg}")?);
+
+    // Database process runs until the stop flag is triggered.
+    let stop_flag = Arc::new(AtomicBool::new(false));
+    let shutdown_handle = tokio::spawn(set_shutdown(stop_flag.clone()));
 
     let mut contrat_set = BTreeSet::new();
     contrat_set.insert(contract_address);
 
-    // Database processes run until the stop flag is triggered.
-    let stop_flag = Arc::new(AtomicBool::new(false));
-    let shutdown_handle = tokio::spawn(set_shutdown(stop_flag.clone()));
-
+    // Start indexer.
     let traverse_config = indexer::TraverseConfig::new_single(endpoint, first_block.block_height);
     let (sender, mut receiver) = tokio::sync::mpsc::channel(20);
-    let db_handle = tokio::spawn(traverse_config.traverse(
+    let indexer_handle = tokio::spawn(traverse_config.traverse(
         indexer::AffectedContractIndexer {
             addresses: contrat_set,
             all:       true,
@@ -205,11 +223,15 @@ async fn handle_indexing(
         sender,
     ));
 
+    // The indexer starts processing historical events and then listens for new
+    // events that are coming in as the blockchain progresses.
     while let Some((block, contract_update_infos)) = receiver.recv().await {
+        // Stop indexer when triggered.
         if stop_flag.load(Ordering::Acquire) {
             break;
         }
 
+        // Progress the progress bar.
         spinner.set_message(block.block_slot_time.to_string());
         spinner.inc(1);
 
@@ -261,7 +283,7 @@ async fn handle_indexing(
                                 }
                                 Err(e) => {
                                     reconnecting_db_errors_count += 1;
-                                    // wait for 500 * 2^(min(successive_errors - 1, 8))
+                                    // wait for 500 * 2^(min(successive_errors - 1, 7))
                                     // seconds before attempting.
                                     // The reason for the min is that we bound the
                                     // time between reconnects.
@@ -325,7 +347,7 @@ async fn handle_indexing(
                                 }
                                 Err(e) => {
                                     reconnecting_db_errors_count += 1;
-                                    // wait for 500 * 2^(min(successive_errors - 1, 8))
+                                    // wait for 500 * 2^(min(successive_errors - 1, 7))
                                     // seconds before attempting.
                                     // The reason for the min is that we bound the
                                     // time between reconnects.
@@ -362,7 +384,7 @@ async fn handle_indexing(
         }
     }
 
-    db_handle.abort();
+    indexer_handle.abort();
     spinner.finish_and_clear();
     shutdown_handle.abort();
 
@@ -371,7 +393,7 @@ async fn handle_indexing(
 
 /// Inserts data related to the `ItemCreatedEvent` into the database.
 /// Everything is commited as a single transactions allowing
-/// for easy restoration from the last recorded block (by height) inserted into
+/// for easy restoration from the last recorded checkpoint into
 /// the database. Returns the duration it took to process the transaction.
 #[tracing::instrument(skip(db))]
 async fn db_insert_created_event<'a>(
@@ -413,7 +435,7 @@ async fn db_insert_created_event<'a>(
 
 /// Inserts data related to the `ItemStatusChangedEvent` into the database.
 /// Everything is commited as a single transactions allowing
-/// for easy restoration from the last recorded block (by height) inserted into
+/// for easy restoration from the last checkpoint inserted into
 /// the database. Returns the duration it took to process the transaction.
 #[tracing::instrument(skip(db))]
 async fn db_insert_item_status_changed_event<'a>(

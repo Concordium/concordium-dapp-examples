@@ -33,5 +33,9 @@ CREATE TABLE IF NOT EXISTS item_created_events (
   CONSTRAINT unique_item_created UNIQUE (block_height, transaction_hash, event_index)
 );
 
--- Improve performance on queries for events within id range for an account.
--- CREATE INDEX IF NOT EXISTS ballots_account_id_idx ON ballots (account, id);
+-- Improve performance on queries for events with given item_id.
+CREATE INDEX IF NOT EXISTS item_changed_index ON item_status_changed_events (item_id);
+-- Improve performance on queries for events with given current status.
+CREATE INDEX IF NOT EXISTS current_status_index ON item_status_changed_events (new_status);
+-- Improve performance on queries for events with given item_id.
+CREATE INDEX IF NOT EXISTS item_created_index ON item_created_events (item_id);
