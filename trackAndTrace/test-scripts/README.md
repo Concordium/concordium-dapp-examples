@@ -1,4 +1,4 @@
-## Test script to facilitate deploying and filling the track and trace contract with data for the indexer
+## Test script to facilitate deploying and filling the track and trace contract with data for the indexer.
 
 This package contains a test script to facilitate filling the track and trace contract with data for the indexer.
 
