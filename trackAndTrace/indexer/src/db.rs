@@ -26,14 +26,15 @@ pub enum DatabaseError {
 /// Alias for returning results with [`DatabaseError`]s as the `Err` variant.
 type DatabaseResult<T> = Result<T, DatabaseError>;
 
-/// The server configuration stored in the DB.
+/// The database configuration stored in the database.
 #[derive(Debug, Serialize)]
 pub struct StoredConfiguration {
-    /// The latest recorded block height.
+    /// The recorded block height of the last event inserted into the database.
     pub latest_block_height:     Option<AbsoluteBlockHeight>,
-    ///  The latest recorded transaction hash.
+    ///  The recorded transaction hash of the last event inserted into the
+    /// database.
     pub latest_transaction_hash: Option<TransactionHash>,
-    /// The latest recorded event index.
+    /// The recorded event index of the last event inserted into the database.
     pub latest_event_index:      Option<u16>,
     /// The contract address of the track and trace contract monitored.
     pub contract_address:        ContractAddress,
@@ -42,6 +43,7 @@ pub struct StoredConfiguration {
 impl TryFrom<tokio_postgres::Row> for StoredConfiguration {
     type Error = DatabaseError;
 
+    // Conversion from the postgres row to the `StoredConfiguration` type.
     fn try_from(value: tokio_postgres::Row) -> DatabaseResult<Self> {
         let raw_latest_block_height: Option<i64> = value.try_get(0)?;
         let raw_latest_transaction_hash: Option<&[u8]> = value.try_get(1)?;
@@ -51,16 +53,13 @@ impl TryFrom<tokio_postgres::Row> for StoredConfiguration {
         let contract_address =
             ContractAddress::new(raw_contract_index as u64, raw_contract_subindex as u64);
 
-        let latest_transaction_hash: Option<TransactionHash> = match raw_latest_transaction_hash {
-            Some(bytes) => {
-                let latest_transaction_hash: TransactionHash = bytes
+        let latest_transaction_hash: Option<TransactionHash> = raw_latest_transaction_hash
+            .and_then(|bytes| {
+                bytes
                     .try_into()
-                    .map_err(|_| DatabaseError::TypeConversion)?;
-
-                Some(latest_transaction_hash)
-            }
-            None => None,
-        };
+                    .map_err(|_| DatabaseError::TypeConversion)
+                    .ok()
+            });
 
         let settings = Self {
             latest_block_height: raw_latest_block_height.map(|v| (v as u64).into()),
@@ -72,24 +71,26 @@ impl TryFrom<tokio_postgres::Row> for StoredConfiguration {
     }
 }
 
-/// An StoredItemStatusChanged event stored in the DB.
+/// A `StoredItemStatusChanged` event stored in the database.
 #[derive(Debug)]
 pub struct StoredItemStatusChangedEvent {
     /// The block height that the event was recorded in.
     pub block_height:     u64,
     /// The transaction hash that the event was recorded in.
     pub transaction_hash: TransactionHash,
-    /// The event_index of the event.
+    /// The event index of the event.
     pub event_index:      u64,
-    /// The item's id from the event.
+    /// The item's id as logged in the event.
     pub item_id:          u64,
-    /// The item's new status.
+    /// The item's new status as logged in the event.
     pub new_status:       Status,
-    /// Any additional data encoded as generic bytes. Usecase-specific data can
-    /// be included here such as temperature, longitude, latitude, ... .
+    /// Any additional data encoded as generic bytes as logged in the event.
+    /// Usecase-specific data can be included here such as temperature,
+    /// longitude, latitude, ... .
     pub additional_data:  AdditionalData,
 }
 
+// Conversion from an integer, as stored in the database, to the `Status` type.
 fn status_from_i64(value: i64) -> Result<Status, DatabaseError> {
     match value {
         0 => Ok(Status::Produced),
@@ -103,6 +104,7 @@ fn status_from_i64(value: i64) -> Result<Status, DatabaseError> {
 impl TryFrom<tokio_postgres::Row> for StoredItemStatusChangedEvent {
     type Error = DatabaseError;
 
+    // Conversion from the postgres row to the `StoredItemStatusChangedEvent` type.
     fn try_from(value: tokio_postgres::Row) -> DatabaseResult<Self> {
         let raw_block_height: i64 = value.try_get(0)?;
         let raw_transaction_hash: &[u8] = value.try_get(1)?;
@@ -125,7 +127,7 @@ impl TryFrom<tokio_postgres::Row> for StoredItemStatusChangedEvent {
     }
 }
 
-/// An StoredItemCreated event stored in the DB.
+/// A `StoredItemCreated` event stored in the database.
 #[derive(Debug)]
 pub struct StoredItemCreatedEvent {
     /// The block height that the event was recorded in.
@@ -134,15 +136,16 @@ pub struct StoredItemCreatedEvent {
     pub transaction_hash: TransactionHash,
     /// The event_index of the event.
     pub event_index:      u64,
-    /// The item's id from the event.
+    /// The item's id as logged in the event.
     pub item_id:          u64,
-    /// The item's metadata_url from the event.
+    /// The item's metadata_url as logged in the event.
     pub metadata_url:     Option<MetadataUrl>,
 }
 
 impl TryFrom<tokio_postgres::Row> for StoredItemCreatedEvent {
     type Error = DatabaseError;
 
+    // Conversion from the postgres row to the `StoredItemCreatedEvent` type.
     fn try_from(value: tokio_postgres::Row) -> DatabaseResult<Self> {
         let raw_block_height: i64 = value.try_get(0)?;
         let raw_transaction_hash: &[u8] = value.try_get(1)?;
@@ -196,8 +199,8 @@ impl Database {
         Ok(())
     }
 
-    /// Get the latest block height, latest transaction hash, and latest event
-    /// index recorded in the DB.
+    /// Get the latest block height, latest transaction hash, latest event
+    /// index, and contract address recorded in the database.
     pub async fn get_settings(&self) -> DatabaseResult<StoredConfiguration> {
         let get_settings = self
             .client
@@ -209,7 +212,7 @@ impl Database {
         self.client.query_one(&get_settings, &[]).await?.try_into()
     }
 
-    /// Get all StoredItemStatusChangedEvents by item id.
+    /// Get all [`StoredItemStatusChangedEvents`] by item id.
     /// Note: This function will be used by the http server and the
     /// `#[allow(dead_code)]` is only temporary until the http server is
     /// developed.
@@ -232,15 +235,15 @@ impl Database {
             .query(&get_item_status_changed_event_submissions, &params)
             .await?;
 
-        let mut result: Vec<StoredItemStatusChangedEvent> = Vec::with_capacity(rows.len());
-        for row in rows {
-            result.push(StoredItemStatusChangedEvent::try_from(row)?)
-        }
+        let result: Vec<StoredItemStatusChangedEvent> = rows
+            .into_iter()
+            .map(StoredItemStatusChangedEvent::try_from)
+            .collect::<Result<Vec<_>, _>>()?;
 
         Ok(result)
     }
 
-    /// Get the ItemCreatedEvent.
+    /// Get the [`StoredItemCreatedEvent`] by item id.
     /// Note: This function will be used by the http server and the
     /// `#[allow(dead_code)]` is only temporary until the http server is
     /// developed.
@@ -278,7 +281,7 @@ impl<'a> From<deadpool_postgres::Transaction<'a>> for Transaction<'a> {
 }
 
 impl<'a> Transaction<'a> {
-    // Set the latest checkpoint in the DB.
+    // Set the latest checkpoint in the database.
     pub async fn set_latest_checkpoint(
         &self,
         height: AbsoluteBlockHeight,
@@ -301,7 +304,7 @@ impl<'a> Transaction<'a> {
         Ok(())
     }
 
-    /// Insert an item created event submission into the DB.
+    /// Insert an item_created event submission into the database.
     pub async fn insert_item_created_event(
         &self,
         block_height: AbsoluteBlockHeight,
@@ -331,7 +334,7 @@ impl<'a> Transaction<'a> {
         Ok(())
     }
 
-    /// Insert an item status changed event submission into the DB.
+    /// Insert an item_status_changed event submission into the database.
     pub async fn insert_item_status_changed_event(
         &self,
         block_height: AbsoluteBlockHeight,
