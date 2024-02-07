@@ -31,6 +31,7 @@ jobs:
           - sponsoredTransactionsAuction/backend/Cargo.toml
           - trackAndTrace/smart-contract/Cargo.toml
           - trackAndTrace/test-scripts/Cargo.toml
+          - trackAndTrace/indexer/Cargo.toml
 
     steps:
       - name: Checkout
@@ -56,6 +57,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
+        target:
+          - wasm32-unknown-unknown
+
         crates:
           - gallery/verifier/Cargo.toml
           - low-code-nft-marketplace/cis2-market/Cargo.toml
@@ -63,6 +67,7 @@ jobs:
           - sponsoredTransactionsAuction/backend/Cargo.toml
           - trackAndTrace/smart-contract/Cargo.toml
           - trackAndTrace/test-scripts/Cargo.toml
+          - trackAndTrace/indexer/Cargo.toml
 
     steps:
       - name: Checkout
@@ -75,7 +80,7 @@ jobs:
           profile: minimal
           toolchain: ${{ env.RUST_VERSION }}
           override: true
-          target: ${{ env.TARGET }}
+          target: ${{ matrix.target }}
           components: rustfmt, clippy
       - name: Clippy
         uses: actions-rs/cargo@v1
@@ -92,7 +97,7 @@ jobs:
       matrix:
         crates:
           - trackAndTrace/smart-contract/Cargo.toml
-          - trackAndTrace/test-scripts/Cargo.toml
+          - trackAndTrace/indexer/Cargo.toml
 
     steps:
       - name: Checkout sources
@@ -107,7 +112,7 @@ jobs:
           args: --manifest-path=${{ matrix.crates }}
 
   test:
-    name: Running tests
+    name: Running cargo-concordium tests
     # Don't run on draft pull requests
     if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
