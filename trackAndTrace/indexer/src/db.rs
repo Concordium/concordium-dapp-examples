@@ -210,6 +210,10 @@ impl Database {
     }
 
     /// Get all StoredItemStatusChangedEvents by item id.
+    /// Note: This function will be used by the http server and the
+    /// `#[allow(dead_code)]` is only temporary until the http server is
+    /// developed.
+    #[allow(dead_code)]
     pub async fn get_item_status_changed_events_submissions(
         &self,
         item_id: u64,
@@ -236,7 +240,11 @@ impl Database {
         Ok(result)
     }
 
-    /// Get ItemCreatedEvent.
+    /// Get the ItemCreatedEvent.
+    /// Note: This function will be used by the http server and the
+    /// `#[allow(dead_code)]` is only temporary until the http server is
+    /// developed.
+    #[allow(dead_code)]
     pub async fn get_item_created_event_submission(
         &self,
         item_id: u64,
