@@ -8,13 +8,12 @@ description = "A smart contract for tracking and tracing items on a supply chain
 
 [features]
 default = ["std", "wee_alloc"]
-std = ["concordium-std/std", "concordium-cis2/std"]
+std = ["concordium-std/std"]
 wee_alloc = ["concordium-std/wee_alloc"]
 derive-serde = ["concordium-contracts-common/derive-serde", "serde"]
 
 [dependencies]
 concordium-std = { version = "9.0", default-features = false }
-concordium-cis2 = { version = "6.0", default-features = false }
 serde = { version = "1", optional = true, features = ["derive"] }
 concordium-contracts-common = "9.0.0"
 
