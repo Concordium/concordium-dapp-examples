@@ -89,7 +89,7 @@ jobs:
 
       - name: Install Dependencies
         if: ${{ matrix.packages == 'low-code-nft-marketplace/market-ui' || matrix.packages == 'low-code-nft-marketplace/mint-ui' }}
-        run: cd low-code-nft-marketplace && yarn install
+        run: cd low-code-nft-marketplace && yarn install && yarn build:tsc
 
       - name: Run install
         run: cd ${{ matrix.packages }} && yarn install
