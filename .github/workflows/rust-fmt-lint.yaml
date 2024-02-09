@@ -81,6 +81,8 @@ jobs:
 
   test:
     name: Running tests
+    # Don't run on draft pull requests
+    if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     strategy:
       matrix:

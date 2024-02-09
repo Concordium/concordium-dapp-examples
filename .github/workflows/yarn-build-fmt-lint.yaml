@@ -14,7 +14,7 @@ jobs:
   lint:
     name: Running linter
     # Don't run on draft pull requests
-    # if: ${{ !github.event.pull_request.draft }}
+    if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -22,11 +22,6 @@ jobs:
           - dapp-template/frontend
           - euroe-demo
           - gallery
-          # - low-code-nft-marketplace/common-ui - needs eslint config file
-          # - low-code-nft-marketplace/market-ui - needs eslint config file
-          # - low-code-nft-marketplace/mint-ui - needs eslint config file
-          # - signMessage - no eslint
-          # - simpleAgeVerification - no eslint
           - sponsoredTransactions/frontend
           - sponsoredTransactionsAuction/frontend
 
@@ -58,20 +53,14 @@ jobs:
   prettier:
     name: Running Prettier
     # Don't run on draft pull requests
-    # if: ${{ !github.event.pull_request.draft }}
+    if: ${{ !github.event.pull_request.draft }}
+    needs: lint
     runs-on: ubuntu-latest
     strategy:
       matrix:
         packages:
           - dapp-template/frontend
           - euroe-demo
-          # - gallery - no prettier
-          # - low-code-nft-marketplace/common-ui - no prettier
-          # - low-code-nft-marketplace/market-ui - no prettier
-          # - low-code-nft-marketplace/mint-ui - no prettier
-          # - signMessage - no prettier
-          # - simpleAgeVerification - no prettier
-          # - sponsoredTransactions/frontend no prettier
           - sponsoredTransactionsAuction/frontend
 
     steps:
@@ -102,7 +91,8 @@ jobs:
   build:
     name: Building Frontend
     # Don't run on draft pull requests
-    # if: ${{ !github.event.pull_request.draft }}
+    if: ${{ !github.event.pull_request.draft }}
+    needs: prettier
     runs-on: ubuntu-latest
     strategy:
       matrix:
