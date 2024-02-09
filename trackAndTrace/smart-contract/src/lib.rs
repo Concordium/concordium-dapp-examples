@@ -46,8 +46,9 @@
 //!     ];
 //! ```
 #![cfg_attr(not(feature = "std"), no_std)]
-use concordium_cis2::*;
 use concordium_std::*;
+// Re-export type.
+pub use concordium_std::MetadataUrl;
 
 /// Event tags.
 pub const ITEM_CREATED_EVENT_TAG: u8 = 0;

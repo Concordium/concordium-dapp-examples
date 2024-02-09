@@ -1,4 +1,3 @@
-use crate::contract_client::MetadataUrl;
 use anyhow::Context;
 use clap::Parser as _;
 use concordium_rust_sdk::{
@@ -13,7 +12,7 @@ use concordium_rust_sdk::{
     },
     v2::{self as sdk, BlockIdentifier},
 };
-use track_and_trace::*;
+use track_and_trace::{MetadataUrl, *};
 
 pub enum TrackAndTraceContract {}
 
