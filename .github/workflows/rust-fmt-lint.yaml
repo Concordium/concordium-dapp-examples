@@ -36,18 +36,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
         with:
-          profile: minimal
-          toolchain: ${{ env.RUST_FMT }}
-          override: true
-          components: rustfmt
-      - name: Format
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --manifest-path=${{ matrix.crates }} -- --check
+          submodules: recursive
+      - name: Install Rust and Format
+        run: |
+          rustup default ${{ env.RUST_FMT }}
+          rustup component add rustfmt
+          cargo fmt --manifest-path=${{ matrix.crates }} -- --check
 
   lint_clippy:
     name: Running clippy
@@ -57,9 +52,6 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        target:
-          - wasm32-unknown-unknown
-
         crates:
           - gallery/verifier/Cargo.toml
           - low-code-nft-marketplace/cis2-market/Cargo.toml
@@ -74,20 +66,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: ${{ env.RUST_VERSION }}
-          override: true
-          target: ${{ matrix.target }}
-          components: rustfmt, clippy
-      - name: Clippy
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --manifest-path ${{ matrix.crates }} -- -D warnings
 
+      - name: Run cargo clippy
+        run: |
+          rustup default ${{ env.RUST_VERSION }}
+          rustup component add clippy
+          cargo clippy --manifest-path=${{ matrix.crates }} --locked -- -D warnings
   build:
     name: Build Rust project
     # Don't run on draft pull requests
@@ -100,16 +84,16 @@ jobs:
           - trackAndTrace/indexer/Cargo.toml
 
     steps:
-      - name: Checkout sources
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: recursive
 
       - name: Run cargo build
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --manifest-path=${{ matrix.crates }}
+        run: |
+          rustup default ${{ env.RUST_VERSION }}
+          rustup component add clippy
+          cargo build --manifest-path=${{ matrix.crates }} --locked -- -D warnings
 
   test:
     name: Running cargo-concordium tests

@@ -21,6 +21,11 @@ Create the `indexer` database:
 CREATE DATABASE indexer;
 ```
 
+Alternatively, you can run the Postgres database in a docker container:
+```
+docker run -p 5432:5432 -e POSTGRES_PASSWORD=password -e POSTGRES_DB="indexer" --rm postgres
+```
+
 ## Build and run the indexer
 
 To build the tool make sure you have the repository submodules initialized
@@ -40,7 +45,7 @@ This will produce a single binary `indexer` in `target/release` directory.
 ## Start the indexer
 
 ```console
-cargo run -- --node https://grpc.testnet.concordium.com:20000 --start 2024-01-28T10:12:30Z --contract "<7835,0>"
+cargo run -- --node https://grpc.testnet.concordium.com:20000 --start 9970784 --contract "<7835,0>"
 ```
 
 ## Configure the indexer
@@ -49,7 +54,7 @@ There are a few options to configure the indexer:
 
 - `--node` is the endpoint to the Concordium node grpc v2 API. If not specified, the default value `https://grpc.testnet.concordium.com:20000` is used.
 
-- `--start` is the start time to index from. To not waste resources and index from the genesis block, set this value to the time when the track-and-trace smart contract was deployed/initialized. The format is ISO-8601, e.g. 2024-01-23T12:13:14Z.
+- `--start` is the block height to index from. To not waste resources and index from the genesis block, set this value to the time when the track-and-trace smart contract was deployed/initialized.
 
 - `--contract` is the contract index of the track-and-trace smart contract, e.g. <7835,0>.
 
