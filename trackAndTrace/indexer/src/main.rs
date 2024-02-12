@@ -18,11 +18,10 @@ use anyhow::Context;
 use clap::Parser;
 use concordium_rust_sdk::{
     indexer::{self},
-    types::{hashes::TransactionHash, queries::BlockInfo, AbsoluteBlockHeight, ContractAddress},
+    types::{hashes::TransactionHash, AbsoluteBlockHeight, ContractAddress},
     v2 as sdk,
 };
 use contract::{ItemCreatedEvent, ItemStatusChangedEvent};
-use indicatif::{ProgressBar, ProgressStyle};
 use std::{
     collections::BTreeSet,
     sync::{
@@ -50,11 +49,10 @@ struct Args {
     #[arg(
         long = "start",
         short = 's',
-        help = "The start time when the track and trace contract was initialized. The format is \
-                ISO-8601, e.g. 2024-01-23T12:13:14Z.",
+        help = "The start block height when the track and trace contract was initialized.",
         env = "CCD_INDEXER_START"
     )]
-    start:            chrono::DateTime<chrono::Utc>,
+    start:            AbsoluteBlockHeight,
     #[arg(
         long = "contract",
         short = 'c',
@@ -109,25 +107,6 @@ async fn set_shutdown(flag: Arc<AtomicBool>) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Figure out which block to use as start block given the start time.
-/// The return block is the first block no earlier than the start time.
-async fn get_first_block(
-    client: &mut sdk::Client,
-    start: chrono::DateTime<chrono::Utc>,
-) -> anyhow::Result<BlockInfo> {
-    let first_block = client
-        .find_first_finalized_block_no_earlier_than(.., start)
-        .await?;
-
-    tracing::info!(
-        "Indexing from block {} at {}.",
-        first_block.block_height,
-        first_block.block_slot_time,
-    );
-
-    Ok(first_block)
-}
-
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let app: Args = Args::parse();
@@ -137,7 +116,8 @@ async fn main() -> anyhow::Result<()> {
         use tracing_subscriber::prelude::*;
         let log_filter = tracing_subscriber::filter::Targets::new()
             .with_target(module_path!(), app.log_level)
-            .with_target("indexer", app.log_level);
+            .with_target("indexer", app.log_level)
+            .with_target("ccd_indexer", app.log_level);
 
         tracing_subscriber::registry()
             .with(tracing_subscriber::fmt::layer())
@@ -192,32 +172,25 @@ async fn handle_indexing(
     mut db: Database,
     db_pool: DatabasePool,
     endpoint: sdk::Endpoint,
-    start: chrono::DateTime<chrono::Utc>,
+    start: AbsoluteBlockHeight,
     contract_address: ContractAddress,
 ) -> anyhow::Result<()> {
     // Establish connection to the node.
-    let mut client = sdk::Client::new(endpoint.clone())
-        .await
-        .context("Unable to connect.")?;
-    let first_block = get_first_block(&mut client, start).await?;
-
-    // Set up progress bar.
-    let spinner =
-        ProgressBar::new_spinner().with_style(ProgressStyle::with_template("{spinner} {msg}")?);
 
     // Database process runs until the stop flag is triggered.
     let stop_flag = Arc::new(AtomicBool::new(false));
     let shutdown_handle = tokio::spawn(set_shutdown(stop_flag.clone()));
 
-    let mut contrat_set = BTreeSet::new();
-    contrat_set.insert(contract_address);
+    tracing::info!("Indexing from block height {}.", start);
+
+    let contract_set = BTreeSet::from([contract_address]);
 
     // Start indexer.
-    let traverse_config = indexer::TraverseConfig::new_single(endpoint, first_block.block_height);
+    let traverse_config = indexer::TraverseConfig::new_single(endpoint, start);
     let (sender, mut receiver) = tokio::sync::mpsc::channel(20);
     let indexer_handle = tokio::spawn(traverse_config.traverse(
         indexer::AffectedContractIndexer {
-            addresses: contrat_set,
+            addresses: contract_set,
             all:       true,
         },
         sender,
@@ -230,10 +203,6 @@ async fn handle_indexing(
         if stop_flag.load(Ordering::Acquire) {
             break;
         }
-
-        // Progress the progress bar.
-        spinner.set_message(block.block_slot_time.to_string());
-        spinner.inc(1);
 
         for tx in contract_update_infos {
             for (contract_invoked, _entry_point_name, events) in tx.0.execution_tree.events() {
@@ -385,7 +354,6 @@ async fn handle_indexing(
     }
 
     indexer_handle.abort();
-    spinner.finish_and_clear();
     shutdown_handle.abort();
 
     Ok(())
