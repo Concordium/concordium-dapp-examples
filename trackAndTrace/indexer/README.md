@@ -1,11 +1,6 @@
 ## Track and trace indexer
 
-A tool for indexing event data from the track and trace contract into a postgres database. The database is configured with the tables from the file `../rescourcs/schema.sql`. The events `ItemStatusChangedEvent` and `ItemCreatedEvent` are indexed in their respective tables. A third table `settings` exists to store global configurations and checkpoints.
-
-Each event can be uniquely identified by the triple (`block_height`, `transaction_hash`, and `event_inex`) and will be uniquely inserted into the table. Meaning even after restarting the indexer, an event will only be inserted into the database if it does not exist in the database yet. Whenever an event is inserted into the database, the checkpoint in the `settings` table is updated to reflect the latest block height, the latest transaction hash, and the latest event index processed by the indexer.
-
-The indexer has some retry logic to re-connect to the database in case connection is lost.
-
+A tool for indexing event data from the track and trace contract into a postgres database. The database is configured with the tables from the file `../rescourcs/schema.sql`. The events `ItemStatusChangedEvent` and `ItemCreatedEvent` are indexed in their respective tables. A third table `settings` exists to store global configurations. Each event can be uniquely identified by the triple (`block_height`, `transaction_hash`, and `event_index`).
 ## Prerequisites
 
 - `PostgreSQL` installed: https://www.postgresql.org/download/

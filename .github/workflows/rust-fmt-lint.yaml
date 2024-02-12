@@ -92,9 +92,8 @@ jobs:
       - name: Run cargo build
         run: |
           rustup default ${{ env.RUST_VERSION }}
-          rustup component add clippy
           cargo build --manifest-path=${{ matrix.crates }} --locked
-          
+
   test:
     name: Running cargo-concordium tests
     # Don't run on draft pull requests

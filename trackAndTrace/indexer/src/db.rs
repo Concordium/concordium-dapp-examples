@@ -1,7 +1,7 @@
 use anyhow::Context;
 use concordium_rust_sdk::{
-    smart_contracts::common::{from_bytes, to_bytes},
-    types::{hashes::TransactionHash, AbsoluteBlockHeight, ContractAddress},
+    smart_contracts::common::from_bytes,
+    types::{hashes::TransactionHash, ContractAddress},
 };
 use deadpool_postgres::{GenericClient, Object};
 use serde::Serialize;
@@ -54,7 +54,7 @@ pub struct StoredItemStatusChangedEvent {
     pub block_height:     u64,
     /// The transaction hash that the event was recorded in.
     pub transaction_hash: TransactionHash,
-    /// The event index of the event.
+    /// The index from the array of logged events in a transaction.
     pub event_index:      u64,
     /// The item's id as logged in the event.
     pub item_id:          u64,
@@ -110,7 +110,7 @@ pub struct StoredItemCreatedEvent {
     pub block_height:     u64,
     /// The transaction hash that the event was recorded in.
     pub transaction_hash: TransactionHash,
-    /// The event_index of the event.
+    /// The index from the array of logged events in a transaction.
     pub event_index:      u64,
     /// The item's id as logged in the event.
     pub item_id:          u64,
@@ -239,79 +239,6 @@ impl Database {
             .await?;
 
         opt_row.map(StoredItemCreatedEvent::try_from).transpose()
-    }
-}
-
-/// Wrapper around a database transaction
-pub struct Transaction<'a> {
-    /// The inner transaction
-    pub inner: deadpool_postgres::Transaction<'a>,
-}
-
-impl<'a> From<deadpool_postgres::Transaction<'a>> for Transaction<'a> {
-    fn from(inner: deadpool_postgres::Transaction<'a>) -> Self { Self { inner } }
-}
-
-impl<'a> Transaction<'a> {
-    /// Insert an item_created event submission into the database.
-    pub async fn insert_item_created_event(
-        &self,
-        block_height: AbsoluteBlockHeight,
-        transaction_hash: TransactionHash,
-        event_index: usize,
-        event: ItemCreatedEvent,
-    ) -> DatabaseResult<()> {
-        let insert_event = self
-            .inner
-            .prepare_cached(
-                "INSERT INTO item_created_events (id, block_height, transaction_hash, \
-                 event_index, item_id, metadata_url) SELECT COALESCE(MAX(id) + 1, 0), $1, $2, $3, \
-                 $4, $5 FROM item_created_events 
-                 ON CONFLICT (block_height, transaction_hash, event_index) DO NOTHING;",
-            )
-            .await?;
-
-        let params: [&(dyn ToSql + Sync); 5] = [
-            &(block_height.height as i64),
-            &transaction_hash.as_ref(),
-            &(event_index as i64),
-            &(event.item_id as i64),
-            &to_bytes(&event.metadata_url),
-        ];
-
-        self.inner.execute(&insert_event, &params).await?;
-        Ok(())
-    }
-
-    /// Insert an item_status_changed event submission into the database.
-    pub async fn insert_item_status_changed_event(
-        &self,
-        block_height: AbsoluteBlockHeight,
-        transaction_hash: TransactionHash,
-        event_index: usize,
-        event: ItemStatusChangedEvent,
-    ) -> DatabaseResult<()> {
-        let insert_event = self
-            .inner
-            .prepare_cached(
-                "INSERT INTO item_status_changed_events (id, block_height, transaction_hash, \
-                 event_index, item_id, new_status, additional_data) SELECT COALESCE(MAX(id) + 1, \
-                 0), $1, $2, $3, $4, $5, $6 FROM item_status_changed_events
-                 ON CONFLICT (block_height, transaction_hash, event_index) DO NOTHING;",
-            )
-            .await?;
-
-        let params: [&(dyn ToSql + Sync); 6] = [
-            &(block_height.height as i64),
-            &transaction_hash.as_ref(),
-            &(event_index as i64),
-            &(event.item_id as i64),
-            &(event.new_status as i64),
-            &event.additional_data.bytes,
-        ];
-
-        self.inner.execute(&insert_event, &params).await?;
-        Ok(())
     }
 }
 
