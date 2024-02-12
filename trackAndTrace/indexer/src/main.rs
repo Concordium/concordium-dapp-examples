@@ -2,26 +2,17 @@
 //! postgres database. The database is configured with the tables from the file
 //! `../rescourcs/schema.sql`. The events `ItemStatusChangedEvent` and
 //! `ItemCreatedEvent` are indexed in their respective tables. A third table
-//! `settings` exists to store global configurations and checkpoints.
-//!
-//! Each event can be uniquely identified by the triple (`block_height`,
-//! `transaction_hash`, and `event_inex`) and will be uniquely inserted into the
-//! table. Meaning even after restarting the indexer, an event will only be
-//! inserted into the database if it does not exist in the database yet.
-//! Whenever an event is inserted into the database, the checkpoint in the
-//! `settings` table is updated to reflect the latest block height, the latest
-//! transaction hash, and the latest event index processed by the indexer.
-//!
-//! The indexer has some retry logic to re-connect to the database in case
-//! connection is lost.
+//! `settings` exists to store global configurations. Each event can be uniquely
+//! identified by the triple (`block_height`, `transaction_hash`, and
+//! `event_inex`).
 use anyhow::Context;
 use clap::Parser;
 use concordium_rust_sdk::{
-    indexer::{self},
-    types::{hashes::TransactionHash, AbsoluteBlockHeight, ContractAddress},
+    indexer,
+    smart_contracts::common::to_bytes,
+    types::{AbsoluteBlockHeight, ContractAddress},
     v2 as sdk,
 };
-use contract::{ItemCreatedEvent, ItemStatusChangedEvent};
 use std::{
     collections::BTreeSet,
     sync::{
@@ -29,6 +20,7 @@ use std::{
         Arc,
     },
 };
+use tokio_postgres::types::ToSql;
 use track_and_trace as contract;
 mod db;
 use crate::db::*;
@@ -63,7 +55,7 @@ struct Args {
     /// Database connection string.
     #[arg(
         long = "db-connection",
-        default_value = "host=localhost dbname=indexer user=postgres password=password port=5432",
+        default_value = "host=localhost dbname=indexer3 user=postgres password=password port=5432",
         help = "A connection string detailing the connection to the database used by the \
                 application.",
         env = "CCD_INDEXER_DB_CONNECTION"
@@ -162,21 +154,18 @@ async fn main() -> anyhow::Result<()> {
         "Contract address does not match the contract address found in the database"
     );
 
-    tracing::info!("Indexing contract: {:?}", settings.contract_address);
+    tracing::info!("Indexing contract: {:?}.", settings.contract_address);
 
-    handle_indexing(db, db_pool, endpoint, app.start, app.contract_address).await
+    handle_indexing(db, endpoint, app.start, app.contract_address).await
 }
 
 /// Handle indexing events.
 async fn handle_indexing(
     mut db: Database,
-    db_pool: DatabasePool,
     endpoint: sdk::Endpoint,
     start: AbsoluteBlockHeight,
     contract_address: ContractAddress,
 ) -> anyhow::Result<()> {
-    // Establish connection to the node.
-
     // Database process runs until the stop flag is triggered.
     let stop_flag = Arc::new(AtomicBool::new(false));
     let shutdown_handle = tokio::spawn(set_shutdown(stop_flag.clone()));
@@ -199,252 +188,123 @@ async fn handle_indexing(
     // The indexer starts processing historical events and then listens for new
     // events that are coming in as the blockchain progresses.
     while let Some((block, contract_update_infos)) = receiver.recv().await {
-        tracing::debug!("Processing block {}.", block.block_height);
+        let now = tokio::time::Instant::now();
 
         // Stop indexer when triggered.
         if stop_flag.load(Ordering::Acquire) {
             break;
         }
 
-        for tx in contract_update_infos {
-            for (contract_invoked, _entry_point_name, events) in tx.0.execution_tree.events() {
-                anyhow::ensure!(
-                    contract_invoked == contract_address,
-                    "The event picked up by the indexer should be from contract `{}` but \
-                     following contract address was found while indexing `{}`.",
-                    contract_address,
-                    contract_invoked
-                );
+        if !contract_update_infos.is_empty() {
+            // Begin the transaction
+            let db_transaction = db
+                .client
+                .transaction()
+                .await
+                .context("Failed to build DB transaction")?;
 
-                for (event_index, event) in events.iter().enumerate() {
-                    let parsed_event: contract::Event = event.parse()?;
+            for tx in contract_update_infos {
+                for (contract_invoked, _entry_point_name, events) in tx.0.execution_tree.events() {
+                    anyhow::ensure!(
+                        contract_invoked == contract_address,
+                        "The event picked up by the indexer should be from contract `{}` but \
+                         following contract address was found while indexing `{}`.",
+                        contract_address,
+                        contract_invoked
+                    );
 
-                    if let contract::Event::ItemStatusChanged(item_status_change_event) =
-                        parsed_event
-                    {
-                        // In case of DB errors, we will reconnect and retry to insert the event
-                        // into the database.
-                        let mut retry = true;
-                        // How many successive insertion errors were encountered.
-                        // This is used to slow down attempts to not spam the database.
-                        let mut reconnecting_db_errors_count = 0;
+                    for (event_index, event) in events.iter().enumerate() {
+                        let parsed_event: contract::Event = event.parse()?;
 
-                        while retry {
-                            retry = match db_insert_item_status_changed_event(
-                                &mut db,
+                        if let contract::Event::ItemStatusChanged(item_status_change_event) =
+                            parsed_event
+                        {
+                            let params: [&(dyn ToSql + Sync); 6] = [
+                                &(block.block_height.height as i64),
+                                &tx.0.transaction_hash.as_ref(),
+                                &(event_index as i64),
+                                &(item_status_change_event.item_id as i64),
+                                &(item_status_change_event.new_status as i64),
+                                &item_status_change_event.additional_data.bytes,
+                            ];
+
+                            let statement = db_transaction
+                                .prepare_cached(
+                                    "INSERT INTO item_status_changed_events (id, block_height, \
+                                     transaction_hash, event_index, item_id, new_status, \
+                                     additional_data) SELECT COALESCE(MAX(id) + 1, 0), $1, $2, \
+                                     $3, $4, $5, $6 FROM item_status_changed_events;",
+                                )
+                                .await
+                                .context(
+                                    "Failed to prepare item_status_change_event transaction",
+                                )?;
+
+                            db_transaction.execute(&statement, &params).await.context(
+                                "Failed to execute item_status_change_event transaction",
+                            )?;
+
+                            tracing::debug!(
+                                "Preparing item_status_change_event from block {}, transaction \
+                                 hash {}, and event index {}.",
                                 block.block_height,
                                 tx.0.transaction_hash,
-                                event_index,
-                                item_status_change_event.clone(),
-                            )
-                            .await
-                            {
-                                Ok(time) => {
-                                    reconnecting_db_errors_count = 0;
-                                    tracing::info!(
-                                        "Processed `item_status_change_event` at event index {} \
-                                         in transaction {} in block {}. Database transaction took \
-                                         {}ms.",
-                                        event_index,
-                                        tx.0.transaction_hash,
-                                        block.block_height,
-                                        time.num_milliseconds()
-                                    );
-                                    false
-                                }
-                                Err(e) => {
-                                    reconnecting_db_errors_count += 1;
-                                    // wait for 500 * 2^(min(successive_errors - 1, 7))
-                                    // seconds before attempting.
-                                    // The reason for the min is that we bound the
-                                    // time between reconnects.
-                                    let delay = std::time::Duration::from_millis(
-                                        500 * (1 << std::cmp::min(reconnecting_db_errors_count, 8)),
-                                    );
-                                    tracing::warn!(
-                                        "Database connection lost due to {:#}. Will
-                            attempt to reconnect in {}ms. Reconnecting database error count: {}",
-                                        e,
-                                        delay.as_millis(),
-                                        reconnecting_db_errors_count
-                                    );
-                                    tokio::time::sleep(delay).await;
+                                event_index
+                            );
+                        } else if let contract::Event::ItemCreated(item_created_event) =
+                            parsed_event
+                        {
+                            let params: [&(dyn ToSql + Sync); 5] = [
+                                &(block.block_height.height as i64),
+                                &tx.0.transaction_hash.as_ref(),
+                                &(event_index as i64),
+                                &(item_created_event.item_id as i64),
+                                &to_bytes(&item_created_event.metadata_url),
+                            ];
 
-                                    // Get new db connection from the pool
-                                    db = match db_pool.get().await.context(
-                                        "Failed to get new database
-                            connection from pool",
-                                    ) {
-                                        Ok(db) => db,
-                                        Err(e) => {
-                                            receiver.close();
-                                            return Err(e);
-                                        }
-                                    };
-                                    true
-                                }
-                            };
-                        }
-                    } else if let contract::Event::ItemCreated(item_created_event) = parsed_event {
-                        // In case of DB errors, we will reconnect and retry to insert the event
-                        // into the database.
-                        let mut retry = true;
-                        // How many successive insertion errors were encountered.
-                        // This is used to slow down attempts to not spam the database.
-                        let mut reconnecting_db_errors_count = 0;
+                            let statement = db_transaction
+                                .prepare_cached(
+                                    "INSERT INTO item_created_events (id, block_height, \
+                                     transaction_hash, event_index, item_id, metadata_url) SELECT \
+                                     COALESCE(MAX(id) + 1, 0), $1, $2, $3, $4, $5 FROM \
+                                     item_created_events;",
+                                )
+                                .await
+                                .context("Failed to prepare item_created_event transaction")?;
 
-                        while retry {
-                            retry = match db_insert_created_event(
-                                &mut db,
+                            db_transaction
+                                .execute(&statement, &params)
+                                .await
+                                .context("Failed to execute item_created_event transaction")?;
+
+                            tracing::debug!(
+                                "Preparing event from block {}, transaction hash {}, and event \
+                                 index {}.",
                                 block.block_height,
                                 tx.0.transaction_hash,
-                                event_index,
-                                item_created_event.clone(),
-                            )
-                            .await
-                            {
-                                Ok(time) => {
-                                    reconnecting_db_errors_count = 0;
-                                    tracing::info!(
-                                        "Processed `item_created_event` at event index {} in \
-                                         transaction {} in block {}. Database transaction took \
-                                         {}ms.",
-                                        event_index,
-                                        tx.0.transaction_hash,
-                                        block.block_height,
-                                        time.num_milliseconds()
-                                    );
-                                    false
-                                }
-                                Err(e) => {
-                                    reconnecting_db_errors_count += 1;
-                                    // wait for 500 * 2^(min(successive_errors - 1, 7))
-                                    // seconds before attempting.
-                                    // The reason for the min is that we bound the
-                                    // time between reconnects.
-                                    let delay = std::time::Duration::from_millis(
-                                        500 * (1 << std::cmp::min(reconnecting_db_errors_count, 8)),
-                                    );
-                                    tracing::warn!(
-                                        "Database connection lost due to {:#}. Will
-                            attempt to reconnect in {}ms. Reconnecting database error count: {}",
-                                        e,
-                                        delay.as_millis(),
-                                        reconnecting_db_errors_count
-                                    );
-                                    tokio::time::sleep(delay).await;
-
-                                    // Get new db connection from the pool
-                                    db = match db_pool.get().await.context(
-                                        "Failed to get new database
-                            connection from pool",
-                                    ) {
-                                        Ok(db) => db,
-                                        Err(e) => {
-                                            receiver.close();
-                                            return Err(e);
-                                        }
-                                    };
-                                    true
-                                }
-                            };
+                                event_index
+                            );
                         }
                     }
                 }
             }
+
+            // Commit the transaction
+            db_transaction
+                .commit()
+                .await
+                .context("Failed to commit block transaction")?;
         }
+
+        tracing::debug!(
+            "Processed block {} in {}ms.",
+            block.block_height,
+            now.elapsed().as_millis()
+        );
     }
 
     indexer_handle.abort();
     shutdown_handle.abort();
 
     Ok(())
-}
-
-/// Inserts data related to the `ItemCreatedEvent` into the database.
-/// Everything is commited as a single transactions allowing
-/// for easy restoration from the last recorded checkpoint into
-/// the database. Returns the duration it took to process the transaction.
-#[tracing::instrument(skip(db))]
-async fn db_insert_created_event<'a>(
-    db: &mut Database,
-    block_height: AbsoluteBlockHeight,
-    tx_hash: TransactionHash,
-    event_index: usize,
-    event: ItemCreatedEvent,
-) -> anyhow::Result<chrono::Duration> {
-    let start = chrono::Utc::now();
-    let transaction = db
-        .client
-        .transaction()
-        .await
-        .context("Failed to build DB transaction")?;
-
-    let transaction = Transaction::from(transaction);
-
-    transaction
-        .insert_item_created_event(block_height, tx_hash, event_index, event)
-        .await?;
-
-    let now = tokio::time::Instant::now();
-    transaction
-        .inner
-        .commit()
-        .await
-        .context("Failed to commit DB transaction.")?;
-
-    tracing::debug!(
-        "Insert event from block_height {}, transaction hash {}, and event index {} into database.",
-        block_height,
-        tx_hash,
-        event_index
-    );
-    tracing::debug!("Commit completed in {}ms.", now.elapsed().as_millis());
-
-    let end = chrono::Utc::now().signed_duration_since(start);
-    Ok(end)
-}
-
-/// Inserts data related to the `ItemStatusChangedEvent` into the database.
-/// Everything is commited as a single transactions allowing
-/// for easy restoration from the last checkpoint inserted into
-/// the database. Returns the duration it took to process the transaction.
-#[tracing::instrument(skip(db))]
-async fn db_insert_item_status_changed_event<'a>(
-    db: &mut Database,
-    block_height: AbsoluteBlockHeight,
-    tx_hash: TransactionHash,
-    event_index: usize,
-    event: ItemStatusChangedEvent,
-) -> anyhow::Result<chrono::Duration> {
-    let start = chrono::Utc::now();
-    let transaction = db
-        .client
-        .transaction()
-        .await
-        .context("Failed to build DB transaction")?;
-
-    let transaction = Transaction::from(transaction);
-
-    transaction
-        .insert_item_status_changed_event(block_height, tx_hash, event_index, event)
-        .await?;
-
-    let now = tokio::time::Instant::now();
-    transaction
-        .inner
-        .commit()
-        .await
-        .context("Failed to commit DB transaction.")?;
-
-    tracing::debug!(
-        "Insert event from block_height {}, transaction hash {}, and event index {} into database.",
-        block_height,
-        tx_hash,
-        event_index
-    );
-    tracing::debug!("Commit completed in {}ms.", now.elapsed().as_millis());
-
-    let end = chrono::Utc::now().signed_duration_since(start);
-    Ok(end)
 }
