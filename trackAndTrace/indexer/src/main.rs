@@ -162,7 +162,7 @@ async fn main() -> anyhow::Result<()> {
         "Contract address does not match the contract address found in the database"
     );
 
-    tracing::info!("Settings: {:?}", settings);
+    tracing::info!("Indexing contract: {:?}", settings.contract_address);
 
     handle_indexing(db, db_pool, endpoint, app.start, app.contract_address).await
 }
@@ -199,6 +199,8 @@ async fn handle_indexing(
     // The indexer starts processing historical events and then listens for new
     // events that are coming in as the blockchain progresses.
     while let Some((block, contract_update_infos)) = receiver.recv().await {
+        tracing::debug!("Processing block {}.", block.block_height);
+
         // Stop indexer when triggered.
         if stop_flag.load(Ordering::Acquire) {
             break;
@@ -381,10 +383,6 @@ async fn db_insert_created_event<'a>(
     let transaction = Transaction::from(transaction);
 
     transaction
-        .set_latest_checkpoint(block_height, tx_hash, event_index)
-        .await?;
-
-    transaction
         .insert_item_created_event(block_height, tx_hash, event_index, event)
         .await?;
 
@@ -395,6 +393,12 @@ async fn db_insert_created_event<'a>(
         .await
         .context("Failed to commit DB transaction.")?;
 
+    tracing::debug!(
+        "Insert event from block_height {}, transaction hash {}, and event index {} into database.",
+        block_height,
+        tx_hash,
+        event_index
+    );
     tracing::debug!("Commit completed in {}ms.", now.elapsed().as_millis());
 
     let end = chrono::Utc::now().signed_duration_since(start);
@@ -423,10 +427,6 @@ async fn db_insert_item_status_changed_event<'a>(
     let transaction = Transaction::from(transaction);
 
     transaction
-        .set_latest_checkpoint(block_height, tx_hash, event_index)
-        .await?;
-
-    transaction
         .insert_item_status_changed_event(block_height, tx_hash, event_index, event)
         .await?;
 
@@ -437,6 +437,12 @@ async fn db_insert_item_status_changed_event<'a>(
         .await
         .context("Failed to commit DB transaction.")?;
 
+    tracing::debug!(
+        "Insert event from block_height {}, transaction hash {}, and event index {} into database.",
+        block_height,
+        tx_hash,
+        event_index
+    );
     tracing::debug!("Commit completed in {}ms.", now.elapsed().as_millis());
 
     let end = chrono::Utc::now().signed_duration_since(start);

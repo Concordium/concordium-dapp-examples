@@ -45,7 +45,7 @@ This will produce a single binary `indexer` in `target/release` directory.
 ## Start the indexer
 
 ```console
-cargo run -- --node https://grpc.testnet.concordium.com:20000 --start 9970784 --contract "<7835,0>"
+cargo run -- --node https://grpc.testnet.concordium.com:20000 --start 9970784 --contract "<7835,0>" --log-level debug
 ```
 
 ## Configure the indexer
