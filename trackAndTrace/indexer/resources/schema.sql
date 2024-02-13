@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS item_status_changed_events (
   -- The item's id as logged in the event.
   item_id INT8 NOT NULL,
   -- The item's new status as logged in the event.
-  new_status INT8 NOT NULL,
+  new_status JSONB NOT NULL,
   -- Any additional data encoded as generic bytes as logged in the event. Usecase-specific data can be included here such as temperature, longitude, latitude, ... .
   additional_data BYTEA NOT NULL
 );
