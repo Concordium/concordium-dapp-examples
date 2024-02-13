@@ -1,0 +1,131 @@
+name: Build, Format and Lint Frontends
+
+on:
+  push:
+    branches: main
+
+  pull_request:
+    branches: main
+  
+env:
+  NODE_VERSION: "lts/*"
+
+jobs:
+  lint:
+    name: Running linter
+    # Don't run on draft pull requests
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        packages:
+          - dapp-template/frontend
+          - euroe-demo
+          - gallery
+          - sponsoredTransactions/frontend
+          - sponsoredTransactionsAuction/frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+          cache-dependency-path: ${{ matrix.packages }}/yarn.lock
+
+      - name: Run install
+        working-directory: ${{ matrix.packages }}
+        run: yarn install
+
+      - name: Run Lint
+        working-directory: ${{ matrix.packages }}
+        run: yarn lint
+
+  prettier:
+    name: Running Prettier
+    # Don't run on draft pull requests
+    if: ${{ !github.event.pull_request.draft }}
+    needs: lint
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        packages:
+          - dapp-template/frontend
+          - euroe-demo
+          - sponsoredTransactionsAuction/frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+          cache-dependency-path: ${{ matrix.packages }}/yarn.lock
+
+      - name: Run install
+        working-directory: ${{ matrix.packages }}
+        run: yarn install
+
+      - name: Run Prettier
+        working-directory: ${{ matrix.packages }}
+        run: yarn prettier -c .
+  
+  build:
+    name: Building Frontend
+    # Don't run on draft pull requests
+    if: ${{ !github.event.pull_request.draft }}
+    needs: prettier
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        packages:
+          - dapp-template/frontend
+          - euroe-demo
+          - gallery
+          - low-code-nft-marketplace/common-ui
+          - low-code-nft-marketplace/market-ui
+          - low-code-nft-marketplace/mint-ui
+          - signMessage
+          - simpleAgeVerification
+          - sponsoredTransactions/frontend
+          - sponsoredTransactionsAuction/frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+          cache-dependency-path: ${{ matrix.packages }}/yarn.lock
+
+      - name: Install Low Code NFT Marketplace Dependencies
+        if: ${{ matrix.packages == 'low-code-nft-marketplace/market-ui' || matrix.packages == 'low-code-nft-marketplace/mint-ui' }}
+        working-directory: low-code-nft-marketplace
+        run: yarn install && yarn workspace common-ui build
+
+      - name: Run install
+        if: ${{ matrix.packages != 'low-code-nft-marketplace/market-ui' && matrix.packages != 'low-code-nft-marketplace/mint-ui' }}
+        working-directory: ${{ matrix.packages }}
+        run: yarn install
+
+      - name: Build
+        working-directory: ${{ matrix.packages }}
+        run: yarn build

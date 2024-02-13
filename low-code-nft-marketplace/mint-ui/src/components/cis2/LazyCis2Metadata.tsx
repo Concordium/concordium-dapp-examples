@@ -18,20 +18,20 @@ function LazyCis2Metadata(props: {
   }>({ loadingMetadata: false, error: "" });
 
   useEffect(() => {
-    setState({ ...state, loadingMetadata: true });
+    setState(state => ({ ...state, loadingMetadata: true }));
     fetchJsonString(toIpfsGatewayUrl(props.metadataUrl.url))
       .then((metadata) => {
-        setState({ ...state, metadata: JSON.parse(metadata), loadingMetadata: false });
+        setState(state => ({ ...state, metadata: JSON.parse(metadata), loadingMetadata: false }));
         props.onMetadataLoaded && props.onMetadataLoaded(metadata);
       })
       .catch((err) => {
-        setState({
+        setState(state => ({
           ...state,
           loadingMetadata: false,
           error: err.message,
-        });
+        }));
       });
-  }, [props.metadataUrl.url]);
+  }, [props]);
 
   if (state.error) {
     return props.errorLoadingTemplate(state.error.toString());

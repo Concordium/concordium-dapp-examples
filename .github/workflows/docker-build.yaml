@@ -1,0 +1,38 @@
+name: Build Docker Containers
+
+on:
+  push:
+    branches: main
+
+  pull_request:
+    branches: main
+  
+  workflow_dispatch: # allows manual trigger
+
+jobs:
+  build:
+    name: Building Docker Containers
+    # Don't run on draft pull requests
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        image:
+          - {dir: euroe-demo, dockerfile: scripts/Dockerfile}
+          - {dir: ., dockerfile: gallery/Dockerfile}
+          - {dir: signMessage, dockerfile: Dockerfile}
+          - {dir: simpleAgeVerification, dockerfile: Dockerfile}
+          - {dir: ., dockerfile: sponsoredTransactions/Dockerfile}
+          - {dir: ., dockerfile: sponsoredTransactionsAuction/Dockerfile}
+          
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    
+    - name: Build image
+      working-directory: ${{ matrix.image.dir }}
+      run:
+        docker build -f ${{ matrix.image.dockerfile }} .
+      

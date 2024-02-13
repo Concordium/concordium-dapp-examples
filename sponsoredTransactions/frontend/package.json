@@ -47,13 +47,13 @@
         "stylelint-config-standard-scss": "^3.0.0",
         "stylelint-prettier": "^2.0.0",
         "stylelint-scss": "^4.2.0",
-        "ts-node": "^10.8.0",
+        "tsx": "^4.7.0",
         "typescript": "^4.7.2"
     },
     "scripts": {
         "lint": "eslint . --cache --max-warnings 0 --ext .ts,.tsx",
         "type:check": "yarn run tsc --noEmit",
-        "build": "SMART_CONTRACT_INDEX=6372 node --loader ts-node/esm ./esbuild.config.ts; cp ./src/assets/* ./dist",
+        "build": "SMART_CONTRACT_INDEX=6372 tsx ./esbuild.config.ts; cp ./src/assets/* ./dist",
         "watch": "cross-env WATCH=1 yarn build",
         "start": "live-server ./dist"
     }

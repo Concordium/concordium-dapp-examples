@@ -1,6 +1,6 @@
 import "./App.css";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import { detectConcordiumProvider, WalletApi } from "@concordium/browser-wallet-api-helpers";
@@ -21,33 +21,33 @@ function App() {
     grpcClient: createConcordiumClient(CONNCORDIUM_NODE_ENDPOINT, Number(CONCORDIUM_NODE_PORT)),
   });
 
-  function connect() {
+  const connect = useCallback(() => {
     detectConcordiumProvider()
       .then((provider) => {
         provider
           .getMostRecentlySelectedAccount()
           .then((account) => (account ? Promise.resolve(account) : provider.connect()))
           .then((account) => {
-            setState({ ...state, provider, account });
+            setState(state => ({ ...state, provider, account }));
           })
           .catch(() => {
             alert("Please allow wallet connection");
           });
         provider.on("accountDisconnected", () => {
-          setState({ ...state, account: undefined });
+          setState(state => ({ ...state, account: undefined }));
         });
         provider.on("accountChanged", (account) => {
-          setState({ ...state, account });
+          setState(state => ({ ...state, account }));
         });
         provider.on("chainChanged", () => {
-          setState({ ...state, account: undefined, provider: undefined });
+          setState(state => ({ ...state, account: undefined, provider: undefined }));
         });
       })
       .catch(() => {
         console.error(`could not find provider`);
         alert("Please download Concordium Wallet");
       });
-  }
+  }, []);
 
   useEffect(() => {
     if (state.provider && state.account) {
@@ -58,7 +58,7 @@ function App() {
     return () => {
       state.provider?.removeAllListeners();
     };
-  }, [state.account]);
+  }, [connect, state.account, state.provider]);
 
   function isConnected() {
     return !!state.provider && !!state.account;

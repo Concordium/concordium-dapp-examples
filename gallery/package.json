@@ -32,12 +32,12 @@
         "stylelint-config-standard-scss": "^3.0.0",
         "stylelint-prettier": "^2.0.0",
         "stylelint-scss": "^4.2.0",
-        "ts-node": "^10.8.0",
-        "typescript": "^4.7.2"
+        "typescript": "^4.7.2",
+        "tsx": "^4.7.0"
     },
     "scripts": {
         "lint": "eslint . --cache --max-warnings 0 --ext .ts,.tsx",
-        "build": "node --loader ts-node/esm ./esbuild.config.ts; cp ./src/assets/* ./public",
+        "build": "tsx ./esbuild.config.ts; cp ./src/assets/* ./public",
         "build-verifier": "cargo build --manifest-path=verifier/Cargo.toml --release",
         "watch": "cross-env WATCH=1 yarn build",
         "start": "./verifier/target/release/gallery-verifier"

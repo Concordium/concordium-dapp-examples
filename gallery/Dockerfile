@@ -1,5 +1,5 @@
-ARG node_base_image=node:16-slim
-ARG rust_base_image=rust:1.62
+ARG node_base_image=node:20-slim
+ARG rust_base_image=rust:1.65
 
 FROM ${node_base_image} AS node_build
 

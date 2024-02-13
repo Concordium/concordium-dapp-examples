@@ -26,6 +26,7 @@ jobs:
       matrix:
         crates:
           - gallery/verifier/Cargo.toml
+          - low-code-nft-marketplace/cis2-market/Cargo.toml
           - sponsoredTransactions/backend/Cargo.toml
           - sponsoredTransactionsAuction/backend/Cargo.toml
           - trackAndTrace/smart-contract/Cargo.toml
@@ -56,6 +57,7 @@ jobs:
       matrix:
         crates:
           - gallery/verifier/Cargo.toml
+          - low-code-nft-marketplace/cis2-market/Cargo.toml
           - sponsoredTransactions/backend/Cargo.toml
           - sponsoredTransactionsAuction/backend/Cargo.toml
           - trackAndTrace/smart-contract/Cargo.toml
@@ -81,6 +83,8 @@ jobs:
 
   test:
     name: Running tests
+    # Don't run on draft pull requests
+    if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -88,6 +92,7 @@ jobs:
           - x86_64-unknown-linux-gnu
 
         crates:
+          - low-code-nft-marketplace/cis2-market
           - trackAndTrace/smart-contract
 
     steps:
