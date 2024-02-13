@@ -6,8 +6,11 @@ use concordium_rust_sdk::{
 };
 use deadpool_postgres::{GenericClient, Object};
 use serde::Serialize;
-use tokio_postgres::{types::ToSql, NoTls};
-use track_and_trace::{MetadataUrl, *};
+use tokio_postgres::{
+    types::{Json, ToSql},
+    NoTls,
+};
+use track_and_trace::{MetadataUrl, Status, *};
 
 /// Represents possible errors returned from [`Database`] or [`DatabasePool`]
 /// functions
@@ -67,36 +70,24 @@ pub struct StoredItemStatusChangedEvent {
     pub additional_data:  AdditionalData,
 }
 
-// Conversion from an integer, as stored in the database, to the `Status` type.
-fn status_from_i64(value: i64) -> Result<Status, DatabaseError> {
-    match value {
-        0 => Ok(Status::Produced),
-        1 => Ok(Status::InTransit),
-        2 => Ok(Status::InStore),
-        3 => Ok(Status::Sold),
-        _ => Err(DatabaseError::TypeConversion),
-    }
-}
-
 impl TryFrom<tokio_postgres::Row> for StoredItemStatusChangedEvent {
     type Error = DatabaseError;
 
     // Conversion from the postgres row to the `StoredItemStatusChangedEvent` type.
     fn try_from(value: tokio_postgres::Row) -> DatabaseResult<Self> {
-        let raw_block_time: DateTime<Utc> = value.try_get(0)?;
-        let raw_transaction_hash: &[u8] = value.try_get(1)?;
-        let raw_event_index: i64 = value.try_get(2)?;
-        let raw_item_id: i64 = value.try_get(3)?;
-        let raw_new_status: i64 = value.try_get(4)?;
-        let raw_additional_data: &[u8] = value.try_get(5)?;
+        let raw_transaction_hash: &[u8] = value.try_get("transaction_hash")?;
+        let raw_item_id: i64 = value.try_get("item_id")?;
+        let raw_event_index: i64 = value.try_get("event_index")?;
+        let raw_additional_data: &[u8] = value.try_get("additional_data")?;
+        let Json(raw_status): Json<Status> = value.try_get("new_status")?;
 
         let events = Self {
-            block_time:       raw_block_time,
+            block_time:       value.try_get("block_time")?,
             transaction_hash: raw_transaction_hash
                 .try_into()
                 .map_err(|_| DatabaseError::TypeConversion)?,
             event_index:      raw_event_index as u64,
-            new_status:       status_from_i64(raw_new_status)?,
+            new_status:       raw_status,
             item_id:          raw_item_id as u64,
             additional_data:  AdditionalData::from_bytes(raw_additional_data.into()),
         };
@@ -124,20 +115,18 @@ impl TryFrom<tokio_postgres::Row> for StoredItemCreatedEvent {
 
     // Conversion from the postgres row to the `StoredItemCreatedEvent` type.
     fn try_from(value: tokio_postgres::Row) -> DatabaseResult<Self> {
-        let raw_block_time: DateTime<Utc> = value.try_get(0)?;
-        let raw_transaction_hash: &[u8] = value.try_get(1)?;
-        let raw_event_index: i64 = value.try_get(2)?;
-        let raw_item_id: i64 = value.try_get(3)?;
-        let raw_metadata_url: &[u8] = value.try_get(4)?;
+        let raw_transaction_hash: &[u8] = value.try_get("transaction_hash")?;
+        let raw_item_id: i64 = value.try_get("item_id")?;
+        let raw_event_index: i64 = value.try_get("event_index")?;
 
         let events = Self {
-            block_time:       raw_block_time,
+            block_time:       value.try_get("block_time")?,
             transaction_hash: raw_transaction_hash
                 .try_into()
                 .map_err(|_| DatabaseError::TypeConversion)?,
             event_index:      raw_event_index as u64,
             item_id:          raw_item_id as u64,
-            metadata_url:     from_bytes(raw_metadata_url).unwrap(),
+            metadata_url:     from_bytes(value.try_get("metadata_url")?).unwrap(),
         };
         Ok(events)
     }
@@ -193,15 +182,19 @@ impl Database {
     pub async fn get_item_status_changed_events_submissions(
         &self,
         item_id: u64,
+        limit: u32,
+        offset: u32,
     ) -> DatabaseResult<Vec<StoredItemStatusChangedEvent>> {
         let get_item_status_changed_event_submissions = self
             .client
             .prepare_cached(
                 "SELECT block_time, transaction_hash, event_index, item_id, new_status, \
-                 additional_data from item_status_changed_events WHERE item_id = $1",
+                 additional_data from item_status_changed_events WHERE item_id = $1 LIMIT $2 \
+                 OFFSET $3",
             )
             .await?;
-        let params: [&(dyn ToSql + Sync); 1] = [&(item_id as i64)];
+        let params: [&(dyn ToSql + Sync); 3] =
+            [&(item_id as i64), &(limit as i64), &(offset as i64)];
 
         let rows = self
             .client

@@ -5,25 +5,29 @@
 //! `settings` exists to store global configurations. Each event can be uniquely
 //! identified by the triple (`block_height`, `transaction_hash`, and
 //! `event_index`).
-use anyhow::Context;
+use anyhow::{bail, Context};
 use clap::Parser;
 use concordium_rust_sdk::{
     indexer,
     smart_contracts::common::to_bytes,
-    types::{AbsoluteBlockHeight, ContractAddress},
-    v2 as sdk,
+    types::{hashes::BlockHash, AbsoluteBlockHeight, ContractAddress},
+    v2::{self as sdk, Client},
 };
 use std::{
     collections::BTreeSet,
+    str::FromStr,
     sync::{
         atomic::{AtomicBool, Ordering},
         Arc,
     },
 };
-use tokio_postgres::types::ToSql;
+use tokio_postgres::types::{Json, ToSql};
 use track_and_trace as contract;
 mod db;
 use crate::db::*;
+
+const TESTNET_GENESIS_BLOCK_HASH: &str =
+    "4221332d34e1694168c2a0c0b3fd0f273809612cb13d000d5c2e00e85f50f796";
 
 /// Command line configuration of the application.
 #[derive(Debug, clap::Parser)]
@@ -135,7 +139,7 @@ async fn main() -> anyhow::Result<()> {
     .timeout(std::time::Duration::from_secs(10));
 
     // Establish connection to the postgres database.
-    let db_pool = DatabasePool::create(app.db_connection.clone(), 2, true)
+    let db_pool = DatabasePool::create(app.db_connection.clone(), 1, true)
         .await
         .context("Could not create database pool")?;
     let db = db_pool
@@ -156,6 +160,25 @@ async fn main() -> anyhow::Result<()> {
     );
 
     tracing::info!("Indexing contract: {:?}.", settings.contract_address);
+
+    let mut client = Client::new(endpoint.clone()).await?;
+    let consensus_info = client.get_consensus_info().await?;
+
+    let testnet_genesis_block_hash: BlockHash = BlockHash::from_str(TESTNET_GENESIS_BLOCK_HASH)?;
+
+    if consensus_info.genesis_block != testnet_genesis_block_hash {
+        tracing::error!(
+            "Got genesis hash from node {} but expected genesis hash of testnet {}.",
+            consensus_info.genesis_block.to_string(),
+            "0x4221332d34e1694168c2a0c0b3fd0f273809612cb13d000d5c2e00e85f50f796"
+        );
+
+        bail!(
+            "Got genesis hash from node {} but expected genesis hash of testnet {}.",
+            consensus_info.genesis_block.to_string(),
+            "0x4221332d34e1694168c2a0c0b3fd0f273809612cb13d000d5c2e00e85f50f796"
+        );
+    }
 
     handle_indexing(db, endpoint, app.start, app.contract_address).await
 }
@@ -205,16 +228,7 @@ async fn handle_indexing(
                 .context("Failed to build DB transaction")?;
 
             for tx in contract_update_infos {
-                for (contract_invoked, _entry_point_name, events) in tx.0.execution_tree.events() {
-                    if contract_invoked == contract_address {
-                        tracing::debug!(
-                            "The event picked up by the indexer should be from contract `{}` but \
-                             following contract address was found while indexing `{}`.",
-                            contract_address,
-                            contract_invoked
-                        );
-                    }
-
+                for (_contract_invoked, _entry_point_name, events) in tx.0.execution_tree.events() {
                     for (event_index, event) in events.iter().enumerate() {
                         let parsed_event: contract::Event = event.parse()?;
 
@@ -227,7 +241,7 @@ async fn handle_indexing(
                                 &tx.0.transaction_hash.as_ref(),
                                 &(event_index as i64),
                                 &(item_status_change_event.item_id as i64),
-                                &(item_status_change_event.new_status as i64),
+                                &Json(&item_status_change_event.new_status),
                                 &item_status_change_event.additional_data.bytes,
                             ];
 
@@ -309,7 +323,9 @@ async fn handle_indexing(
     }
 
     // let test = db.get_item_created_event_submission(1).await?;
-    // let test2 = db.get_item_status_changed_events_submissions(1).await?;
+    // let test2 = db
+    //     .get_item_status_changed_events_submissions(1, 10, 0)
+    //     .await?;
 
     // tracing::debug!("{:#?}", test);
     // tracing::debug!("{:#?}", test2);
