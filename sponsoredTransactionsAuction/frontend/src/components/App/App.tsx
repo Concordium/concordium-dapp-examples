@@ -1,13 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Button } from 'react-bootstrap';
 
-import {
-    useGrpcClient,
-    WalletConnectionProps,
-    useConnection,
-    useConnect,
-    TESTNET,
-} from '@concordium/react-components';
+import { useGrpcClient, WalletConnectionProps, useConnection, useConnect, TESTNET } from '@concordium/react-components';
 import { AccountAddress, TransactionHash } from '@concordium/web-sdk';
 
 import MintTokens from '../MintTokens';
@@ -27,8 +21,15 @@ import * as Cis2MultiContract from '../../../generated/cis2_multi_cis2_multi';
  * It imports and displays the four components `MintTokens`, `AddItemToAuction`, `ViewItem`, and `Bid`.
  */
 export default function App(props: WalletConnectionProps) {
-    const { network, activeConnectorType, setActiveConnectorType, activeConnector, activeConnectorError, connectedAccounts, genesisHashes } =
-        props;
+    const {
+        network,
+        activeConnectorType,
+        setActiveConnectorType,
+        activeConnector,
+        activeConnectorError,
+        connectedAccounts,
+        genesisHashes,
+    } = props;
 
     const { connection, setConnection, account, genesisHash } = useConnection(connectedAccounts, genesisHashes);
     const { connect, connectError } = useConnect(activeConnector, setConnection);
