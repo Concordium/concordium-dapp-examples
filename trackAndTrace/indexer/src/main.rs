@@ -4,7 +4,7 @@
 //! `ItemCreatedEvent` are indexed in their respective tables. A third table
 //! `settings` exists to store global configurations. Each event can be uniquely
 //! identified by the triple (`block_height`, `transaction_hash`, and
-//! `event_inex`).
+//! `event_index`).
 use anyhow::Context;
 use clap::Parser;
 use concordium_rust_sdk::{
@@ -55,7 +55,7 @@ struct Args {
     /// Database connection string.
     #[arg(
         long = "db-connection",
-        default_value = "host=localhost dbname=indexer3 user=postgres password=password port=5432",
+        default_value = "host=localhost dbname=indexer user=postgres password=password port=5432",
         help = "A connection string detailing the connection to the database used by the \
                 application.",
         env = "CCD_INDEXER_DB_CONNECTION"
@@ -109,7 +109,8 @@ async fn main() -> anyhow::Result<()> {
         let log_filter = tracing_subscriber::filter::Targets::new()
             .with_target(module_path!(), app.log_level)
             .with_target("indexer", app.log_level)
-            .with_target("ccd_indexer", app.log_level);
+            .with_target("ccd_indexer", app.log_level)
+            .with_target("db", app.log_level);
 
         tracing_subscriber::registry()
             .with(tracing_subscriber::fmt::layer())
@@ -205,13 +206,14 @@ async fn handle_indexing(
 
             for tx in contract_update_infos {
                 for (contract_invoked, _entry_point_name, events) in tx.0.execution_tree.events() {
-                    anyhow::ensure!(
-                        contract_invoked == contract_address,
-                        "The event picked up by the indexer should be from contract `{}` but \
-                         following contract address was found while indexing `{}`.",
-                        contract_address,
-                        contract_invoked
-                    );
+                    if contract_invoked == contract_address {
+                        tracing::debug!(
+                            "The event picked up by the indexer should be from contract `{}` but \
+                             following contract address was found while indexing `{}`.",
+                            contract_address,
+                            contract_invoked
+                        );
+                    }
 
                     for (event_index, event) in events.iter().enumerate() {
                         let parsed_event: contract::Event = event.parse()?;
@@ -219,7 +221,8 @@ async fn handle_indexing(
                         if let contract::Event::ItemStatusChanged(item_status_change_event) =
                             parsed_event
                         {
-                            let params: [&(dyn ToSql + Sync); 6] = [
+                            let params: [&(dyn ToSql + Sync); 7] = [
+                                &(block.block_slot_time),
                                 &(block.block_height.height as i64),
                                 &tx.0.transaction_hash.as_ref(),
                                 &(event_index as i64),
@@ -230,10 +233,11 @@ async fn handle_indexing(
 
                             let statement = db_transaction
                                 .prepare_cached(
-                                    "INSERT INTO item_status_changed_events (id, block_height, \
-                                     transaction_hash, event_index, item_id, new_status, \
-                                     additional_data) SELECT COALESCE(MAX(id) + 1, 0), $1, $2, \
-                                     $3, $4, $5, $6 FROM item_status_changed_events;",
+                                    "INSERT INTO item_status_changed_events (id, block_time, \
+                                     block_height, transaction_hash, event_index, item_id, \
+                                     new_status, additional_data) SELECT COALESCE(MAX(id) + 1, \
+                                     0), $1, $2, $3, $4, $5, $6, $7 FROM \
+                                     item_status_changed_events;",
                                 )
                                 .await
                                 .context(
@@ -254,7 +258,8 @@ async fn handle_indexing(
                         } else if let contract::Event::ItemCreated(item_created_event) =
                             parsed_event
                         {
-                            let params: [&(dyn ToSql + Sync); 5] = [
+                            let params: [&(dyn ToSql + Sync); 6] = [
+                                &(block.block_slot_time),
                                 &(block.block_height.height as i64),
                                 &tx.0.transaction_hash.as_ref(),
                                 &(event_index as i64),
@@ -264,10 +269,10 @@ async fn handle_indexing(
 
                             let statement = db_transaction
                                 .prepare_cached(
-                                    "INSERT INTO item_created_events (id, block_height, \
-                                     transaction_hash, event_index, item_id, metadata_url) SELECT \
-                                     COALESCE(MAX(id) + 1, 0), $1, $2, $3, $4, $5 FROM \
-                                     item_created_events;",
+                                    "INSERT INTO item_created_events (id, block_time, \
+                                     block_height, transaction_hash, event_index, item_id, \
+                                     metadata_url) SELECT COALESCE(MAX(id) + 1, 0), $1, $2, $3, \
+                                     $4, $5, $6 FROM item_created_events;",
                                 )
                                 .await
                                 .context("Failed to prepare item_created_event transaction")?;
@@ -303,6 +308,11 @@ async fn handle_indexing(
         );
     }
 
+    // let test = db.get_item_created_event_submission(1).await?;
+    // let test2 = db.get_item_status_changed_events_submissions(1).await?;
+
+    // tracing::debug!("{:#?}", test);
+    // tracing::debug!("{:#?}", test2);
     indexer_handle.abort();
     shutdown_handle.abort();
 
