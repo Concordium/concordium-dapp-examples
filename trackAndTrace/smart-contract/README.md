@@ -4,7 +4,7 @@
 
 `cargo/rustup` and `cargo-concordium` needs to be [set up](https://developer.concordium.software/en/mainnet/smart-contracts/guides/quick-start.html).
 
-## Build
+## Building
 
 Run the following command to compile the smart contract into the wasm module `module.wasm.v1` with embedded schema:
 
@@ -22,10 +22,35 @@ cargo concordium build --schema-embed --out concordium-out/module.wasm.v1 --veri
 
 Documentation on using verifiable builds is available [here](https://docs.rs/crate/cargo-concordium/latest).
 
-## Test
+## Testing
 
 Run the following command to run the unit and integration tests:
 
 ```bash
 cargo concordium test --out concordium-out/module.wasm.v1
 ```
+
+## Deploying module to chain
+
+You can use Step 1 of the [smart contract developer tools](https://sctools.mainnet.concordium.software/) to deploy your module.
+
+Alternatively, you can use `concordium-client` with the command:
+
+```
+concordium-client module deploy module.wasm.v1 --sender <YourWalletAccount> --grpc-port 20000 --grpc-ip grpc.testnet.concordium.com --secure
+```
+
+Links: 
+- [Link to install concordium-client](https://developer.concordium.software/en/mainnet/net/references/concordium-client.html?highlight=concordium%20client)
+- [Link to import account keys to concordium-client](https://developer.concordium.software/en/mainnet/smart-contracts/tutorials/setup-env.html#import-the-key)
+
+
+## Initializing smart contract instance on chain
+
+Use an input parameter similar to the [inputParameter.json](../test-scripts/inputParameter.json) file.
+
+You can use Step 2 of the [smart contract developer tools](https://sctools.mainnet.concordium.software/) to initialize a new smart contract instance from the module reference 001be979e72f18b68ffa10634b78198e228833a42bd3d71a18c838972e67261e.
+
+Alternatively, you can use `concordium-client`:
+
+

@@ -637,9 +637,9 @@ dependencies = [
 
 [[package]]
 name = "concordium-rust-sdk"
-version = "4.0.0"
+version = "4.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d98ad09fd9f5496180d1fe79b4e71ab69a88d58f2c509ccaa47659ab712681db"
+checksum = "129ba5797981e1b1a22f52807087ca5b018cbe27b8932df4c963be21419d5753"
 dependencies = [
  "aes-gcm",
  "anyhow",
