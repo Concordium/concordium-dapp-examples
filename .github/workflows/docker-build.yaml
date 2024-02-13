@@ -19,11 +19,11 @@ jobs:
       matrix:
         image:
           - {dir: euroe-demo, dockerfile: scripts/Dockerfile}
-          - {dir: gallery, dockerfile: Dockerfile}
+          - {dir: ., dockerfile: gallery/Dockerfile}
           - {dir: signMessage, dockerfile: Dockerfile}
           - {dir: simpleAgeVerification, dockerfile: Dockerfile}
-          - {dir: sponsoredTransactions, dockerfile: Dockerfile}
-          - {dir: sponsoredTransactionsAuction, dockerfile: Dockerfile}
+          - {dir: ., dockerfile: sponsoredTransactions/Dockerfile}
+          - {dir: ., dockerfile: sponsoredTransactionsAuction/Dockerfile}
           
     steps:
     - name: Checkout
@@ -34,5 +34,5 @@ jobs:
     - name: Build image
       working-directory: ${{ matrix.image.dir }}
       run:
-        docker build -t ${{ matrix.image.dir }} -f ${{ matrix.image.dockerfile }} .
+        docker build -f ${{ matrix.image.dockerfile }} .
       
