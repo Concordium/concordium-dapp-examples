@@ -1,4 +1,5 @@
 use anyhow::Context;
+use chrono::{DateTime, Utc};
 use concordium_rust_sdk::{
     smart_contracts::common::from_bytes,
     types::{hashes::TransactionHash, ContractAddress},
@@ -50,8 +51,8 @@ impl TryFrom<tokio_postgres::Row> for StoredConfiguration {
 /// A `StoredItemStatusChanged` event stored in the database.
 #[derive(Debug)]
 pub struct StoredItemStatusChangedEvent {
-    /// The block height that the event was recorded in.
-    pub block_height:     u64,
+    /// The timestamp of the block the event was included in.
+    pub block_time:       DateTime<Utc>,
     /// The transaction hash that the event was recorded in.
     pub transaction_hash: TransactionHash,
     /// The index from the array of logged events in a transaction.
@@ -82,7 +83,7 @@ impl TryFrom<tokio_postgres::Row> for StoredItemStatusChangedEvent {
 
     // Conversion from the postgres row to the `StoredItemStatusChangedEvent` type.
     fn try_from(value: tokio_postgres::Row) -> DatabaseResult<Self> {
-        let raw_block_height: i64 = value.try_get(0)?;
+        let raw_block_time: DateTime<Utc> = value.try_get(0)?;
         let raw_transaction_hash: &[u8] = value.try_get(1)?;
         let raw_event_index: i64 = value.try_get(2)?;
         let raw_item_id: i64 = value.try_get(3)?;
@@ -90,7 +91,7 @@ impl TryFrom<tokio_postgres::Row> for StoredItemStatusChangedEvent {
         let raw_additional_data: &[u8] = value.try_get(5)?;
 
         let events = Self {
-            block_height:     raw_block_height as u64,
+            block_time:       raw_block_time,
             transaction_hash: raw_transaction_hash
                 .try_into()
                 .map_err(|_| DatabaseError::TypeConversion)?,
@@ -106,8 +107,8 @@ impl TryFrom<tokio_postgres::Row> for StoredItemStatusChangedEvent {
 /// A `StoredItemCreated` event stored in the database.
 #[derive(Debug)]
 pub struct StoredItemCreatedEvent {
-    /// The block height that the event was recorded in.
-    pub block_height:     u64,
+    /// The timestamp of the block the event was included in.
+    pub block_time:       DateTime<Utc>,
     /// The transaction hash that the event was recorded in.
     pub transaction_hash: TransactionHash,
     /// The index from the array of logged events in a transaction.
@@ -123,14 +124,14 @@ impl TryFrom<tokio_postgres::Row> for StoredItemCreatedEvent {
 
     // Conversion from the postgres row to the `StoredItemCreatedEvent` type.
     fn try_from(value: tokio_postgres::Row) -> DatabaseResult<Self> {
-        let raw_block_height: i64 = value.try_get(0)?;
+        let raw_block_time: DateTime<Utc> = value.try_get(0)?;
         let raw_transaction_hash: &[u8] = value.try_get(1)?;
         let raw_event_index: i64 = value.try_get(2)?;
         let raw_item_id: i64 = value.try_get(3)?;
         let raw_metadata_url: &[u8] = value.try_get(4)?;
 
         let events = Self {
-            block_height:     raw_block_height as u64,
+            block_time:       raw_block_time,
             transaction_hash: raw_transaction_hash
                 .try_into()
                 .map_err(|_| DatabaseError::TypeConversion)?,
@@ -196,7 +197,7 @@ impl Database {
         let get_item_status_changed_event_submissions = self
             .client
             .prepare_cached(
-                "SELECT block_height, transaction_hash, event_index, item_id, new_status, \
+                "SELECT block_time, transaction_hash, event_index, item_id, new_status, \
                  additional_data from item_status_changed_events WHERE item_id = $1",
             )
             .await?;
@@ -227,7 +228,7 @@ impl Database {
         let get_item_created_event_submissions = self
             .client
             .prepare_cached(
-                "SELECT block_height, transaction_hash, event_index, item_id, metadata_url from \
+                "SELECT block_time, transaction_hash, event_index, item_id, metadata_url from \
                  item_created_events WHERE item_id = $1",
             )
             .await?;
