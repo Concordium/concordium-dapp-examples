@@ -1,15 +1,9 @@
 use anyhow::Context;
 use clap::Parser as _;
 use concordium_rust_sdk::{
-    base::transactions,
-    common::types::TransactionTime,
-    contract_client::{self, ViewError},
+    contract_client::{ContractInitBuilder, ModuleDeployBuilder, ViewError},
     smart_contracts::common::Amount,
-    types::{
-        smart_contracts::{OwnedContractName, OwnedParameter, WasmModule},
-        transactions::InitContractPayload,
-        Energy, WalletAccount,
-    },
+    types::{smart_contracts::WasmModule, WalletAccount},
     v2::{self as sdk, BlockIdentifier},
 };
 use track_and_trace::{MetadataUrl, *};
@@ -45,7 +39,7 @@ struct Args {
         short = 'i',
         help = "Number of items to be created in the contract."
     )]
-    num_items:                 usize,
+    num_items:                 u64,
     #[structopt(
         long = "admin-key-file",
         short = 'a',
@@ -83,43 +77,29 @@ async fn main() -> anyhow::Result<()> {
 
     eprintln!("Starting script with admin account {}.", admin_key.address);
 
+    let module = WasmModule::from_file(&args.module).context("Could not read contract module.")?;
+    let mod_ref = module.get_module_ref();
+
     // Deploy module
-    let mod_ref = {
-        let module = WasmModule::from_file(&args.module)?;
-        let mod_ref = module.get_module_ref();
-        if client
-            .get_module_source(&mod_ref, BlockIdentifier::LastFinal)
-            .await
-            .is_ok()
-        {
-            eprintln!("Source module with reference {mod_ref} already exists.");
-        } else {
-            let nonce_response = client
-                .get_next_account_sequence_number(&admin_key.address)
-                .await
-                .context("NonceQueryError.")?;
+    if client
+        .get_module_source(&mod_ref, BlockIdentifier::LastFinal)
+        .await
+        .is_ok()
+    {
+        eprintln!("Source module with reference {mod_ref} already exists.");
+    } else {
+        let builder =
+            ModuleDeployBuilder::dry_run_module_deploy(client.clone(), admin_key.address, module)
+                .await?;
 
-            let tx = transactions::send::deploy_module(
-                &admin_key,
-                admin_key.address,
-                nonce_response.nonce,
-                TransactionTime::hours_after(1),
-                module,
-            );
-            let hash = client.send_account_transaction(tx).await?;
+        let handle = builder.send(&admin_key.keys).await?;
 
-            eprintln!("Send deployment transaction with hash {hash}.");
+        println!("Module deployment transaction {handle} submitted.");
 
-            let (block_hash, result) = client.wait_until_finalized(&hash).await?;
+        let result = handle.wait_for_finalization().await?;
 
-            if let Some(err) = result.is_rejected_account_transaction() {
-                anyhow::bail!("Failed to deploy module: {err:#?}");
-            }
-
-            eprintln!("Deployed module with reference {mod_ref} in block {block_hash}.");
-        }
-        mod_ref
-    };
+        println!("Module {} deployed.", result.module_reference);
+    }
 
     // Initialize new instance
     let params: Vec<TransitionEdges> = serde_json::from_reader(
@@ -128,50 +108,30 @@ async fn main() -> anyhow::Result<()> {
     )
     .context("Unable to parse input parameter.")?;
 
-    let mut contract_client = {
-        let expiry = TransactionTime::hours_after(1);
-        let payload = InitContractPayload {
-            amount: Amount::zero(),
-            mod_ref,
-            init_name: OwnedContractName::new_unchecked("init_track_and_trace".into()),
-            param: OwnedParameter::from_serial(&params).expect("Init params"),
-        };
-        let energy = Energy::from(10000);
+    let builder = ContractInitBuilder::<TrackAndTraceContract>::dry_run_new_instance(
+        client,
+        admin_key.address,
+        mod_ref,
+        "track_and_trace",
+        Amount::zero(),
+        &params,
+    )
+    .await?;
 
-        let nonce_response = client
-            .get_next_account_sequence_number(&admin_key.address)
-            .await
-            .context("NonceQueryError.")?;
+    println!(
+        "The maximum amount of NRG allowed for the transaction is {}.",
+        builder.current_energy()
+    );
+    let handle = builder.send(&admin_key.keys).await?;
 
-        let tx = transactions::send::init_contract(
-            &admin_key,
-            admin_key.address,
-            nonce_response.nonce,
-            expiry,
-            payload,
-            energy,
-        );
-        let hash = client.send_account_transaction(tx).await?;
+    println!("Transaction {handle} submitted. Waiting for finalization.");
 
-        eprintln!("Send initialization transaction with hash {hash}.");
+    let (mut contract_client, _) = handle.wait_for_finalization().await?;
 
-        let (block_hash, result) = client.wait_until_finalized(&hash).await?;
-        if let Some(error) = result.is_rejected_account_transaction() {
-            anyhow::bail!("Failed to initialize contract: {error:#?}.");
-        }
-        let info = result.contract_init().context("Expect an init result")?;
-
-        eprintln!(
-            "Successfully initialized contract in block {block_hash}, with address {}.",
-            info.address
-        );
-
-        contract_client::ContractClient::<TrackAndTraceContract>::create(
-            client.clone(),
-            info.address,
-        )
-        .await?
-    };
+    println!(
+        "Initialized a new smart contract instance at address {}.",
+        contract_client.address
+    );
 
     // Create new items
     for i in 0..args.num_items {
@@ -188,7 +148,7 @@ async fn main() -> anyhow::Result<()> {
 
         let tx_hash = tx_dry_run.send(&admin_key).await?;
 
-        eprintln!("Submitted create item with index {i} in transaction hash {tx_hash}.");
+        eprintln!("Submitted create item with index {i} in transaction {tx_hash}.");
 
         if let Err(err) = tx_hash.wait_for_finalization().await {
             anyhow::bail!("Creating item failed: {err:#?}");
@@ -198,7 +158,7 @@ async fn main() -> anyhow::Result<()> {
     // Update items from `Produced` to `InTransit`
     for i in 0..args.num_items {
         let param: ChangeItemStatusParams = ChangeItemStatusParams {
-            item_id:         i as u64,
+            item_id:         i,
             new_status:      Status::InTransit,
             additional_data: AdditionalData::empty(),
         };
@@ -215,8 +175,7 @@ async fn main() -> anyhow::Result<()> {
         let tx_hash = tx_dry_run.send(&admin_key).await?;
 
         eprintln!(
-            "Submitted update item status with index {i} to `InTransit` in transaction hash \
-             {tx_hash}."
+            "Submitted update item status with index {i} to `InTransit` in transaction {tx_hash}."
         );
 
         if let Err(err) = tx_hash.wait_for_finalization().await {
@@ -227,7 +186,7 @@ async fn main() -> anyhow::Result<()> {
     // Update items from `InTransit` to `InStore`
     for i in 0..args.num_items {
         let param: ChangeItemStatusParams = ChangeItemStatusParams {
-            item_id:         i as u64,
+            item_id:         i,
             new_status:      Status::InStore,
             additional_data: AdditionalData::empty(),
         };
@@ -256,7 +215,7 @@ async fn main() -> anyhow::Result<()> {
     // Update items from `InStore` to `Sold`
     for i in 0..args.num_items {
         let param: ChangeItemStatusParams = ChangeItemStatusParams {
-            item_id:         i as u64,
+            item_id:         i,
             new_status:      Status::Sold,
             additional_data: AdditionalData::empty(),
         };
@@ -273,7 +232,7 @@ async fn main() -> anyhow::Result<()> {
         let tx_hash = tx_dry_run.send(&admin_key).await?;
 
         eprintln!(
-            "Submitted update item status with index {i} to `Sold` in transaction hash {tx_hash}."
+            "Submitted update item status with index {i} to `Sold` in transaction {tx_hash}."
         );
 
         if let Err(err) = tx_hash.wait_for_finalization().await {
