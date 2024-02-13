@@ -7,7 +7,6 @@ import {
     useConnection,
     useConnect,
     TESTNET,
-    useWalletConnectorSelector,
 } from '@concordium/react-components';
 import { AccountAddress, TransactionHash } from '@concordium/web-sdk';
 
@@ -28,15 +27,13 @@ import * as Cis2MultiContract from '../../../generated/cis2_multi_cis2_multi';
  * It imports and displays the four components `MintTokens`, `AddItemToAuction`, `ViewItem`, and `Bid`.
  */
 export default function App(props: WalletConnectionProps) {
-    const { network, activeConnectorType, activeConnector, activeConnectorError, connectedAccounts, genesisHashes } =
+    const { network, activeConnectorType, setActiveConnectorType, activeConnector, activeConnectorError, connectedAccounts, genesisHashes } =
         props;
 
     const { connection, setConnection, account, genesisHash } = useConnection(connectedAccounts, genesisHashes);
     const { connect, connectError } = useConnect(activeConnector, setConnection);
-    const { isConnected, select } = useWalletConnectorSelector(BROWSER_WALLET, connection, {
-        ...props,
-    });
     const grpcClient = useGrpcClient(TESTNET);
+    const isConnected = connection !== undefined;
 
     const [publicKeyError, setPublicKeyError] = useState<undefined | string>(undefined);
     const [publicKey, setPublicKey] = useState<string | undefined>(undefined);
@@ -109,8 +106,8 @@ export default function App(props: WalletConnectionProps) {
     }, [account, getPublicKey]);
 
     useEffect(() => {
-        select();
-    }, [select]);
+        setActiveConnectorType(BROWSER_WALLET);
+    }, [setActiveConnectorType]);
 
     return (
         <div className="black-card-style">
