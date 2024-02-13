@@ -166,7 +166,7 @@ fn transfer<S: HasStateApi>(
         SupportResult::NoSupport => bail!(MarketplaceError::CollectionNotCis2),
         SupportResult::Support => params.cis_contract_address,
         SupportResult::SupportBy(contracts) => match contracts.first() {
-            Some(c) => c.clone(),
+            Some(c) => *c,
             None => bail!(MarketplaceError::CollectionNotCis2),
         },
     };
@@ -232,7 +232,7 @@ fn ensure_supports_cis2<S: HasStateApi, T: IsTokenId + Copy, A: IsTokenAmount + 
     host: &mut impl HasHost<State<S, T, A>, StateApiType = S>,
     cis_contract_address: &ContractAddress,
 ) -> ContractResult<()> {
-    let cis2_client = Cis2Client::new(cis_contract_address.clone());
+    let cis2_client = Cis2Client::new(*cis_contract_address);
     let res: Cis2ClientResult<SupportResult> = cis2_client.supports_cis2(host);
 
     let res = match res {
@@ -255,7 +255,7 @@ fn ensure_is_operator<S: HasStateApi, T: IsTokenId + Copy, A: IsTokenAmount + Co
     ctx: &impl HasReceiveContext<()>,
     cis_contract_address: &ContractAddress,
 ) -> ContractResult<()> {
-    let cis2_client = Cis2Client::new(cis_contract_address.clone());
+    let cis2_client = Cis2Client::new(*cis_contract_address);
     let res: Cis2ClientResult<bool> =
         cis2_client.operator_of(host, ctx.sender(), Address::Contract(ctx.self_address()));
     let res = match res {
@@ -275,7 +275,7 @@ fn ensure_balance<S: HasStateApi, T: IsTokenId + Copy, A: IsTokenAmount + Ord + 
     owner: AccountAddress,
     minimum_balance: A,
 ) -> ContractResult<()> {
-    let cis2_client = Cis2Client::new(cis_contract_address.clone());
+    let cis2_client = Cis2Client::new(*cis_contract_address);
 
     let res: Cis2ClientResult<A> = cis2_client.balance_of(host, token_id, Address::Account(owner));
     let res = match res {
