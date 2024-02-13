@@ -802,23 +802,19 @@ fn contract_permit(
     let message = param.message;
 
     // Check the nonce to prevent replay attacks.
-    ensure_eq!(
-        message.nonce,
-        nonce,
-        CustomContractError::NonceMismatch.into()
-    );
+    ensure_eq!(message.nonce, nonce, CustomContractError::NonceMismatch);
 
     // Check that the signature was intended for this contract.
     ensure_eq!(
         message.contract_address,
         ctx.self_address(),
-        CustomContractError::WrongContract.into()
+        CustomContractError::WrongContract
     );
 
     // Check signature is not expired.
     ensure!(
         message.timestamp > ctx.metadata().slot_time(),
-        CustomContractError::Expired.into()
+        CustomContractError::Expired
     );
 
     let message_hash = contract_view_message_hash(ctx, host, crypto_primitives)?;
@@ -826,14 +822,14 @@ fn contract_permit(
     // Check signature.
     let valid_signature =
         host.check_account_signature(param.signer, &param.signature, &message_hash)?;
-    ensure!(valid_signature, CustomContractError::WrongSignature.into());
+    ensure!(valid_signature, CustomContractError::WrongSignature);
 
     if message.entry_point.as_entrypoint_name() == EntrypointName::new_unchecked("changeItemStatus")
     {
         let change_item_status_param: ChangeItemStatusParams = from_bytes(&message.payload)?;
         change_item_status(change_item_status_param, param.signer, host, logger)?;
     } else {
-        bail!(CustomContractError::WrongEntryPoint.into())
+        bail!(CustomContractError::WrongEntryPoint)
     }
 
     // Log the nonce event.
