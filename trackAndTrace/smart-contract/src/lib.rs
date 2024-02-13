@@ -69,6 +69,9 @@ pub enum Event {
     GrantRole(GrantRoleEvent),
     /// The event tracks when a role is revoked from an address.
     RevokeRole(RevokeRoleEvent),
+    /// The event tracks the nonce used by the signer of the `PermitMessage`
+    /// whenever the `permit` function is invoked.
+    Nonce(NonceEvent),
 }
 
 /// The [`ItemCreatedEvent`] is logged when an item is created.
@@ -109,6 +112,16 @@ pub struct RevokeRoleEvent {
     pub address: Address,
     /// The role that was revoked from the above address.
     pub role:    Roles,
+}
+
+/// The NonceEvent is logged when the `permit` function is invoked. The event
+/// tracks the nonce used by the signer of the `PermitMessage`.
+#[derive(Debug, Serialize, SchemaType, PartialEq, Eq)]
+pub struct NonceEvent {
+    /// Account that signed the `PermitMessage`.
+    pub account: AccountAddress,
+    /// The nonce that was used in the `PermitMessage`.
+    pub nonce:   u64,
 }
 
 /// A struct containing a set of roles granted to an address.
@@ -163,16 +176,23 @@ pub struct ItemState {
 struct State<S = StateApi> {
     /// The next item id that will be assigned to an item when the admin creates
     /// it. This value is sequentially increased by 1.
-    next_item_id: ItemID,
+    next_item_id:    ItemID,
     /// A map containing all roles granted to addresses.
-    roles:        StateMap<Address, AddressRoleState<S>, S>,
+    roles:           StateMap<Address, AddressRoleState<S>, S>,
     /// A map containing all items with their states.
-    items:        StateMap<ItemID, ItemState, S>,
+    items:           StateMap<ItemID, ItemState, S>,
     /// A map containing all allowed transitions of the state machine.
     /// The first `Status` maps to a map of `AccountAddresses` that are allowed
     /// to update the given `Status`. The last `StateSet` specifies to which
     /// `Statuses` the `AccountAddress` is allowed to update the first `Status.`
-    transitions:  StateMap<Status, StatusTransitions<S>, S>,
+    transitions:     StateMap<Status, StatusTransitions<S>, S>,
+    /// A registry to link an account to its next nonce. The nonce is used to
+    /// prevent replay attacks of sponsored transactions. The nonce is increased
+    /// sequentially every time a signed message (corresponding to the
+    /// account) is successfully executed in the `permit` function. This
+    /// mapping keeps track of the next nonce that needs to be used by the
+    /// account to generate a signature.
+    nonces_registry: StateMap<AccountAddress, u64, S>,
 }
 
 /// The different errors the contract can produce.
@@ -196,6 +216,33 @@ pub enum CustomContractError {
     FinalState, // -7
     /// Contract address should not invoke entry point.
     NoContract, // -8
+    /// Failed to verify signature because signer account does not exist on
+    /// chain.
+    MissingAccount, // -9
+    /// Failed to verify signature because data was malformed.
+    MalformedData, // -10
+    /// Failed signature verification: Invalid signature.
+    WrongSignature, // -11
+    /// Failed signature verification: A different nonce is expected.
+    NonceMismatch, // -12
+    /// Failed signature verification: Signature was intended for a different
+    /// contract.
+    WrongContract, // -13
+    /// Failed signature verification: Signature was intended for a different
+    /// entry_point.
+    WrongEntryPoint, // -14
+    /// Failed signature verification: Signature is expired.
+    Expired, // -15
+}
+
+/// Mapping account signature error to CustomContractError
+impl From<CheckAccountSignatureError> for CustomContractError {
+    fn from(e: CheckAccountSignatureError) -> Self {
+        match e {
+            CheckAccountSignatureError::MissingAccount => Self::MissingAccount,
+            CheckAccountSignatureError::MalformedData => Self::MalformedData,
+        }
+    }
 }
 
 /// Mapping the logging errors to CustomContractError.
@@ -285,10 +332,11 @@ impl<S: HasStateApi> State<S> {
     /// Create the state and state machine from a vector of transition edges.
     pub fn from_iter(state_builder: &mut StateBuilder<S>, i: Vec<TransitionEdges>) -> Self {
         let mut r = Self {
-            next_item_id: 0u64,
-            roles:        state_builder.new_map(),
-            items:        state_builder.new_map(),
-            transitions:  state_builder.new_map(),
+            next_item_id:    0u64,
+            roles:           state_builder.new_map(),
+            items:           state_builder.new_map(),
+            transitions:     state_builder.new_map(),
+            nonces_registry: state_builder.new_map(),
         };
         for transition_edge in i {
             for to in transition_edge.to {
@@ -522,22 +570,31 @@ pub struct ChangeItemStatusParams {
     mutable,
     enable_logger
 )]
-fn change_item_status(
+fn contract_change_item_status(
     ctx: &ReceiveContext,
     host: &mut Host<State>,
     logger: &mut impl HasLogger,
-) -> Result<(), CustomContractError> {
+) -> ContractResult<()> {
     // Parse the parameter.
     let param: ChangeItemStatusParams = ctx.parameter_cursor().get()?;
-
-    let state = host.state_mut();
 
     let account = match ctx.sender() {
         Address::Account(account) => account,
         Address::Contract(_) => bail!(CustomContractError::NoContract),
     };
 
-    let (mut item, allowed_transitions) = state.get_item_and_transitions(&param.item_id)?;
+    change_item_status(param, account, host, logger)
+}
+
+/// Helper function to update the item's status based on the rules of the state.
+fn change_item_status(
+    param: ChangeItemStatusParams,
+    account: AccountAddress,
+    host: &mut Host<State>,
+    logger: &mut impl HasLogger,
+) -> ContractResult<()> {
+    let (mut item, allowed_transitions) =
+        host.state_mut().get_item_and_transitions(&param.item_id)?;
 
     let verify = allowed_transitions.check(&account, &param.new_status);
 
@@ -658,4 +715,182 @@ fn contract_revoke_role(
         role:    params.role,
     }))?;
     Ok(())
+}
+
+/// Part of the parameter type for the contract function `permit`.
+/// Specifies the message that is signed.
+#[derive(SchemaType, Serialize)]
+pub struct PermitMessage {
+    /// The contract_address that the signature is intended for.
+    pub contract_address: ContractAddress,
+    /// A nonce to prevent replay attacks.
+    pub nonce:            u64,
+    /// A timestamp to make signatures expire.
+    pub timestamp:        Timestamp,
+    /// The entry_point that the signature is intended for.
+    pub entry_point:      OwnedEntrypointName,
+    /// The serialized payload that should be forwarded to either the `transfer`
+    /// or the `updateOperator` function.
+    #[concordium(size_length = 2)]
+    pub payload:          Vec<u8>,
+}
+
+/// The parameter type for the contract function `permit`.
+/// Takes a signature, the signer, and the message that was signed.
+#[derive(Serialize, SchemaType)]
+pub struct PermitParam {
+    /// Signature/s. The CIS3 standard supports multi-sig accounts.
+    pub signature: AccountSignatures,
+    /// Account that created the above signature.
+    pub signer:    AccountAddress,
+    /// Message that was signed.
+    pub message:   PermitMessage,
+}
+
+/// Partial version of the `PermitParam` type without the `message` field.
+#[derive(Serialize)]
+pub struct PermitParamPartial {
+    /// Signature/s. The CIS3 standard supports multi-sig accounts.
+    signature: AccountSignatures,
+    /// Account that created the above signature.
+    signer:    AccountAddress,
+}
+
+/// Verify an ed25519 signature and allows calling the `changeItemStatus`
+/// function.
+///
+/// It rejects if:
+/// - It fails to parse the parameter.
+/// - A different nonce is expected.
+/// - The signature was intended for a different contract.
+/// - The signature was intended for a different `entry_point`.
+/// - The signature is expired.
+/// - The signature can not be validated.
+/// - Fails to log event.
+/// - The receive hook function call rejects.
+#[receive(
+    contract = "track_and_trace",
+    name = "permit",
+    parameter = "PermitParam",
+    error = "CustomContractError",
+    crypto_primitives,
+    enable_logger,
+    mutable
+)]
+fn contract_permit(
+    ctx: &ReceiveContext,
+    host: &mut Host<State>,
+    logger: &mut impl HasLogger,
+    crypto_primitives: &impl HasCryptoPrimitives,
+) -> ContractResult<()> {
+    // Parse the parameter.
+    let param: PermitParam = ctx.parameter_cursor().get()?;
+
+    // Update the nonce.
+    let mut entry = host
+        .state_mut()
+        .nonces_registry
+        .entry(param.signer)
+        .or_insert_with(|| 0);
+
+    // Get the current nonce.
+    let nonce = *entry;
+    // Bump nonce.
+    *entry += 1;
+    drop(entry);
+
+    let message = param.message;
+
+    // Check the nonce to prevent replay attacks.
+    ensure_eq!(
+        message.nonce,
+        nonce,
+        CustomContractError::NonceMismatch.into()
+    );
+
+    // Check that the signature was intended for this contract.
+    ensure_eq!(
+        message.contract_address,
+        ctx.self_address(),
+        CustomContractError::WrongContract.into()
+    );
+
+    // Check signature is not expired.
+    ensure!(
+        message.timestamp > ctx.metadata().slot_time(),
+        CustomContractError::Expired.into()
+    );
+
+    let message_hash = contract_view_message_hash(ctx, host, crypto_primitives)?;
+
+    // Check signature.
+    let valid_signature =
+        host.check_account_signature(param.signer, &param.signature, &message_hash)?;
+    ensure!(valid_signature, CustomContractError::WrongSignature.into());
+
+    if message.entry_point.as_entrypoint_name() == EntrypointName::new_unchecked("changeItemStatus")
+    {
+        let change_item_status_param: ChangeItemStatusParams = from_bytes(&message.payload)?;
+        change_item_status(change_item_status_param, param.signer, host, logger)?;
+    } else {
+        bail!(CustomContractError::WrongEntryPoint.into())
+    }
+
+    // Log the nonce event.
+    logger.log(&Event::Nonce(NonceEvent {
+        account: param.signer,
+        nonce,
+    }))?;
+
+    Ok(())
+}
+
+/// Helper function to calculate the `message_hash`.
+#[receive(
+    contract = "track_and_trace",
+    name = "viewMessageHash",
+    parameter = "PermitParam",
+    return_value = "[u8;32]",
+    error = "CustomContractError",
+    crypto_primitives,
+    mutable
+)]
+fn contract_view_message_hash(
+    ctx: &ReceiveContext,
+    _host: &mut Host<State>,
+    crypto_primitives: &impl HasCryptoPrimitives,
+) -> ContractResult<[u8; 32]> {
+    // Parse the parameter.
+    let mut cursor = ctx.parameter_cursor();
+    // The input parameter is `PermitParam` but we only read the initial part of it
+    // with `PermitParamPartial`. I.e. we read the `signature` and the
+    // `signer`, but not the `message` here.
+    let param: PermitParamPartial = cursor.get()?;
+
+    // The input parameter is `PermitParam` but we have only read the initial part
+    // of it with `PermitParamPartial` so far. We read in the `message` now.
+    // `(cursor.size() - cursor.cursor_position()` is the length of the message in
+    // bytes.
+    let mut message_bytes = vec![0; (cursor.size() - cursor.cursor_position()) as usize];
+
+    cursor.read_exact(&mut message_bytes)?;
+
+    // The message signed in the Concordium browser wallet is prepended with the
+    // `account` address and 8 zero bytes. Accounts in the Concordium browser wallet
+    // can either sign a regular transaction (in that case the prepend is
+    // `account` address and the nonce of the account which is by design >= 1)
+    // or sign a message (in that case the prepend is `account` address and 8 zero
+    // bytes). Hence, the 8 zero bytes ensure that the user does not accidentally
+    // sign a transaction. The account nonce is of type u64 (8 bytes).
+    let mut msg_prepend = [0; 32 + 8];
+    // Prepend the `account` address of the signer.
+    msg_prepend[0..32].copy_from_slice(param.signer.as_ref());
+    // Prepend 8 zero bytes.
+    msg_prepend[32..40].copy_from_slice(&[0u8; 8]);
+    // Calculate the message hash.
+    let message_hash = crypto_primitives
+        .hash_sha2_256(&[&msg_prepend[0..40], &message_bytes].concat())
+        .0;
+
+    Ok(message_hash)
 }
