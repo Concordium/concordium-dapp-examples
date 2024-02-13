@@ -49,11 +49,16 @@
 use concordium_cis2::*;
 use concordium_std::*;
 
+/// List of supported entrypoints by the `permit` function (CIS3 standard).
+const SUPPORTS_PERMIT_ENTRYPOINTS: [EntrypointName; 1] =
+    [EntrypointName::new_unchecked("changeItemStatus")];
+
 /// Event tags.
 pub const ITEM_CREATED_EVENT_TAG: u8 = 0;
 pub const ITEM_STATUS_CHANGED_EVENT_TAG: u8 = 1;
 pub const GRANT_ROLE_EVENT_TAG: u8 = 2;
 pub const REVOKE_ROLE_EVENT_TAG: u8 = 3;
+pub const NONCE_EVENT_TAG: u8 = 4;
 
 /// Custom type for the item id.
 pub type ItemID = u64;
@@ -889,4 +894,44 @@ fn contract_view_message_hash(
         .0;
 
     Ok(message_hash)
+}
+
+/// The parameter type for the contract function `supportsPermit`.
+#[derive(Debug, Serialize, SchemaType)]
+pub struct SupportsPermitQueryParams {
+    /// The list of supportPermit queries.
+    #[concordium(size_length = 2)]
+    pub queries: Vec<OwnedEntrypointName>,
+}
+
+/// Get the entrypoints supported by the `permit` function given a
+/// list of entrypoints.
+///
+/// It rejects if:
+/// - It fails to parse the parameter.
+#[receive(
+    contract = "track_and_trace",
+    name = "supportsPermit",
+    parameter = "SupportsPermitQueryParams",
+    return_value = "SupportsQueryResponse",
+    error = "CustomContractError"
+)]
+fn contract_supports_permit(
+    ctx: &ReceiveContext,
+    _host: &Host<State>,
+) -> ContractResult<SupportsQueryResponse> {
+    // Parse the parameter.
+    let params: SupportsPermitQueryParams = ctx.parameter_cursor().get()?;
+
+    // Build the response.
+    let mut response = Vec::with_capacity(params.queries.len());
+    for entrypoint in params.queries {
+        if SUPPORTS_PERMIT_ENTRYPOINTS.contains(&entrypoint.as_entrypoint_name()) {
+            response.push(SupportResult::Support);
+        } else {
+            response.push(SupportResult::NoSupport);
+        }
+    }
+    let result = SupportsQueryResponse::from(response);
+    Ok(result)
 }
