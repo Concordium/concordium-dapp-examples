@@ -112,9 +112,10 @@ async fn main() -> anyhow::Result<()> {
         use tracing_subscriber::prelude::*;
         let log_filter = tracing_subscriber::filter::Targets::new()
             .with_target(module_path!(), app.log_level)
-            .with_target("indexer", app.log_level)
+            // Update rust-sdk to the new version once released for the `ccd_indexer` target to work.
             .with_target("ccd_indexer", app.log_level)
-            .with_target("db", app.log_level);
+            .with_target("ccd_event_processor", app.log_level)
+            .with_target("tokio_postgres", app.log_level);
 
         tracing_subscriber::registry()
             .with(tracing_subscriber::fmt::layer())
@@ -170,13 +171,13 @@ async fn main() -> anyhow::Result<()> {
         tracing::error!(
             "Got genesis hash from node {} but expected genesis hash of testnet {}.",
             consensus_info.genesis_block.to_string(),
-            "0x4221332d34e1694168c2a0c0b3fd0f273809612cb13d000d5c2e00e85f50f796"
+            testnet_genesis_block_hash
         );
 
         bail!(
             "Got genesis hash from node {} but expected genesis hash of testnet {}.",
             consensus_info.genesis_block.to_string(),
-            "0x4221332d34e1694168c2a0c0b3fd0f273809612cb13d000d5c2e00e85f50f796"
+            testnet_genesis_block_hash
         );
     }
 
@@ -192,7 +193,6 @@ async fn handle_indexing(
 ) -> anyhow::Result<()> {
     // Database process runs until the stop flag is triggered.
     let stop_flag = Arc::new(AtomicBool::new(false));
-    let shutdown_handle = tokio::spawn(set_shutdown(stop_flag.clone()));
 
     tracing::info!("Indexing from block height {}.", start);
 
@@ -211,13 +211,15 @@ async fn handle_indexing(
 
     // The indexer starts processing historical events and then listens for new
     // events that are coming in as the blockchain progresses.
-    while let Some((block, contract_update_infos)) = receiver.recv().await {
-        let now = tokio::time::Instant::now();
+    loop {
+        let (block, contract_update_infos) = tokio::select! {
+            biased;
+            _ =  set_shutdown(stop_flag.clone())=> { break },
+            Some(v) = receiver.recv() => v,
+            else => { break }
+        };
 
-        // Stop indexer when triggered.
-        if stop_flag.load(Ordering::Acquire) {
-            break;
-        }
+        let now = tokio::time::Instant::now();
 
         if !contract_update_infos.is_empty() {
             // Begin the transaction
@@ -322,15 +324,7 @@ async fn handle_indexing(
         );
     }
 
-    // let test = db.get_item_created_event_submission(1).await?;
-    // let test2 = db
-    //     .get_item_status_changed_events_submissions(1, 10, 0)
-    //     .await?;
-
-    // tracing::debug!("{:#?}", test);
-    // tracing::debug!("{:#?}", test2);
     indexer_handle.abort();
-    shutdown_handle.abort();
 
     Ok(())
 }
