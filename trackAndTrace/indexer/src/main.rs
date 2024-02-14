@@ -5,17 +5,16 @@
 //! `settings` exists to store global configurations. Each event can be uniquely
 //! identified by the triple (`block_height`, `transaction_hash`, and
 //! `event_index`).
-use anyhow::{bail, Context};
+use anyhow::Context;
 use clap::Parser;
 use concordium_rust_sdk::{
     indexer,
     smart_contracts::common::to_bytes,
-    types::{hashes::BlockHash, AbsoluteBlockHeight, ContractAddress},
-    v2::{self as sdk, Client},
+    types::{AbsoluteBlockHeight, ContractAddress},
+    v2::{self as sdk},
 };
 use std::{
     collections::BTreeSet,
-    str::FromStr,
     sync::{
         atomic::{AtomicBool, Ordering},
         Arc,
@@ -25,9 +24,6 @@ use tokio_postgres::types::{Json, ToSql};
 use track_and_trace as contract;
 mod db;
 use crate::db::*;
-
-const TESTNET_GENESIS_BLOCK_HASH: &str =
-    "4221332d34e1694168c2a0c0b3fd0f273809612cb13d000d5c2e00e85f50f796";
 
 /// Command line configuration of the application.
 #[derive(Debug, clap::Parser)]
@@ -161,25 +157,6 @@ async fn main() -> anyhow::Result<()> {
     );
 
     tracing::info!("Indexing contract: {:?}.", settings.contract_address);
-
-    let mut client = Client::new(endpoint.clone()).await?;
-    let consensus_info = client.get_consensus_info().await?;
-
-    let testnet_genesis_block_hash: BlockHash = BlockHash::from_str(TESTNET_GENESIS_BLOCK_HASH)?;
-
-    if consensus_info.genesis_block != testnet_genesis_block_hash {
-        tracing::error!(
-            "Got genesis hash from node {} but expected genesis hash of testnet {}.",
-            consensus_info.genesis_block.to_string(),
-            testnet_genesis_block_hash
-        );
-
-        bail!(
-            "Got genesis hash from node {} but expected genesis hash of testnet {}.",
-            consensus_info.genesis_block.to_string(),
-            testnet_genesis_block_hash
-        );
-    }
 
     handle_indexing(db, endpoint, app.start, app.contract_address).await
 }
