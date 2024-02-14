@@ -2,7 +2,10 @@ use anyhow::Context;
 use chrono::{DateTime, Utc};
 use concordium_rust_sdk::{
     smart_contracts::common::from_bytes,
-    types::{hashes::TransactionHash, ContractAddress},
+    types::{
+        hashes::{BlockHash, TransactionHash},
+        ContractAddress,
+    },
 };
 use deadpool_postgres::{GenericClient, Object};
 use serde::Serialize;
@@ -33,20 +36,28 @@ type DatabaseResult<T> = Result<T, DatabaseError>;
 /// The database configuration stored in the database.
 #[derive(Debug, Serialize)]
 pub struct StoredConfiguration {
+    /// The genesis block hash of the network monitored.
+    pub genesis_block_hash: BlockHash,
     /// The contract address of the track and trace contract monitored.
-    pub contract_address: ContractAddress,
+    pub contract_address:   ContractAddress,
 }
 
 impl TryFrom<tokio_postgres::Row> for StoredConfiguration {
     type Error = DatabaseError;
 
     fn try_from(value: tokio_postgres::Row) -> DatabaseResult<Self> {
+        let raw_genesis_block_hash: &[u8] = value.try_get("genesis_block_hash")?;
         let raw_contract_index: i64 = value.try_get("contract_index")?;
         let raw_contract_subindex: i64 = value.try_get("contract_subindex")?;
         let contract_address =
             ContractAddress::new(raw_contract_index as u64, raw_contract_subindex as u64);
 
-        let settings = Self { contract_address };
+        let settings = Self {
+            genesis_block_hash: raw_genesis_block_hash
+                .try_into()
+                .map_err(|_| DatabaseError::TypeConversion("genesis_block_hash".to_string()))?,
+            contract_address,
+        };
         Ok(settings)
     }
 }
@@ -79,17 +90,17 @@ impl TryFrom<tokio_postgres::Row> for StoredItemStatusChangedEvent {
         let raw_item_id: i64 = value.try_get("item_id")?;
         let raw_event_index: i64 = value.try_get("event_index")?;
         let raw_additional_data: &[u8] = value.try_get("additional_data")?;
-        let Json(raw_status): Json<Status> = value.try_get("new_status")?;
+        let Json(new_status): Json<Status> = value.try_get("new_status")?;
 
         let events = Self {
-            block_time:       value.try_get("block_time")?,
+            block_time: value.try_get("block_time")?,
             transaction_hash: raw_transaction_hash
                 .try_into()
                 .map_err(|_| DatabaseError::TypeConversion("transaction_hash".to_string()))?,
-            event_index:      raw_event_index as u64,
-            new_status:       raw_status,
-            item_id:          raw_item_id as u64,
-            additional_data:  AdditionalData::from_bytes(raw_additional_data.into()),
+            event_index: raw_event_index as u64,
+            new_status,
+            item_id: raw_item_id as u64,
+            additional_data: AdditionalData::from_bytes(raw_additional_data.into()),
         };
         Ok(events)
     }
@@ -150,15 +161,20 @@ impl AsRef<Object> for Database {
 impl Database {
     /// Inserts a row in the settings table holding the application
     /// configuration. The table is constrained to only hold a single row.
-    pub async fn init_settings(&self, contract_address: &ContractAddress) -> DatabaseResult<()> {
+    pub async fn init_settings(
+        &self,
+        contract_address: &ContractAddress,
+        genesis_block_hash: &BlockHash,
+    ) -> DatabaseResult<()> {
         let init_settings = self
             .client
             .prepare_cached(
-                "INSERT INTO settings (contract_index, contract_subindex) VALUES ($1, $2) ON \
-                 CONFLICT DO NOTHING",
+                "INSERT INTO settings (genesis_block_hash, contract_index, contract_subindex) \
+                 VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
             )
             .await?;
-        let params: [&(dyn ToSql + Sync); 2] = [
+        let params: [&(dyn ToSql + Sync); 3] = [
+            &genesis_block_hash.as_ref(),
             &(contract_address.index as i64),
             &(contract_address.subindex as i64),
         ];
@@ -170,7 +186,9 @@ impl Database {
     pub async fn get_settings(&self) -> DatabaseResult<StoredConfiguration> {
         let get_settings = self
             .client
-            .prepare_cached("SELECT contract_index, contract_subindex FROM settings")
+            .prepare_cached(
+                "SELECT genesis_block_hash, contract_index, contract_subindex FROM settings",
+            )
             .await?;
         self.client.query_one(&get_settings, &[]).await?.try_into()
     }
@@ -249,7 +267,7 @@ pub struct DatabasePool {
 impl DatabasePool {
     /// Create a new [`DatabasePool`] from [`tokio_postgres::Config`] of size
     /// `pool_size`. If `try_create_tables` is true, database tables are
-    /// created using `/resources/schema.sql`.
+    /// created using `../resources/schema.sql`.
     pub async fn create(
         db_config: tokio_postgres::Config,
         pool_size: usize,

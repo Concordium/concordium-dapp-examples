@@ -1,17 +1,16 @@
 //! A tool for indexing event data from the track and trace contract into a
 //! postgres database. The database is configured with the tables from the file
-//! `../rescourcs/schema.sql`. The events `ItemStatusChangedEvent` and
+//! `../resources/schema.sql`. The events `ItemStatusChangedEvent` and
 //! `ItemCreatedEvent` are indexed in their respective tables. A third table
 //! `settings` exists to store global configurations. Each event can be uniquely
-//! identified by the triple (`block_height`, `transaction_hash`, and
-//! `event_index`).
+//! identified by the `transaction_hash` and `event_index`.
 use anyhow::Context;
 use clap::Parser;
 use concordium_rust_sdk::{
     indexer,
     smart_contracts::common::to_bytes,
     types::{AbsoluteBlockHeight, ContractAddress},
-    v2::{self as sdk},
+    v2::{self as sdk, Client},
 };
 use std::{
     collections::BTreeSet,
@@ -135,6 +134,10 @@ async fn main() -> anyhow::Result<()> {
     .connect_timeout(std::time::Duration::from_secs(5))
     .timeout(std::time::Duration::from_secs(10));
 
+    // Establish connection to the blockchain node.
+    let mut client = Client::new(endpoint.clone()).await?;
+    let consensus_info = client.get_consensus_info().await?;
+
     // Establish connection to the postgres database.
     let db_pool = DatabasePool::create(app.db_connection.clone(), 1, true)
         .await
@@ -143,7 +146,7 @@ async fn main() -> anyhow::Result<()> {
         .get()
         .await
         .context("Could not get database connection from pool")?;
-    db.init_settings(&app.contract_address)
+    db.init_settings(&app.contract_address, &consensus_info.genesis_block)
         .await
         .context("Could not init settings for database")?;
     let settings = db
@@ -151,12 +154,32 @@ async fn main() -> anyhow::Result<()> {
         .await
         .context("Could not get settings from database")?;
 
+    // This check ensures when re-starting the indexer, that the current
+    // `contract_address` settings of the indexer are compatible will the stored
+    // indexer settings to prevent corrupting the database.
     anyhow::ensure!(
         settings.contract_address == app.contract_address,
-        "Contract address does not match the contract address found in the database"
+        "Contract address {} does not match the contract address {} found in the database",
+        app.contract_address,
+        settings.contract_address
     );
 
-    tracing::info!("Indexing contract: {:?}.", settings.contract_address);
+    // This check ensures when re-starting the indexer, that the current
+    // `genesis_hash/node` settings of the indexer are compatible will the
+    // stored indexer settings to prevent corrupting the database.
+    anyhow::ensure!(
+        settings.genesis_block_hash == consensus_info.genesis_block,
+        "Genesis hash from the connected node {} does not match the genesis hash {} found in the \
+         database",
+        consensus_info.genesis_block,
+        settings.genesis_block_hash
+    );
+
+    tracing::info!(
+        "Indexing contract {:?} on network with genesis hash {}.",
+        settings.contract_address.index,
+        settings.genesis_block_hash
+    );
 
     handle_indexing(db, endpoint, app.start, app.contract_address).await
 }
