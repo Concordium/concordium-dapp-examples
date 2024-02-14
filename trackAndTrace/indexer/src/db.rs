@@ -20,8 +20,8 @@ pub enum DatabaseError {
     #[error("{0}")]
     Postgres(#[from] tokio_postgres::Error),
     /// Failed to perform conversion from DB representation of type.
-    #[error("Failed to convert type")]
-    TypeConversion,
+    #[error("Failed to convert type: {0}")]
+    TypeConversion(String),
     /// Failed to configure database
     #[error("Could not configure database: {0}")]
     Configuration(#[from] anyhow::Error),
@@ -41,8 +41,8 @@ impl TryFrom<tokio_postgres::Row> for StoredConfiguration {
     type Error = DatabaseError;
 
     fn try_from(value: tokio_postgres::Row) -> DatabaseResult<Self> {
-        let raw_contract_index: i64 = value.try_get(0)?;
-        let raw_contract_subindex: i64 = value.try_get(1)?;
+        let raw_contract_index: i64 = value.try_get("contract_index")?;
+        let raw_contract_subindex: i64 = value.try_get("contract_subindex")?;
         let contract_address =
             ContractAddress::new(raw_contract_index as u64, raw_contract_subindex as u64);
 
@@ -85,7 +85,7 @@ impl TryFrom<tokio_postgres::Row> for StoredItemStatusChangedEvent {
             block_time:       value.try_get("block_time")?,
             transaction_hash: raw_transaction_hash
                 .try_into()
-                .map_err(|_| DatabaseError::TypeConversion)?,
+                .map_err(|_| DatabaseError::TypeConversion("transaction_hash".to_string()))?,
             event_index:      raw_event_index as u64,
             new_status:       raw_status,
             item_id:          raw_item_id as u64,
@@ -123,10 +123,11 @@ impl TryFrom<tokio_postgres::Row> for StoredItemCreatedEvent {
             block_time:       value.try_get("block_time")?,
             transaction_hash: raw_transaction_hash
                 .try_into()
-                .map_err(|_| DatabaseError::TypeConversion)?,
+                .map_err(|_| DatabaseError::TypeConversion("transaction_hash".to_string()))?,
             event_index:      raw_event_index as u64,
             item_id:          raw_item_id as u64,
-            metadata_url:     from_bytes(value.try_get("metadata_url")?).unwrap(),
+            metadata_url:     from_bytes(value.try_get("metadata_url")?)
+                .map_err(|_| DatabaseError::TypeConversion("metadata_url".to_string()))?,
         };
         Ok(events)
     }
@@ -175,6 +176,7 @@ impl Database {
     }
 
     /// Get all [`StoredItemStatusChangedEvents`] by item id.
+    /// The query enforces pagination with the `limit` and `offset` parameter.
     /// Note: This function will be used by the http server and the
     /// `#[allow(dead_code)]` is only temporary until the http server is
     /// developed.
@@ -210,9 +212,10 @@ impl Database {
     }
 
     /// Get the [`StoredItemCreatedEvent`] by item id.
-    /// Note: This function will be used by the http server and the
-    /// `#[allow(dead_code)]` is only temporary until the http server is
-    /// developed.
+    /// An error is returned if there are more than one row in the database
+    /// matching the query. Note: This function will be used by the http
+    /// server and the `#[allow(dead_code)]` is only temporary until the
+    /// http server is developed.
     #[allow(dead_code)]
     pub async fn get_item_created_event_submission(
         &self,
