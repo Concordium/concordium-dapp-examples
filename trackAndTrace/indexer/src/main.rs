@@ -7,18 +7,14 @@
 use anyhow::Context;
 use clap::Parser;
 use concordium_rust_sdk::{
-    indexer,
+    indexer::{self, AffectedContractIndexer, ContractUpdateInfo, ProcessorConfig},
     smart_contracts::common::to_bytes,
-    types::{AbsoluteBlockHeight, ContractAddress},
+    types::{
+        queries::BlockInfo, smart_contracts::OwnedReceiveName, AbsoluteBlockHeight, ContractAddress,
+    },
     v2::{self as sdk, Client},
 };
-use std::{
-    collections::BTreeSet,
-    sync::{
-        atomic::{AtomicBool, Ordering},
-        Arc,
-    },
-};
+use std::collections::{BTreeMap, BTreeSet};
 use tokio_postgres::types::{Json, ToSql};
 use track_and_trace as contract;
 mod db;
@@ -71,31 +67,165 @@ struct Args {
     log_level:        tracing_subscriber::filter::LevelFilter,
 }
 
-/// Construct a future for shutdown signals (for unix: SIGINT and SIGTERM) (for
-/// windows: ctrl c and ctrl break). The signal handler is set when the future
-/// is polled and until then the default signal handler.
-async fn set_shutdown(flag: Arc<AtomicBool>) -> anyhow::Result<()> {
-    #[cfg(unix)]
-    {
-        use tokio::signal::unix as unix_signal;
-        let mut terminate_stream = unix_signal::signal(unix_signal::SignalKind::terminate())?;
-        let mut interrupt_stream = unix_signal::signal(unix_signal::SignalKind::interrupt())?;
-        let terminate = Box::pin(terminate_stream.recv());
-        let interrupt = Box::pin(interrupt_stream.recv());
-        futures::future::select(terminate, interrupt).await;
-        flag.store(true, Ordering::Release);
+/// A handler for storing monitored events in the database. This implements
+/// the `indexer::ProcessEvent` trait to store events in the database.
+struct StoreEvents {
+    /// An active database connect to the postgres database.
+    db:      Database,
+    // A database pool used for reconnects.
+    db_pool: DatabasePool,
+}
+
+#[indexer::async_trait]
+impl indexer::ProcessEvent for StoreEvents {
+    type Data = (
+        BlockInfo,
+        Vec<(
+            ContractUpdateInfo,
+            BTreeMap<ContractAddress, BTreeSet<OwnedReceiveName>>,
+        )>,
+    );
+    type Description = String;
+    type Error = anyhow::Error;
+
+    async fn process(
+        &mut self,
+        (block_info, contract_update_info): &Self::Data,
+    ) -> Result<Self::Description, Self::Error> {
+        if !contract_update_info.is_empty() {
+            //  It is typically easiest to reason about a database if blocks are inserted
+            // in a single database transaction. So we do that here.
+            let db_transaction = self
+                .db
+                .client
+                .transaction()
+                .await
+                .context("Failed to build database transaction")?;
+
+            for single_contract_update_info in contract_update_info {
+                for (_contract_invoked, _entry_point_name, events) in
+                    single_contract_update_info.0.execution_tree.events()
+                {
+                    for (event_index, event) in events.iter().enumerate() {
+                        let parsed_event: contract::Event = event.parse()?;
+
+                        if let contract::Event::ItemStatusChanged(item_status_change_event) =
+                            parsed_event
+                        {
+                            let params: [&(dyn ToSql + Sync); 7] = [
+                                &(block_info.block_slot_time),
+                                &(block_info.block_height.height as i64),
+                                &single_contract_update_info.0.transaction_hash.as_ref(),
+                                &(event_index as i64),
+                                &(item_status_change_event.item_id as i64),
+                                &Json(&item_status_change_event.new_status),
+                                &item_status_change_event.additional_data.bytes,
+                            ];
+
+                            let statement = db_transaction
+                                .prepare_cached(
+                                    "INSERT INTO item_status_changed_events (id, block_time, \
+                                     block_height, transaction_hash, event_index, item_id, \
+                                     new_status, additional_data) SELECT COALESCE(MAX(id) + 1, \
+                                     0), $1, $2, $3, $4, $5, $6, $7 FROM \
+                                     item_status_changed_events;",
+                                )
+                                .await
+                                .context(
+                                    "Failed to prepare item_status_change_event transaction",
+                                )?;
+
+                            db_transaction.execute(&statement, &params).await.context(
+                                "Failed to execute item_status_change_event transaction",
+                            )?;
+
+                            tracing::debug!(
+                                target:"ccd_event_processor",
+                                "Preparing item_status_change_event from block {}, transaction \
+                                 hash {}, and event index {}.",
+                                block_info.block_height,
+                                single_contract_update_info.0.transaction_hash,
+                                event_index
+                            );
+                        } else if let contract::Event::ItemCreated(item_created_event) =
+                            parsed_event
+                        {
+                            let params: [&(dyn ToSql + Sync); 6] = [
+                                &(block_info.block_slot_time),
+                                &(block_info.block_height.height as i64),
+                                &single_contract_update_info.0.transaction_hash.as_ref(),
+                                &(event_index as i64),
+                                &(item_created_event.item_id as i64),
+                                &to_bytes(&item_created_event.metadata_url),
+                            ];
+
+                            let statement = db_transaction
+                                .prepare_cached(
+                                    "INSERT INTO item_created_events (id, block_time, \
+                                     block_height, transaction_hash, event_index, item_id, \
+                                     metadata_url) SELECT COALESCE(MAX(id) + 1, 0), $1, $2, $3, \
+                                     $4, $5, $6 FROM item_created_events;",
+                                )
+                                .await
+                                .context("Failed to prepare item_created_event transaction")?;
+
+                            db_transaction
+                                .execute(&statement, &params)
+                                .await
+                                .context("Failed to execute item_created_event transaction")?;
+
+                            tracing::debug!(
+                                target:"ccd_event_processor",
+                                "Preparing event from block {}, transaction hash {}, and event \
+                                 index {}.",
+                                block_info.block_height,
+                                single_contract_update_info.0.transaction_hash,
+                                event_index
+                            );
+                        }
+                    }
+                }
+            }
+
+            // Commit the transaction
+            db_transaction
+                .commit()
+                .await
+                .context("Failed to commit block transaction")?;
+        }
+        // We return an informative message that will be logged by the `process_events`
+        // method of the indexer.
+        Ok(format!(
+            "Processed block {} at height {} with timestamp {}.",
+            block_info.block_hash, block_info.block_height, block_info.block_slot_time
+        ))
     }
-    #[cfg(windows)]
-    {
-        use tokio::signal::windows as windows_signal;
-        let mut ctrl_break_stream = windows_signal::ctrl_break()?;
-        let mut ctrl_c_stream = windows_signal::ctrl_c()?;
-        let ctrl_break = Box::pin(ctrl_break_stream.recv());
-        let ctrl_c = Box::pin(ctrl_c_stream.recv());
-        futures::future::select(ctrl_break, ctrl_c).await;
-        flag.store(true, Ordering::Release);
+
+    async fn on_failure(
+        &mut self,
+        error: Self::Error,
+        _failed_attempts: u32,
+    ) -> Result<bool, Self::Error> {
+        tracing::error!(
+            target:"ccd_event_processor",
+            "Encountered error {error}");
+
+        // Get new database connection from the pool
+        match self
+            .db_pool
+            .get()
+            .await
+            .context("Failed to get new database connection from pool")
+        {
+            Ok(_) => Ok(true),
+            Err(e) => {
+                tracing::error!(
+                    target:"ccd_event_processor",
+                    "Encountered error trying to re-connect to database pool: {e}");
+                Ok(false)
+            }
+        }
     }
-    Ok(())
 }
 
 #[tokio::main]
@@ -107,7 +237,6 @@ async fn main() -> anyhow::Result<()> {
         use tracing_subscriber::prelude::*;
         let log_filter = tracing_subscriber::filter::Targets::new()
             .with_target(module_path!(), app.log_level)
-            // Update rust-sdk to the new version once released for the `ccd_indexer` target to work.
             .with_target("ccd_indexer", app.log_level)
             .with_target("ccd_event_processor", app.log_level)
             .with_target("tokio_postgres", app.log_level);
@@ -181,150 +310,39 @@ async fn main() -> anyhow::Result<()> {
         settings.genesis_block_hash
     );
 
-    handle_indexing(db, endpoint, app.start, app.contract_address).await
+    handle_indexing(db, endpoint, app.start, app.contract_address, db_pool).await
 }
 
 /// Handle indexing events.
 async fn handle_indexing(
-    mut db: Database,
+    db: Database,
     endpoint: sdk::Endpoint,
     start: AbsoluteBlockHeight,
     contract_address: ContractAddress,
+    db_pool: DatabasePool,
 ) -> anyhow::Result<()> {
-    // Database process runs until the stop flag is triggered.
-    let stop_flag = Arc::new(AtomicBool::new(false));
-
     tracing::info!("Indexing from block height {}.", start);
 
     let contract_set = BTreeSet::from([contract_address]);
 
-    // Start indexer.
     let traverse_config = indexer::TraverseConfig::new_single(endpoint, start);
-    let (sender, mut receiver) = tokio::sync::mpsc::channel(20);
-    let indexer_handle = tokio::spawn(traverse_config.traverse(
-        indexer::AffectedContractIndexer {
+
+    let events = StoreEvents { db_pool, db };
+
+    // The program terminates only
+    // when the processor terminates, which in this example can only happen if
+    // there are sufficiently many errors when attempting to write to the
+    // database.
+    indexer::traverse_and_process(
+        traverse_config,
+        AffectedContractIndexer {
             addresses: contract_set,
             all:       true,
         },
-        sender,
-    ));
-
-    // The indexer starts processing historical events and then listens for new
-    // events that are coming in as the blockchain progresses.
-    loop {
-        let (block, contract_update_infos) = tokio::select! {
-            biased;
-            _ =  set_shutdown(stop_flag.clone())=> { break },
-            Some(v) = receiver.recv() => v,
-            else => { break }
-        };
-
-        let now = tokio::time::Instant::now();
-
-        if !contract_update_infos.is_empty() {
-            // Begin the transaction
-            let db_transaction = db
-                .client
-                .transaction()
-                .await
-                .context("Failed to build DB transaction")?;
-
-            for tx in contract_update_infos {
-                for (_contract_invoked, _entry_point_name, events) in tx.0.execution_tree.events() {
-                    for (event_index, event) in events.iter().enumerate() {
-                        let parsed_event: contract::Event = event.parse()?;
-
-                        if let contract::Event::ItemStatusChanged(item_status_change_event) =
-                            parsed_event
-                        {
-                            let params: [&(dyn ToSql + Sync); 7] = [
-                                &(block.block_slot_time),
-                                &(block.block_height.height as i64),
-                                &tx.0.transaction_hash.as_ref(),
-                                &(event_index as i64),
-                                &(item_status_change_event.item_id as i64),
-                                &Json(&item_status_change_event.new_status),
-                                &item_status_change_event.additional_data.bytes,
-                            ];
-
-                            let statement = db_transaction
-                                .prepare_cached(
-                                    "INSERT INTO item_status_changed_events (id, block_time, \
-                                     block_height, transaction_hash, event_index, item_id, \
-                                     new_status, additional_data) SELECT COALESCE(MAX(id) + 1, \
-                                     0), $1, $2, $3, $4, $5, $6, $7 FROM \
-                                     item_status_changed_events;",
-                                )
-                                .await
-                                .context(
-                                    "Failed to prepare item_status_change_event transaction",
-                                )?;
-
-                            db_transaction.execute(&statement, &params).await.context(
-                                "Failed to execute item_status_change_event transaction",
-                            )?;
-
-                            tracing::debug!(
-                                "Preparing item_status_change_event from block {}, transaction \
-                                 hash {}, and event index {}.",
-                                block.block_height,
-                                tx.0.transaction_hash,
-                                event_index
-                            );
-                        } else if let contract::Event::ItemCreated(item_created_event) =
-                            parsed_event
-                        {
-                            let params: [&(dyn ToSql + Sync); 6] = [
-                                &(block.block_slot_time),
-                                &(block.block_height.height as i64),
-                                &tx.0.transaction_hash.as_ref(),
-                                &(event_index as i64),
-                                &(item_created_event.item_id as i64),
-                                &to_bytes(&item_created_event.metadata_url),
-                            ];
-
-                            let statement = db_transaction
-                                .prepare_cached(
-                                    "INSERT INTO item_created_events (id, block_time, \
-                                     block_height, transaction_hash, event_index, item_id, \
-                                     metadata_url) SELECT COALESCE(MAX(id) + 1, 0), $1, $2, $3, \
-                                     $4, $5, $6 FROM item_created_events;",
-                                )
-                                .await
-                                .context("Failed to prepare item_created_event transaction")?;
-
-                            db_transaction
-                                .execute(&statement, &params)
-                                .await
-                                .context("Failed to execute item_created_event transaction")?;
-
-                            tracing::debug!(
-                                "Preparing event from block {}, transaction hash {}, and event \
-                                 index {}.",
-                                block.block_height,
-                                tx.0.transaction_hash,
-                                event_index
-                            );
-                        }
-                    }
-                }
-            }
-
-            // Commit the transaction
-            db_transaction
-                .commit()
-                .await
-                .context("Failed to commit block transaction")?;
-        }
-
-        tracing::debug!(
-            "Processed block {} in {}ms.",
-            block.block_height,
-            now.elapsed().as_millis()
-        );
-    }
-
-    indexer_handle.abort();
+        ProcessorConfig::new(),
+        events,
+    )
+    .await?;
 
     Ok(())
 }
