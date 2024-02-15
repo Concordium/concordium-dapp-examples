@@ -13,7 +13,9 @@ CREATE TABLE IF NOT EXISTS settings (
   -- The genesis block hash as querried from the node. This will be set the frist time the indexer is started. 
   -- Re-starting the indexer will check if its settings are compatible will 
   -- the stored indexer setting to prevent corrupting the database.
-  genesis_block_hash BYTEA NOT NULL
+  genesis_block_hash BYTEA NOT NULL,
+    -- The last block height that was processed.
+  latest_processed_block_height INT8
 );
 
 -- Table containing item_status_changed_events successfully submitted to the database from the contract monitored.
@@ -22,8 +24,6 @@ CREATE TABLE IF NOT EXISTS item_status_changed_events (
   id INT8 PRIMARY KEY,
   -- The timestamp of the block the event was included in.
   block_time TIMESTAMP WITH TIME ZONE NOT NULL,
-  -- The block height that the event was included in.
-  block_height INT8 NOT NULL,
   -- The transaction hash that the event was included in.
   transaction_hash BYTEA NOT NULL,
   -- The index from the array of logged events in a transaction.
@@ -42,8 +42,6 @@ CREATE TABLE IF NOT EXISTS item_created_events (
   id INT8 PRIMARY KEY,
   -- The timestamp of the block the event was included in.
   block_time TIMESTAMP WITH TIME ZONE NOT NULL,
-  -- The block height that the event was included in.
-  block_height INT8 NOT NULL,
   -- The transaction hash that the event was included in.
   transaction_hash BYTEA NOT NULL,
   -- The index from the array of logged events in a transaction.
