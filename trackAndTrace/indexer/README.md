@@ -1,12 +1,12 @@
 ## Track and trace indexer
 
-A tool for indexing event data from the track and trace contract into a postgres database. The database is configured with the tables from the file `../resources/schema.sql`. The monitored events `ItemStatusChangedEvent` and `ItemCreatedEvent` are indexed in their respective tables. A third table `settings` exists to store global configurations (e.g.: the contract address, and the genesis block hash). 
+A tool for indexing event data from the track and trace contract into a postgres database. The database is configured with the tables from the file `../resources/schema.sql`. The monitored events `ItemStatusChangedEvent` and `ItemCreatedEvent` are indexed in their respective tables. A third table `settings` exists to store global configurations (e.g.: the contract address, latest block processed, and the genesis block hash). 
 
 The global configurations are set when the indexer is started for the first time. Re-starting the indexer will check if its current settings are compatible will the stored indexer settings to prevent corrupting the database. In addition, the settings can be queried by the front end to check compatibility. 
 
-All monitored events in a block are atomically added in one database transaction to postgres. This ensures a simple recovery process since we always process the complete block or roll back the database to the beginning of the block.
+When the indexer is started for the first time, it will look up when the smart contract instance was created and use that block as the starting block. When the indexer is re-started with the same database settings, it resumes indexing from the `latest_processed_block_height+1` as stored in the database.
 
-In case the indexer stops, after fixing the cause of the failure the indexer can be re-started by providing as `--start` option the `latest_processed_block_height + 1`. You can figure out the latest processed block height from the logs of the indexer. Alternatively, you can get the `latest_processed_block_height_with_monitored_event` by taking the rows with the largest id in the `item_status_changed_events` and the `item_created_events` tables. Alternatively, you can re-start the indexer by providing as `--start` option the `latest_processed_block_height_with_monitored_event + 1`. You should ensure to never re-start the indexer from a block where it processes a block with monitored events a second time, since you will end up with duplicated rows in the database.
+All monitored events in a block are atomically added in one database transaction to postgres. This ensures a simple recovery process since we always process the complete block or roll back the database to the beginning of the block. In addition, the indexer has a re-try logic and will try to re-connect to the database pool and re-submit any failed database transaction.
 
 Each event can be uniquely identified by the `transaction_hash` and `event_index`. The `event_index` is the index from the array of logged events in a transaction.
 
@@ -49,7 +49,7 @@ This will produce a single binary `indexer` in `target/release` directory.
 ## Run the indexer
 
 ```console
-cargo run -- --node https://grpc.testnet.concordium.com:20000 --start 9970784 --contract "<7835,0>" --log-level debug
+cargo run -- --node https://grpc.testnet.concordium.com:20000 --contract "<7835,0>" --log-level debug
 ```
 
 ## Configure the indexer
@@ -57,8 +57,6 @@ cargo run -- --node https://grpc.testnet.concordium.com:20000 --start 9970784 --
 There are a few options to configure the indexer:
 
 - `--node` is the endpoint to the Concordium node grpc v2 API. If not specified, the default value `https://grpc.testnet.concordium.com:20000` is used.
-
-- `--start` is the block height to index from. To not waste resources and index from the genesis block, set this value to the time when the track-and-trace smart contract was deployed/initialized.
 
 - `--contract` is the contract index of the track-and-trace smart contract, e.g. <7835,0>.
 

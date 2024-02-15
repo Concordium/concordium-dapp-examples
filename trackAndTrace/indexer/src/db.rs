@@ -4,7 +4,7 @@ use concordium_rust_sdk::{
     smart_contracts::common::from_bytes,
     types::{
         hashes::{BlockHash, TransactionHash},
-        ContractAddress,
+        AbsoluteBlockHeight, ContractAddress,
     },
 };
 use deadpool_postgres::{GenericClient, Object};
@@ -37,9 +37,11 @@ type DatabaseResult<T> = Result<T, DatabaseError>;
 #[derive(Debug, Serialize)]
 pub struct StoredConfiguration {
     /// The genesis block hash of the network monitored.
-    pub genesis_block_hash: BlockHash,
+    pub genesis_block_hash:            BlockHash,
     /// The contract address of the track and trace contract monitored.
-    pub contract_address:   ContractAddress,
+    pub contract_address:              ContractAddress,
+    /// The last block height that was processed.
+    pub latest_processed_block_height: Option<AbsoluteBlockHeight>,
 }
 
 impl TryFrom<tokio_postgres::Row> for StoredConfiguration {
@@ -49,10 +51,24 @@ impl TryFrom<tokio_postgres::Row> for StoredConfiguration {
         let raw_genesis_block_hash: &[u8] = value.try_get("genesis_block_hash")?;
         let raw_contract_index: i64 = value.try_get("contract_index")?;
         let raw_contract_subindex: i64 = value.try_get("contract_subindex")?;
+        let raw_latest_processed_block_height: Option<i64> =
+            value.try_get("latest_processed_block_height")?;
         let contract_address =
             ContractAddress::new(raw_contract_index as u64, raw_contract_subindex as u64);
 
+        let latest_processed_block_height = match raw_latest_processed_block_height {
+            Some(raw_latest_processed_block_height) => {
+                AbsoluteBlockHeight::from(raw_latest_processed_block_height as u64)
+                    .try_into()
+                    .map_err(|_| {
+                        DatabaseError::TypeConversion("latest_processed_block_height".to_string())
+                    })?
+            }
+            None => None,
+        };
+
         let settings = Self {
+            latest_processed_block_height,
             genesis_block_hash: raw_genesis_block_hash
                 .try_into()
                 .map_err(|_| DatabaseError::TypeConversion("genesis_block_hash".to_string()))?,
@@ -187,7 +203,8 @@ impl Database {
         let get_settings = self
             .client
             .prepare_cached(
-                "SELECT genesis_block_hash, contract_index, contract_subindex FROM settings",
+                "SELECT genesis_block_hash, contract_index, contract_subindex, \
+                 latest_processed_block_height FROM settings",
             )
             .await?;
         self.client.query_one(&get_settings, &[]).await?.try_into()

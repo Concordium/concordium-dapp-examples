@@ -34,13 +34,6 @@ struct Args {
     )]
     node_endpoint:    concordium_rust_sdk::v2::Endpoint,
     #[arg(
-        long = "start",
-        short = 's',
-        help = "The start block height when the track and trace contract was initialized.",
-        env = "CCD_INDEXER_START"
-    )]
-    start:            AbsoluteBlockHeight,
-    #[arg(
         long = "contract",
         short = 'c',
         help = "The track and trace contract address.",
@@ -92,107 +85,114 @@ impl indexer::ProcessEvent for StoreEvents {
         &mut self,
         (block_info, contract_update_info): &Self::Data,
     ) -> Result<Self::Description, Self::Error> {
-        if !contract_update_info.is_empty() {
-            //  It is typically easiest to reason about a database if blocks are inserted
-            // in a single database transaction. So we do that here.
-            let db_transaction = self
-                .db
-                .client
-                .transaction()
-                .await
-                .context("Failed to build database transaction")?;
+        //  It is typically easiest to reason about a database if blocks are inserted
+        // in a single database transaction. So we do that here.
+        let db_transaction = self
+            .db
+            .client
+            .transaction()
+            .await
+            .context("Failed to build database transaction")?;
 
-            for single_contract_update_info in contract_update_info {
-                for (_contract_invoked, _entry_point_name, events) in
-                    single_contract_update_info.0.execution_tree.events()
-                {
-                    for (event_index, event) in events.iter().enumerate() {
-                        let parsed_event: contract::Event = event.parse()?;
+        let params: [&(dyn ToSql + Sync); 1] = [&(block_info.block_height.height as i64)];
 
-                        if let contract::Event::ItemStatusChanged(item_status_change_event) =
-                            parsed_event
-                        {
-                            let params: [&(dyn ToSql + Sync); 7] = [
-                                &(block_info.block_slot_time),
-                                &(block_info.block_height.height as i64),
-                                &single_contract_update_info.0.transaction_hash.as_ref(),
-                                &(event_index as i64),
-                                &(item_status_change_event.item_id as i64),
-                                &Json(&item_status_change_event.new_status),
-                                &item_status_change_event.additional_data.bytes,
-                            ];
+        // Update latest_processed_block_height
+        let statement = db_transaction
+            .prepare_cached(
+                "UPDATE settings SET latest_processed_block_height = $1 WHERE id = true",
+            )
+            .await
+            .context("Failed to prepare latest_processed_block_height transaction")?;
 
-                            let statement = db_transaction
-                                .prepare_cached(
-                                    "INSERT INTO item_status_changed_events (id, block_time, \
-                                     block_height, transaction_hash, event_index, item_id, \
-                                     new_status, additional_data) SELECT COALESCE(MAX(id) + 1, \
-                                     0), $1, $2, $3, $4, $5, $6, $7 FROM \
-                                     item_status_changed_events;",
-                                )
-                                .await
-                                .context(
-                                    "Failed to prepare item_status_change_event transaction",
-                                )?;
+        db_transaction
+            .execute(&statement, &params)
+            .await
+            .context("Failed to execute latest_processed_block_height transaction")?;
 
-                            db_transaction.execute(&statement, &params).await.context(
-                                "Failed to execute item_status_change_event transaction",
-                            )?;
+        for single_contract_update_info in contract_update_info {
+            for (_contract_invoked, _entry_point_name, events) in
+                single_contract_update_info.0.execution_tree.events()
+            {
+                for (event_index, event) in events.iter().enumerate() {
+                    let parsed_event: contract::Event = event.parse()?;
 
-                            tracing::debug!(
-                                target:"ccd_event_processor",
-                                "Preparing item_status_change_event from block {}, transaction \
-                                 hash {}, and event index {}.",
-                                block_info.block_height,
-                                single_contract_update_info.0.transaction_hash,
-                                event_index
-                            );
-                        } else if let contract::Event::ItemCreated(item_created_event) =
-                            parsed_event
-                        {
-                            let params: [&(dyn ToSql + Sync); 6] = [
-                                &(block_info.block_slot_time),
-                                &(block_info.block_height.height as i64),
-                                &single_contract_update_info.0.transaction_hash.as_ref(),
-                                &(event_index as i64),
-                                &(item_created_event.item_id as i64),
-                                &to_bytes(&item_created_event.metadata_url),
-                            ];
+                    if let contract::Event::ItemStatusChanged(item_status_change_event) =
+                        parsed_event
+                    {
+                        let params: [&(dyn ToSql + Sync); 6] = [
+                            &(block_info.block_slot_time),
+                            &single_contract_update_info.0.transaction_hash.as_ref(),
+                            &(event_index as i64),
+                            &(item_status_change_event.item_id as i64),
+                            &Json(&item_status_change_event.new_status),
+                            &item_status_change_event.additional_data.bytes,
+                        ];
 
-                            let statement = db_transaction
-                                .prepare_cached(
-                                    "INSERT INTO item_created_events (id, block_time, \
-                                     block_height, transaction_hash, event_index, item_id, \
-                                     metadata_url) SELECT COALESCE(MAX(id) + 1, 0), $1, $2, $3, \
-                                     $4, $5, $6 FROM item_created_events;",
-                                )
-                                .await
-                                .context("Failed to prepare item_created_event transaction")?;
+                        let statement = db_transaction
+                            .prepare_cached(
+                                "INSERT INTO item_status_changed_events (id, block_time, \
+                                 transaction_hash, event_index, item_id, new_status, \
+                                 additional_data) SELECT COALESCE(MAX(id) + 1, 0), $1, $2, $3, \
+                                 $4, $5, $6 FROM item_status_changed_events;",
+                            )
+                            .await
+                            .context("Failed to prepare item_status_change_event transaction")?;
 
-                            db_transaction
-                                .execute(&statement, &params)
-                                .await
-                                .context("Failed to execute item_created_event transaction")?;
+                        db_transaction
+                            .execute(&statement, &params)
+                            .await
+                            .context("Failed to execute item_status_change_event transaction")?;
 
-                            tracing::debug!(
-                                target:"ccd_event_processor",
-                                "Preparing event from block {}, transaction hash {}, and event \
-                                 index {}.",
-                                block_info.block_height,
-                                single_contract_update_info.0.transaction_hash,
-                                event_index
-                            );
-                        }
+                        tracing::debug!(
+                            target:"ccd_event_processor",
+                            "Preparing item_status_change_event from block {}, transaction \
+                             hash {}, and event index {}.",
+                            block_info.block_height,
+                            single_contract_update_info.0.transaction_hash,
+                            event_index
+                        );
+                    } else if let contract::Event::ItemCreated(item_created_event) = parsed_event {
+                        let params: [&(dyn ToSql + Sync); 5] = [
+                            &(block_info.block_slot_time),
+                            &single_contract_update_info.0.transaction_hash.as_ref(),
+                            &(event_index as i64),
+                            &(item_created_event.item_id as i64),
+                            &to_bytes(&item_created_event.metadata_url),
+                        ];
+
+                        let statement = db_transaction
+                            .prepare_cached(
+                                "INSERT INTO item_created_events (id, block_time, \
+                                 transaction_hash, event_index, item_id, metadata_url) SELECT \
+                                 COALESCE(MAX(id) + 1, 0), $1, $2, $3, $4, $5 FROM \
+                                 item_created_events;",
+                            )
+                            .await
+                            .context("Failed to prepare item_created_event transaction")?;
+
+                        db_transaction
+                            .execute(&statement, &params)
+                            .await
+                            .context("Failed to execute item_created_event transaction")?;
+
+                        tracing::debug!(
+                            target:"ccd_event_processor",
+                            "Preparing event from block {}, transaction hash {}, and event \
+                             index {}.",
+                            block_info.block_height,
+                            single_contract_update_info.0.transaction_hash,
+                            event_index
+                        );
                     }
                 }
             }
-
-            // Commit the transaction
-            db_transaction
-                .commit()
-                .await
-                .context("Failed to commit block transaction")?;
         }
+        // Commit the transaction
+        db_transaction
+            .commit()
+            .await
+            .context("Failed to commit block transaction")?;
+
         // We return an informative message that will be logged by the `process_events`
         // method of the indexer.
         Ok(format!(
@@ -310,7 +310,23 @@ async fn main() -> anyhow::Result<()> {
         settings.genesis_block_hash
     );
 
-    handle_indexing(db, endpoint, app.start, app.contract_address, db_pool).await
+    let start_block = match settings.latest_processed_block_height {
+        // If the indexer is re-started with the same database settings,
+        // it should resume indexing from the `latest_processed_block_height+1` as stored in the
+        // database.
+        Some(processed_block) => processed_block.next(),
+        // If the indexer is started for the first time, lookup when the instance was created and
+        // use that block as the starting block.
+        None => {
+            let instance_created = client
+                .find_instance_creation(.., app.contract_address)
+                .await?;
+
+            instance_created.0
+        }
+    };
+
+    handle_indexing(db, endpoint, start_block, app.contract_address, db_pool).await
 }
 
 /// Handle indexing events.
