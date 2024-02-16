@@ -491,7 +491,6 @@ fn test_permit_change_item_status() {
         contract_address,
         to_bytes(&payload),
         "changeItemStatus".to_string(),
-        ADMIN,
         SELLER,
         account_keypairs.admin,
     )
@@ -518,7 +517,6 @@ fn test_permit_change_item_status() {
         contract_address,
         to_bytes(&payload),
         "changeItemStatus".to_string(),
-        PRODUCER,
         ADMIN,
         account_keypairs.producer,
     )
@@ -534,7 +532,6 @@ fn permit(
     contract_address: ContractAddress,
     payload: Vec<u8>,
     entrypoint_name: String,
-    signer: AccountAddress,
     invoker: AccountAddress,
     keypairs: AccountKeys,
 ) -> Result<ContractInvokeSuccess, ContractInvokeError> {
@@ -551,8 +548,8 @@ fn permit(
         signature: AccountSignatures {
             sigs: signature_map,
         },
-        signer,
-        message: PermitMessage {
+        signer:    ADMIN,
+        message:   PermitMessage {
             timestamp: Timestamp::from_timestamp_millis(10_000_000_000),
             contract_address: ContractAddress::new(0, 0),
             entry_point: OwnedEntrypointName::new_unchecked(entrypoint_name),
