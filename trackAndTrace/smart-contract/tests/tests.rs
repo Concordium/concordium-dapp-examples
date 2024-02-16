@@ -26,6 +26,13 @@ const DUMMY_SIGNATURE: SignatureEd25519 = SignatureEd25519([
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 ]);
 
+struct AccountKeypairs {
+    admin:        AccountKeys,
+    producer:     AccountKeys,
+    _transporter: AccountKeys,
+    _seller:      AccountKeys,
+}
+
 // 1. Test that the ADMIN can create a new item.
 // 2. Test that the PRODUCER can update the item status to `InTransit`.
 // 3. Test that the SELLER can NOT update the item status to `InStore`.
@@ -274,24 +281,45 @@ fn check_state(
 
 /// Setup chain and contract. Returns the chain, keys of the ADMIN, and the
 /// contract address.
-fn initialize_chain_and_contract() -> (Chain, AccountKeys, ContractAddress) {
+fn initialize_chain_and_contract() -> (Chain, AccountKeypairs, ContractAddress) {
     let mut chain = Chain::builder()
         .build()
         .expect("Should be able to build chain");
 
     let mut rng = rand::thread_rng();
-    let admin_keys = AccountKeys::singleton(&mut rng);
     let balance = AccountBalance {
         total:  ACC_INITIAL_BALANCE,
         staked: Amount::zero(),
         locked: Amount::zero(),
     };
+    let admin_keys = AccountKeys::singleton(&mut rng);
+    let producer_keys = AccountKeys::singleton(&mut rng);
+    let transporter_keys = AccountKeys::singleton(&mut rng);
+    let seller_keys = AccountKeys::singleton(&mut rng);
 
     // Create some accounts on the chain.
     chain.create_account(Account::new_with_keys(ADMIN, balance, (&admin_keys).into()));
-    chain.create_account(Account::new(PRODUCER, ACC_INITIAL_BALANCE));
-    chain.create_account(Account::new(TRANSPORTER, ACC_INITIAL_BALANCE));
-    chain.create_account(Account::new(SELLER, ACC_INITIAL_BALANCE));
+    chain.create_account(Account::new_with_keys(
+        PRODUCER,
+        balance,
+        (&producer_keys).into(),
+    ));
+    chain.create_account(Account::new_with_keys(
+        TRANSPORTER,
+        balance,
+        (&transporter_keys).into(),
+    ));
+    chain.create_account(Account::new_with_keys(
+        SELLER,
+        balance,
+        (&seller_keys).into(),
+    ));
+    let account_keypairs = AccountKeypairs {
+        admin:        admin_keys,
+        producer:     producer_keys,
+        _transporter: transporter_keys,
+        _seller:      seller_keys,
+    };
 
     // Load and deploy the track_and_trace module.
     let module = module_load_v1("./concordium-out/module.wasm.v1").expect("Module exists");
@@ -419,12 +447,12 @@ fn initialize_chain_and_contract() -> (Chain, AccountKeys, ContractAddress) {
             },
         )
         .expect("SELLER should be granted role");
-    (chain, admin_keys, track_and_trace.contract_address)
+    (chain, account_keypairs, track_and_trace.contract_address)
 }
 
 #[test]
 fn test_permit_change_item_status() {
-    let (mut chain, admin_keys, contract_address) = initialize_chain_and_contract();
+    let (mut chain, account_keypairs, contract_address) = initialize_chain_and_contract();
 
     // Create the Parameter.
     let metadata_url = Some(MetadataUrl {
@@ -463,22 +491,53 @@ fn test_permit_change_item_status() {
         contract_address,
         to_bytes(&payload),
         "changeItemStatus".to_string(),
-        admin_keys,
-    );
+        ADMIN,
+        SELLER,
+        account_keypairs.admin,
+    )
+    .expect("Should be able to update the state of the item");
 
     // Check that the status updated correctly.
+    check_state(
+        &chain,
+        contract_address,
+        Status::InStore,
+        metadata_url.clone(),
+    );
+
+    // Check that the PRODUCER can not update the status to `Sold` with a
+    // sponsored transaction.
+    let payload = ChangeItemStatusParams {
+        item_id:         0u64,
+        additional_data: AdditionalData { bytes: vec![] },
+        new_status:      Status::Sold,
+    };
+
+    let _update = permit(
+        &mut chain,
+        contract_address,
+        to_bytes(&payload),
+        "changeItemStatus".to_string(),
+        PRODUCER,
+        ADMIN,
+        account_keypairs.producer,
+    )
+    .expect_err("PRODUCER should not be able to change state to Sold");
+
+    // Check that the status was not updated.
     check_state(&chain, contract_address, Status::InStore, metadata_url);
 }
 
-/// Execute a permit function invoke, using ADMIN as the signer and SELLER as
-/// the authorized account.
+/// Execute a permit function invoke.
 fn permit(
     chain: &mut Chain,
     contract_address: ContractAddress,
     payload: Vec<u8>,
     entrypoint_name: String,
-    admin_keys: AccountKeys,
-) -> ContractInvokeSuccess {
+    signer: AccountAddress,
+    invoker: AccountAddress,
+    keypairs: AccountKeys,
+) -> Result<ContractInvokeSuccess, ContractInvokeError> {
     // The `viewMessageHash` function uses the same input parameter `PermitParam` as
     // the `permit` function. The `PermitParam` type includes a `signature` and
     // a `signer`. Because these two values (`signature` and `signer`) are not
@@ -492,8 +551,8 @@ fn permit(
         signature: AccountSignatures {
             sigs: signature_map,
         },
-        signer:    ADMIN,
-        message:   PermitMessage {
+        signer,
+        message: PermitMessage {
             timestamp: Timestamp::from_timestamp_millis(10_000_000_000),
             contract_address: ContractAddress::new(0, 0),
             entry_point: OwnedEntrypointName::new_unchecked(entrypoint_name),
@@ -505,8 +564,8 @@ fn permit(
     // Get the message hash to be signed.
     let invoke = chain
         .contract_invoke(
-            SELLER,
-            SELLER_ADDR,
+            invoker,
+            Address::Account(invoker),
             Energy::from(10000),
             UpdateContractPayload {
                 amount:       Amount::zero(),
@@ -523,22 +582,20 @@ fn permit(
     let message_hash: HashSha2256 =
         from_bytes(&invoke.return_value).expect("Should return a valid result");
 
-    param.signature = admin_keys.sign_message(&to_bytes(&message_hash));
+    param.signature = keypairs.sign_message(&to_bytes(&message_hash));
 
     // Execute permit function.
-    chain
-        .contract_update(
-            Signer::with_one_key(),
-            SELLER,
-            SELLER_ADDR,
-            Energy::from(10000),
-            UpdateContractPayload {
-                amount:       Amount::zero(),
-                address:      contract_address,
-                receive_name: OwnedReceiveName::new_unchecked("track_and_trace.permit".to_string()),
-                message:      OwnedParameter::from_serial(&param)
-                    .expect("Should be a valid inut parameter"),
-            },
-        )
-        .expect("Should be able to exit permit token with permit")
+    chain.contract_update(
+        Signer::with_one_key(),
+        invoker,
+        Address::Account(invoker),
+        Energy::from(10000),
+        UpdateContractPayload {
+            amount:       Amount::zero(),
+            address:      contract_address,
+            receive_name: OwnedReceiveName::new_unchecked("track_and_trace.permit".to_string()),
+            message:      OwnedParameter::from_serial(&param)
+                .expect("Should be a valid inut parameter"),
+        },
+    )
 }
