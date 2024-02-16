@@ -63,9 +63,9 @@ struct Args {
 /// A handler for storing monitored events in the database. This implements
 /// the `indexer::ProcessEvent` trait to store events in the database.
 struct StoreEvents {
-    /// An active database connect to the postgres database.
+    /// An active database connection to the postgres database.
     db:      Database,
-    // A database pool used for reconnects.
+    /// A database pool used for reconnects.
     db_pool: DatabasePool,
 }
 
@@ -284,7 +284,7 @@ async fn main() -> anyhow::Result<()> {
         .context("Could not get settings from database")?;
 
     // This check ensures when re-starting the indexer, that the current
-    // `contract_address` settings of the indexer are compatible will the stored
+    // `contract_address` settings of the indexer are compatible with the stored
     // indexer settings to prevent corrupting the database.
     anyhow::ensure!(
         settings.contract_address == app.contract_address,
@@ -294,7 +294,7 @@ async fn main() -> anyhow::Result<()> {
     );
 
     // This check ensures when re-starting the indexer, that the current
-    // `genesis_hash/node` settings of the indexer are compatible will the
+    // `genesis_hash/node` settings of the indexer are compatible with the
     // stored indexer settings to prevent corrupting the database.
     anyhow::ensure!(
         settings.genesis_block_hash == consensus_info.genesis_block,
