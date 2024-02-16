@@ -1,6 +1,10 @@
 //! Tests for the track_and_trace smart contract.
+use std::collections::BTreeMap;
+
 use concordium_smart_contract_testing::*;
-use concordium_std::MetadataUrl;
+use concordium_std::{
+    AccountSignatures, CredentialSignatures, HashSha2256, MetadataUrl, SignatureEd25519,
+};
 use track_and_trace::*;
 
 /// The test accounts.
@@ -16,6 +20,12 @@ const SELLER_ADDR: Address = Address::Account(AccountAddress([3; 32]));
 const SIGNER: Signer = Signer::with_one_key();
 const ACC_INITIAL_BALANCE: Amount = Amount::from_ccd(10000);
 
+/// Dummy signature used as placeholder.
+const DUMMY_SIGNATURE: SignatureEd25519 = SignatureEd25519([
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+]);
+
 // 1. Test that the ADMIN can create a new item.
 // 2. Test that the PRODUCER can update the item status to `InTransit`.
 // 3. Test that the SELLER can NOT update the item status to `InStore`.
@@ -23,7 +33,7 @@ const ACC_INITIAL_BALANCE: Amount = Amount::from_ccd(10000);
 // update the item to any state, neglecting the rules of the state machine.
 #[test]
 fn test_create_item_and_update_item_status() {
-    let (mut chain, track_and_trace_contract_address) = initialize_chain_and_contract();
+    let (mut chain, _, track_and_trace_contract_address) = initialize_chain_and_contract();
 
     // Create the Parameter.
     let metadata_url = Some(MetadataUrl {
@@ -262,14 +272,23 @@ fn check_state(
     assert_eq!(return_value, 1);
 }
 
-/// Setup chain and contract.
-fn initialize_chain_and_contract() -> (Chain, ContractAddress) {
+/// Setup chain and contract. Returns the chain, keys of the ADMIN, and the
+/// contract address.
+fn initialize_chain_and_contract() -> (Chain, AccountKeys, ContractAddress) {
     let mut chain = Chain::builder()
         .build()
         .expect("Should be able to build chain");
 
+    let mut rng = rand::thread_rng();
+    let admin_keys = AccountKeys::singleton(&mut rng);
+    let balance = AccountBalance {
+        total:  ACC_INITIAL_BALANCE,
+        staked: Amount::zero(),
+        locked: Amount::zero(),
+    };
+
     // Create some accounts on the chain.
-    chain.create_account(Account::new(ADMIN, ACC_INITIAL_BALANCE));
+    chain.create_account(Account::new_with_keys(ADMIN, balance, (&admin_keys).into()));
     chain.create_account(Account::new(PRODUCER, ACC_INITIAL_BALANCE));
     chain.create_account(Account::new(TRANSPORTER, ACC_INITIAL_BALANCE));
     chain.create_account(Account::new(SELLER, ACC_INITIAL_BALANCE));
@@ -400,5 +419,126 @@ fn initialize_chain_and_contract() -> (Chain, ContractAddress) {
             },
         )
         .expect("SELLER should be granted role");
-    (chain, track_and_trace.contract_address)
+    (chain, admin_keys, track_and_trace.contract_address)
+}
+
+#[test]
+fn test_permit_change_item_status() {
+    let (mut chain, admin_keys, contract_address) = initialize_chain_and_contract();
+
+    // Create the Parameter.
+    let metadata_url = Some(MetadataUrl {
+        url:  "https://some.example/".to_string(),
+        hash: None,
+    });
+
+    // Have the ADMIN create a new item.
+    let _update = chain
+        .contract_update(
+            SIGNER,
+            ADMIN,
+            ADMIN_ADDR,
+            Energy::from(10000),
+            UpdateContractPayload {
+                amount:       Amount::from_ccd(0),
+                address:      contract_address,
+                receive_name: OwnedReceiveName::new_unchecked(
+                    "track_and_trace.createItem".to_string(),
+                ),
+                message:      OwnedParameter::from_serial(&metadata_url)
+                    .expect("Serialize parameter"),
+            },
+        )
+        .expect("Should be able to create item");
+
+    // Check that the status can updated to `InStore` with a sponsored transaction.
+    let payload = ChangeItemStatusParams {
+        item_id:         0u64,
+        additional_data: AdditionalData { bytes: vec![] },
+        new_status:      Status::InStore,
+    };
+
+    let _update = permit(
+        &mut chain,
+        contract_address,
+        to_bytes(&payload),
+        "changeItemStatus".to_string(),
+        admin_keys,
+    );
+
+    // Check that the status updated correctly.
+    check_state(&chain, contract_address, Status::InStore, metadata_url);
+}
+
+/// Execute a permit function invoke, using ADMIN as the signer and SELLER as
+/// the authorized account.
+fn permit(
+    chain: &mut Chain,
+    contract_address: ContractAddress,
+    payload: Vec<u8>,
+    entrypoint_name: String,
+    admin_keys: AccountKeys,
+) -> ContractInvokeSuccess {
+    // The `viewMessageHash` function uses the same input parameter `PermitParam` as
+    // the `permit` function. The `PermitParam` type includes a `signature` and
+    // a `signer`. Because these two values (`signature` and `signer`) are not
+    // read in the `viewMessageHash` function, any value can be used and we choose
+    // to use `DUMMY_SIGNATURE` and `ADMIN` in the test case below.
+    let signature_map = BTreeMap::from([(0u8, CredentialSignatures {
+        sigs: BTreeMap::from([(0u8, concordium_std::Signature::Ed25519(DUMMY_SIGNATURE))]),
+    })]);
+
+    let mut param = PermitParam {
+        signature: AccountSignatures {
+            sigs: signature_map,
+        },
+        signer:    ADMIN,
+        message:   PermitMessage {
+            timestamp: Timestamp::from_timestamp_millis(10_000_000_000),
+            contract_address: ContractAddress::new(0, 0),
+            entry_point: OwnedEntrypointName::new_unchecked(entrypoint_name),
+            nonce: 0,
+            payload,
+        },
+    };
+
+    // Get the message hash to be signed.
+    let invoke = chain
+        .contract_invoke(
+            SELLER,
+            SELLER_ADDR,
+            Energy::from(10000),
+            UpdateContractPayload {
+                amount:       Amount::zero(),
+                address:      contract_address,
+                receive_name: OwnedReceiveName::new_unchecked(
+                    "track_and_trace.viewMessageHash".to_string(),
+                ),
+                message:      OwnedParameter::from_serial(&param)
+                    .expect("Should be a valid inut parameter"),
+            },
+        )
+        .expect("Should be able to query viewMessageHash");
+
+    let message_hash: HashSha2256 =
+        from_bytes(&invoke.return_value).expect("Should return a valid result");
+
+    param.signature = admin_keys.sign_message(&to_bytes(&message_hash));
+
+    // Execute permit function.
+    chain
+        .contract_update(
+            Signer::with_one_key(),
+            SELLER,
+            SELLER_ADDR,
+            Energy::from(10000),
+            UpdateContractPayload {
+                amount:       Amount::zero(),
+                address:      contract_address,
+                receive_name: OwnedReceiveName::new_unchecked("track_and_trace.permit".to_string()),
+                message:      OwnedParameter::from_serial(&param)
+                    .expect("Should be a valid inut parameter"),
+            },
+        )
+        .expect("Should be able to exit permit token with permit")
 }

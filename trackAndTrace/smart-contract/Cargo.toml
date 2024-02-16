@@ -17,11 +17,11 @@ concordium-cis2 = { version = "6.0", default-features = false }
 
 [dev-dependencies]
 concordium-smart-contract-testing = { version = "4.1" }
+rand = "0.8"
 
 [lib]
-crate-type=["cdylib", "rlib"]
+crate-type = ["cdylib", "rlib"]
 
 [profile.release]
 codegen-units = 1
 opt-level = "s"
-

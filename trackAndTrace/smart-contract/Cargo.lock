@@ -2402,6 +2402,7 @@ dependencies = [
  "concordium-cis2",
  "concordium-smart-contract-testing",
  "concordium-std",
+ "rand",
 ]
 
 [[package]]
