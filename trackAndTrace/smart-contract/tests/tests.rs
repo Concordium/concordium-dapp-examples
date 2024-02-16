@@ -372,7 +372,7 @@ fn initialize_chain_and_contract() -> (Chain, AccountKeypairs, ContractAddress) 
             amount:    Amount::zero(),
             mod_ref:   deployment.module_reference,
             init_name: OwnedContractName::new_unchecked("init_track_and_trace".to_string()),
-            param:     OwnedParameter::from_serial(&params).expect("GrantRole params"),
+            param:     OwnedParameter::from_serial(&params).expect("Init params"),
         })
         .expect("Initialize track_and_trace contract");
 

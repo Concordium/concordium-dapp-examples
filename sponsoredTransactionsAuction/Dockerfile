@@ -1,5 +1,5 @@
 ARG node_base_image=node:18-slim
-ARG rust_base_image=rust:1.70
+ARG rust_base_image=rust:1.72
 
 FROM ${node_base_image} AS front_end
 

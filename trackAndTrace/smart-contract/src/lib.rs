@@ -46,8 +46,10 @@
 //!     ];
 //! ```
 #![cfg_attr(not(feature = "std"), no_std)]
-use concordium_cis2::*;
+use concordium_cis2::{SupportResult, SupportsQueryResponse};
 use concordium_std::*;
+// Re-export type.
+pub use concordium_std::MetadataUrl;
 
 /// List of supported entrypoints by the `permit` function (CIS3 standard).
 const SUPPORTS_PERMIT_ENTRYPOINTS: [EntrypointName; 1] =
@@ -153,6 +155,7 @@ pub enum Roles {
 
 /// Enum of the statuses that an item can have.
 #[derive(Serialize, PartialEq, Eq, Reject, SchemaType, Clone, Copy, Debug)]
+#[cfg_attr(feature = "derive-serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum Status {
     /// Item is produced.
     Produced,
@@ -388,6 +391,7 @@ impl<S: HasStateApi> State<S> {
 /// The parameter type for the contract function `init` which
 /// initilizes a new instance of the contract.
 #[derive(Serialize, SchemaType)]
+#[cfg_attr(feature = "derive-serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct TransitionEdges {
     /// The status of the `from` node of the transition edges.
     pub from:               Status,
@@ -543,6 +547,10 @@ pub struct AdditionalData {
     /// Any additional data encoded as generic bytes. Usecase-specific data can
     /// be included here such as temperature, longitude, latitude, ... .
     pub bytes: Vec<u8>,
+}
+
+impl AdditionalData {
+    pub fn empty() -> Self { AdditionalData { bytes: vec![] } }
 }
 
 /// The parameter type for the contract function `changeItemStatus` which
