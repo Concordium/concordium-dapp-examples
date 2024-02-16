@@ -56,7 +56,7 @@ Alternatively, you can use `concordium-client`:
 
 ## `serde` feature
 
-This project has a `serde` feature. The smart contract can not be built with this feature. The intended use of the feature is for other projects to derive it when these projects use the types defined the smart contract. For example, the traits `serde::Deserialize` and `serde::Serialize` are needed on the types defined in the smart contract, if a project wants to insert the JSON representation of the type into a database or read it from a JSON file. 
+This project has a `serde` feature. The smart contract can not be built with this feature. The intended use of the feature is for other projects to derive it when these projects use the types defined in the smart contract. For example, the traits `serde::Deserialize` and `serde::Serialize` are needed on the types defined in the smart contract, if a project wants to insert the JSON representation of the type into a database or read it from a JSON file. 
 For example, the `indexer` and the `test-scripts` derive the feature in the `../indexer/Cargo.toml` and the `../test-scripts/Cargo.toml` files with the command:
 
 ```
