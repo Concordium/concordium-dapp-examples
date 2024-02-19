@@ -12,7 +12,7 @@
         "build": "tsc && CIS2_TOKEN_CONTRACT_INDEX=7723 AUCTION_CONTRACT_INDEX=7724 vite build",
         "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
         "lint-fix": "yarn lint --fix",
-        "generate-client": "tsx ./scripts/generate-client.ts",
+        "generate-client": "ccd-js-gen --module ./contracts/cis2_multi.wasm.v1 --out-dir ./generated --output-type TypeScript --ts-nocheck; ccd-js-gen --module ./contracts/sponsored_tx_enabled_auction.wasm.v1 --out-dir ./generated --output-type TypeScript --ts-nocheck",
         "fmt": "prettier -w .",
         "preview": "CIS2_TOKEN_CONTRACT_INDEX=7723 AUCTION_CONTRACT_INDEX=7724 vite preview"
     },
@@ -32,7 +32,7 @@
         "tsx": "^4.7.0"
     },
     "devDependencies": {
-        "@concordium/ccd-js-gen": "^1.0.1",
+        "@concordium/ccd-js-gen": "^1.2.0",
         "@types/json-bigint": "^1",
         "@types/react": "^18.2.15",
         "@types/react-dom": "^18.2.7",
