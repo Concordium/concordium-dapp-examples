@@ -1,14 +1,16 @@
-import * as MyContract from '../../generated/module_track_and_trace';
-import * as SDK from '@concordium/web-sdk';
-
 export function Explorer() {
     return (
-        <div className="centered column flex-1">
-            <h1>Here is the basic explorer page</h1>
-            <p>
-                Hello from the generated contract client:{' '}
-                <code>{SDK.ContractName.toString(MyContract.contractName)}</code>.
-            </p>
+        <div className="container">
+            <div className="centered column flex-1">
+                <br />
+                <br />
+                <h1>Track the journey of your products</h1>
+                <br />
+                <br />
+                <input type="text" placeholder="Enter the tracking number ID"></input>
+                <br />
+                <button>Search for Product Journey</button>
+            </div>
         </div>
     );
 }

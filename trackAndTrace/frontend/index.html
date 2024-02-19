@@ -4,46 +4,31 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Concordium Track And Trace dApp</title>
-        <style>
-            .container {
-                width: 100%;
+
+        <script src="../node_modules/@concordium/web-sdk/lib/min/concordium.web.min.js"></script>
+        <script src="../node_modules/@concordium/browser-wallet-api-helpers/lib/concordiumHelpers.min.js"></script>
+
+        <script>
+            let client = null;
+
+            function connect() {
+                client.connect().then((accountAddress) => {
+                    console.log(accountAddress);
+                    document.getElementById('account').innerHTML = accountAddress;
+                });
             }
 
-            /* Basic styling for the navbar */
-            .navbar {
-                background-color: rgba(0, 0, 0, 0.05);
-                display: flex;
-                justify-content: center;
-                overflow: hidden;
-                width: 100%;
-                height: 93px;
-                top: 15px;
-                border-radius: 8px;
+            function setupPage() {
+                // Get the client.
+                concordiumHelpers
+                    .detectConcordiumProvider()
+                    .then((c) => (client = c))
+                    .catch(alert);
             }
 
-            /* Style the links inside the navbar */
-            .navbar a {
-                color: black;
-                text-align: center;
-                padding: 35px 20px;
-                text-decoration: none;
-            }
-
-            .navbar button {
-                margin-left: auto;
-            }
-
-            .navbar div {
-                margin-right: auto;
-                padding: 35px 20px;
-            }
-
-            /* Change the color of links on hover */
-            .navbar a:hover {
-                background-color: #ddd;
-                color: black;
-            }
-        </style>
+            // Set up the page when the DOM is loaded.
+            addEventListener('DOMContentLoaded', (_) => setupPage());
+        </script>
     </head>
 
     <body>
@@ -54,7 +39,7 @@
                 <a href="/explorer">Explorer</a>
                 <a href="/support">Support</a>
                 <a href="/admin">Admin</a>
-                <button>Connect Wallet</button>
+                <button id="account" onClick="{connect()}">Connect Wallet</button>
             </div>
             <div id="root"></div>
         </div>

@@ -2,20 +2,83 @@
     justify-content: center;
     align-items: center;
 }
+
 .column {
     display: flex;
     flex-direction: column;
 }
+
 .row {
     display: flex;
     flex-direction: row;
 }
+
 .flex-1 {
     flex: 1;
 }
 
 button {
-    padding: 1em 2em 1em 2em;
+    padding: 10px 20px;
+    gap: 10px;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    background: #11212e;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+}
+
+input {
+    padding: 10px 20px;
+    gap: 10px;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid #ededed;
+    border-radius: 8px;
+    color: black;
+}
+
+.container {
+    width: 100%;
+}
+
+/* Basic styling for the navbar */
+.navbar {
+    background-color: rgba(0, 0, 0, 0.05);
+    display: flex;
+    justify-content: center;
+    overflow: hidden;
+    width: 100%;
+    height: 93px;
+    top: 15px;
+    border-radius: 8px;
+}
+
+/* Style the links inside the navbar */
+.navbar a {
+    color: black;
+    text-align: center;
+    padding: 35px 20px;
+    text-decoration: none;
+}
+
+.navbar button {
+    margin-left: auto;
+}
+
+.navbar div {
+    margin-right: auto;
+    padding: 35px 20px;
+}
+
+/* Change the color of links on hover */
+.navbar a:hover {
+    background-color: #ddd;
+    color: black;
 }
 
 html,
