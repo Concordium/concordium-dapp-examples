@@ -13,6 +13,7 @@
         "generate": "ccd-js-gen --module ../smart-contract/concordium-out/module.wasm.v1 --out-dir ./generated --output-type TypeScript --ts-nocheck"
     },
     "dependencies": {
+        "@concordium/browser-wallet-api-helpers": "^3.0.1",
         "@concordium/react-components": "^0.4.0",
         "@concordium/wallet-connectors": "^0.4.0",
         "@concordium/web-sdk": "^7.3.2",

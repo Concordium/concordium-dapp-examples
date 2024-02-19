@@ -14,7 +14,7 @@
   dependencies:
     regenerator-runtime "^0.14.0"
 
-"@concordium/browser-wallet-api-helpers@^3.0.0":
+"@concordium/browser-wallet-api-helpers@^3.0.0", "@concordium/browser-wallet-api-helpers@^3.0.1":
   version "3.0.1"
   resolved "https://registry.yarnpkg.com/@concordium/browser-wallet-api-helpers/-/browser-wallet-api-helpers-3.0.1.tgz#bca405fb7b08239420f9f2787f2791655230c669"
   integrity sha512-XracEETVCT0CPE+F8etGXeJ6Ug7d9R1g7k489hcQ3v//fNldJTb2DleV4+FspqFCjUK5bzCbwW/w2DNq5HTedg==
