@@ -1,29 +1,29 @@
 .centered {
-  justify-content: center;
-  align-items: center;
+    justify-content: center;
+    align-items: center;
 }
 .column {
-  display: flex;
-  flex-direction: column;
+    display: flex;
+    flex-direction: column;
 }
 .row {
-  display: flex;
-  flex-direction: row;
+    display: flex;
+    flex-direction: row;
 }
 .flex-1 {
-  flex: 1;
+    flex: 1;
 }
 
 button {
-  padding: 1em 2em 1em 2em;
+    padding: 1em 2em 1em 2em;
 }
 
 html,
 body,
 #root {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  width: 100%;
-  display: flex;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    display: flex;
 }

@@ -4,9 +4,9 @@
 
 Make sure to have the following installed:
 
-- [NodeJs](https://nodejs.org).
-- Rust and cargo (Recommended to install using [rustup](https://rustup.rs)).
-- Recent version of [cargo concordium](https://crates.io/crates/cargo-concordium) (Install using `cargo install --locked cargo-concordium`.
+-   [NodeJs](https://nodejs.org).
+-   Rust and cargo (Recommended to install using [rustup](https://rustup.rs)).
+-   Recent version of [cargo concordium](https://crates.io/crates/cargo-concordium) (Install using `cargo install --locked cargo-concordium`.
 
 ## Smart contracts
 
