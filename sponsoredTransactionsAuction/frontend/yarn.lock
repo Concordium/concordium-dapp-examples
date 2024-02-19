@@ -32,9 +32,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@concordium/ccd-js-gen@npm:^1.0.1":
-  version: 1.0.1
-  resolution: "@concordium/ccd-js-gen@npm:1.0.1"
+"@concordium/ccd-js-gen@npm:^1.2.0":
+  version: 1.2.0
+  resolution: "@concordium/ccd-js-gen@npm:1.2.0"
   dependencies:
     "@concordium/web-sdk": ^7.0.0
     buffer: ^6.0.3
@@ -45,7 +45,7 @@ __metadata:
     "@concordium/web-sdk": 7.x
   bin:
     ccd-js-gen: bin/ccd-js-gen.js
-  checksum: e99169d8041a92be9ebf3c6cdd29a825c42dedb0c0c4bd97cbf2d3089e6df4445e735a8b007323c0c7b03f6e25e906e27ec83380d5399146484eee8afc744557
+  checksum: e1731ded9196a20dfee2079c7e817eaa0002ed9727a814ba5619fb6d373e267884c1782ad80ade11141cbb87d459a906911071608452b590af55dfa88bb85a31
   languageName: node
   linkType: hard
 
@@ -2044,7 +2044,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "auction-sponsored-transactions@workspace:."
   dependencies:
-    "@concordium/ccd-js-gen": ^1.0.1
+    "@concordium/ccd-js-gen": ^1.2.0
     "@concordium/react-components": ^0.4.0
     "@concordium/wallet-connectors": ^0.4.0
     "@concordium/web-sdk": ^7.1.0

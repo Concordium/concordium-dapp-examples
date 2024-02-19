@@ -1,6 +1,5 @@
 // @ts-nocheck
 import * as SDK from "@concordium/web-sdk";
-
 /** The reference of the smart contract module supported by the provided client. */
 export const moduleReference: SDK.ModuleReference.Type = /*#__PURE__*/ SDK.ModuleReference.fromHexString('59166ebadaf1e4f13b4fc06727a3719b38482f57d5fbc64799eed97fd58debc5');
 
@@ -11,7 +10,7 @@ class SponsoredTxEnabledAuctionModule {
     /** Generic module client used internally. */
     public readonly internalModuleClient: SDK.ModuleClient.Type;
 
-    /** Constructor is only ment to be used internally in this module. Use functions such as `create` or `createUnchecked` for construction. */
+    /** Constructor is only meant to be used internally in this module. Use functions such as `create` or `createUnchecked` for construction. */
     constructor(internalModuleClient: SDK.ModuleClient.Type) {
         this.internalModuleClient = internalModuleClient;
     }
@@ -63,19 +62,45 @@ export function checkOnChain(moduleClient: SponsoredTxEnabledAuctionModule): Pro
 export function getModuleSource(moduleClient: SponsoredTxEnabledAuctionModule): Promise<SDK.VersionedModuleSource> {
     return SDK.ModuleClient.getModuleSource(moduleClient.internalModuleClient);
 }
-
-/** Parameter type transaction for instantiating a new 'sponsored_tx_enabled_auction' smart contract instance */
+/** Base64 encoding of the parameter schema type used when instantiating a new 'sponsored_tx_enabled_auction' smart contract instance. */
+const base64SponsoredTxEnabledAuctionParameterSchema = 'DA==';
+/** Parameter JSON type needed by the schema when instantiating a new 'sponsored_tx_enabled_auction' smart contract instance. */
+type SponsoredTxEnabledAuctionParameterSchemaJson = SDK.ContractAddress.SchemaValue;
+/** Parameter type transaction for instantiating a new 'sponsored_tx_enabled_auction' smart contract instance. */
 export type SponsoredTxEnabledAuctionParameter = SDK.ContractAddress.Type;
 
 /**
- * Construct Parameter type transaction for instantiating a new 'sponsored_tx_enabled_auction' smart contract instance.
+ * Construct schema JSON representation used in transactions for instantiating a new 'sponsored_tx_enabled_auction' smart contract instance.
+ * @param {SponsoredTxEnabledAuctionParameter} parameter The structured parameter to construct from.
+ * @returns {SponsoredTxEnabledAuctionParameterSchemaJson} The smart contract parameter JSON.
+ */
+function createSponsoredTxEnabledAuctionParameterSchemaJson(parameter: SponsoredTxEnabledAuctionParameter): SponsoredTxEnabledAuctionParameterSchemaJson {
+    const contractAddress0 = SDK.ContractAddress.toSchemaValue(parameter);
+    return contractAddress0;
+}
+
+/**
+ * Construct Parameter type used in transactions for instantiating a new 'sponsored_tx_enabled_auction' smart contract instance.
  * @param {SponsoredTxEnabledAuctionParameter} parameter The structured parameter to construct from.
  * @returns {SDK.Parameter.Type} The smart contract parameter.
  */
 export function createSponsoredTxEnabledAuctionParameter(parameter: SponsoredTxEnabledAuctionParameter): SDK.Parameter.Type {
-    const contractAddress545 = SDK.ContractAddress.toSchemaValue(parameter);
-    const out = SDK.Parameter.fromBase64SchemaType('DA==', contractAddress545);
-    return out
+    return SDK.Parameter.fromBase64SchemaType(base64SponsoredTxEnabledAuctionParameterSchema, createSponsoredTxEnabledAuctionParameterSchemaJson(parameter));
+}
+
+/**
+ * Construct WebWallet parameter type used in transactions for instantiating a new 'sponsored_tx_enabled_auction' smart contract instance.
+ * @param {SponsoredTxEnabledAuctionParameter} parameter The structured parameter to construct from.
+ * @returns The smart contract parameter support by the WebWallet.
+ */
+export function createSponsoredTxEnabledAuctionParameterWebWallet(parameter: SponsoredTxEnabledAuctionParameter) {
+    return {
+        parameters: createSponsoredTxEnabledAuctionParameterSchemaJson(parameter),
+        schema: {
+            type: 'TypeSchema' as const,
+            value: SDK.toBuffer(base64SponsoredTxEnabledAuctionParameterSchema, 'base64')
+        },
+    }
 }
 
 /**

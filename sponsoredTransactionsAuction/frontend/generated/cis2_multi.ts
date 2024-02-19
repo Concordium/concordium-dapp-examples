@@ -1,6 +1,5 @@
 // @ts-nocheck
 import * as SDK from "@concordium/web-sdk";
-
 /** The reference of the smart contract module supported by the provided client. */
 export const moduleReference: SDK.ModuleReference.Type = /*#__PURE__*/ SDK.ModuleReference.fromHexString('e95d15e62c8f9d80e08de180a3c0188d602a5f5ed58b8c34daa82131b9940c3a');
 
@@ -11,7 +10,7 @@ class Cis2MultiModule {
     /** Generic module client used internally. */
     public readonly internalModuleClient: SDK.ModuleClient.Type;
 
-    /** Constructor is only ment to be used internally in this module. Use functions such as `create` or `createUnchecked` for construction. */
+    /** Constructor is only meant to be used internally in this module. Use functions such as `create` or `createUnchecked` for construction. */
     constructor(internalModuleClient: SDK.ModuleClient.Type) {
         this.internalModuleClient = internalModuleClient;
     }
@@ -63,19 +62,45 @@ export function checkOnChain(moduleClient: Cis2MultiModule): Promise<void> {
 export function getModuleSource(moduleClient: Cis2MultiModule): Promise<SDK.VersionedModuleSource> {
     return SDK.ModuleClient.getModuleSource(moduleClient.internalModuleClient);
 }
-
-/** Parameter type transaction for instantiating a new 'cis2_multi' smart contract instance */
+/** Base64 encoding of the parameter schema type used when instantiating a new 'cis2_multi' smart contract instance. */
+const base64Cis2MultiParameterSchema = 'GyUAAAA=';
+/** Parameter JSON type needed by the schema when instantiating a new 'cis2_multi' smart contract instance. */
+type Cis2MultiParameterSchemaJson = string;
+/** Parameter type transaction for instantiating a new 'cis2_multi' smart contract instance. */
 export type Cis2MultiParameter = number | bigint;
 
 /**
- * Construct Parameter type transaction for instantiating a new 'cis2_multi' smart contract instance.
+ * Construct schema JSON representation used in transactions for instantiating a new 'cis2_multi' smart contract instance.
+ * @param {Cis2MultiParameter} parameter The structured parameter to construct from.
+ * @returns {Cis2MultiParameterSchemaJson} The smart contract parameter JSON.
+ */
+function createCis2MultiParameterSchemaJson(parameter: Cis2MultiParameter): Cis2MultiParameterSchemaJson {
+    const leb0 = BigInt(parameter).toString();
+    return leb0;
+}
+
+/**
+ * Construct Parameter type used in transactions for instantiating a new 'cis2_multi' smart contract instance.
  * @param {Cis2MultiParameter} parameter The structured parameter to construct from.
  * @returns {SDK.Parameter.Type} The smart contract parameter.
  */
 export function createCis2MultiParameter(parameter: Cis2MultiParameter): SDK.Parameter.Type {
-    const number0 = BigInt(parameter).toString();
-    const out = SDK.Parameter.fromBase64SchemaType('GyUAAAA=', number0);
-    return out
+    return SDK.Parameter.fromBase64SchemaType(base64Cis2MultiParameterSchema, createCis2MultiParameterSchemaJson(parameter));
+}
+
+/**
+ * Construct WebWallet parameter type used in transactions for instantiating a new 'cis2_multi' smart contract instance.
+ * @param {Cis2MultiParameter} parameter The structured parameter to construct from.
+ * @returns The smart contract parameter support by the WebWallet.
+ */
+export function createCis2MultiParameterWebWallet(parameter: Cis2MultiParameter) {
+    return {
+        parameters: createCis2MultiParameterSchemaJson(parameter),
+        schema: {
+            type: 'TypeSchema' as const,
+            value: SDK.toBuffer(base64Cis2MultiParameterSchema, 'base64')
+        },
+    }
 }
 
 /**
