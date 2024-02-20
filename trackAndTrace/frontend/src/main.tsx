@@ -34,17 +34,17 @@ const App = () => {
         <Router>
             <div className="navbar">
                 <div>Track And Trace</div>
-                <Link to="/admin">Admin</Link>
                 <Link to="/about">About</Link>
                 <Link to="/explorer">Explorer</Link>
                 <Link to="/support">Support</Link>
+                <Link to="/admin">Admin</Link>
                 <button id="account" onClick={connect}>
                     {accountAddress ? accountAddress : 'Connect Wallet'}
                 </button>
             </div>
 
             <Routes>
-                <Route path="/admin" element={<Admin provider={provider} />} />
+                <Route path="/admin" element={<Admin provider={provider} accountAddress={accountAddress} />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/explorer" element={<Explorer />} />
                 <Route path="/support" element={<Support />} />

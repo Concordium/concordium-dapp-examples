@@ -1,10 +1,33 @@
-import * as MyContract from '../../generated/module_track_and_trace';
-import * as SDK from '@concordium/web-sdk';
+import { createItem } from '../track_and_trace_contract';
+import * as TrackAndTraceContract from '../../generated/module_track_and_trace';
+import { AccountAddress } from '@concordium/web-sdk';
+import * as concordiumHelpers from '@concordium/browser-wallet-api-helpers';
+import { useState } from 'react';
 
-export function Admin({ provider }: any) {
-    function click() {
-        console.log('hi');
-        console.log(provider);
+interface Props {
+    provider: concordiumHelpers.WalletApi | undefined;
+    accountAddress: string | undefined;
+}
+
+export function Admin(props: Props) {
+    const { provider, accountAddress } = props;
+
+    const [txHash, setTxHash] = useState<string | undefined>(undefined);
+
+    function addItem() {
+        const parameter: TrackAndTraceContract.CreateItemParameter = {
+            type: 'Some',
+            content: {
+                url: 'https://example.com',
+                hash: { type: 'None' },
+            },
+        };
+
+        if (accountAddress && provider) {
+            createItem(provider, AccountAddress.fromBase58(accountAddress), parameter).then((txHash) => {
+                setTxHash(txHash);
+            });
+        }
     }
 
     return (
@@ -13,7 +36,8 @@ export function Admin({ provider }: any) {
             <br />
             <input type="text" placeholder="Enter metadata URL"></input>
             <br />
-            <button onClick={click}>Add product</button>
+            <button onClick={addItem}>Add product</button>
+            <div>{txHash}</div>
         </div>
     );
 }
