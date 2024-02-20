@@ -27,10 +27,8 @@ const DUMMY_SIGNATURE: SignatureEd25519 = SignatureEd25519([
 ]);
 
 struct AccountKeypairs {
-    admin:        AccountKeys,
-    producer:     AccountKeys,
-    _transporter: AccountKeys,
-    _seller:      AccountKeys,
+    admin:    AccountKeys,
+    producer: AccountKeys,
 }
 
 // 1. Test that the ADMIN can create a new item.
@@ -279,8 +277,8 @@ fn check_state(
     assert_eq!(return_value, 1);
 }
 
-/// Setup chain and contract. Returns the chain, keys of the ADMIN, and the
-/// contract address.
+/// Setup chain and contract. Returns the chain, keys of the ADMIN and PRODUCER,
+/// and the contract address.
 fn initialize_chain_and_contract() -> (Chain, AccountKeypairs, ContractAddress) {
     let mut chain = Chain::builder()
         .build()
@@ -315,10 +313,8 @@ fn initialize_chain_and_contract() -> (Chain, AccountKeypairs, ContractAddress) 
         (&seller_keys).into(),
     ));
     let account_keypairs = AccountKeypairs {
-        admin:        admin_keys,
-        producer:     producer_keys,
-        _transporter: transporter_keys,
-        _seller:      seller_keys,
+        admin:    admin_keys,
+        producer: producer_keys,
     };
 
     // Load and deploy the track_and_trace module.
@@ -479,14 +475,15 @@ fn test_permit_change_item_status() {
         )
         .expect("Should be able to create item");
 
-    // Check that the status can updated to `InStore` with a sponsored transaction.
+    // Check that the status can be updated to `InStore` with a sponsored
+    // transaction.
     let payload = ChangeItemStatusParams {
         item_id:         0u64,
         additional_data: AdditionalData { bytes: vec![] },
         new_status:      Status::InStore,
     };
 
-    let _update = permit(
+    let update = permit(
         &mut chain,
         contract_address,
         to_bytes(&payload),
@@ -495,6 +492,19 @@ fn test_permit_change_item_status() {
         account_keypairs.admin,
     )
     .expect("Should be able to update the state of the item");
+
+    // Check that the events are logged.
+    let events = update
+        .events()
+        .flat_map(|(_addr, events)| events.iter().map(|e| e.parse().expect("Deserialize event")))
+        .collect::<Vec<Event>>();
+
+    // Check that a nonce event with tag 250 is logged.
+    let nonce_event = events
+        .iter()
+        .find(|e| matches!(e, Event::Nonce(_)))
+        .expect("Should have a nonce event");
+    assert_eq!(to_bytes(nonce_event)[0], NONCE_EVENT_TAG);
 
     // Check that the status updated correctly.
     check_state(

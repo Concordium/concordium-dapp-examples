@@ -60,24 +60,30 @@ pub const ITEM_CREATED_EVENT_TAG: u8 = 0;
 pub const ITEM_STATUS_CHANGED_EVENT_TAG: u8 = 1;
 pub const GRANT_ROLE_EVENT_TAG: u8 = 2;
 pub const REVOKE_ROLE_EVENT_TAG: u8 = 3;
-pub const NONCE_EVENT_TAG: u8 = 4;
+pub const NONCE_EVENT_TAG: u8 = 250;
 
 /// Custom type for the item id.
 pub type ItemID = u64;
 
 /// Tagged events to be serialized for the event log.
 #[derive(Debug, Serial, Deserial, PartialEq, Eq, SchemaType)]
+#[concordium(repr(u8))]
 pub enum Event {
     /// The event tracks when an item is created.
+    #[concordium(tag = 0)]
     ItemCreated(ItemCreatedEvent),
     /// The event tracks when the item's status is updated.
+    #[concordium(tag = 1)]
     ItemStatusChanged(ItemStatusChangedEvent),
     /// The event tracks when a new role is granted to an address.
+    #[concordium(tag = 2)]
     GrantRole(GrantRoleEvent),
     /// The event tracks when a role is revoked from an address.
+    #[concordium(tag = 3)]
     RevokeRole(RevokeRoleEvent),
     /// The event tracks the nonce used by the signer of the `PermitMessage`
     /// whenever the `permit` function is invoked.
+    #[concordium(tag = 250)]
     Nonce(NonceEvent),
 }
 
@@ -616,7 +622,6 @@ fn change_item_status(
 
     // Update the state of the item.
     item.status = param.new_status;
-    drop(item);
 
     // Log an ItemStatusChangedEvent.
     logger.log(&Event::ItemStatusChanged(ItemStatusChangedEvent {
@@ -780,7 +785,8 @@ pub struct PermitParamPartial {
 /// - The signature is expired.
 /// - The signature can not be validated.
 /// - Fails to log event.
-/// - The receive hook function call rejects.
+/// - Signer is not an authorized role to update the item to the next state.
+/// - The item does not exist in the state.
 #[receive(
     contract = "track_and_trace",
     name = "permit",
@@ -942,4 +948,15 @@ fn contract_supports_permit(
     }
     let result = SupportsQueryResponse::from(response);
     Ok(result)
+}
+
+// Helper function that can be invoked at the front-end to serialize the
+/// PermitMessage before signing it in the wallet.
+#[receive(
+    contract = "track_and_trace",
+    name = "serializationHelper",
+    parameter = "PermitMessage"
+)]
+fn contract_serialization_helper(_ctx: &ReceiveContext, _host: &Host<State>) -> ContractResult<()> {
+    Ok(())
 }
