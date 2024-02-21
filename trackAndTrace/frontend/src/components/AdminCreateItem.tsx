@@ -17,7 +17,6 @@ export function AdminCreateItem(props: Props) {
     const [url, setUrl] = useState<string>('');
 
     function addItem() {
-
         if (url === undefined) {
             throw Error('URL undefined');
         }
