@@ -9,7 +9,8 @@ export const TxHashLink = function TxHashLink(props: TxHashLinkProps) {
     const { txHash } = props;
 
     return (
-        <div>
+        <div className="centered">
+            Txhash:{' '}
             <a
                 className="link"
                 target="_blank"

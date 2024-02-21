@@ -4,8 +4,8 @@
     "version": "1.0.0",
     "type": "module",
     "scripts": {
-        "dev": "TRACK_AND_TRACE_CONTRACT_INDEX=8085 vite",
-        "build": "tsc && TRACK_AND_TRACE_CONTRACT_INDEX=8085 vite build",
+        "dev": "TRACK_AND_TRACE_CONTRACT_INDEX=8092 vite",
+        "build": "tsc && TRACK_AND_TRACE_CONTRACT_INDEX=8092 vite build",
         "lint-check": "eslint",
         "format-check": "prettier --check .",
         "format-fix": "prettier --write .",
@@ -13,7 +13,6 @@
         "generate": "ccd-js-gen --module ../smart-contract/concordium-out/module.wasm.v1 --out-dir ./generated --output-type TypeScript --ts-nocheck"
     },
     "dependencies": {
-        "@concordium/browser-wallet-api-helpers": "^3.0.1",
         "@concordium/react-components": "^0.4.0",
         "@concordium/wallet-connectors": "^0.4.0",
         "@concordium/web-sdk": "^7.3.2",

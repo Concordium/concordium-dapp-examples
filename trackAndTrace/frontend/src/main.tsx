@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 
@@ -6,32 +6,29 @@ import { About } from './components/About';
 import { Explorer } from './components/Explorer';
 import { Support } from './components/Support';
 import './styles.scss';
-import {} from '@concordium/web-sdk';
-import * as concordiumHelpers from '@concordium/browser-wallet-api-helpers';
+import {
+    WithWalletConnector,
+    WalletConnectionProps,
+    useConnection,
+    useConnect,
+    TESTNET,
+} from '@concordium/react-components';
+
 import { AdminCreateItem } from './components/AdminCreateItem';
 import { AdminChangeRoles } from './components/AdminChangeRoles';
 import { ChangeItemStatus } from './components/ChangeItemStatus';
 import { Button } from 'react-bootstrap';
+import { BROWSER_WALLET } from '../constants';
 
-const App = () => {
-    const [provider, setProvider] = useState<concordiumHelpers.WalletApi>();
-    const [accountAddress, setAccountAddress] = useState<string | undefined>(undefined);
+const App = (props: WalletConnectionProps) => {
+    const { setActiveConnectorType, activeConnector, connectedAccounts, genesisHashes } = props;
 
-    async function connect() {
-        if (provider) {
-            provider.connect().then((address) => {
-                console.log(address);
-                setAccountAddress(address);
-            });
-        }
-    }
+    const { connection, setConnection, account } = useConnection(connectedAccounts, genesisHashes);
+    const { connect } = useConnect(activeConnector, setConnection);
 
     useEffect(() => {
-        concordiumHelpers
-            .detectConcordiumProvider()
-            .then((c) => setProvider(c))
-            .catch(alert);
-    }, []);
+        setActiveConnectorType(BROWSER_WALLET);
+    }, [setActiveConnectorType]);
 
     return (
         <Router>
@@ -40,11 +37,11 @@ const App = () => {
                 <Link to="/about">About</Link>
                 <Link to="/explorer">Explorer</Link>
                 <Link to="/support">Support</Link>
-                <Link to="/adminCreateItem">AdminCreateItem</Link>
-                <Link to="/adminChangeRoles">AdminChangeRoles</Link>
-                <Link to="/changeItemStatus">ChangeItemStatus</Link>
+                <Link to="/adminCreateItem">Admin1</Link>
+                <Link to="/adminChangeRoles">Admin2</Link>
+                <Link to="/changeItemStatus">Admin3</Link>
                 <Button variant="primary" id="account" onClick={connect}>
-                    {accountAddress ? accountAddress : 'Connect Wallet'}
+                    {account ? account.slice(0, 5) + '...' + account.slice(-5) : 'Connect Wallet'}
                 </Button>
             </div>
 
@@ -54,15 +51,15 @@ const App = () => {
                 <Route path="/support" element={<Support />} />
                 <Route
                     path="/adminCreateItem"
-                    element={<AdminCreateItem provider={provider} accountAddress={accountAddress} />}
+                    element={<AdminCreateItem connection={connection} accountAddress={account} />}
                 />
                 <Route
                     path="/adminChangeRoles"
-                    element={<AdminChangeRoles provider={provider} accountAddress={accountAddress} />}
+                    element={<AdminChangeRoles connection={connection} accountAddress={account} />}
                 />
                 <Route
                     path="/changeItemStatus"
-                    element={<ChangeItemStatus provider={provider} accountAddress={accountAddress} />}
+                    element={<ChangeItemStatus connection={connection} accountAddress={account} />}
                 />
                 <Route path="/" element={<div></div>} />
             </Routes>
@@ -72,6 +69,6 @@ const App = () => {
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
-        <App />
+        <WithWalletConnector network={TESTNET}>{(props) => <App {...props} />}</WithWalletConnector>
     </React.StrictMode>
 );

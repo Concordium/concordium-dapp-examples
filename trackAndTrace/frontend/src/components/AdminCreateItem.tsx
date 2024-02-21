@@ -1,17 +1,17 @@
 import { createItem } from '../track_and_trace_contract';
 import * as TrackAndTraceContract from '../../generated/module_track_and_trace';
 import { AccountAddress } from '@concordium/web-sdk';
-import * as concordiumHelpers from '@concordium/browser-wallet-api-helpers';
 import { useState } from 'react';
 import { Button } from 'react-bootstrap';
+import { WalletConnection } from '@concordium/wallet-connectors';
 
 interface Props {
-    provider: concordiumHelpers.WalletApi | undefined;
+    connection: WalletConnection | undefined;
     accountAddress: string | undefined;
 }
 
 export function AdminCreateItem(props: Props) {
-    const { provider, accountAddress } = props;
+    const { connection, accountAddress } = props;
 
     const [txHash, setTxHash] = useState<string | undefined>(undefined);
     const [url, setUrl] = useState<string>('');
@@ -28,8 +28,8 @@ export function AdminCreateItem(props: Props) {
             },
         };
 
-        if (accountAddress && provider) {
-            createItem(provider, AccountAddress.fromBase58(accountAddress), parameter).then((txHash) => {
+        if (accountAddress && connection) {
+            createItem(connection, AccountAddress.fromBase58(accountAddress), parameter).then((txHash) => {
                 setTxHash(txHash);
             });
         }
