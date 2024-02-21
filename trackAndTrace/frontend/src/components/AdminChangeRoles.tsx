@@ -1,16 +1,16 @@
 import { addRole, removeRole } from '../track_and_trace_contract';
 import * as TrackAndTraceContract from '../../generated/module_track_and_trace';
 import { AccountAddress } from '@concordium/web-sdk';
-import * as concordiumHelpers from '@concordium/browser-wallet-api-helpers';
 import { useState } from 'react';
 import Switch from 'react-switch';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Alert, Button, Form } from 'react-bootstrap';
 import Select from 'react-select';
 import { TxHashLink } from './CCDScanLinks';
+import { WalletConnection } from '@concordium/wallet-connectors';
 
 interface Props {
-    provider: concordiumHelpers.WalletApi | undefined;
+    connection: WalletConnection | undefined;
     accountAddress: string | undefined;
 }
 
@@ -22,7 +22,7 @@ const ROLE_OPTIONS = [
 ];
 
 export function AdminChangeRoles(props: Props) {
-    const { provider, accountAddress } = props;
+    const { connection, accountAddress } = props;
 
     type FormType = {
         address: string | undefined;
@@ -54,8 +54,8 @@ export function AdminChangeRoles(props: Props) {
             };
 
             // Send transaction
-            if (accountAddress && provider) {
-                addRole(provider, AccountAddress.fromBase58(accountAddress), parameter).then((txHash: string) => {
+            if (accountAddress && connection) {
+                addRole(connection, AccountAddress.fromBase58(accountAddress), parameter).then((txHash: string) => {
                     setTxHash(txHash);
                 });
             }
@@ -66,8 +66,8 @@ export function AdminChangeRoles(props: Props) {
             };
 
             // Send transaction
-            if (accountAddress && provider) {
-                removeRole(provider, AccountAddress.fromBase58(accountAddress), parameter).then((txHash: string) => {
+            if (accountAddress && connection) {
+                removeRole(connection, AccountAddress.fromBase58(accountAddress), parameter).then((txHash: string) => {
                     setTxHash(txHash);
                 });
             }
@@ -96,7 +96,7 @@ export function AdminChangeRoles(props: Props) {
                                 />
                             )}
                         />
-                        Remove role
+                        Remove old role
                     </Form.Group>
 
                     <Form.Group className="col mb-3">
@@ -104,20 +104,14 @@ export function AdminChangeRoles(props: Props) {
                         <Controller
                             name="role"
                             control={control}
-                            render={({}) => (
-                                <Controller
-                                    render={({ field: { onChange } }) => (
-                                        <Select
-                                            getOptionValue={(option) => option.value}
-                                            options={ROLE_OPTIONS}
-                                            onChange={(e) => {
-                                                onChange(e?.value);
-                                            }}
-                                        />
-                                    )}
-                                    name="role"
-                                    control={control}
-                                    defaultValue={'Admin'}
+                            defaultValue={'Admin'}
+                            render={({ field: { onChange } }) => (
+                                <Select
+                                    getOptionValue={(option) => option.value}
+                                    options={ROLE_OPTIONS}
+                                    onChange={(e) => {
+                                        onChange(e?.value);
+                                    }}
                                 />
                             )}
                         />
@@ -139,7 +133,11 @@ export function AdminChangeRoles(props: Props) {
                     </Button>
                 </Form>
 
-                {txHash && <TxHashLink txHash={txHash} />}
+                {txHash && (
+                    <Alert key="info" variant="info">
+                        <TxHashLink txHash={txHash} />
+                    </Alert>
+                )}
             </div>
         </div>
     );

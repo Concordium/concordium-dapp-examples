@@ -12,10 +12,10 @@ import {
     ConcordiumGRPCWebClient,
     ContractInvokeMetadata,
 } from '@concordium/web-sdk';
-import { BASE64_CONTRACT_SCHEMA, CONTRACT_SUB_INDEX, EPSILON_ENERGY, NODE, PORT } from '../constants';
-import * as concordiumHelpers from '@concordium/browser-wallet-api-helpers';
+import { CONTRACT_SUB_INDEX, EPSILON_ENERGY, NODE, PORT } from '../constants';
 
 import JSONbig from 'json-bigint';
+import { WalletConnection } from '@concordium/wallet-connectors';
 
 const grpc = new ConcordiumGRPCWebClient(NODE, PORT);
 
@@ -36,7 +36,7 @@ export const CONTRACT = contract;
  * @returns A promise resolving with the corresponding {@linkcode string}
  */
 export async function createItem(
-    provider: concordiumHelpers.WalletApi,
+    connection: WalletConnection,
     accountAddress: AccountAddress.Type,
     createItemParameter: TrackAndTraceContract.CreateItemParameter
 ): Promise<string> {
@@ -54,7 +54,7 @@ export async function createItem(
         const parsedErrorCode = TrackAndTraceContract.parseErrorMessageCreateItem(dryRunResult)?.type;
 
         throw new Error(
-            `RPC call 'invokeContract' on method '${TrackAndTraceContract.contractName}.createItem' of contract '${
+            `RPC call 'invokeContract' on method '${TrackAndTraceContract.contractName.value}.createItem' of contract '${
                 process.env.TRACK_AND_TRACE_CONTRACT_INDEX
             }' failed. Decoded error code: ${JSONbig.stringify(
                 parsedErrorCode
@@ -71,32 +71,14 @@ export async function createItem(
         maxContractExecutionEnergy,
     };
 
-    // TODO: use webWalletParameter instead
-    // let webWalletParameter = TrackAndTraceContract.createCreateItemParameterWebWallet(addItemParameter);
-    if (createItemParameter.type == 'Some') {
-        createItemParameter.content.url;
+    let webWalletParameter = TrackAndTraceContract.createCreateItemParameterWebWallet(createItemParameter);
 
-        const params = {
-            Some: [
-                {
-                    hash: {
-                        None: [],
-                    },
-                    url: createItemParameter.content.url,
-                },
-            ],
-        };
-
-        return provider.sendTransaction(
-            accountAddress,
-            AccountTransactionType.Update,
-            payload,
-            params,
-            BASE64_CONTRACT_SCHEMA
-        );
-    } else {
-        throw Error('Should have `Some` as createItemParameter');
-    }
+    return connection.signAndSendTransaction(
+        accountAddress.address,
+        AccountTransactionType.Update,
+        payload,
+        webWalletParameter
+    );
 }
 
 /**
@@ -109,7 +91,7 @@ export async function createItem(
  * @returns A promise resolving with the corresponding {@linkcode string}
  */
 export async function removeRole(
-    provider: concordiumHelpers.WalletApi,
+    connection: WalletConnection,
     accountAddress: AccountAddress.Type,
     revokeRoleParameter: TrackAndTraceContract.RevokeRoleParameter
 ): Promise<string> {
@@ -127,7 +109,7 @@ export async function removeRole(
         const parsedErrorCode = TrackAndTraceContract.parseErrorMessageCreateItem(dryRunResult)?.type;
 
         throw new Error(
-            `RPC call 'invokeContract' on method '${TrackAndTraceContract.contractName}.revokeRole' of contract '${
+            `RPC call 'invokeContract' on method '${TrackAndTraceContract.contractName.value}.revokeRole' of contract '${
                 process.env.TRACK_AND_TRACE_CONTRACT_INDEX
             }' failed. Decoded error code: ${JSONbig.stringify(
                 parsedErrorCode
@@ -144,28 +126,14 @@ export async function removeRole(
         maxContractExecutionEnergy,
     };
 
-    // TODO: use webWalletParameter instead
-    // let webWalletParameter = TrackAndTraceContract.createCreateItemParameterWebWallet(addItemParameter);
-    if (revokeRoleParameter.address.type == 'Account' && revokeRoleParameter.role.type == 'Admin') {
-        const params = {
-            address: {
-                Account: [revokeRoleParameter.address.content.address],
-            },
-            role: {
-                Admin: [],
-            },
-        };
+    let webWalletParameter = TrackAndTraceContract.createRevokeRoleParameterWebWallet(revokeRoleParameter);
 
-        return provider.sendTransaction(
-            accountAddress,
-            AccountTransactionType.Update,
-            payload,
-            params,
-            BASE64_CONTRACT_SCHEMA
-        );
-    } else {
-        throw Error('TODO needs to be fixed');
-    }
+    return connection.signAndSendTransaction(
+        accountAddress.address,
+        AccountTransactionType.Update,
+        payload,
+        webWalletParameter
+    );
 }
 
 /**
@@ -178,7 +146,7 @@ export async function removeRole(
  * @returns A promise resolving with the corresponding {@linkcode string}
  */
 export async function addRole(
-    provider: concordiumHelpers.WalletApi,
+    connection: WalletConnection,
     accountAddress: AccountAddress.Type,
     grantRoleParameter: TrackAndTraceContract.GrantRoleParameter
 ): Promise<string> {
@@ -196,7 +164,7 @@ export async function addRole(
         const parsedErrorCode = TrackAndTraceContract.parseErrorMessageCreateItem(dryRunResult)?.type;
 
         throw new Error(
-            `RPC call 'invokeContract' on method '${TrackAndTraceContract.contractName}.grantRole' of contract '${
+            `RPC call 'invokeContract' on method '${TrackAndTraceContract.contractName.value}.grantRole' of contract '${
                 process.env.TRACK_AND_TRACE_CONTRACT_INDEX
             }' failed. Decoded error code: ${JSONbig.stringify(
                 parsedErrorCode
@@ -213,26 +181,12 @@ export async function addRole(
         maxContractExecutionEnergy,
     };
 
-    // TODO: use webWalletParameter instead
-    // let webWalletParameter = TrackAndTraceContract.createCreateItemParameterWebWallet(addItemParameter);
-    if (grantRoleParameter.address.type == 'Account' && grantRoleParameter.role.type == 'Admin') {
-        const params = {
-            address: {
-                Account: [grantRoleParameter.address.content.address],
-            },
-            role: {
-                Admin: [],
-            },
-        };
+    let webWalletParameter = TrackAndTraceContract.createGrantRoleParameterWebWallet(grantRoleParameter);
 
-        return provider.sendTransaction(
-            accountAddress,
-            AccountTransactionType.Update,
-            payload,
-            params,
-            BASE64_CONTRACT_SCHEMA
-        );
-    } else {
-        throw Error('TODO needs to be fixed');
-    }
+    return connection.signAndSendTransaction(
+        accountAddress.address,
+        AccountTransactionType.Update,
+        payload,
+        webWalletParameter
+    );
 }
