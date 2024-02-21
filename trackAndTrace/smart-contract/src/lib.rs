@@ -67,7 +67,8 @@ pub type ItemID = u64;
 
 /// Tagged events to be serialized for the event log.
 #[derive(Debug, Serial, Deserial, PartialEq, Eq, SchemaType, Clone)]
-#[concordium(repr(u8))]pub enum Event {
+#[concordium(repr(u8))]
+pub enum Event {
     /// The event tracks when an item is created.
     #[concordium(tag = 0)]
     ItemCreated(ItemCreatedEvent),
@@ -128,7 +129,7 @@ pub struct RevokeRoleEvent {
 
 /// The NonceEvent is logged when the `permit` function is invoked. The event
 /// tracks the nonce used by the signer of the `PermitMessage`.
-#[derive(Debug, Serialize, SchemaType, PartialEq, Eq)]
+#[derive(Debug, Serialize, SchemaType, PartialEq, Eq, Clone)]
 pub struct NonceEvent {
     /// Account that signed the `PermitMessage`.
     pub account: AccountAddress,
