@@ -25,7 +25,7 @@ Create the `indexer` database:
 CREATE DATABASE indexer;
 ```
 
-Alternatively, you can run the Postgres database in a docker container:
+Alternatively, you can run the Postgres database in a docker container. The command below will create an indexer db automatically:
 ```
 docker run -p 5432:5432 -e POSTGRES_PASSWORD=password -e POSTGRES_DB="indexer" --rm postgres
 ```

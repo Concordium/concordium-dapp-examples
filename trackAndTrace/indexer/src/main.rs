@@ -63,8 +63,6 @@ struct Args {
 /// A handler for storing monitored events in the database. This implements
 /// the `indexer::ProcessEvent` trait to store events in the database.
 struct StoreEvents {
-    /// An active database connection to the postgres database.
-    db:      Database,
     /// A database pool used for reconnects.
     db_pool: DatabasePool,
 }
@@ -85,10 +83,11 @@ impl indexer::ProcessEvent for StoreEvents {
         &mut self,
         (block_info, contract_update_info): &Self::Data,
     ) -> Result<Self::Description, Self::Error> {
-        //  It is typically easiest to reason about a database if blocks are inserted
+        let mut conn = self.db_pool.get().await?;
+
+        // It is typically easiest to reason about a database if blocks are inserted
         // in a single database transaction. So we do that here.
-        let db_transaction = self
-            .db
+        let db_transaction = conn
             .client
             .transaction()
             .await
@@ -144,9 +143,8 @@ impl indexer::ProcessEvent for StoreEvents {
                             .context("Failed to execute item_status_change_event transaction")?;
 
                         tracing::debug!(
-                            target:"ccd_event_processor",
-                            "Preparing item_status_change_event from block {}, transaction \
-                             hash {}, and event index {}.",
+                            "Preparing item_status_change_event from block {}, transaction hash \
+                             {}, and event index {}.",
                             block_info.block_height,
                             single_contract_update_info.0.transaction_hash,
                             event_index
@@ -176,9 +174,8 @@ impl indexer::ProcessEvent for StoreEvents {
                             .context("Failed to execute item_created_event transaction")?;
 
                         tracing::debug!(
-                            target:"ccd_event_processor",
-                            "Preparing event from block {}, transaction hash {}, and event \
-                             index {}.",
+                            "Preparing event from block {}, transaction hash {}, and event index \
+                             {}.",
                             block_info.block_height,
                             single_contract_update_info.0.transaction_hash,
                             event_index
@@ -206,25 +203,9 @@ impl indexer::ProcessEvent for StoreEvents {
         error: Self::Error,
         _failed_attempts: u32,
     ) -> Result<bool, Self::Error> {
-        tracing::error!(
-            target:"ccd_event_processor",
-            "Encountered error {error}");
+        tracing::error!("Encountered error {error}");
 
-        // Get new database connection from the pool
-        match self
-            .db_pool
-            .get()
-            .await
-            .context("Failed to get new database connection from pool")
-        {
-            Ok(_) => Ok(true),
-            Err(e) => {
-                tracing::error!(
-                    target:"ccd_event_processor",
-                    "Encountered error trying to re-connect to database pool: {e}");
-                Ok(false)
-            }
-        }
+        Ok(true)
     }
 }
 
@@ -268,7 +249,7 @@ async fn main() -> anyhow::Result<()> {
     let consensus_info = client.get_consensus_info().await?;
 
     // Establish connection to the postgres database.
-    let db_pool = DatabasePool::create(app.db_connection.clone(), 1, true)
+    let db_pool = DatabasePool::create(app.db_connection.clone(), 2, true)
         .await
         .context("Could not create database pool")?;
     let db = db_pool
@@ -326,12 +307,11 @@ async fn main() -> anyhow::Result<()> {
         }
     };
 
-    handle_indexing(db, endpoint, start_block, app.contract_address, db_pool).await
+    handle_indexing(endpoint, start_block, app.contract_address, db_pool).await
 }
 
 /// Handle indexing events.
 async fn handle_indexing(
-    db: Database,
     endpoint: sdk::Endpoint,
     start: AbsoluteBlockHeight,
     contract_address: ContractAddress,
@@ -343,7 +323,7 @@ async fn handle_indexing(
 
     let traverse_config = indexer::TraverseConfig::new_single(endpoint, start);
 
-    let events = StoreEvents { db_pool, db };
+    let events = StoreEvents { db_pool };
 
     // The program terminates only
     // when the processor terminates, which in this example can only happen if

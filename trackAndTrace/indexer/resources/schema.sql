@@ -3,15 +3,15 @@ CREATE TABLE IF NOT EXISTS settings (
   -- Primary key.
   id BOOL PRIMARY KEY DEFAULT true CHECK (id), -- To constrain table to have a single row.
   -- Contract index. This will be set the frist time the indexer is started. 
-  -- Re-starting the indexer will check if its settings are compatible will 
+  -- Re-starting the indexer will check if its settings are compatible with 
   -- the stored indexer setting to prevent corrupting the database.
   contract_index INT8 NOT NULL,
   -- Contract subindex. This will be set the frist time the indexer is started. 
-  -- Re-starting the indexer will check if its settings are compatible will 
+  -- Re-starting the indexer will check if its settings are compatible with 
   -- the stored indexer setting to prevent corrupting the database.
   contract_subindex INT8 NOT NULL,
   -- The genesis block hash as querried from the node. This will be set the frist time the indexer is started. 
-  -- Re-starting the indexer will check if its settings are compatible will 
+  -- Re-starting the indexer will check if its settings are compatible with 
   -- the stored indexer setting to prevent corrupting the database.
   genesis_block_hash BYTEA NOT NULL,
     -- The last block height that was processed.
