@@ -1,4 +1,4 @@
-import { createItem } from '../track_and_trace_contract';
+import { addRole, removeRole } from '../track_and_trace_contract';
 import * as TrackAndTraceContract from '../../generated/module_track_and_trace';
 import { AccountAddress } from '@concordium/web-sdk';
 import * as concordiumHelpers from '@concordium/browser-wallet-api-helpers';
@@ -6,18 +6,27 @@ import { useState } from 'react';
 import Switch from 'react-switch';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Alert, Button, Form } from 'react-bootstrap';
+import Select from 'react-select';
+import { TxHashLink } from './CCDScanLinks';
 
 interface Props {
     provider: concordiumHelpers.WalletApi | undefined;
     accountAddress: string | undefined;
 }
 
+const ROLE_OPTIONS = [
+    { label: 'Admin', value: 'Admin' },
+    { label: 'Producer', value: 'Producer' },
+    { label: 'Transporter', value: 'Transporter' },
+    { label: 'Seller', value: 'Seller' },
+];
+
 export function AdminChangeRoles(props: Props) {
     const { provider, accountAddress } = props;
 
     type FormType = {
         address: string | undefined;
-        role: string | undefined;
+        role: 'Admin' | 'Producer' | 'Transporter' | 'Seller' | undefined;
         toggle: boolean;
     };
     const { control, register, formState, handleSubmit, setValue } = useForm<FormType>({ mode: 'all' });
@@ -38,20 +47,30 @@ export function AdminChangeRoles(props: Props) {
             throw Error(`'role' undefined`);
         }
 
-        // const parameter: TrackAndTraceContract.CreateItemParameter = {
-        //     type: 'Some',
-        //     content: {
-        //         url,
-        //         hash: { type: 'None' },
-        //     },
-        // };
+        if (toggle) {
+            const parameter: TrackAndTraceContract.GrantRoleParameter = {
+                address: { type: 'Account', content: AccountAddress.fromBase58(address) },
+                role: { type: role },
+            };
 
-        // Send transaction
-        if (accountAddress && provider) {
-            // const tx = deploy(connection, AccountAddress.fromBase58(account), base64Module);
-            // tx.then((txHash) => {
-            //     setTxHashDeploy(txHash);
-            // }).catch((err: Error) => setTransactionErrorDeploy((err as Error).message));
+            // Send transaction
+            if (accountAddress && provider) {
+                addRole(provider, AccountAddress.fromBase58(accountAddress), parameter).then((txHash: string) => {
+                    setTxHash(txHash);
+                });
+            }
+        } else {
+            const parameter: TrackAndTraceContract.RevokeRoleParameter = {
+                address: { type: 'Account', content: AccountAddress.fromBase58(address) },
+                role: { type: role },
+            };
+
+            // Send transaction
+            if (accountAddress && provider) {
+                removeRole(provider, AccountAddress.fromBase58(accountAddress), parameter).then((txHash: string) => {
+                    setTxHash(txHash);
+                });
+            }
         }
     }
 
@@ -70,6 +89,7 @@ export function AdminChangeRoles(props: Props) {
                                     onChange={() => {
                                         setValue('toggle', !toggle);
                                     }}
+                                    onColor="#808080"
                                     checked={!toggle}
                                     checkedIcon={false}
                                     uncheckedIcon={false}
@@ -78,6 +98,31 @@ export function AdminChangeRoles(props: Props) {
                         />
                         Remove role
                     </Form.Group>
+
+                    <Form.Group className="col mb-3">
+                        <Form.Label>Role</Form.Label>
+                        <Controller
+                            name="role"
+                            control={control}
+                            render={({}) => (
+                                <Controller
+                                    render={({ field: { onChange } }) => (
+                                        <Select
+                                            getOptionValue={(option) => option.value}
+                                            options={ROLE_OPTIONS}
+                                            onChange={(e) => {
+                                                onChange(e?.value);
+                                            }}
+                                        />
+                                    )}
+                                    name="role"
+                                    control={control}
+                                    defaultValue={'Admin'}
+                                />
+                            )}
+                        />
+                    </Form.Group>
+
                     <Form.Group className="col mb-3">
                         <Form.Label>Address</Form.Label>
                         <Form.Control {...register('address', { required: true })} />
@@ -89,23 +134,12 @@ export function AdminChangeRoles(props: Props) {
                         )}
                         <Form.Text />
                     </Form.Group>
-                    <Form.Group className="col mb-3">
-                        <Form.Label>Role</Form.Label>
-                        <Form.Control {...register('role', { required: true })} />
-                        {formState.errors.role && (
-                            <Alert key="info" variant="info">
-                                {' '}
-                                Role is required{' '}
-                            </Alert>
-                        )}
-                        <Form.Text />
-                    </Form.Group>
                     <Button variant="secondary" type="submit">
                         {toggle ? 'Add new role' : 'Remove role'}
                     </Button>
                 </Form>
 
-                <div>{txHash}</div>
+                {txHash && <TxHashLink txHash={txHash} />}
             </div>
         </div>
     );

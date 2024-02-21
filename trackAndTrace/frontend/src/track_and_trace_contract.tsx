@@ -54,7 +54,7 @@ export async function createItem(
         const parsedErrorCode = TrackAndTraceContract.parseErrorMessageCreateItem(dryRunResult)?.type;
 
         throw new Error(
-            `RPC call 'invokeContract' on method '${TrackAndTraceContract.contractName}.addItem' of contract '${
+            `RPC call 'invokeContract' on method '${TrackAndTraceContract.contractName}.createItem' of contract '${
                 process.env.TRACK_AND_TRACE_CONTRACT_INDEX
             }' failed. Decoded error code: ${JSONbig.stringify(
                 parsedErrorCode
@@ -88,7 +88,7 @@ export async function createItem(
         };
 
         return provider.sendTransaction(
-            AccountAddress.toBase58(accountAddress),
+            accountAddress,
             AccountTransactionType.Update,
             payload,
             params,
@@ -96,5 +96,143 @@ export async function createItem(
         );
     } else {
         throw Error('Should have `Some` as createItemParameter');
+    }
+}
+
+/**
+ * This function submits a transaction to create an item in the track and trace contract.
+ *
+ * @param provider - The wallet provider to use for sending the transaction.
+ * @param accountAddress - The account address to send from.
+ * @param createItemParameter - The parameter for the createItem function.
+ * @throws If simulating the contract update fails.
+ * @returns A promise resolving with the corresponding {@linkcode string}
+ */
+export async function removeRole(
+    provider: concordiumHelpers.WalletApi,
+    accountAddress: AccountAddress.Type,
+    revokeRoleParameter: TrackAndTraceContract.RevokeRoleParameter
+): Promise<string> {
+    let contractInvokeMetadata: ContractInvokeMetadata = {
+        invoker: accountAddress,
+    };
+
+    const dryRunResult = await TrackAndTraceContract.dryRunRevokeRole(
+        contract,
+        revokeRoleParameter,
+        contractInvokeMetadata
+    );
+
+    if (!dryRunResult || dryRunResult.tag === 'failure' || !dryRunResult.returnValue) {
+        const parsedErrorCode = TrackAndTraceContract.parseErrorMessageCreateItem(dryRunResult)?.type;
+
+        throw new Error(
+            `RPC call 'invokeContract' on method '${TrackAndTraceContract.contractName}.revokeRole' of contract '${
+                process.env.TRACK_AND_TRACE_CONTRACT_INDEX
+            }' failed. Decoded error code: ${JSONbig.stringify(
+                parsedErrorCode
+            )}. Original response: ${JSONbig.stringify(dryRunResult)}`
+        );
+    }
+
+    const maxContractExecutionEnergy = Energy.create(dryRunResult.usedEnergy.value + EPSILON_ENERGY);
+
+    const payload: Omit<UpdateContractPayload, 'message'> = {
+        amount: CcdAmount.zero(),
+        address: contract.contractAddress,
+        receiveName: ReceiveName.create(TrackAndTraceContract.contractName, EntrypointName.fromString('revokeRole')),
+        maxContractExecutionEnergy,
+    };
+
+    // TODO: use webWalletParameter instead
+    // let webWalletParameter = TrackAndTraceContract.createCreateItemParameterWebWallet(addItemParameter);
+    if (revokeRoleParameter.address.type == 'Account' && revokeRoleParameter.role.type == 'Admin') {
+        const params = {
+            address: {
+                Account: [revokeRoleParameter.address.content.address],
+            },
+            role: {
+                Admin: [],
+            },
+        };
+
+        return provider.sendTransaction(
+            accountAddress,
+            AccountTransactionType.Update,
+            payload,
+            params,
+            BASE64_CONTRACT_SCHEMA
+        );
+    } else {
+        throw Error('TODO needs to be fixed');
+    }
+}
+
+/**
+ * This function submits a transaction to create an item in the track and trace contract.
+ *
+ * @param provider - The wallet provider to use for sending the transaction.
+ * @param accountAddress - The account address to send from.
+ * @param createItemParameter - The parameter for the createItem function.
+ * @throws If simulating the contract update fails.
+ * @returns A promise resolving with the corresponding {@linkcode string}
+ */
+export async function addRole(
+    provider: concordiumHelpers.WalletApi,
+    accountAddress: AccountAddress.Type,
+    grantRoleParameter: TrackAndTraceContract.GrantRoleParameter
+): Promise<string> {
+    let contractInvokeMetadata: ContractInvokeMetadata = {
+        invoker: accountAddress,
+    };
+
+    const dryRunResult = await TrackAndTraceContract.dryRunGrantRole(
+        contract,
+        grantRoleParameter,
+        contractInvokeMetadata
+    );
+
+    if (!dryRunResult || dryRunResult.tag === 'failure' || !dryRunResult.returnValue) {
+        const parsedErrorCode = TrackAndTraceContract.parseErrorMessageCreateItem(dryRunResult)?.type;
+
+        throw new Error(
+            `RPC call 'invokeContract' on method '${TrackAndTraceContract.contractName}.grantRole' of contract '${
+                process.env.TRACK_AND_TRACE_CONTRACT_INDEX
+            }' failed. Decoded error code: ${JSONbig.stringify(
+                parsedErrorCode
+            )}. Original response: ${JSONbig.stringify(dryRunResult)}`
+        );
+    }
+
+    const maxContractExecutionEnergy = Energy.create(dryRunResult.usedEnergy.value + EPSILON_ENERGY);
+
+    const payload: Omit<UpdateContractPayload, 'message'> = {
+        amount: CcdAmount.zero(),
+        address: contract.contractAddress,
+        receiveName: ReceiveName.create(TrackAndTraceContract.contractName, EntrypointName.fromString('grantRole')),
+        maxContractExecutionEnergy,
+    };
+
+    // TODO: use webWalletParameter instead
+    // let webWalletParameter = TrackAndTraceContract.createCreateItemParameterWebWallet(addItemParameter);
+    if (grantRoleParameter.address.type == 'Account' && grantRoleParameter.role.type == 'Admin') {
+        const params = {
+            address: {
+                Account: [grantRoleParameter.address.content.address],
+            },
+            role: {
+                Admin: [],
+            },
+        };
+
+        return provider.sendTransaction(
+            accountAddress,
+            AccountTransactionType.Update,
+            payload,
+            params,
+            BASE64_CONTRACT_SCHEMA
+        );
+    } else {
+        throw Error('TODO needs to be fixed');
     }
 }
