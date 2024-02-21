@@ -3,22 +3,28 @@ import * as TrackAndTraceContract from '../../generated/module_track_and_trace';
 import { AccountAddress } from '@concordium/web-sdk';
 import * as concordiumHelpers from '@concordium/browser-wallet-api-helpers';
 import { useState } from 'react';
+import { Button } from 'react-bootstrap';
 
 interface Props {
     provider: concordiumHelpers.WalletApi | undefined;
     accountAddress: string | undefined;
 }
 
-export function Admin(props: Props) {
+export function AdminCreateItem(props: Props) {
     const { provider, accountAddress } = props;
 
     const [txHash, setTxHash] = useState<string | undefined>(undefined);
+    const [url, setUrl] = useState<string>('');
 
     function addItem() {
+
+        if (url === undefined) {
+            throw Error('URL undefined');
+        }
         const parameter: TrackAndTraceContract.CreateItemParameter = {
             type: 'Some',
             content: {
-                url: 'https://example.com',
+                url,
                 hash: { type: 'None' },
             },
         };
@@ -34,9 +40,16 @@ export function Admin(props: Props) {
         <div className="centered column flex-1">
             <br />
             <br />
-            <input type="text" placeholder="Enter metadata URL"></input>
+            <input
+                type="text"
+                onChange={(event) => setUrl(event.target.value)}
+                value={url}
+                placeholder="Enter metadata URL"
+            ></input>
             <br />
-            <button onClick={addItem}>Add product</button>
+            <Button variant="primary" onClick={addItem}>
+                Add product
+            </Button>
             <div>{txHash}</div>
         </div>
     );

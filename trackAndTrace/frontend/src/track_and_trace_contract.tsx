@@ -73,22 +73,28 @@ export async function createItem(
 
     // TODO: use webWalletParameter instead
     // let webWalletParameter = TrackAndTraceContract.createCreateItemParameterWebWallet(addItemParameter);
-    const params = {
-        Some: [
-            {
-                hash: {
-                    None: [],
-                },
-                url: 'http://',
-            },
-        ],
-    };
+    if (createItemParameter.type == 'Some') {
+        createItemParameter.content.url;
 
-    return provider.sendTransaction(
-        AccountAddress.toBase58(accountAddress),
-        AccountTransactionType.Update,
-        payload,
-        params,
-        BASE64_CONTRACT_SCHEMA
-    );
+        const params = {
+            Some: [
+                {
+                    hash: {
+                        None: [],
+                    },
+                    url: createItemParameter.content.url,
+                },
+            ],
+        };
+
+        return provider.sendTransaction(
+            AccountAddress.toBase58(accountAddress),
+            AccountTransactionType.Update,
+            payload,
+            params,
+            BASE64_CONTRACT_SCHEMA
+        );
+    } else {
+        throw Error('Should have `Some` as createItemParameter');
+    }
 }
