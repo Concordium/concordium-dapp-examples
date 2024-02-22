@@ -54,21 +54,16 @@ export function AdminCreateItem(props: Props) {
                     <Form.Group className="col mb-3">
                         <Form.Label>Url</Form.Label>
                         <Form.Control {...register('url', { required: true })} placeholder="Enter metadata URL" />
-                        {formState.errors.url && (
-                            <Alert key="info" variant="info">
-                                {' '}
-                                Url is required{' '}
-                            </Alert>
-                        )}
+                        {formState.errors.url && <Alert variant="info"> Url is required </Alert>}
                         <Form.Text />
                     </Form.Group>
                     <Button variant="secondary" type="submit">
-                        Add new product
+                        Add New Product
                     </Button>
                 </Form>
 
                 {txHash && (
-                    <Alert key="info" variant="info">
+                    <Alert variant="info">
                         <TxHashLink txHash={txHash} />
                     </Alert>
                 )}
