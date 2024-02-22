@@ -2,9 +2,7 @@ import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 
-import { About } from './components/About';
 import { Explorer } from './components/Explorer';
-import { Support } from './components/Support';
 import './styles.scss';
 import {
     WithWalletConnector,
@@ -34,21 +32,17 @@ const App = (props: WalletConnectionProps) => {
         <Router>
             <div className="navbar">
                 <div>Track And Trace</div>
-                <Link to="/about">About</Link>
                 <Link to="/explorer">Explorer</Link>
-                <Link to="/support">Support</Link>
-                <Link to="/adminCreateItem">Admin1</Link>
-                <Link to="/adminChangeRoles">Admin2</Link>
-                <Link to="/changeItemStatus">Admin3</Link>
+                <Link to="/changeItemStatus">Admin1</Link>
+                <Link to="/adminCreateItem">Admin2</Link>
+                <Link to="/adminChangeRoles">Admin3</Link>
                 <Button variant="primary" id="account" onClick={connect}>
                     {account ? account.slice(0, 5) + '...' + account.slice(-5) : 'Connect Wallet'}
                 </Button>
             </div>
 
             <Routes>
-                <Route path="/about" element={<About />} />
                 <Route path="/explorer" element={<Explorer />} />
-                <Route path="/support" element={<Support />} />
                 <Route
                     path="/adminCreateItem"
                     element={<AdminCreateItem connection={connection} accountAddress={account} />}

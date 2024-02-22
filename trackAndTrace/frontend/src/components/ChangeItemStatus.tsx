@@ -55,7 +55,7 @@ interface Props {
 
 const NEW_STATUS_OPTIONS = [
     { label: 'Produced', value: 'Produced' },
-    { label: 'InTransit', value: 'Intransit' },
+    { label: 'InTransit', value: 'InTransit' },
     { label: 'InStore', value: 'InStore' },
     { label: 'Sold', value: 'Sold' },
 ];
@@ -112,8 +112,10 @@ export function ChangeItemStatus(props: Props) {
 
                 // TODO: Send signature to backend and submit transaction.
                 // TODO: Send transaction hash to frontend
+                console.log('Generate Signature:');
                 console.log(permitSignature[0][0]);
-                setTxHash('TODO: get transaction hash from backend');
+                console.log('TODO: Send signature to backend.');
+                setTxHash('TODO: Get transaction hash from backend');
             } catch (err) {
                 setError((err as Error).message);
             }
@@ -123,6 +125,8 @@ export function ChangeItemStatus(props: Props) {
     return (
         <div className="centered">
             <div className="card">
+                <h2 className="centered"> Update The Product Status</h2>
+                <br />
                 <Form onSubmit={handleSubmit(onSubmit)}>
                     <Form.Group className="col mb-3">
                         <Form.Label>Item ID</Form.Label>

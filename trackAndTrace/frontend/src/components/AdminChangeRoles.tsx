@@ -77,6 +77,8 @@ export function AdminChangeRoles(props: Props) {
     return (
         <div className="centered">
             <div className="card">
+                <h2 className="centered"> Change The Role Of An Address</h2>
+                <br />
                 <Form onSubmit={handleSubmit(onSubmit)}>
                     <Form.Group className="containerSwitch">
                         Add role
