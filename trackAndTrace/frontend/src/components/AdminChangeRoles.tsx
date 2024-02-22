@@ -29,7 +29,7 @@ export function AdminChangeRoles(props: Props) {
         role: 'Admin' | 'Producer' | 'Transporter' | 'Seller' | undefined;
         toggle: boolean;
     };
-    const { control, register, formState, handleSubmit, setValue } = useForm<FormType>({ mode: 'all' });
+    const { control, register, formState, handleSubmit } = useForm<FormType>({ mode: 'all' });
 
     const [toggle, role, address] = useWatch({
         control: control,
@@ -84,10 +84,10 @@ export function AdminChangeRoles(props: Props) {
                             name="toggle"
                             control={control}
                             defaultValue={false}
-                            render={({}) => (
+                            render={({ field: { onChange } }) => (
                                 <Switch
                                     onChange={() => {
-                                        setValue('toggle', !toggle);
+                                        onChange(!toggle);
                                     }}
                                     onColor="#808080"
                                     checked={!toggle}
