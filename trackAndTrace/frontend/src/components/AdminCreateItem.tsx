@@ -50,6 +50,8 @@ export function AdminCreateItem(props: Props) {
     return (
         <div className="centered">
             <div className="card">
+                <h2 className="centered"> Create New Product</h2>
+                <br />
                 <Form onSubmit={handleSubmit(onSubmit)}>
                     <Form.Group className="col mb-3">
                         <Form.Label>Url</Form.Label>
