@@ -2,8 +2,10 @@ import { createItem } from '../track_and_trace_contract';
 import * as TrackAndTraceContract from '../../generated/module_track_and_trace';
 import { AccountAddress } from '@concordium/web-sdk';
 import { useState } from 'react';
-import { Button } from 'react-bootstrap';
+import { Alert, Button, Form } from 'react-bootstrap';
 import { WalletConnection } from '@concordium/wallet-connectors';
+import { useForm, useWatch } from 'react-hook-form';
+import { TxHashLink } from './CCDScanLinks';
 
 interface Props {
     connection: WalletConnection | undefined;
@@ -13,10 +15,19 @@ interface Props {
 export function AdminCreateItem(props: Props) {
     const { connection, accountAddress } = props;
 
-    const [txHash, setTxHash] = useState<string | undefined>(undefined);
-    const [url, setUrl] = useState<string>('');
+    type FormType = {
+        url: string | undefined;
+    };
+    const { control, register, formState, handleSubmit } = useForm<FormType>({ mode: 'all' });
 
-    function addItem() {
+    const [url] = useWatch({
+        control: control,
+        name: ['url'],
+    });
+
+    const [txHash, setTxHash] = useState<string | undefined>(undefined);
+
+    function onSubmit() {
         if (url === undefined) {
             throw Error('URL undefined');
         }
@@ -28,6 +39,7 @@ export function AdminCreateItem(props: Props) {
             },
         };
 
+        // Send transaction
         if (accountAddress && connection) {
             createItem(connection, AccountAddress.fromBase58(accountAddress), parameter).then((txHash) => {
                 setTxHash(txHash);
@@ -36,20 +48,31 @@ export function AdminCreateItem(props: Props) {
     }
 
     return (
-        <div className="centered column flex-1">
-            <br />
-            <br />
-            <input
-                type="text"
-                onChange={(event) => setUrl(event.target.value)}
-                value={url}
-                placeholder="Enter metadata URL"
-            ></input>
-            <br />
-            <Button variant="primary" onClick={addItem}>
-                Add product
-            </Button>
-            <div>{txHash}</div>
+        <div className="centered">
+            <div className="card">
+                <Form onSubmit={handleSubmit(onSubmit)}>
+                    <Form.Group className="col mb-3">
+                        <Form.Label>Url</Form.Label>
+                        <Form.Control {...register('url', { required: true })} placeholder="Enter metadata URL" />
+                        {formState.errors.url && (
+                            <Alert key="info" variant="info">
+                                {' '}
+                                Url is required{' '}
+                            </Alert>
+                        )}
+                        <Form.Text />
+                    </Form.Group>
+                    <Button variant="secondary" type="submit">
+                        Add new product
+                    </Button>
+                </Form>
+
+                {txHash && (
+                    <Alert key="info" variant="info">
+                        <TxHashLink txHash={txHash} />
+                    </Alert>
+                )}
+            </div>
         </div>
     );
 }
