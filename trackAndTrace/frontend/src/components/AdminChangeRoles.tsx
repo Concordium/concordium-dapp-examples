@@ -119,22 +119,20 @@ export function AdminChangeRoles(props: Props) {
 
                     <Form.Group className="col mb-3">
                         <Form.Label>Address</Form.Label>
-                        <Form.Control {...register('address', { required: true })} />
-                        {formState.errors.address && (
-                            <Alert key="info" variant="info">
-                                {' '}
-                                Address is required{' '}
-                            </Alert>
-                        )}
+                        <Form.Control
+                            {...register('address', { required: true })}
+                            placeholder="4bbdAUCDK2D6cUvUeprGr4FaSaHXKuYmYVjyCa4bXSCu3NUXzA"
+                        />
+                        {formState.errors.address && <Alert variant="info"> Address is required </Alert>}
                         <Form.Text />
                     </Form.Group>
                     <Button variant="secondary" type="submit">
-                        {toggle ? 'Add new role' : 'Remove role'}
+                        {toggle ? 'Add New Role' : 'Remove Role'}
                     </Button>
                 </Form>
 
                 {txHash && (
-                    <Alert key="info" variant="info">
+                    <Alert variant="info">
                         <TxHashLink txHash={txHash} />
                     </Alert>
                 )}
