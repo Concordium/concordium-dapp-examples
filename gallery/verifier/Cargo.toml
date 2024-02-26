@@ -1,6 +1,6 @@
 [package]
 name = "gallery-verifier"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Concordium AG <developers@concordium.com>"]
 edition = "2021"
 license-file = "../../LICENSE"
