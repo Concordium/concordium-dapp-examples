@@ -1,78 +1,87 @@
-//! A tool for indexing event data from the track and trace contract into a
-//! postgres database. The database is configured with the tables from the file
-//! `../resources/schema.sql`. The events `ItemStatusChangedEvent` and
-//! `ItemCreatedEvent` are indexed in their respective tables. A third table
-//! `settings` exists to store global configurations. Each event can be uniquely
-//! identified by the `transaction_hash` and `event_index`.
-use ::indexer::db::DatabasePool;
+use ::indexer::db::{DatabaseError, DatabasePool, StoredItemStatusChangedEvent};
 use anyhow::Context;
-use axum::{
-    extract::{rejection::JsonRejection, State},
-    http,
-    response::Html,
-    routing::{get, post},
-    Json, Router,
-};
+use axum::{extract::rejection::JsonRejection, http, response::Html, routing::get, Json, Router};
 use clap::Parser;
-use concordium_rust_sdk::{
-    cis2::{AdditionalData, Receiver, Transfer},
-    common::types::TransactionTime,
-    smart_contracts::common::{
-        AccountSignatures, Address, Amount, CredentialSignatures, OwnedEntrypointName, Signature,
-        SignatureEd25519,
-    },
-    types::{
-        hashes::TransactionHash,
-        smart_contracts,
-        smart_contracts::{ContractContext, InvokeContractResult},
-        transactions, Energy, WalletAccount,
-    },
-    v2::{self, BlockIdentifier},
-};
-use concordium_rust_sdk::{
-    indexer::{self, AffectedContractIndexer, ContractUpdateInfo, ProcessorConfig},
-    smart_contracts::common::to_bytes,
-    types::{
-        queries::BlockInfo, smart_contracts::OwnedReceiveName, AbsoluteBlockHeight, ContractAddress,
-    },
-    v2::{self as sdk, Client},
-};
-use std::collections::{BTreeMap, BTreeSet};
-use std::{collections::HashMap, fs, sync::Arc};
-use tokio::sync::Mutex;
-use tokio_postgres::types::ToSql;
-use tonic::transport::ClientTlsConfig;
+use concordium_rust_sdk::types::RejectReason;
+use http::StatusCode;
+use std::fs;
 use tower_http::services::ServeDir;
-use track_and_trace as contract;
 
 #[derive(Clone, Debug)]
 pub struct Server {}
+
+#[derive(Debug, thiserror::Error)]
+pub enum ServerError {
+    #[error("Database Error Postgres.")]
+    DatabaseErrorPostgres,
+    #[error("Database Error Type Conversion.")]
+    DatabaseErrorTypeConversion,
+    #[error("Database Error Configuration.")]
+    DatabaseErrorConfiguration,
+}
+
+/// Mapping account signature error to CustomContractError
+impl From<DatabaseError> for ServerError {
+    fn from(e: DatabaseError) -> Self {
+        match e {
+            DatabaseError::Postgres(_) => ServerError::DatabaseErrorPostgres,
+            DatabaseError::TypeConversion(_) => ServerError::DatabaseErrorTypeConversion,
+            DatabaseError::Configuration(_) => ServerError::DatabaseErrorConfiguration,
+        }
+    }
+}
+
+impl axum::response::IntoResponse for ServerError {
+    fn into_response(self) -> axum::response::Response {
+        let r = match self {
+            // ServerError::ParameterError => {
+            //     tracing::error!("Internal error: Unable to create parameter.");
+            //     (
+            //         StatusCode::INTERNAL_SERVER_ERROR,
+            //         Json("Unable to create parameter.".to_string()),
+            //     )
+            // }
+            // ServerError::SimulationInvokeError(error) => {
+            //     tracing::error!("Internal error: {error}.");
+            //     (
+            //         StatusCode::INTERNAL_SERVER_ERROR,
+            //         Json(format!("{}", error)),
+            //     )
+            // }
+            // ServerError::SubmitSponsoredTransactionError(error) => {
+            //     tracing::error!("Internal error: {error}.");
+            //     (
+            //         StatusCode::INTERNAL_SERVER_ERROR,
+            //         Json(format!("{}", error)),
+            //     )
+            // }
+            error => {
+                tracing::debug!("Bad request: {error}.");
+                (StatusCode::BAD_REQUEST, Json(format!("{}", error)))
+            }
+        };
+        r.into_response()
+    }
+}
+
+/// Struct to store the revert reason.
+#[derive(serde::Serialize, Debug)]
+pub struct RevertReason {
+    /// Smart contract revert reason.
+    pub reason: RejectReason,
+}
 
 /// Command line configuration of the application.
 #[derive(Debug, clap::Parser)]
 #[command(author, version, about)]
 struct Args {
     #[clap(
-        long = "node",
-        help = "GRPC V2 interface of the node.",
-        default_value = "https://grpc.testnet.concordium.com:20000",
-        env = "CCD_INDEXER_NODE"
-    )]
-    endpoint: v2::Endpoint,
-    #[clap(
-        long = "request-timeout",
-        help = "Request timeout (both of request to the node and server requests) in milliseconds.",
-        default_value = "10000",
-        env = "CCD_INDEXER_REQUEST_TIMEOUT"
-    )]
-    request_timeout: u64,
-    #[clap(
         long = "port",
         default_value = "0.0.0.0:8080",
         help = "Address where the server will listen on.",
         env = "CCD_INDEXER_LISTEN_ADDRESS"
     )]
-    listen_address: std::net::SocketAddr,
+    listen_address:  std::net::SocketAddr,
     #[clap(
         long = "frontend",
         default_value = "../frontend/dist",
@@ -88,7 +97,7 @@ struct Args {
                 application.",
         env = "CCD_INDEXER_DB_CONNECTION"
     )]
-    db_connection: tokio_postgres::config::Config,
+    db_connection:   tokio_postgres::config::Config,
     /// Maximum log level
     #[clap(
         long = "log-level",
@@ -97,7 +106,7 @@ struct Args {
                 `error`.",
         env = "CCD_INDEXER_LOG_LEVEL"
     )]
-    log_level: tracing_subscriber::filter::LevelFilter,
+    log_level:       tracing_subscriber::filter::LevelFilter,
 }
 
 #[tokio::main]
@@ -116,39 +125,10 @@ async fn main() -> anyhow::Result<()> {
             .init();
     }
 
-    anyhow::ensure!(
-        app.request_timeout >= 1000,
-        "Request timeout should be at least 1s."
-    );
-
-    let endpoint = if app
-        .endpoint
-        .uri()
-        .scheme()
-        .map_or(false, |x| x == &http::uri::Scheme::HTTPS)
-    {
-        app.endpoint
-        .tls_config(ClientTlsConfig::new())
-        .context("Unable to construct TLS configuration for Concordium API.")?
-    } else {
-        app.endpoint
-    };
-
-    // Make it 500ms less than request timeout to make sure we can fail properly
-    // with a connection timeout in case of node connectivity problems.
-    let node_timeout = std::time::Duration::from_millis(app.request_timeout - 500);
-
-    let endpoint = endpoint
-        .connect_timeout(node_timeout)
-        .timeout(node_timeout)
-        .http2_keep_alive_interval(std::time::Duration::from_secs(300))
-        .keep_alive_timeout(std::time::Duration::from_secs(10))
-        .keep_alive_while_idle(true);
-
-    // TODO: do we need it?
-    let _node_client = v2::Client::new(endpoint)
+    // Establish connection to the postgres database.
+    let db_pool = DatabasePool::create(app.db_connection.clone(), 2, true)
         .await
-        .context("Unable to establish connection to the node.")?;
+        .context("Could not create database pool")?;
 
     let state = Server {};
 
@@ -160,7 +140,7 @@ async fn main() -> anyhow::Result<()> {
     let router = Router::new()
         .route("/", get(|| async { Html(index_template) }))
         .nest_service("/assets", serve_dir_service)
-        //.route("/api/bid", post(handle_signature_bid))
+        .route("/api/get", get(|req: Result<Json<u16>, JsonRejection>| {items(req, db_pool)}))
         .route("/health", get(health))
         .with_state(state)
         .layer(
@@ -168,9 +148,6 @@ async fn main() -> anyhow::Result<()> {
                 .make_span_with(tower_http::trace::DefaultMakeSpan::new())
                 .on_response(tower_http::trace::DefaultOnResponse::new()),
         )
-        .layer(tower_http::timeout::TimeoutLayer::new(
-            std::time::Duration::from_millis(app.request_timeout),
-        ))
         .layer(tower_http::limit::RequestBodyLimitLayer::new(1_000_000)) // at most 1000kB of data.
         .layer(tower_http::compression::CompressionLayer::new());
 
@@ -235,4 +212,26 @@ async fn health() -> Json<Health> {
     Json(Health {
         version: env!("CARGO_PKG_VERSION"),
     })
+}
+
+#[derive(serde::Serialize)]
+struct StoredItemStatusChangedEventsReturnValue {
+    data: Vec<StoredItemStatusChangedEvent>,
+}
+
+#[tracing::instrument(level = "info")]
+async fn items(
+    request: Result<Json<u16>, JsonRejection>,
+    db_pool: DatabasePool,
+) -> Result<Json<StoredItemStatusChangedEventsReturnValue>, ServerError> {
+    let db = db_pool.get().await?;
+
+    // TODO: use input parameter passed from frontend
+    let database_result = db
+        .get_item_status_changed_events_submissions(1, 10, 0)
+        .await?;
+
+    Ok(Json(StoredItemStatusChangedEventsReturnValue {
+        data: database_result,
+    }))
 }
