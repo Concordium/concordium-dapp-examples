@@ -70,10 +70,12 @@ There are a few options to configure the indexer:
 
 ## The `sever` binary
 
+You have to build the front end in the folder `../frontend` before running this command.
+
 ## Run the `server`
 
 ```console
-cargo run --bin server -- --node https://grpc.testnet.concordium.com:20000 --contract "<7835,0>" --log-level debug
+cargo run --bin server
 ```
 
 ## Configure the `server`
