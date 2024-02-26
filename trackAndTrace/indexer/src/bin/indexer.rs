@@ -4,6 +4,7 @@
 //! `ItemCreatedEvent` are indexed in their respective tables. A third table
 //! `settings` exists to store global configurations. Each event can be uniquely
 //! identified by the `transaction_hash` and `event_index`.
+use ::indexer::db::DatabasePool;
 use anyhow::Context;
 use clap::Parser;
 use concordium_rust_sdk::{
@@ -18,7 +19,6 @@ use std::collections::{BTreeMap, BTreeSet};
 use tokio_postgres::types::{Json, ToSql};
 use track_and_trace as contract;
 use track_and_trace::AdditionalData;
-use ::indexer::db::DatabasePool;
 
 /// Command line configuration of the application.
 #[derive(Debug, clap::Parser)]

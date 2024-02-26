@@ -79,7 +79,7 @@ impl TryFrom<tokio_postgres::Row> for StoredConfiguration {
 }
 
 /// A `StoredItemStatusChanged` event stored in the database.
-#[derive(Debug)]
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct StoredItemStatusChangedEvent {
     /// The timestamp of the block the event was included in.
     pub block_time:       DateTime<Utc>,
