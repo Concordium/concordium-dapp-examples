@@ -108,6 +108,7 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl warp::Reply, Infall
     } else {
         let code = StatusCode::INTERNAL_SERVER_ERROR;
         let message = "Internal error.";
+        log::debug!("Internal error. Original error: {:?}", err);
         Ok(mk_reply(message.into(), code))
     }
 }
