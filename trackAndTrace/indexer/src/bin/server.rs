@@ -4,8 +4,31 @@
 //! `ItemCreatedEvent` are indexed in their respective tables. A third table
 //! `settings` exists to store global configurations. Each event can be uniquely
 //! identified by the `transaction_hash` and `event_index`.
+use ::indexer::db::DatabasePool;
 use anyhow::Context;
+use axum::{
+    extract::{rejection::JsonRejection, State},
+    http,
+    response::Html,
+    routing::{get, post},
+    Json, Router,
+};
 use clap::Parser;
+use concordium_rust_sdk::{
+    cis2::{AdditionalData, Receiver, Transfer},
+    common::types::TransactionTime,
+    smart_contracts::common::{
+        AccountSignatures, Address, Amount, CredentialSignatures, OwnedEntrypointName, Signature,
+        SignatureEd25519,
+    },
+    types::{
+        hashes::TransactionHash,
+        smart_contracts,
+        smart_contracts::{ContractContext, InvokeContractResult},
+        transactions, Energy, WalletAccount,
+    },
+    v2::{self, BlockIdentifier},
+};
 use concordium_rust_sdk::{
     indexer::{self, AffectedContractIndexer, ContractUpdateInfo, ProcessorConfig},
     smart_contracts::common::to_bytes,
@@ -15,30 +38,48 @@ use concordium_rust_sdk::{
     v2::{self as sdk, Client},
 };
 use std::collections::{BTreeMap, BTreeSet};
-use tokio_postgres::types::{Json, ToSql};
+use std::{collections::HashMap, fs, sync::Arc};
+use tokio::sync::Mutex;
+use tokio_postgres::types::ToSql;
+use tonic::transport::ClientTlsConfig;
+use tower_http::services::ServeDir;
 use track_and_trace as contract;
-use ::indexer::db::DatabasePool;
+
+#[derive(Clone, Debug)]
+pub struct Server {}
 
 /// Command line configuration of the application.
 #[derive(Debug, clap::Parser)]
 #[command(author, version, about)]
 struct Args {
-    #[arg(
+    #[clap(
         long = "node",
-        short = 'n',
-        help = "The node endpoint.",
+        help = "GRPC V2 interface of the node.",
         default_value = "https://grpc.testnet.concordium.com:20000",
-        global = true,
         env = "CCD_INDEXER_NODE"
     )]
-    node_endpoint:    concordium_rust_sdk::v2::Endpoint,
-    #[arg(
-        long = "contract",
-        short = 'c',
-        help = "The track and trace contract address.",
-        env = "CCD_INDEXER_CONTRACT"
+    endpoint: v2::Endpoint,
+    #[clap(
+        long = "request-timeout",
+        help = "Request timeout (both of request to the node and server requests) in milliseconds.",
+        default_value = "10000",
+        env = "CCD_INDEXER_REQUEST_TIMEOUT"
     )]
-    contract_address: ContractAddress,
+    request_timeout: u64,
+    #[clap(
+        long = "port",
+        default_value = "0.0.0.0:8080",
+        help = "Address where the server will listen on.",
+        env = "CCD_INDEXER_LISTEN_ADDRESS"
+    )]
+    listen_address: std::net::SocketAddr,
+    #[clap(
+        long = "frontend",
+        default_value = "../frontend/dist",
+        help = "Path to the directory where frontend assets are located.",
+        env = "CCD_INDEXER_FRONTEND"
+    )]
+    frontend_assets: std::path::PathBuf,
     /// Database connection string.
     #[arg(
         long = "db-connection",
@@ -47,7 +88,7 @@ struct Args {
                 application.",
         env = "CCD_INDEXER_DB_CONNECTION"
     )]
-    db_connection:    tokio_postgres::config::Config,
+    db_connection: tokio_postgres::config::Config,
     /// Maximum log level
     #[clap(
         long = "log-level",
@@ -56,21 +97,18 @@ struct Args {
                 `error`.",
         env = "CCD_INDEXER_LOG_LEVEL"
     )]
-    log_level:        tracing_subscriber::filter::LevelFilter,
+    log_level: tracing_subscriber::filter::LevelFilter,
 }
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let app: Args = Args::parse();
+    let app = Args::parse();
 
-    // Tracing configuration.
     {
         use tracing_subscriber::prelude::*;
         let log_filter = tracing_subscriber::filter::Targets::new()
             .with_target(module_path!(), app.log_level)
-            .with_target("ccd_indexer", app.log_level)
-            .with_target("ccd_event_processor", app.log_level)
-            .with_target("tokio_postgres", app.log_level);
+            .with_target("tower_http", app.log_level);
 
         tracing_subscriber::registry()
             .with(tracing_subscriber::fmt::layer())
@@ -78,121 +116,123 @@ async fn main() -> anyhow::Result<()> {
             .init();
     }
 
-    // Set up endpoint to the node.
+    anyhow::ensure!(
+        app.request_timeout >= 1000,
+        "Request timeout should be at least 1s."
+    );
+
     let endpoint = if app
-        .node_endpoint
+        .endpoint
         .uri()
         .scheme()
-        .map_or(false, |x| x == &sdk::Scheme::HTTPS)
+        .map_or(false, |x| x == &http::uri::Scheme::HTTPS)
     {
-        app.node_endpoint
-            .tls_config(tonic::transport::channel::ClientTlsConfig::new())
-            .context("Unable to construct TLS configuration for the Concordium API.")?
+        app.endpoint
+        .tls_config(ClientTlsConfig::new())
+        .context("Unable to construct TLS configuration for Concordium API.")?
     } else {
-        app.node_endpoint
-    }
-    .connect_timeout(std::time::Duration::from_secs(5))
-    .timeout(std::time::Duration::from_secs(10));
-
-    // Establish connection to the blockchain node.
-    let mut client = Client::new(endpoint.clone()).await?;
-    let consensus_info = client.get_consensus_info().await?;
-
-    // Establish connection to the postgres database.
-    let db_pool = DatabasePool::create(app.db_connection.clone(), 2, true)
-        .await
-        .context("Could not create database pool")?;
-    let db = db_pool
-        .get()
-        .await
-        .context("Could not get database connection from pool")?;
-    db.init_settings(&app.contract_address, &consensus_info.genesis_block)
-        .await
-        .context("Could not init settings for database")?;
-    let settings = db
-        .get_settings()
-        .await
-        .context("Could not get settings from database")?;
-
-    // This check ensures when re-starting the indexer, that the current
-    // `contract_address` settings of the indexer are compatible with the stored
-    // indexer settings to prevent corrupting the database.
-    anyhow::ensure!(
-        settings.contract_address == app.contract_address,
-        "Contract address {} does not match the contract address {} found in the database",
-        app.contract_address,
-        settings.contract_address
-    );
-
-    // This check ensures when re-starting the indexer, that the current
-    // `genesis_hash/node` settings of the indexer are compatible with the
-    // stored indexer settings to prevent corrupting the database.
-    anyhow::ensure!(
-        settings.genesis_block_hash == consensus_info.genesis_block,
-        "Genesis hash from the connected node {} does not match the genesis hash {} found in the \
-         database",
-        consensus_info.genesis_block,
-        settings.genesis_block_hash
-    );
-
-    tracing::info!(
-        "Indexing contract {:?} on network with genesis hash {}.",
-        settings.contract_address.index,
-        settings.genesis_block_hash
-    );
-
-    let start_block = match settings.latest_processed_block_height {
-        // If the indexer is re-started with the same database settings,
-        // it should resume indexing from the `latest_processed_block_height+1` as stored in the
-        // database.
-        Some(processed_block) => processed_block.next(),
-        // If the indexer is started for the first time, lookup when the instance was created and
-        // use that block as the starting block.
-        None => {
-            let instance_created = client
-                .find_instance_creation(.., app.contract_address)
-                .await?;
-
-            instance_created.0
-        }
+        app.endpoint
     };
 
-    println!("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+    // Make it 500ms less than request timeout to make sure we can fail properly
+    // with a connection timeout in case of node connectivity problems.
+    let node_timeout = std::time::Duration::from_millis(app.request_timeout - 500);
+
+    let endpoint = endpoint
+        .connect_timeout(node_timeout)
+        .timeout(node_timeout)
+        .http2_keep_alive_interval(std::time::Duration::from_secs(300))
+        .keep_alive_timeout(std::time::Duration::from_secs(10))
+        .keep_alive_while_idle(true);
+
+    // TODO: do we need it?
+    let _node_client = v2::Client::new(endpoint)
+        .await
+        .context("Unable to establish connection to the node.")?;
+
+    let state = Server {};
+
+    // Render index.html
+    let index_template = fs::read_to_string(app.frontend_assets.join("index.html"))
+        .context("Frontend was not built or wrong path to the frontend files.")?;
+    tracing::info!("Starting server...");
+    let serve_dir_service = ServeDir::new(app.frontend_assets.join("assets"));
+    let router = Router::new()
+        .route("/", get(|| async { Html(index_template) }))
+        .nest_service("/assets", serve_dir_service)
+        //.route("/api/bid", post(handle_signature_bid))
+        .route("/health", get(health))
+        .with_state(state)
+        .layer(
+            tower_http::trace::TraceLayer::new_for_http()
+                .make_span_with(tower_http::trace::DefaultMakeSpan::new())
+                .on_response(tower_http::trace::DefaultOnResponse::new()),
+        )
+        .layer(tower_http::timeout::TimeoutLayer::new(
+            std::time::Duration::from_millis(app.request_timeout),
+        ))
+        .layer(tower_http::limit::RequestBodyLimitLayer::new(1_000_000)) // at most 1000kB of data.
+        .layer(tower_http::compression::CompressionLayer::new());
+
+    tracing::info!("Listening at {}", app.listen_address);
+
+    let socket = app.listen_address;
+    let shutdown_signal = set_shutdown()?;
+    axum::Server::bind(&socket)
+        .serve(router.into_make_service())
+        .with_graceful_shutdown(shutdown_signal)
+        .await?;
 
     Ok(())
-
-  //  handle_indexing(endpoint, start_block, app.contract_address, db_pool).await
 }
 
-// /// Handle indexing events.
-// async fn handle_indexing(
-//     endpoint: sdk::Endpoint,
-//     start: AbsoluteBlockHeight,
-//     contract_address: ContractAddress,
-//     db_pool: DatabasePool,
-// ) -> anyhow::Result<()> {
-//     tracing::info!("Indexing from block height {}.", start);
+/// Construct a future for shutdown signals (for unix: SIGINT and SIGTERM) (for
+/// windows: ctrl c and ctrl break). The signal handler is set when the future
+/// is polled and until then the default signal handler.
+fn set_shutdown() -> anyhow::Result<impl futures::Future<Output = ()>> {
+    use futures::FutureExt;
+    #[cfg(unix)]
+    {
+        use tokio::signal::unix as unix_signal;
 
-//     let contract_set = BTreeSet::from([contract_address]);
+        let mut terminate_stream = unix_signal::signal(unix_signal::SignalKind::terminate())?;
+        let mut interrupt_stream = unix_signal::signal(unix_signal::SignalKind::interrupt())?;
 
-//     let traverse_config = indexer::TraverseConfig::new_single(endpoint, start);
+        Ok(async move {
+            futures::future::select(
+                Box::pin(terminate_stream.recv()),
+                Box::pin(interrupt_stream.recv()),
+            )
+            .map(|_| ())
+            .await
+        })
+    }
+    #[cfg(windows)]
+    {
+        use tokio::signal::windows as windows_signal;
 
-//     let events = StoreEvents { db_pool };
+        let mut ctrl_break_stream = windows_signal::ctrl_break()?;
+        let mut ctrl_c_stream = windows_signal::ctrl_c()?;
 
-//     // The program terminates only
-//     // when the processor terminates, which in this example can only happen if
-//     // there are sufficiently many errors when attempting to write to the
-//     // database.
-//     indexer::traverse_and_process(
-//         traverse_config,
-//         AffectedContractIndexer {
-//             addresses: contract_set,
-//             all:       true,
-//         },
-//         ProcessorConfig::new(),
-//         events,
-//     )
-//     .await?;
+        Ok(async move {
+            futures::future::select(
+                Box::pin(ctrl_break_stream.recv()),
+                Box::pin(ctrl_c_stream.recv()),
+            )
+            .map(|_| ())
+            .await
+        })
+    }
+}
 
-//     Ok(())
-// }
+#[derive(serde::Serialize)]
+struct Health {
+    version: &'static str,
+}
+
+#[tracing::instrument(level = "info")]
+async fn health() -> Json<Health> {
+    Json(Health {
+        version: env!("CARGO_PKG_VERSION"),
+    })
+}
