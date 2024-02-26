@@ -18,8 +18,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use tokio_postgres::types::{Json, ToSql};
 use track_and_trace as contract;
 use track_and_trace::AdditionalData;
-mod db;
-use crate::db::*;
+use ::indexer::db::DatabasePool;
 
 /// Command line configuration of the application.
 #[derive(Debug, clap::Parser)]
