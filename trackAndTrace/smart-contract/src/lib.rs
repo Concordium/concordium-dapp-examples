@@ -412,7 +412,7 @@ pub struct TransitionEdges {
 #[init(
     contract = "track_and_trace",
     parameter = "Vec<TransitionEdges>",
-    event = "Event",
+    event = "Event<AdditionalData>",
     enable_logger
 )]
 fn init(
@@ -587,7 +587,7 @@ pub struct ChangeItemStatusParams<A> {
 #[receive(
     contract = "track_and_trace",
     name = "changeItemStatus",
-    parameter = "ChangeItemStatusParams",
+    parameter = "ChangeItemStatusParams<AdditionalData>",
     error = "CustomContractError",
     mutable,
     enable_logger

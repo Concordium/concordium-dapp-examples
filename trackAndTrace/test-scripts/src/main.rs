@@ -157,14 +157,14 @@ async fn main() -> anyhow::Result<()> {
 
     // Update items from `Produced` to `InTransit`
     for i in 0..args.num_items {
-        let param: ChangeItemStatusParams = ChangeItemStatusParams {
+        let param: ChangeItemStatusParams<AdditionalData> = ChangeItemStatusParams {
             item_id:         i,
             new_status:      Status::InTransit,
             additional_data: AdditionalData::empty(),
         };
 
         let tx_dry_run = contract_client
-            .dry_run_update::<ChangeItemStatusParams, ViewError>(
+            .dry_run_update::<ChangeItemStatusParams<AdditionalData>, ViewError>(
                 "changeItemStatus",
                 Amount::zero(),
                 admin_key.address,
@@ -185,14 +185,14 @@ async fn main() -> anyhow::Result<()> {
 
     // Update items from `InTransit` to `InStore`
     for i in 0..args.num_items {
-        let param: ChangeItemStatusParams = ChangeItemStatusParams {
+        let param: ChangeItemStatusParams<AdditionalData> = ChangeItemStatusParams {
             item_id:         i,
             new_status:      Status::InStore,
             additional_data: AdditionalData::empty(),
         };
 
         let tx_dry_run = contract_client
-            .dry_run_update::<ChangeItemStatusParams, ViewError>(
+            .dry_run_update::<ChangeItemStatusParams<AdditionalData>, ViewError>(
                 "changeItemStatus",
                 Amount::zero(),
                 admin_key.address,
@@ -214,14 +214,14 @@ async fn main() -> anyhow::Result<()> {
 
     // Update items from `InStore` to `Sold`
     for i in 0..args.num_items {
-        let param: ChangeItemStatusParams = ChangeItemStatusParams {
+        let param: ChangeItemStatusParams<AdditionalData> = ChangeItemStatusParams {
             item_id:         i,
             new_status:      Status::Sold,
             additional_data: AdditionalData::empty(),
         };
 
         let tx_dry_run = contract_client
-            .dry_run_update::<ChangeItemStatusParams, ViewError>(
+            .dry_run_update::<ChangeItemStatusParams<AdditionalData>, ViewError>(
                 "changeItemStatus",
                 Amount::zero(),
                 admin_key.address,
