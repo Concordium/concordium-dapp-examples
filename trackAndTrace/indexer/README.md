@@ -68,7 +68,7 @@ There are a few options to configure the indexer:
 
 - `--log-level` specifies the maximum log level. Possible values are: `trace`, `debug`, `info`, `warn`, and `error`. If not specified, the default value `info` is used.
 
-## The `sever` binary
+## The `server` binary
 
 You have to build the front end in the folder `../frontend` before running this command.
 
@@ -84,7 +84,7 @@ There are a few options to configure the server:
 
 - `--port` is the port where the server will be listen on. If not specified, the default value `8080` is used.
 
-- `--frontend` is the path to the directory where frontend assets are located. If not specified, the default value `../frontend/dist` is used.
+- `--frontend` is the path to the directory where the frontend assets are located. If not specified, the default value `../frontend/dist` is used.
 
 - `--db-connection` should specify your postgreSQL database connection. If not specified, the default value `host=localhost dbname=indexer user=postgres password=password port=5432` is used.
 
