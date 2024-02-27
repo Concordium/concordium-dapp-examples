@@ -7,7 +7,6 @@ edition = "2021"
 anyhow = "1.0"
 axum = { version = "0.6", features = ["macros"] }
 clap = { version = "4.3", features = ["derive", "env"] }
-serde_json = "1.0"
 tracing = "0.1"
 tracing-subscriber = "0.3"
 serde = { version = "1.0", features = ["derive"] }
@@ -15,7 +14,6 @@ futures = "0.3"
 tower-http = { version = "0.4", features = [
   "trace",
   "limit",
-  "timeout",
   "fs",
   "compression-br",
   "compression-zstd",
@@ -23,7 +21,6 @@ tower-http = { version = "0.4", features = [
 http = "0.2"
 tonic = { version = "0.10", features = ["tls-roots", "tls"] }
 thiserror = "1.0"
-hex = "0.4.3"
 chrono = "0.4"
 concordium-rust-sdk = { version = "4.2"}
 track-and-trace = { path = "../smart-contract", features = ["serde"]}
