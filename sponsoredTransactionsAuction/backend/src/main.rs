@@ -204,10 +204,19 @@ async fn main() -> anyhow::Result<()> {
 
     let socket = app.listen_address;
     let shutdown_signal = set_shutdown()?;
-    axum::Server::bind(&socket)
-        .serve(router.into_make_service())
-        .with_graceful_shutdown(shutdown_signal)
-        .await?;
+
+    // Create the server.
+    let server = axum::Server::bind(&socket).serve(router.into_make_service());
+
+    // Wait for either the server to complete or a shutdown signal to be received.
+    tokio::select! {
+      _ = server => {
+          println!("Server has shut down gracefully");
+      }
+      _ = shutdown_signal => {
+          println!("Received shutdown signal. Shutting down server gracefully...");
+      }
+    }
 
     Ok(())
 }

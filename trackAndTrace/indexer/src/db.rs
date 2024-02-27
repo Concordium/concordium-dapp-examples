@@ -1,6 +1,7 @@
 use anyhow::Context;
 use chrono::{DateTime, Utc};
 use concordium_rust_sdk::{
+    cis2::MetadataUrl,
     smart_contracts::common::from_bytes,
     types::{
         hashes::{BlockHash, TransactionHash},
@@ -13,7 +14,7 @@ use tokio_postgres::{
     types::{Json, ToSql},
     NoTls,
 };
-use track_and_trace::{MetadataUrl, Status, *};
+use track_and_trace::{Status, *};
 
 /// Represents possible errors returned from [`Database`] or [`DatabasePool`]
 /// functions
@@ -123,7 +124,7 @@ impl TryFrom<tokio_postgres::Row> for StoredItemStatusChangedEvent {
 }
 
 /// A `StoredItemCreated` event stored in the database.
-#[derive(Debug)]
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct StoredItemCreatedEvent {
     /// The timestamp of the block the event was included in.
     pub block_time:       DateTime<Utc>,
