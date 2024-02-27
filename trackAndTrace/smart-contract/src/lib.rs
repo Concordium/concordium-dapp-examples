@@ -68,13 +68,13 @@ pub type ItemID = u64;
 /// Tagged events to be serialized for the event log.
 #[derive(Debug, Serial, Deserial, PartialEq, Eq, SchemaType, Clone)]
 #[concordium(repr(u8))]
-pub enum Event {
+pub enum Event<A: Serial> {
     /// The event tracks when an item is created.
     #[concordium(tag = 0)]
     ItemCreated(ItemCreatedEvent),
     /// The event tracks when the item's status is updated.
     #[concordium(tag = 1)]
-    ItemStatusChanged(ItemStatusChangedEvent),
+    ItemStatusChanged(ItemStatusChangedEvent<A>),
     /// The event tracks when a new role is granted to an address.
     #[concordium(tag = 2)]
     GrantRole(GrantRoleEvent),
@@ -99,14 +99,14 @@ pub struct ItemCreatedEvent {
 /// The [`ItemStatusChangedEvent`] is logged when the status of an item is
 /// updated.
 #[derive(Serialize, SchemaType, Debug, PartialEq, Eq, Clone)]
-pub struct ItemStatusChangedEvent {
+pub struct ItemStatusChangedEvent<A: Serial> {
     /// The item's id.
     pub item_id:         ItemID,
     /// The item's new status.
     pub new_status:      Status,
     /// Any additional data encoded as generic bytes. Usecase-specific data can
     /// be included here such as temperature, longitude, latitude, ... .
-    pub additional_data: AdditionalData,
+    pub additional_data: A,
 }
 
 /// The [`GrantRoleEvent`] is logged when a new role is granted to an address.
@@ -430,7 +430,7 @@ fn init(
 
     // Grant Admin role.
     state.grant_role(&invoker, Roles::Admin, state_builder);
-    logger.log(&Event::GrantRole(GrantRoleEvent {
+    logger.log(&Event::<AdditionalData>::GrantRole(GrantRoleEvent {
         address: invoker,
         role:    Roles::Admin,
     }))?;
@@ -538,7 +538,7 @@ fn create_item(
     ensure_eq!(previous_item, None, CustomContractError::ItemAlreadyExists);
 
     // Log an ItemCreatedEvent.
-    logger.log(&Event::ItemCreated(ItemCreatedEvent {
+    logger.log(&Event::<AdditionalData>::ItemCreated(ItemCreatedEvent {
         item_id: next_item_id,
         metadata_url,
     }))?;
@@ -565,14 +565,14 @@ impl AdditionalData {
 /// The parameter type for the contract function `changeItemStatus` which
 /// updates the status of an item.
 #[derive(Serialize, SchemaType)]
-pub struct ChangeItemStatusParams {
+pub struct ChangeItemStatusParams<A> {
     /// The item's id.
     pub item_id:         ItemID,
     /// The item's new status.
     pub new_status:      Status,
     /// Any additional data encoded as generic bytes. Usecase-specific data can
     /// be included here such as temperature, longitude, latitude, ... .
-    pub additional_data: AdditionalData,
+    pub additional_data: A,
 }
 
 /// Receive function to update the item's
@@ -598,7 +598,7 @@ fn contract_change_item_status(
     logger: &mut impl HasLogger,
 ) -> ContractResult<()> {
     // Parse the parameter.
-    let param: ChangeItemStatusParams = ctx.parameter_cursor().get()?;
+    let param: ChangeItemStatusParams<AdditionalData> = ctx.parameter_cursor().get()?;
 
     let account = match ctx.sender() {
         Address::Account(account) => account,
@@ -610,7 +610,7 @@ fn contract_change_item_status(
 
 /// Helper function to update the item's status based on the rules of the state.
 fn change_item_status(
-    param: ChangeItemStatusParams,
+    param: ChangeItemStatusParams<AdditionalData>,
     account: AccountAddress,
     host: &mut Host<State>,
     logger: &mut impl HasLogger,
@@ -680,7 +680,7 @@ fn contract_grant_role(
     // Grant role.
     state.grant_role(&params.address, params.role, state_builder);
     // Log a GrantRoleEvent.
-    logger.log(&Event::GrantRole(GrantRoleEvent {
+    logger.log(&Event::<AdditionalData>::GrantRole(GrantRoleEvent {
         address: params.address,
         role:    params.role,
     }))?;
@@ -731,7 +731,7 @@ fn contract_revoke_role(
     // Revoke role.
     state.revoke_role(&params.address, params.role);
     // Log a RevokeRoleEvent.
-    logger.log(&Event::RevokeRole(RevokeRoleEvent {
+    logger.log(&Event::<AdditionalData>::RevokeRole(RevokeRoleEvent {
         address: params.address,
         role:    params.role,
     }))?;
@@ -848,14 +848,15 @@ fn contract_permit(
 
     if message.entry_point.as_entrypoint_name() == EntrypointName::new_unchecked("changeItemStatus")
     {
-        let change_item_status_param: ChangeItemStatusParams = from_bytes(&message.payload)?;
+        let change_item_status_param: ChangeItemStatusParams<AdditionalData> =
+            from_bytes(&message.payload)?;
         change_item_status(change_item_status_param, param.signer, host, logger)?;
     } else {
         bail!(CustomContractError::WrongEntryPoint)
     }
 
     // Log the nonce event.
-    logger.log(&Event::Nonce(NonceEvent {
+    logger.log(&Event::<AdditionalData>::Nonce(NonceEvent {
         account: param.signer,
         nonce,
     }))?;
@@ -962,4 +963,56 @@ fn contract_supports_permit(
 )]
 fn contract_serialization_helper(_ctx: &ReceiveContext, _host: &Host<State>) -> ContractResult<()> {
     Ok(())
+}
+
+/// The parameter type for the contract functions `noneOf`. A query
+/// for the nonce of a given account.
+#[derive(Debug, Serialize, SchemaType)]
+#[concordium(transparent)]
+pub struct VecOfAccountAddresses {
+    /// List of queries.
+    #[concordium(size_length = 1)]
+    pub queries: Vec<AccountAddress>,
+}
+
+/// Response type for the function `nonceOf`.
+#[derive(Debug, Serialize, SchemaType)]
+#[concordium(transparent)]
+pub struct NonceOfQueryResponse(#[concordium(size_length = 1)] pub Vec<u64>);
+
+impl From<Vec<u64>> for NonceOfQueryResponse {
+    fn from(results: concordium_std::Vec<u64>) -> Self { NonceOfQueryResponse(results) }
+}
+
+/// Get the nonces of accounts.
+///
+/// It rejects if:
+/// - It fails to parse the parameter.
+#[receive(
+    contract = "track_and_trace",
+    name = "nonceOf",
+    parameter = "VecOfAccountAddresses",
+    return_value = "NonceOfQueryResponse",
+    error = "CustomContractError"
+)]
+fn contract_nonce_of(
+    ctx: &ReceiveContext,
+    host: &Host<State>,
+) -> ContractResult<NonceOfQueryResponse> {
+    // Parse the parameter.
+    let params: VecOfAccountAddresses = ctx.parameter_cursor().get()?;
+    // Build the response.
+    let mut response: Vec<u64> = Vec::with_capacity(params.queries.len());
+    for account in params.queries {
+        // Query the next nonce.
+        let nonce = host
+            .state()
+            .nonces_registry
+            .get(&account)
+            .map(|nonce| *nonce)
+            .unwrap_or(0);
+
+        response.push(nonce);
+    }
+    Ok(NonceOfQueryResponse::from(response))
 }

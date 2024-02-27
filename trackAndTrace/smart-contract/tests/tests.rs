@@ -69,7 +69,7 @@ fn test_create_item_and_update_item_status() {
     let events = update
         .events()
         .flat_map(|(_addr, events)| events.iter().map(|e| e.parse().expect("Deserialize event")))
-        .collect::<Vec<Event>>();
+        .collect::<Vec<Event<AdditionalData>>>();
 
     assert_eq!(events, [Event::ItemCreated(ItemCreatedEvent {
         item_id:      0u64,
@@ -112,7 +112,7 @@ fn test_create_item_and_update_item_status() {
     let events = update
         .events()
         .flat_map(|(_addr, events)| events.iter().map(|e| e.parse().expect("Deserialize event")))
-        .collect::<Vec<Event>>();
+        .collect::<Vec<Event<AdditionalData>>>();
 
     assert_eq!(events, [Event::ItemStatusChanged(ItemStatusChangedEvent {
         item_id:         parameter.item_id,
@@ -187,7 +187,7 @@ fn test_create_item_and_update_item_status() {
     let events = update
         .events()
         .flat_map(|(_addr, events)| events.iter().map(|e| e.parse().expect("Deserialize event")))
-        .collect::<Vec<Event>>();
+        .collect::<Vec<Event<AdditionalData>>>();
 
     assert_eq!(events, [Event::ItemStatusChanged(ItemStatusChangedEvent {
         item_id:         parameter.item_id,
@@ -497,7 +497,7 @@ fn test_permit_change_item_status() {
     let events = update
         .events()
         .flat_map(|(_addr, events)| events.iter().map(|e| e.parse().expect("Deserialize event")))
-        .collect::<Vec<Event>>();
+        .collect::<Vec<Event<AdditionalData>>>();
 
     // Check that a nonce event with tag 250 is logged.
     let nonce_event = events
@@ -512,6 +512,36 @@ fn test_permit_change_item_status() {
         contract_address,
         Status::InStore,
         metadata_url.clone(),
+    );
+
+    // Check if correct nonces are returned by the `nonceOf` function.
+    let nonce_query_vector = VecOfAccountAddresses {
+        queries: vec![ADMIN],
+    };
+
+    let invoke = chain
+        .contract_invoke(
+            ADMIN,
+            Address::Account(ADMIN),
+            Energy::from(10000),
+            UpdateContractPayload {
+                amount:       Amount::zero(),
+                address:      contract_address,
+                receive_name: OwnedReceiveName::new_unchecked(
+                    "track_and_trace.nonceOf".to_string(),
+                ),
+                message:      OwnedParameter::from_serial(&nonce_query_vector)
+                    .expect("Should be a valid inut parameter"),
+            },
+        )
+        .expect("Should be able to query nonceOf");
+
+    let nonces: NonceOfQueryResponse =
+        from_bytes(&invoke.return_value).expect("Should return a valid result");
+
+    assert_eq!(
+        nonces.0[0], 1,
+        "Nonce of ADMIN should be 1 because the account already sent one sponsored transaction"
     );
 
     // Check that the PRODUCER can not update the status to `Sold` with a
