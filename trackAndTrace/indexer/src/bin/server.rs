@@ -1,14 +1,23 @@
 use ::indexer::db::{DatabaseError, DatabasePool, StoredItemStatusChangedEvent};
 use anyhow::Context;
-use axum::{extract::rejection::JsonRejection, http, response::Html, routing::get, Json, Router};
+use axum::{
+    extract::{rejection::JsonRejection, State},
+    http,
+    response::Html,
+    routing::{get, post},
+    Json, Router,
+};
 use clap::Parser;
 use concordium_rust_sdk::types::RejectReason;
 use http::StatusCode;
+use indexer::db::StoredItemCreatedEvent;
 use std::fs;
 use tower_http::services::ServeDir;
 
 #[derive(Clone, Debug)]
-pub struct Server {}
+pub struct Server {
+    db_pool: DatabasePool,
+}
 
 #[derive(Debug, thiserror::Error)]
 pub enum ServerError {
@@ -18,6 +27,8 @@ pub enum ServerError {
     DatabaseErrorTypeConversion,
     #[error("Database Error Configuration.")]
     DatabaseErrorConfiguration,
+    #[error("JsonRejection.")]
+    JsonRejection(#[from] JsonRejection),
 }
 
 /// Mapping account signature error to CustomContractError
@@ -126,11 +137,11 @@ async fn main() -> anyhow::Result<()> {
     }
 
     // Establish connection to the postgres database.
-    let db_pool = DatabasePool::create(app.db_connection.clone(), 2, true)
+    let db_pool = DatabasePool::create(app.db_connection.clone(), 1, true)
         .await
         .context("Could not create database pool")?;
 
-    let state = Server {};
+    let state = Server { db_pool };
 
     // Render index.html
     let index_template = fs::read_to_string(app.frontend_assets.join("index.html"))
@@ -140,7 +151,8 @@ async fn main() -> anyhow::Result<()> {
     let router = Router::new()
         .route("/", get(|| async { Html(index_template) }))
         .nest_service("/assets", serve_dir_service)
-        .route("/api/get", get(|req: Result<Json<u16>, JsonRejection>| {items(req, db_pool)}))
+        .route("/api/getItemStatusChangedEvents", post(get_item_status_changed_events))
+        .route("/api/getItemCreatedEvent", post(get_item_created_event))
         .route("/health", get(health))
         .with_state(state)
         .layer(
@@ -155,10 +167,19 @@ async fn main() -> anyhow::Result<()> {
 
     let socket = app.listen_address;
     let shutdown_signal = set_shutdown()?;
-    axum::Server::bind(&socket)
-        .serve(router.into_make_service())
-        .with_graceful_shutdown(shutdown_signal)
-        .await?;
+
+    // Create the server.
+    let server = axum::Server::bind(&socket).serve(router.into_make_service());
+
+    // Wait for either the server to complete or a shutdown signal to be received.
+    tokio::select! {
+      _ = server => {
+          println!("Server has shut down gracefully");
+      }
+      _ = shutdown_signal => {
+          println!("Received shutdown signal. Shutting down server gracefully...");
+      }
+    }
 
     Ok(())
 }
@@ -168,6 +189,7 @@ async fn main() -> anyhow::Result<()> {
 /// is polled and until then the default signal handler.
 fn set_shutdown() -> anyhow::Result<impl futures::Future<Output = ()>> {
     use futures::FutureExt;
+
     #[cfg(unix)]
     {
         use tokio::signal::unix as unix_signal;
@@ -184,6 +206,7 @@ fn set_shutdown() -> anyhow::Result<impl futures::Future<Output = ()>> {
             .await
         })
     }
+
     #[cfg(windows)]
     {
         use tokio::signal::windows as windows_signal;
@@ -220,18 +243,41 @@ struct StoredItemStatusChangedEventsReturnValue {
 }
 
 #[tracing::instrument(level = "info")]
-async fn items(
-    request: Result<Json<u16>, JsonRejection>,
-    db_pool: DatabasePool,
+async fn get_item_status_changed_events(
+    State(state): State<Server>,
+    request: Result<Json<u64>, JsonRejection>,
 ) -> Result<Json<StoredItemStatusChangedEventsReturnValue>, ServerError> {
-    let db = db_pool.get().await?;
+    let db = state.db_pool.get().await?;
 
-    // TODO: use input parameter passed from frontend
+    let Json(item_id) = request?;
+
+    // We hardcode the pagination here for simplicity for this demo dApp.
     let database_result = db
-        .get_item_status_changed_events_submissions(1, 10, 0)
+        .get_item_status_changed_events_submissions(item_id, 30, 0)
         .await?;
 
     Ok(Json(StoredItemStatusChangedEventsReturnValue {
+        data: database_result,
+    }))
+}
+
+#[derive(serde::Serialize)]
+struct StoredItemCreatedEventReturnValue {
+    data: Option<StoredItemCreatedEvent>,
+}
+
+#[tracing::instrument(level = "info")]
+async fn get_item_created_event(
+    State(state): State<Server>,
+    request: Result<Json<u64>, JsonRejection>,
+) -> Result<Json<StoredItemCreatedEventReturnValue>, ServerError> {
+    let db = state.db_pool.get().await?;
+
+    let Json(item_id) = request?;
+
+    let database_result = db.get_item_created_event_submission(item_id).await?;
+
+    Ok(Json(StoredItemCreatedEventReturnValue {
         data: database_result,
     }))
 }
