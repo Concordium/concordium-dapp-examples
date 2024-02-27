@@ -1,6 +1,6 @@
 import { BrowserWalletConnector, ephemeralConnectorType } from '@concordium/react-components';
 
-// import moment from 'moment';
+import moment from 'moment';
 
 export const VERIFIER_URL = '/api';
 
@@ -8,7 +8,7 @@ export const NODE = 'https://grpc.testnet.concordium.com';
 
 export const PORT = 20000;
 
-// export const REFRESH_INTERVAL = moment.duration(2, 'seconds');
+export const REFRESH_INTERVAL = moment.duration(2, 'seconds');
 
 export const CONTRACT_SUB_INDEX = 0n;
 

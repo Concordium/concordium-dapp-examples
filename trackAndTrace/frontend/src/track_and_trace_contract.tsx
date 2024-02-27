@@ -24,8 +24,6 @@ const contract = TrackAndTraceContract.createUnchecked(
     ContractAddress.create(Number(process.env.TRACK_AND_TRACE_CONTRACT_INDEX), CONTRACT_SUB_INDEX)
 );
 
-export const CONTRACT = contract;
-
 /**
  * This function submits a transaction to create an item in the track and trace contract.
  *
@@ -189,4 +187,39 @@ export async function addRole(
         payload,
         webWalletParameter
     );
+}
+
+/**
+ * This function views the nonce (CIS3 standard) of an acccount in the contract.
+ *
+ * @param nonceOfParameter - The parameter for the nonceOf function.
+ * @throws If the communicate with the Concordium node fails, the smart contract reverts, or parsing the returnValue fails.
+ * @returns A promise resolving with the corresponding {@linkcode TrackAndTrace.ReturnValueNonceOf}
+ */
+export async function nonceOf(
+    nonceOfParameter: TrackAndTraceContract.NonceOfParameter
+): Promise<TrackAndTraceContract.ReturnValueNonceOf> {
+    const dryRunResult = await TrackAndTraceContract.dryRunNonceOf(contract, nonceOfParameter);
+
+    if (!dryRunResult || dryRunResult.tag === 'failure' || !dryRunResult.returnValue) {
+        const parsedErrorCode = TrackAndTraceContract.parseErrorMessageNonceOf(dryRunResult)?.type;
+
+        throw new Error(
+            `RPC call 'invokeContract' on method '${TrackAndTraceContract.contractName.value}.nonceOf' of contract '${
+                process.env.TRACK_AND_TRACE_CONTRACT_INDEX
+            }' failed. Decoded error code: ${JSONbig.stringify(
+                parsedErrorCode
+            )}. Original response: ${JSONbig.stringify(dryRunResult)}`
+        );
+    }
+
+    const parsedReturnValue = TrackAndTraceContract.parseReturnValueNonceOf(dryRunResult);
+
+    if (parsedReturnValue === undefined) {
+        throw new Error(
+            `Deserializing the returnValue from the '${TrackAndTraceContract.contractName.value}.nonceOf' method of contract '${process.env.TRACK_AND_TRACE_CONTRACT_INDEX}' failed`
+        );
+    } else {
+        return parsedReturnValue;
+    }
 }
