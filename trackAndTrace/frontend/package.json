@@ -4,8 +4,8 @@
     "version": "1.0.0",
     "type": "module",
     "scripts": {
-        "dev": "TRACK_AND_TRACE_CONTRACT_INDEX=8092 vite",
-        "build": "tsc && TRACK_AND_TRACE_CONTRACT_INDEX=8092 vite build",
+        "dev": "TRACK_AND_TRACE_CONTRACT_INDEX=8144 vite",
+        "build": "tsc && TRACK_AND_TRACE_CONTRACT_INDEX=8144 vite build",
         "lint-check": "eslint",
         "format-check": "prettier --check .",
         "format-fix": "prettier --write .",
@@ -20,6 +20,7 @@
         "@types/react-router-dom": "^5.3.3",
         "bootstrap": "^5.3.3",
         "json-bigint": "^1.0.0",
+        "moment": "^2.30.1",
         "react": "^18.2.0",
         "react-bootstrap": "^2.10.1",
         "react-dom": "^18.2.0",

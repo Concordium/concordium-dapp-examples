@@ -1,12 +1,20 @@
-import { serializeTypeValue, toBuffer } from '@concordium/web-sdk';
-import { useState } from 'react';
+import { AccountAddress, serializeTypeValue, toBuffer } from '@concordium/web-sdk';
+import { useCallback, useEffect, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Alert, Button, Form } from 'react-bootstrap';
 import Select from 'react-select';
 import { TxHashLink } from './CCDScanLinks';
-import { WalletConnection, typeSchemaFromBase64 } from '@concordium/wallet-connectors';
-import { CHANGE_ITEM_STATUS_PARAMETER_SCHEMA, SERIALIZATION_HELPER_SCHEMA_PERMIT_MESSAGE } from '../../constants';
+import { TESTNET, WalletConnection, typeSchemaFromBase64 } from '@concordium/wallet-connectors';
+import {
+    CHANGE_ITEM_STATUS_PARAMETER_SCHEMA,
+    REFRESH_INTERVAL,
+    SERIALIZATION_HELPER_SCHEMA_PERMIT_MESSAGE,
+} from '../../constants';
 import { Buffer } from 'buffer/';
+import { nonceOf } from '../track_and_trace_contract';
+import { useGrpcClient } from '@concordium/react-components';
+import * as TrackAndTraceContract from '../../generated/module_track_and_trace'; // Code generated from a smart contract module. The naming convention of the generated file is `moduleName_smartContractName`.
+import JSONbig from 'json-bigint';
 
 async function generateMessage(newStatus: string, itemID: bigint, expiryTimeSignature: string, nonce: number | bigint) {
     try {
@@ -76,6 +84,38 @@ export function ChangeItemStatus(props: Props) {
 
     const [txHash, setTxHash] = useState<string | undefined>(undefined);
     const [error, setError] = useState<string | undefined>(undefined);
+    const [nextNonceError, setNextNonceError] = useState<undefined | string>(undefined);
+    const [nextNonce, setNextNonce] = useState<number | bigint>(0);
+
+    const grpcClient = useGrpcClient(TESTNET);
+
+    /**
+     * This function querries the nonce (CIS3 standard) of an acccount in the cis2_multi contract.
+     */
+    const refreshNonce = useCallback(() => {
+        if (grpcClient && accountAddress) {
+            const nonceOfParam: TrackAndTraceContract.NonceOfParameter = [AccountAddress.fromBase58(accountAddress)];
+
+            nonceOf(nonceOfParam)
+                .then((nonceValue: TrackAndTraceContract.ReturnValueNonceOf) => {
+                    if (nonceValue !== undefined) {
+                        setNextNonce(nonceValue[0]);
+                    }
+                    setNextNonceError(undefined);
+                })
+                .catch((e) => {
+                    setNextNonceError((e as Error).message);
+                    setNextNonce(0);
+                });
+        }
+    }, [grpcClient, accountAddress]);
+
+    useEffect(() => {
+        refreshNonce();
+        // Refresh the next nonce value periodically.
+        const interval = setInterval(refreshNonce, REFRESH_INTERVAL.asMilliseconds());
+        return () => clearInterval(interval);
+    }, [refreshNonce]);
 
     async function onSubmit() {
         setError(undefined);
@@ -96,13 +136,7 @@ export function ChangeItemStatus(props: Props) {
 
         if (connection && accountAddress) {
             try {
-                const serializedMessage = await generateMessage(
-                    newStatus,
-                    itemID,
-                    expiryTimeSignature,
-                    0 // TODO: This should be the current nonce of the account.
-                    // Track it at the database at the backend and get it form the database.
-                );
+                const serializedMessage = await generateMessage(newStatus, itemID, expiryTimeSignature, nextNonce);
 
                 const permitSignature = await connection.signMessage(accountAddress, {
                     type: 'BinaryMessage',
@@ -153,6 +187,10 @@ export function ChangeItemStatus(props: Props) {
                         />
                     </Form.Group>
 
+                    {nextNonce !== undefined && (
+                        <Alert variant="info">Your next nonce: {JSONbig.stringify(nextNonce)} </Alert>
+                    )}
+
                     <Button variant="secondary" type="submit">
                         Update Status
                     </Button>
@@ -164,6 +202,7 @@ export function ChangeItemStatus(props: Props) {
                     </Alert>
                 )}
                 {error && <Alert variant="danger">{error}</Alert>}
+                {nextNonceError && <Alert variant="danger">Error: {nextNonceError}. </Alert>}
             </div>
         </div>
     );
