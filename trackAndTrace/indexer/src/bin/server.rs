@@ -8,36 +8,37 @@ use axum::{
     Json, Router,
 };
 use clap::Parser;
-use concordium_rust_sdk::types::RejectReason;
 use http::StatusCode;
 use indexer::db::StoredItemCreatedEvent;
 use std::fs;
 use tower_http::services::ServeDir;
 
+/// Server struct to store the db_pool.
 #[derive(Clone, Debug)]
 pub struct Server {
     db_pool: DatabasePool,
 }
 
+/// Errors that this server can produce.
 #[derive(Debug, thiserror::Error)]
 pub enum ServerError {
-    #[error("Database Error Postgres.")]
-    DatabaseErrorPostgres,
-    #[error("Database Error Type Conversion.")]
-    DatabaseErrorTypeConversion,
-    #[error("Database Error Configuration.")]
-    DatabaseErrorConfiguration,
-    #[error("JsonRejection.")]
+    #[error("Database error from postgres: {0}")]
+    DatabaseErrorPostgres(tokio_postgres::Error),
+    #[error("Database error in type conversion: {0}")]
+    DatabaseErrorTypeConversion(String),
+    #[error("Database error in configuration: {0}")]
+    DatabaseErrorConfiguration(anyhow::Error),
+    #[error("Failed to extract json object: {0}")]
     JsonRejection(#[from] JsonRejection),
 }
 
-/// Mapping account signature error to CustomContractError
+/// Mapping DatabaseError to ServerError
 impl From<DatabaseError> for ServerError {
     fn from(e: DatabaseError) -> Self {
         match e {
-            DatabaseError::Postgres(_) => ServerError::DatabaseErrorPostgres,
-            DatabaseError::TypeConversion(_) => ServerError::DatabaseErrorTypeConversion,
-            DatabaseError::Configuration(_) => ServerError::DatabaseErrorConfiguration,
+            DatabaseError::Postgres(e) => ServerError::DatabaseErrorPostgres(e),
+            DatabaseError::TypeConversion(e) => ServerError::DatabaseErrorTypeConversion(e),
+            DatabaseError::Configuration(e) => ServerError::DatabaseErrorConfiguration(e),
         }
     }
 }
@@ -45,27 +46,24 @@ impl From<DatabaseError> for ServerError {
 impl axum::response::IntoResponse for ServerError {
     fn into_response(self) -> axum::response::Response {
         let r = match self {
-            // ServerError::ParameterError => {
-            //     tracing::error!("Internal error: Unable to create parameter.");
-            //     (
-            //         StatusCode::INTERNAL_SERVER_ERROR,
-            //         Json("Unable to create parameter.".to_string()),
-            //     )
-            // }
-            // ServerError::SimulationInvokeError(error) => {
-            //     tracing::error!("Internal error: {error}.");
-            //     (
-            //         StatusCode::INTERNAL_SERVER_ERROR,
-            //         Json(format!("{}", error)),
-            //     )
-            // }
-            // ServerError::SubmitSponsoredTransactionError(error) => {
-            //     tracing::error!("Internal error: {error}.");
-            //     (
-            //         StatusCode::INTERNAL_SERVER_ERROR,
-            //         Json(format!("{}", error)),
-            //     )
-            // }
+            ServerError::DatabaseErrorPostgres(error) => {
+                tracing::error!("Internal error: {error}.");
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(format!("{}", error)),
+                )
+            }
+            ServerError::DatabaseErrorTypeConversion(error) => {
+                tracing::error!("Internal error: {error}.");
+                (StatusCode::INTERNAL_SERVER_ERROR, Json(error.to_string()))
+            }
+            ServerError::DatabaseErrorConfiguration(error) => {
+                tracing::error!("Internal error: {error}.");
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(format!("{}", error)),
+                )
+            }
             error => {
                 tracing::debug!("Bad request: {error}.");
                 (StatusCode::BAD_REQUEST, Json(format!("{}", error)))
@@ -73,13 +71,6 @@ impl axum::response::IntoResponse for ServerError {
         };
         r.into_response()
     }
-}
-
-/// Struct to store the revert reason.
-#[derive(serde::Serialize, Debug)]
-pub struct RevertReason {
-    /// Smart contract revert reason.
-    pub reason: RejectReason,
 }
 
 /// Command line configuration of the application.
@@ -90,14 +81,14 @@ struct Args {
         long = "port",
         default_value = "0.0.0.0:8080",
         help = "Address where the server will listen on.",
-        env = "CCD_INDEXER_LISTEN_ADDRESS"
+        env = "CCD_SERVER_LISTEN_ADDRESS"
     )]
     listen_address:  std::net::SocketAddr,
     #[clap(
         long = "frontend",
         default_value = "../frontend/dist",
         help = "Path to the directory where frontend assets are located.",
-        env = "CCD_INDEXER_FRONTEND"
+        env = "CCD_SERVER_FRONTEND"
     )]
     frontend_assets: std::path::PathBuf,
     /// Database connection string.
@@ -106,7 +97,7 @@ struct Args {
         default_value = "host=localhost dbname=indexer user=postgres password=password port=5432",
         help = "A connection string detailing the connection to the database used by the \
                 application.",
-        env = "CCD_INDEXER_DB_CONNECTION"
+        env = "CCD_SERVER_DB_CONNECTION"
     )]
     db_connection:   tokio_postgres::config::Config,
     /// Maximum log level
@@ -115,11 +106,12 @@ struct Args {
         default_value = "info",
         help = "The maximum log level. Possible values are: `trace`, `debug`, `info`, `warn`, and \
                 `error`.",
-        env = "CCD_INDEXER_LOG_LEVEL"
+        env = "CCD_SERVER_LOG_LEVEL"
     )]
     log_level:       tracing_subscriber::filter::LevelFilter,
 }
 
+/// The main function.
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let app = Args::parse();
@@ -143,11 +135,13 @@ async fn main() -> anyhow::Result<()> {
 
     let state = Server { db_pool };
 
-    // Render index.html
+    tracing::info!("Starting server...");
+
+    // Render `index.html` file and `assets` folder.
     let index_template = fs::read_to_string(app.frontend_assets.join("index.html"))
         .context("Frontend was not built or wrong path to the frontend files.")?;
-    tracing::info!("Starting server...");
     let serve_dir_service = ServeDir::new(app.frontend_assets.join("assets"));
+
     let router = Router::new()
         .route("/", get(|| async { Html(index_template) }))
         .nest_service("/assets", serve_dir_service)
@@ -165,11 +159,10 @@ async fn main() -> anyhow::Result<()> {
 
     tracing::info!("Listening at {}", app.listen_address);
 
-    let socket = app.listen_address;
     let shutdown_signal = set_shutdown()?;
 
     // Create the server.
-    let server = axum::Server::bind(&socket).serve(router.into_make_service());
+    let server = axum::Server::bind(&app.listen_address).serve(router.into_make_service());
 
     // Wait for either the server to complete or a shutdown signal to be received.
     tokio::select! {
@@ -225,11 +218,14 @@ fn set_shutdown() -> anyhow::Result<impl futures::Future<Output = ()>> {
     }
 }
 
+/// Struct returned by the `health` endpoint. It returns the version of the
+/// backend.
 #[derive(serde::Serialize)]
 struct Health {
     version: &'static str,
 }
 
+/// Handles the `health` endpoint, returning the version of the backend.
 #[tracing::instrument(level = "info")]
 async fn health() -> Json<Health> {
     Json(Health {
@@ -237,11 +233,15 @@ async fn health() -> Json<Health> {
     })
 }
 
+/// Struct returned by the `getItemStatusChangedEvents` endpoint. It returns a
+/// vector of ItemStatusChangedEvents from the database if present.
 #[derive(serde::Serialize)]
 struct StoredItemStatusChangedEventsReturnValue {
     data: Vec<StoredItemStatusChangedEvent>,
 }
 
+/// Handles the `getItemStatusChangedEvents` endpoint, returning a vector of
+/// ItemStatusChangedEvents from the database if present.
 #[tracing::instrument(level = "info")]
 async fn get_item_status_changed_events(
     State(state): State<Server>,
@@ -261,11 +261,15 @@ async fn get_item_status_changed_events(
     }))
 }
 
+/// Struct returned by the `getItemCreatedEvent` endpoint. It returns the
+/// itemCreatedEvent from the database if present.
 #[derive(serde::Serialize)]
 struct StoredItemCreatedEventReturnValue {
     data: Option<StoredItemCreatedEvent>,
 }
 
+/// Handles the `health` endpoint, returning the itemCreatedEvent from the
+/// database if present.
 #[tracing::instrument(level = "info")]
 async fn get_item_created_event(
     State(state): State<Server>,
