@@ -965,7 +965,7 @@ fn contract_serialization_helper(_ctx: &ReceiveContext, _host: &Host<State>) -> 
     Ok(())
 }
 
-/// The parameter type for the contract functions `noneOf`. A query
+/// The parameter type for the contract functions `nonceOf`. A query
 /// for the nonce of a given account.
 #[derive(Debug, Serialize, SchemaType)]
 #[concordium(transparent)]
