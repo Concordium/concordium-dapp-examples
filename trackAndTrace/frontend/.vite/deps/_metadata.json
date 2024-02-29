@@ -1,0 +1,124 @@
+{
+    "hash": "9b5a8a38",
+    "configHash": "c482cc47",
+    "lockfileHash": "c262adb6",
+    "browserHash": "8b395122",
+    "optimized": {
+        "react/jsx-dev-runtime": {
+            "src": "../../node_modules/react/jsx-dev-runtime.js",
+            "file": "react_jsx-dev-runtime.js",
+            "fileHash": "803dbfd2",
+            "needsInterop": true
+        },
+        "react": {
+            "src": "../../node_modules/react/index.js",
+            "file": "react.js",
+            "fileHash": "7ea5e342",
+            "needsInterop": true
+        },
+        "react-dom/client": {
+            "src": "../../node_modules/react-dom/client.js",
+            "file": "react-dom_client.js",
+            "fileHash": "90954f77",
+            "needsInterop": true
+        },
+        "react-router-dom": {
+            "src": "../../node_modules/react-router-dom/dist/index.js",
+            "file": "react-router-dom.js",
+            "fileHash": "8593c028",
+            "needsInterop": false
+        },
+        "@concordium/react-components": {
+            "src": "../../node_modules/@concordium/react-components/dist/index.js",
+            "file": "@concordium_react-components.js",
+            "fileHash": "dd563923",
+            "needsInterop": false
+        },
+        "react-bootstrap": {
+            "src": "../../node_modules/react-bootstrap/esm/index.js",
+            "file": "react-bootstrap.js",
+            "fileHash": "b3709134",
+            "needsInterop": false
+        },
+        "moment": {
+            "src": "../../node_modules/moment/dist/moment.js",
+            "file": "moment.js",
+            "fileHash": "f26d8d37",
+            "needsInterop": false
+        },
+        "@concordium/web-sdk": {
+            "src": "../../node_modules/@concordium/web-sdk/lib/esm/index.js",
+            "file": "@concordium_web-sdk.js",
+            "fileHash": "bc66b9e3",
+            "needsInterop": false
+        },
+        "react-hook-form": {
+            "src": "../../node_modules/react-hook-form/dist/index.esm.mjs",
+            "file": "react-hook-form.js",
+            "fileHash": "936a9168",
+            "needsInterop": false
+        },
+        "react-select": {
+            "src": "../../node_modules/react-select/dist/react-select.esm.js",
+            "file": "react-select.js",
+            "fileHash": "316eb093",
+            "needsInterop": false
+        },
+        "@concordium/wallet-connectors": {
+            "src": "../../node_modules/@concordium/wallet-connectors/dist/index.js",
+            "file": "@concordium_wallet-connectors.js",
+            "fileHash": "b7af06d3",
+            "needsInterop": false
+        },
+        "buffer/": {
+            "src": "../../node_modules/buffer/index.js",
+            "file": "buffer_.js",
+            "fileHash": "4727eff7",
+            "needsInterop": true
+        },
+        "json-bigint": {
+            "src": "../../node_modules/json-bigint/index.js",
+            "file": "json-bigint.js",
+            "fileHash": "a4dd8c9a",
+            "needsInterop": true
+        },
+        "react-switch": {
+            "src": "../../node_modules/react-switch/dist/index.dev.mjs",
+            "file": "react-switch.js",
+            "fileHash": "0fe4ed39",
+            "needsInterop": false
+        }
+    },
+    "chunks": {
+        "chunk-7F5NCG6F": {
+            "file": "chunk-7F5NCG6F.js"
+        },
+        "chunk-J2HDAMLS": {
+            "file": "chunk-J2HDAMLS.js"
+        },
+        "chunk-33DERLYP": {
+            "file": "chunk-33DERLYP.js"
+        },
+        "chunk-KANKV5NS": {
+            "file": "chunk-KANKV5NS.js"
+        },
+        "chunk-62AAIPHI": {
+            "file": "chunk-62AAIPHI.js"
+        },
+        "chunk-JZSXOKIY": {
+            "file": "chunk-JZSXOKIY.js"
+        },
+        "chunk-UJRN4I3W": {
+            "file": "chunk-UJRN4I3W.js"
+        },
+        "chunk-C3Y62267": {
+            "file": "chunk-C3Y62267.js"
+        },
+        "chunk-GNSLCM6O": {
+            "file": "chunk-GNSLCM6O.js"
+        },
+        "chunk-ANIWD3T6": {
+            "file": "chunk-ANIWD3T6.js"
+        }
+    }
+}
