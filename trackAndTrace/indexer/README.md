@@ -82,7 +82,7 @@ cargo run --bin server
 
 There are a few options to configure the server:
 
-- `--listen-address` is the listen address where the server will be listen on. If not specified, the default value `8080` is used.
+- `--listen-address` is the listen address where the server will be listen on. If not specified, the default value `0.0.0.0:8080` is used.
 
 - `--frontend` is the path to the directory where the frontend assets are located. If not specified, the default value `../frontend/dist` is used.
 

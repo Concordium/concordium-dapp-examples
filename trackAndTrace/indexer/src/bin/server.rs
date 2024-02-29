@@ -13,6 +13,9 @@ use indexer::db::StoredItemCreatedEvent;
 use std::fs;
 use tower_http::services::ServeDir;
 
+/// The maximum number of events allowed in a request to the database.
+const MAX_REQUEST_LIMIT: u32 = 30;
+
 /// Server struct to store the db_pool.
 #[derive(Clone, Debug)]
 pub struct Server {
@@ -30,6 +33,8 @@ pub enum ServerError {
     DatabaseErrorConfiguration(anyhow::Error),
     #[error("Failed to extract json object: {0}")]
     JsonRejection(#[from] JsonRejection),
+    #[error("The requested events to the database where above the limit {0}")]
+    MaxRequestLimit(u32),
 }
 
 /// Mapping DatabaseError to ServerError
@@ -68,6 +73,10 @@ impl axum::response::IntoResponse for ServerError {
                 )
             }
             ServerError::JsonRejection(error) => {
+                tracing::debug!("Bad request: {error}.");
+                (StatusCode::BAD_REQUEST, Json(format!("{}", error)))
+            }
+            ServerError::MaxRequestLimit(error) => {
                 tracing::debug!("Bad request: {error}.");
                 (StatusCode::BAD_REQUEST, Json(format!("{}", error)))
             }
@@ -222,7 +231,6 @@ struct Health {
 }
 
 /// Handles the `health` endpoint, returning the version of the backend.
-#[tracing::instrument(level = "info")]
 async fn health() -> Json<Health> {
     Json(Health {
         version: env!("CARGO_PKG_VERSION"),
@@ -255,6 +263,10 @@ async fn get_item_status_changed_events(
 
     let Json(param) = request?;
 
+    if param.limit > MAX_REQUEST_LIMIT {
+        return Err(ServerError::MaxRequestLimit(MAX_REQUEST_LIMIT));
+    }
+
     let database_result = db
         .get_item_status_changed_events_submissions(param.item_id, param.limit, param.offset)
         .await?;
@@ -271,8 +283,8 @@ struct StoredItemCreatedEventReturnValue {
     data: Option<StoredItemCreatedEvent>,
 }
 
-/// Handles the `health` endpoint, returning the itemCreatedEvent from the
-/// database if present.
+/// Handles the `getItemCreatedEvent` endpoint, returning the itemCreatedEvent
+/// from the database if present.
 async fn get_item_created_event(
     State(state): State<Server>,
     request: Result<Json<u64>, JsonRejection>,
