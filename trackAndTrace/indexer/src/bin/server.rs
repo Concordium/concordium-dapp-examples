@@ -50,21 +50,24 @@ impl axum::response::IntoResponse for ServerError {
                 tracing::error!("Internal error: {error}.");
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(format!("{}", error)),
+                    Json("Internal error".to_string()),
                 )
             }
             ServerError::DatabaseErrorTypeConversion(error) => {
                 tracing::error!("Internal error: {error}.");
-                (StatusCode::INTERNAL_SERVER_ERROR, Json(error.to_string()))
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json("Internal error".to_string()),
+                )
             }
             ServerError::DatabaseErrorConfiguration(error) => {
                 tracing::error!("Internal error: {error}.");
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(format!("{}", error)),
+                    Json("Internal error".to_string()),
                 )
             }
-            error => {
+            ServerError::JsonRejection(error) => {
                 tracing::debug!("Bad request: {error}.");
                 (StatusCode::BAD_REQUEST, Json(format!("{}", error)))
             }
@@ -78,7 +81,7 @@ impl axum::response::IntoResponse for ServerError {
 #[command(author, version, about)]
 struct Args {
     #[clap(
-        long = "port",
+        long = "listen-address",
         default_value = "0.0.0.0:8080",
         help = "Address where the server will listen on.",
         env = "CCD_SERVER_LISTEN_ADDRESS"
@@ -138,12 +141,12 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("Starting server...");
 
     // Render `index.html` file and `assets` folder.
-    let index_template = fs::read_to_string(app.frontend_assets.join("index.html"))
+    let index_file = fs::read_to_string(app.frontend_assets.join("index.html"))
         .context("Frontend was not built or wrong path to the frontend files.")?;
     let serve_dir_service = ServeDir::new(app.frontend_assets.join("assets"));
 
     let router = Router::new()
-        .route("/", get(|| async { Html(index_template) }))
+        .route("/", get(|| async { Html(index_file) }))
         .nest_service("/assets", serve_dir_service)
         .route("/api/getItemStatusChangedEvents", post(get_item_status_changed_events))
         .route("/api/getItemCreatedEvent", post(get_item_created_event))
@@ -162,17 +165,10 @@ async fn main() -> anyhow::Result<()> {
     let shutdown_signal = set_shutdown()?;
 
     // Create the server.
-    let server = axum::Server::bind(&app.listen_address).serve(router.into_make_service());
-
-    // Wait for either the server to complete or a shutdown signal to be received.
-    tokio::select! {
-      _ = server => {
-          println!("Server has shut down gracefully");
-      }
-      _ = shutdown_signal => {
-          println!("Received shutdown signal. Shutting down server gracefully...");
-      }
-    }
+    axum::Server::bind(&app.listen_address)
+        .serve(router.into_make_service())
+        .with_graceful_shutdown(shutdown_signal)
+        .await?;
 
     Ok(())
 }
@@ -240,20 +236,27 @@ struct StoredItemStatusChangedEventsReturnValue {
     data: Vec<StoredItemStatusChangedEvent>,
 }
 
+/// Parameter struct for the `getItemStatusChangedEvents` endpoint send in the
+/// request body.
+#[derive(serde::Deserialize)]
+struct GetItemstatusChangedEventsParam {
+    item_id: u64,
+    limit:   u32,
+    offset:  u32,
+}
+
 /// Handles the `getItemStatusChangedEvents` endpoint, returning a vector of
 /// ItemStatusChangedEvents from the database if present.
-#[tracing::instrument(level = "info")]
 async fn get_item_status_changed_events(
     State(state): State<Server>,
-    request: Result<Json<u64>, JsonRejection>,
+    request: Result<Json<GetItemstatusChangedEventsParam>, JsonRejection>,
 ) -> Result<Json<StoredItemStatusChangedEventsReturnValue>, ServerError> {
     let db = state.db_pool.get().await?;
 
-    let Json(item_id) = request?;
+    let Json(param) = request?;
 
-    // We hardcode the pagination here for simplicity for this demo dApp.
     let database_result = db
-        .get_item_status_changed_events_submissions(item_id, 30, 0)
+        .get_item_status_changed_events_submissions(param.item_id, param.limit, param.offset)
         .await?;
 
     Ok(Json(StoredItemStatusChangedEventsReturnValue {
@@ -270,7 +273,6 @@ struct StoredItemCreatedEventReturnValue {
 
 /// Handles the `health` endpoint, returning the itemCreatedEvent from the
 /// database if present.
-#[tracing::instrument(level = "info")]
 async fn get_item_created_event(
     State(state): State<Server>,
     request: Result<Json<u64>, JsonRejection>,

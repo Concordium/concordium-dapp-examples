@@ -67,7 +67,7 @@ struct App {
     )]
     request_timeout: u64,
     #[clap(
-        long = "port",
+        long = "listen-address",
         default_value = "0.0.0.0:8080",
         help = "Address where the server will listen on.",
         env = "LISTEN_ADDRESS"
@@ -206,17 +206,10 @@ async fn main() -> anyhow::Result<()> {
     let shutdown_signal = set_shutdown()?;
 
     // Create the server.
-    let server = axum::Server::bind(&socket).serve(router.into_make_service());
-
-    // Wait for either the server to complete or a shutdown signal to be received.
-    tokio::select! {
-      _ = server => {
-          println!("Server has shut down gracefully");
-      }
-      _ = shutdown_signal => {
-          println!("Received shutdown signal. Shutting down server gracefully...");
-      }
-    }
+    axum::Server::bind(&socket)
+        .serve(router.into_make_service())
+        .with_graceful_shutdown(shutdown_signal)
+        .await?;
 
     Ok(())
 }
