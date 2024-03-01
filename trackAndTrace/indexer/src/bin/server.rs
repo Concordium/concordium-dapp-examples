@@ -33,7 +33,7 @@ pub enum ServerError {
     DatabaseErrorConfiguration(anyhow::Error),
     #[error("Failed to extract json object: {0}")]
     JsonRejection(#[from] JsonRejection),
-    #[error("The requested events to the database where above the limit {0}")]
+    #[error("The requested events to the database were above the limit {0}")]
     MaxRequestLimit(u32),
 }
 
