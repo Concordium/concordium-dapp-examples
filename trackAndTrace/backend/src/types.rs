@@ -1,0 +1,157 @@
+use axum::{extract::rejection::JsonRejection, Json};
+use concordium_rust_sdk::{
+    smart_contracts::{
+        common as concordium_std,
+        common::{
+            AccountAddress, AccountSignatures, ContractAddress, OwnedEntrypointName, Serial,
+            Timestamp,
+        },
+    },
+    types::{Nonce, RejectReason, WalletAccount},
+    v2::{self, QueryError, RPCError},
+};
+use hex::FromHexError;
+use http::StatusCode;
+use std::{collections::HashMap, sync::Arc};
+use tokio::sync::Mutex;
+
+#[derive(Debug, thiserror::Error)]
+pub enum ServerError {
+    #[error("Unable to parse request: {0}.")]
+    InvalidRequest(#[from] JsonRejection),
+    #[error("Unable to parse signature into a hex string: {0}.")]
+    SignatureError(#[from] FromHexError),
+    #[error("Unable to parse signature because of wrong length.")]
+    SignatureLengthError,
+    #[error("Unable to create parameter.")]
+    ParameterError,
+    #[error("Unable to invoke the node to simulate the transaction: {0}.")]
+    SimulationInvokeError(#[from] QueryError),
+    #[error("Simulation of transaction reverted in smart contract with reason: {0:?}.")]
+    TransactionSimulationError(RevertReason),
+    #[error("The signer account reached its rate limit.")]
+    RateLimitError,
+    #[error("Unable to submit transaction on chain successfully: {0}.")]
+    SubmitSponsoredTransactionError(#[from] RPCError),
+    #[error("Unable to derive alias account of signer.")]
+    NoAliasAccount,
+}
+
+impl axum::response::IntoResponse for ServerError {
+    fn into_response(self) -> axum::response::Response {
+        let r = match self {
+            ServerError::ParameterError => {
+                tracing::error!("Internal error: Unable to create parameter.");
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json("Unable to create parameter.".to_string()),
+                )
+            }
+            ServerError::SimulationInvokeError(error) => {
+                tracing::error!("Internal error: {error}.");
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(format!("{}", error)),
+                )
+            }
+            ServerError::SubmitSponsoredTransactionError(error) => {
+                tracing::error!("Internal error: {error}.");
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(format!("{}", error)),
+                )
+            }
+            error => {
+                tracing::debug!("Bad request: {error}.");
+                (StatusCode::BAD_REQUEST, Json(format!("{}", error)))
+            }
+        };
+        r.into_response()
+    }
+}
+
+/// Struct to store the revert reason.
+#[derive(serde::Serialize, Debug)]
+pub struct RevertReason {
+    /// Smart contract revert reason.
+    pub reason: RejectReason,
+}
+
+/// Parameters passed from the front end to this back end when calling the API
+/// endpoint `/sponsoredTransaction`.
+#[derive(serde::Deserialize, serde::Serialize, Debug, Clone)]
+pub struct SponsoredTransactionParam {
+    /// Wallet account that signed the `permit_message` at the front end.
+    pub signer:           AccountAddress,
+    /// Nonce (as stored in the state of the `smart-contract`) of the
+    /// above account when it signed the `permit_message` at the front end.
+    /// The nonce prevents replay attacks.
+    pub nonce:            u64,
+    /// Signature that the above account generated when it signed the
+    /// `permit_message` at the front end.
+    pub signature:        String,
+    /// A timestamp to make signatures expire.
+    pub expiry_timestamp: Timestamp,
+    /// The name of the contract.
+    pub contract_name:    String,
+    /// The name of the endpoint that should be invoked through the sponsored
+    /// transaction mechanism.
+    pub endpoint:         String,
+    /// The serialized payload that the permit endpoint forwards to the above
+    /// `endpoint`.
+    pub payload:          Vec<u8>,
+}
+
+/// The parameters for the permit function of the cis3 standard.
+#[derive(Debug, Serial)]
+pub struct PermitParam {
+    /// Signature that the above account generated when it signed the
+    /// `permit_message` at the front end.
+    pub signature: AccountSignatures,
+    /// Wallet account that signed the `permit_message` at the front end.
+    pub signer:    AccountAddress,
+    /// The `permit_message` that the signer signed at the front end.
+    pub message:   PermitMessage,
+}
+
+/// Part of the parameters for the permit function of the cis3 standard.
+#[derive(Debug, Serial, Clone)]
+pub struct PermitMessage {
+    /// The contract_address that the signature is intended for.
+    pub contract_address: ContractAddress,
+    /// Nonce (as stored in the state of the `cis2-token-smart-contract`) of the
+    /// signer when it signed the `permit_message` at the front end.
+    /// The nonce prevents replay attacks.
+    pub nonce:            u64,
+    /// A timestamp to make signatures expire.
+    pub timestamp:        Timestamp,
+    /// The entry_point that the signature is intended for.
+    pub entry_point:      OwnedEntrypointName,
+    /// The serialized payload that the permit endpoint forwards to the above
+    /// `endpoint`.
+    #[concordium(size_length = 2)]
+    pub payload:          Vec<u8>,
+}
+
+/// Server struct to store the contract addresses, the node client,
+/// the nonce and key of the sponsorer account, and the
+/// rate_limits of user accounts.
+#[derive(Clone, Debug)]
+pub struct Server {
+    /// Client to interact with the node.
+    pub node_client: v2::Client,
+    /// Key and address of the sponsorer account.
+    pub key: Arc<WalletAccount>,
+    /// Contract address of the track_and_trace contract.
+    pub track_and_trace_smart_contract: ContractAddress,
+    /// Nonce of the sponsorer account.
+    pub nonce: Arc<Mutex<Nonce>>,
+    /// The rate limit value for each user account is incremented
+    /// every time this user account signs a `permit_message` at the front end
+    /// and the signature is submitted to the `sponsoredTransaction` entry point
+    /// of this back end. This server only allows up to
+    /// `RATE_LIMIT_PER_ACCOUNT` transactions to be submitted with a
+    /// signature generated from a given user account. The rate limit values
+    /// stored here are transient and are reset on server restart.
+    pub rate_limits: Arc<Mutex<HashMap<AccountAddress, u8>>>,
+}

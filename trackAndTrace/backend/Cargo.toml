@@ -1,0 +1,35 @@
+[package]
+name = "sponsored-transaction-backend"
+version = "1.0.0"
+authors = ["Concordium AG <developers@concordium.com>"]
+edition = "2021"
+license-file = "../../LICENSE"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0"
+axum = { version = "0.6", features = ["macros"] }
+clap = { version = "4.3", features = ["derive", "env"] }
+serde_json = "1.0"
+tokio = { version = "1.29", features = ["rt-multi-thread", "signal"] }
+tracing = "0.1"
+tracing-subscriber = "0.3"
+serde = { version = "1.0", features = ["derive"] }
+futures = "0.3"
+tower-http = { version = "0.4", features = [
+  "trace",
+  "limit",
+  "timeout",
+  "fs",
+  "compression-br",
+  "compression-zstd",
+] }
+http = "0.2"
+tonic = { version = "0.8", features = ["tls-roots", "tls"] }
+thiserror = "1.0"
+hex = "0.4.3"
+
+[dependencies.concordium-rust-sdk]
+path = "../../deps/concordium-rust-sdk/"
+
