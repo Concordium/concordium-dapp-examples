@@ -4,7 +4,6 @@ import { useForm, useWatch } from 'react-hook-form';
 
 /**
  * This function gets the historical ItemStatusChangedEvents for a given itemID.
- * Note: For simplicity of this demo dapp, pagination is currently hardcoded at the backend.
  *
  * @param itemID - The itemID.
  * @throws If the server responds with an error or the response of the server is malformed.
@@ -167,7 +166,7 @@ export function Explorer() {
                         <table>
                             <thead>
                                 <tr>
-                                    <th>Block Time</th>
+                                    <th>Timestamp</th>
                                     <th>Transaction Hash</th>
                                     <th>New Status</th>
                                 </tr>
