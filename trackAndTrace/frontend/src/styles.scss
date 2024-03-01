@@ -98,7 +98,7 @@ input {
     border-radius: 8px;
 }
 
-.navbar a {
+.navbar a.secondary {
     color: black;
     text-align: center;
     padding: 10px 20px;
@@ -116,7 +116,7 @@ input {
     padding: 10px 20px;
 }
 
-.navbar a:hover {
+.navbar a.secondary:hover {
     background-color: #ddd;
     color: black;
 }

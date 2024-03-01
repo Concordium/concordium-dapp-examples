@@ -31,11 +31,28 @@ const App = (props: WalletConnectionProps) => {
     return (
         <Router>
             <div className="navbar">
-                <div>Track And Trace</div>
-                <Link to="/explorer">Explorer</Link>
-                <Link to="/changeItemStatus">Admin1</Link>
-                <Link to="/adminCreateItem">Admin2</Link>
-                <Link to="/adminChangeRoles">Admin3</Link>
+                <div>
+                    Track And Trace{' '}
+                    <a
+                        target="_blank"
+                        rel="noreferrer"
+                        href={`https://testnet.ccdscan.io/?dcount=1&dentity=contract&dcontractAddressIndex=${Number(process.env.TRACK_AND_TRACE_CONTRACT_INDEX)}&dcontractAddressSubIndex=0`}
+                    >
+                        &lt;{Number(process.env.TRACK_AND_TRACE_CONTRACT_INDEX)},0&gt;
+                    </a>
+                </div>
+                <Link className="secondary" to="/explorer">
+                    Explorer
+                </Link>
+                <Link className="secondary" to="/changeItemStatus">
+                    Admin1
+                </Link>
+                <Link className="secondary" to="/adminCreateItem">
+                    Admin2
+                </Link>
+                <Link className="secondary" to="/adminChangeRoles">
+                    Admin3
+                </Link>
                 <Button variant="primary" id="account" onClick={connect}>
                     {account ? account.slice(0, 5) + '...' + account.slice(-5) : 'Connect Wallet'}
                 </Button>

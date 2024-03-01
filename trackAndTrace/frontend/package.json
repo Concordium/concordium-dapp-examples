@@ -4,8 +4,8 @@
     "version": "1.0.0",
     "type": "module",
     "scripts": {
-        "dev": "TRACK_AND_TRACE_CONTRACT_INDEX=8214 vite",
-        "build": "tsc && TRACK_AND_TRACE_CONTRACT_INDEX=8214 vite build",
+        "dev": "TRACK_AND_TRACE_CONTRACT_INDEX=8219 vite",
+        "build": "tsc && TRACK_AND_TRACE_CONTRACT_INDEX=8219 vite build",
         "lint-check": "eslint",
         "format-check": "prettier --check .",
         "format-fix": "prettier --write .",
