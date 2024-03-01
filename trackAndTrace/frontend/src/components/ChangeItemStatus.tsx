@@ -50,7 +50,7 @@ async function generateMessage(newStatus: string, itemID: bigint, expiryTimeSign
             toBuffer(SERIALIZATION_HELPER_SCHEMA_PERMIT_MESSAGE, 'base64')
         );
 
-        return serializedMessage;
+        return [payload, serializedMessage];
     } catch (error) {
         throw new Error(`Generating message failed. Orginal error: ${(error as Error).message}`);
     }
@@ -136,7 +136,7 @@ export function ChangeItemStatus(props: Props) {
 
         if (connection && accountAddress) {
             try {
-                const serializedMessage = await generateMessage(newStatus, itemID, expiryTimeSignature, nextNonce);
+                const [payload, serializedMessage] = await generateMessage(newStatus, itemID, expiryTimeSignature, nextNonce);
 
                 const permitSignature = await connection.signMessage(accountAddress, {
                     type: 'BinaryMessage',
@@ -144,12 +144,31 @@ export function ChangeItemStatus(props: Props) {
                     schema: typeSchemaFromBase64(SERIALIZATION_HELPER_SCHEMA_PERMIT_MESSAGE),
                 });
 
-                // TODO: Send signature to backend and submit transaction.
-                // TODO: Send transaction hash to frontend
-                console.log('Generate Signature:');
-                console.log(permitSignature[0][0]);
-                console.log('TODO: Send signature to backend.');
-                setTxHash('TODO: Get transaction hash from backend');
+                const response = await fetch(`api/sponsoredTransaction`, {
+                    method: 'POST',
+                    headers: new Headers({ 'content-type': 'application/json' }),
+                    body: JSON.stringify({
+                        signer: accountAddress,
+                        nonce: Number(nextNonce),
+                        signature: permitSignature[0][0],
+                        expiry_timestamp: expiryTimeSignature,
+                        contract_name:    TrackAndTraceContract.contractName.value,
+                        endpoint:        "changeItemStatus",
+                        payload: Array.from(payload.buffer),
+                    }),
+                });
+
+                if (!response.ok) {
+                    const error = (await response.json()) as Error;
+                    throw new Error(`Unable to get item's change status events: ${JSON.stringify(error)}`);
+                }
+                const txHash = (await response.json()) as string;
+
+                if (txHash) {
+                    setTxHash(txHash);
+                } else {
+                    throw new Error(`Unable to get item's change status events`);
+                }
             } catch (err) {
                 setError((err as Error).message);
             }
