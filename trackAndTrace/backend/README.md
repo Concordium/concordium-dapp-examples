@@ -17,13 +17,13 @@ All of the above is available by using `--help` to get usage information.
 
 An example to run the backend with basic settings and testnet node would be:
 ```shell
-cargo run -- --account-key-file <YourAccountPathToYourKeys> --log-level debug
+cargo run -- --account-key-file <YourAccountPathToYourKeys> --whitelisted-accounts <YourWhitelistedAccountAddress> --log-level debug
 ```
 
 An example to run the backend with some filled in example settings would be:
 
 ```shell
-cargo run -- --account-key-file ./4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export --log-level debug 
+cargo run -- --account-key-file ./4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export --whitelisted-accounts 4bbdAUCDK2D6cUvUeprGr4FaSaHXKuYmYVjyCa4bXSCu3NUXzA --log-level debug 
 ```
 
 To get your account file (the `4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export` file in the above example), export it from the [Concordium Browser wallet for web](http://developer.concordium.software/en/mainnet/net/guides/export-key.html).

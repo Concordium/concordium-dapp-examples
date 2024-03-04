@@ -10,23 +10,19 @@ use axum::{
 use clap::Parser;
 use concordium_rust_sdk::{
     common::types::TransactionTime,
+    id::types::AccountAddress,
     smart_contracts::common::{
         AccountSignatures, Amount, ContractAddress, CredentialSignatures, OwnedEntrypointName,
         Signature, SignatureEd25519,
     },
     types::{
         hashes::TransactionHash,
-        smart_contracts,
-        smart_contracts::{ContractContext, InvokeContractResult},
+        smart_contracts::{self, ContractContext, InvokeContractResult},
         transactions, Energy, WalletAccount,
     },
     v2::{self, BlockIdentifier},
 };
-use std::{
-    collections::{BTreeMap, HashMap},
-    fs,
-    sync::Arc,
-};
+use std::{collections::BTreeMap, fs, sync::Arc};
 use tokio::sync::Mutex;
 use tonic::transport::ClientTlsConfig;
 use tower_http::services::ServeDir;
@@ -38,7 +34,6 @@ use tower_http::services::ServeDir;
 // state) caused by transactions that have been executed meanwhile.
 const EPSILON_ENERGY: u64 = 1000;
 const ENERGY: u64 = 60000;
-const RATE_LIMIT_PER_ACCOUNT: u8 = 30;
 
 #[derive(clap::Parser, Debug)]
 #[clap(version, author)]
@@ -49,41 +44,50 @@ struct App {
         default_value = "https://grpc.testnet.concordium.com:20000",
         env = "NODE"
     )]
-    endpoint:        concordium_rust_sdk::v2::Endpoint,
+    endpoint:             concordium_rust_sdk::v2::Endpoint,
     #[clap(
         long = "log-level",
         default_value = "info",
         help = "Maximum log level.",
         env = "LOG_LEVEL"
     )]
-    log_level:       tracing_subscriber::filter::LevelFilter,
+    log_level:            tracing_subscriber::filter::LevelFilter,
     #[clap(
         long = "request-timeout",
         help = "Request timeout (both of request to the node and server requests) in milliseconds.",
         default_value = "10000",
         env = "REQUEST_TIMEOUT"
     )]
-    request_timeout: u64,
+    request_timeout:      u64,
     #[clap(
         long = "listen-address",
         default_value = "0.0.0.0:8080",
         help = "Address where the server will listen on.",
         env = "LISTEN_ADDRESS"
     )]
-    listen_address:  std::net::SocketAddr,
+    listen_address:       std::net::SocketAddr,
     #[clap(
         long = "frontend",
         default_value = "../frontend/dist",
         help = "Path to the directory where frontend assets are located.",
         env = "FRONTEND"
     )]
-    frontend_assets: std::path::PathBuf,
+    frontend_assets:      std::path::PathBuf,
     #[structopt(
         long = "account-key-file",
         env = "ACCOUNT_KEY_FILE",
         help = "Path to the account key file."
     )]
-    keys_path:       std::path::PathBuf,
+    keys_path:            std::path::PathBuf,
+    #[clap(
+        long = "whitelisted-accounts",
+        env = "WHITELISTED_ACCOUNTS",
+        help = "A list of whitelisted account addresses. These accounts are allowed to submit \
+                transactions via the backend. You can use this flag several times e.g. \
+                `--whitelisted-account 32GKttZ8SB1DZvpK1czfWHLWht1oMDz1JqmV9Lo28Hqpf2RP2w \
+                --whitelisted-account 4EphLJK99TVEuMRscZHJziPWi1bVdb2YLxPoEVSw8FKidPfr5w`"
+    )]
+    whitelisted_accounts: Vec<AccountAddress>,
 }
 
 #[tokio::main]
@@ -155,7 +159,7 @@ async fn main() -> anyhow::Result<()> {
     let state = Server {
         node_client,
         nonce: Arc::new(Mutex::new(nonce_response.nonce)),
-        rate_limits: Arc::new(Mutex::new(HashMap::new())),
+        whitelisted_accounts: app.whitelisted_accounts,
         key: sponsorer_key,
     };
 
@@ -198,6 +202,19 @@ async fn handle_sponsored_transaction(
     request: Result<Json<SponsoredTransactionParam>, JsonRejection>,
 ) -> Result<Json<TransactionHash>, ServerError> {
     let Json(request) = request?;
+
+    // We restrict submission of sponsored transactions via the backend
+    // to trusted/whitelisted accounts only. To enable untrusted accounts
+    // for sponsored transaction submissions, implement rate-limiting and/or
+    // other authorization mechanisms. This prevents untrusted accounts
+    // from sending an unlimited number of transactions,
+    // which could deplete the CCD balance in your sponsorer account.
+    tracing::debug!("Check if account {} is whitelisted  ...", request.signer);
+
+    if !state.whitelisted_accounts.contains(&request.signer) {
+        tracing::warn!("Signer account {} is not whitelisted.", request.signer);
+        return Err(ServerError::SignerNotWhitelisted);
+    }
 
     tracing::debug!("Created payload: {:?}", request.payload);
 
@@ -303,40 +320,6 @@ async fn handle_sponsored_transaction(
     // increased by 1 and its lock is released after the transaction is submitted to
     // the blockchain.
     let mut nonce = state.nonce.lock().await;
-
-    // There should be rate limiting in place to prevent the sponsor wallet from
-    // being drained. We only allow up to RATE_LIMIT_PER_ACCOUNT API calls to
-    // this backend. The rate_limits are transient and are reset on server
-    // restart.
-
-    // We only check the rate_limits after acquiring the nonce lock. If we do it
-    // before we don't have guarantees due to possible parallel API requests.
-
-    // On mainnet, a user can only create around 25 accounts per identity.
-    // In production, a user registration/authentication at the frontend can be
-    // added or a database that permanently keeps track of the rate_limits so
-    // that the server can be restarted and reload the rate_limit values from the
-    // database.
-
-    tracing::debug!("Check rate limit of account {} ...", request.signer);
-
-    let mut rate_limits = state.rate_limits.lock().await;
-
-    // Account addresses on Concordium have account aliases. We track the
-    // rate-limits by using the alias 0 for every account. https://developer.concordium.software/en/mainnet/net/references/transactions.html#account-aliases
-    let alias_account_0 = request
-        .signer
-        .get_alias(0)
-        .ok_or_else(|| ServerError::NoAliasAccount)?;
-
-    let limit = rate_limits.entry(alias_account_0).or_insert(0u8);
-
-    if *limit >= RATE_LIMIT_PER_ACCOUNT {
-        tracing::warn!("Rate limit for account {} reached.", request.signer);
-        return Err(ServerError::RateLimitError);
-    }
-
-    *limit += 1;
 
     let tx = transactions::send::make_and_sign_transaction(
         &state.key.keys,

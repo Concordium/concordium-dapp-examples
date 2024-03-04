@@ -12,7 +12,7 @@ use concordium_rust_sdk::{
 };
 use hex::FromHexError;
 use http::StatusCode;
-use std::{collections::HashMap, sync::Arc};
+use std::sync::Arc;
 use tokio::sync::Mutex;
 
 #[derive(Debug, thiserror::Error)]
@@ -29,12 +29,10 @@ pub enum ServerError {
     SimulationInvokeError(#[from] QueryError),
     #[error("Simulation of transaction reverted in smart contract with reason: {0:?}.")]
     TransactionSimulationError(RevertReason),
-    #[error("The signer account reached its rate limit.")]
-    RateLimitError,
+    #[error("The signer account is not whitelisted.")]
+    SignerNotWhitelisted,
     #[error("Unable to submit transaction on chain successfully: {0}.")]
     SubmitSponsoredTransactionError(#[from] RPCError),
-    #[error("Unable to derive alias account of signer.")]
-    NoAliasAccount,
 }
 
 impl axum::response::IntoResponse for ServerError {
@@ -136,21 +134,16 @@ pub struct PermitMessage {
 
 /// Server struct to store the contract addresses, the node client,
 /// the nonce and key of the sponsorer account, and the
-/// rate_limits of user accounts.
+/// whitelisted_accounts.
 #[derive(Clone, Debug)]
 pub struct Server {
     /// Client to interact with the node.
-    pub node_client: v2::Client,
+    pub node_client:          v2::Client,
     /// Key and address of the sponsorer account.
-    pub key:         Arc<WalletAccount>,
+    pub key:                  Arc<WalletAccount>,
     /// Nonce of the sponsorer account.
-    pub nonce:       Arc<Mutex<Nonce>>,
-    /// The rate limit value for each user account is incremented
-    /// every time this user account signs a `permit_message` at the front end
-    /// and the signature is submitted to the `sponsoredTransaction` entry point
-    /// of this back end. This server only allows up to
-    /// `RATE_LIMIT_PER_ACCOUNT` transactions to be submitted with a
-    /// signature generated from a given user account. The rate limit values
-    /// stored here are transient and are reset on server restart.
-    pub rate_limits: Arc<Mutex<HashMap<AccountAddress, u8>>>,
+    pub nonce:                Arc<Mutex<Nonce>>,
+    /// A liste of accounts allowed to send sponsored transactions via this back
+    /// end.
+    pub whitelisted_accounts: Vec<AccountAddress>,
 }
