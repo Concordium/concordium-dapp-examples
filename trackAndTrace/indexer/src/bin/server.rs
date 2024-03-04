@@ -8,19 +8,39 @@ use axum::{
     Json, Router,
 };
 use clap::Parser;
+use concordium_rust_sdk::{
+    base::hashes::TransactionHash,
+    common::types::TransactionTime,
+    id::types::AccountAddress,
+    smart_contracts::common::{
+        AccountSignatures, Amount, ContractAddress, CredentialSignatures, OwnedEntrypointName,
+        Signature, SignatureEd25519,
+    },
+    types::{
+        smart_contracts::{self, ContractContext, InvokeContractResult},
+        transactions, Energy, WalletAccount,
+    },
+    v2::{
+        BlockIdentifier, QueryError, RPCError, {self},
+    },
+};
+use hex::{self, FromHexError};
 use http::StatusCode;
-use indexer::db::StoredItemCreatedEvent;
-use std::fs;
+use indexer::{db::StoredItemCreatedEvent, types::*};
+use std::{collections::BTreeMap, fs, sync::Arc};
+use tokio::sync::Mutex;
+use tonic::transport::ClientTlsConfig;
 use tower_http::services::ServeDir;
 
+// Before submitting a transaction we simulate/dry-run the transaction to get an
+// estimate of the energy needed for executing the transaction. In addition, we
+// allow an additional small amount of energy `EPSILON_ENERGY` to be consumed by
+// the transaction to cover small variations (e.g. changes to the smart contract
+// state) caused by transactions that have been executed meanwhile.
+const EPSILON_ENERGY: u64 = 1000;
+const ENERGY: u64 = 60000;
 /// The maximum number of events allowed in a request to the database.
 const MAX_REQUEST_LIMIT: u32 = 30;
-
-/// Server struct to store the db_pool.
-#[derive(Clone, Debug)]
-pub struct Server {
-    db_pool: DatabasePool,
-}
 
 /// Errors that this server can produce.
 #[derive(Debug, thiserror::Error)]
@@ -31,10 +51,24 @@ pub enum ServerError {
     DatabaseErrorTypeConversion(String),
     #[error("Database error in configuration: {0}")]
     DatabaseErrorConfiguration(anyhow::Error),
-    #[error("Failed to extract json object: {0}")]
-    JsonRejection(#[from] JsonRejection),
+    #[error("Failed to parse request: {0}")]
+    InvalidRequest(#[from] JsonRejection),
     #[error("The requested events to the database were above the limit {0}")]
     MaxRequestLimit(u32),
+    #[error("Unable to parse signature into a hex string: {0}.")]
+    SignatureError(#[from] FromHexError),
+    #[error("Unable to parse signature because of wrong length.")]
+    SignatureLengthError,
+    #[error("Unable to create parameter.")]
+    ParameterError,
+    #[error("Unable to invoke the node to simulate the transaction: {0}.")]
+    SimulationInvokeError(#[from] QueryError),
+    #[error("Simulation of transaction reverted in smart contract with reason: {0:?}.")]
+    TransactionSimulationError(RevertReason),
+    #[error("The signer account is not whitelisted.")]
+    SignerNotWhitelisted,
+    #[error("Unable to submit transaction on chain successfully: {0}.")]
+    SubmitSponsoredTransactionError(#[from] RPCError),
 }
 
 /// Mapping DatabaseError to ServerError
@@ -72,13 +106,56 @@ impl axum::response::IntoResponse for ServerError {
                     Json("Internal error".to_string()),
                 )
             }
-            ServerError::JsonRejection(error) => {
-                tracing::debug!("Bad request: {error}.");
-                (StatusCode::BAD_REQUEST, Json(format!("{}", error)))
-            }
             ServerError::MaxRequestLimit(error) => {
                 tracing::debug!("Bad request: {error}.");
                 (StatusCode::BAD_REQUEST, Json(format!("{}", error)))
+            }
+            ServerError::ParameterError => {
+                tracing::error!("Internal error: Unable to create parameter.");
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json("Unable to create parameter.".to_string()),
+                )
+            }
+            ServerError::SimulationInvokeError(error) => {
+                tracing::error!("Internal error: {error}.");
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(format!("{}", error)),
+                )
+            }
+            ServerError::SubmitSponsoredTransactionError(error) => {
+                tracing::error!("Internal error: {error}.");
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(format!("{}", error)),
+                )
+            }
+            ServerError::InvalidRequest(error) => {
+                tracing::debug!("Bad request: {error}.");
+                (StatusCode::BAD_REQUEST, Json(format!("{}", error)))
+            }
+            ServerError::SignatureError(error) => {
+                tracing::debug!("Bad request: {error}.");
+                (StatusCode::BAD_REQUEST, Json(format!("{}", error)))
+            }
+            ServerError::SignatureLengthError => {
+                tracing::debug!("Bad request:");
+                (
+                    StatusCode::BAD_REQUEST,
+                    Json("Unable to parse signature because of wrong length".to_string()),
+                )
+            }
+            ServerError::TransactionSimulationError(error) => {
+                tracing::debug!("Bad request:");
+                (StatusCode::BAD_REQUEST, Json(format!("{:?}", error.reason)))
+            }
+            ServerError::SignerNotWhitelisted => {
+                tracing::debug!("Bad request:");
+                (
+                    StatusCode::BAD_REQUEST,
+                    Json("The signer account is not whitelisted".to_string()),
+                )
             }
         };
         r.into_response()
@@ -95,14 +172,14 @@ struct Args {
         help = "Address where the server will listen on.",
         env = "CCD_SERVER_LISTEN_ADDRESS"
     )]
-    listen_address:  std::net::SocketAddr,
+    listen_address:       std::net::SocketAddr,
     #[clap(
         long = "frontend",
         default_value = "../frontend/dist",
         help = "Path to the directory where frontend assets are located.",
         env = "CCD_SERVER_FRONTEND"
     )]
-    frontend_assets: std::path::PathBuf,
+    frontend_assets:      std::path::PathBuf,
     /// Database connection string.
     #[arg(
         long = "db-connection",
@@ -111,7 +188,7 @@ struct Args {
                 application.",
         env = "CCD_SERVER_DB_CONNECTION"
     )]
-    db_connection:   tokio_postgres::config::Config,
+    db_connection:        tokio_postgres::config::Config,
     /// Maximum log level
     #[clap(
         long = "log-level",
@@ -120,7 +197,36 @@ struct Args {
                 `error`.",
         env = "CCD_SERVER_LOG_LEVEL"
     )]
-    log_level:       tracing_subscriber::filter::LevelFilter,
+    log_level:            tracing_subscriber::filter::LevelFilter,
+    #[clap(
+        long = "node",
+        help = "GRPC V2 interface of the node.",
+        default_value = "https://grpc.testnet.concordium.com:20000",
+        env = "NODE"
+    )]
+    endpoint:             concordium_rust_sdk::v2::Endpoint,
+    #[clap(
+        long = "request-timeout",
+        help = "Request timeout (both of request to the node and server requests) in milliseconds.",
+        default_value = "10000",
+        env = "REQUEST_TIMEOUT"
+    )]
+    request_timeout:      u64,
+    #[structopt(
+        long = "account-key-file",
+        env = "ACCOUNT_KEY_FILE",
+        help = "Path to the account key file."
+    )]
+    keys_path:            std::path::PathBuf,
+    #[clap(
+        long = "whitelisted-accounts",
+        env = "WHITELISTED_ACCOUNTS",
+        help = "A list of whitelisted account addresses. These accounts are allowed to submit \
+                transactions via the backend. You can use this flag several times e.g. \
+                `--whitelisted-account 32GKttZ8SB1DZvpK1czfWHLWht1oMDz1JqmV9Lo28Hqpf2RP2w \
+                --whitelisted-account 4EphLJK99TVEuMRscZHJziPWi1bVdb2YLxPoEVSw8FKidPfr5w`"
+    )]
+    whitelisted_accounts: Vec<AccountAddress>,
 }
 
 /// The main function.
@@ -140,12 +246,69 @@ async fn main() -> anyhow::Result<()> {
             .init();
     }
 
+    anyhow::ensure!(
+        app.request_timeout >= 1000,
+        "Request timeout should be at least 1s."
+    );
+
+    let endpoint = if app
+        .endpoint
+        .uri()
+        .scheme()
+        .map_or(false, |x| x == &http::uri::Scheme::HTTPS)
+    {
+        app.endpoint
+            .tls_config(ClientTlsConfig::new())
+            .context("Unable to construct TLS configuration for Concordium API.")?
+    } else {
+        app.endpoint
+    };
+
+    // Make it 500ms less than request timeout to make sure we can fail properly
+    // with a connection timeout in case of node connectivity problems.
+    let node_timeout = std::time::Duration::from_millis(app.request_timeout - 500);
+
+    let endpoint = endpoint
+        .connect_timeout(node_timeout)
+        .timeout(node_timeout)
+        .http2_keep_alive_interval(std::time::Duration::from_secs(300))
+        .keep_alive_timeout(std::time::Duration::from_secs(10))
+        .keep_alive_while_idle(true);
+
+    let mut node_client = v2::Client::new(endpoint)
+        .await
+        .context("Unable to establish connection to the node.")?;
+
+    // Load account keys and sender address from a file
+    let keys: WalletAccount =
+        WalletAccount::from_json_file(app.keys_path).context("Could not read the keys file.")?;
+
+    let sponsorer_key = Arc::new(keys);
+
+    let nonce_response = node_client
+        .get_next_account_sequence_number(&sponsorer_key.address)
+        .await
+        .context("NonceQueryError.")?;
+
+    tracing::debug!(
+        "Starting server with sponsorer {}. Current sponsorer nonce: {}.",
+        sponsorer_key.address,
+        nonce_response.nonce
+    );
+
     // Establish connection to the postgres database.
     let db_pool = DatabasePool::create(app.db_connection.clone(), 1, true)
         .await
         .context("Could not create database pool")?;
 
-    let state = Server { db_pool };
+    // Store the server configurations.
+    let state = Server {
+        db_pool,
+        node_client,
+        nonce: Arc::new(Mutex::new(nonce_response.nonce)),
+        whitelisted_accounts: app.whitelisted_accounts,
+        key: sponsorer_key,
+    };
 
     tracing::info!("Starting server...");
 
@@ -159,6 +322,7 @@ async fn main() -> anyhow::Result<()> {
         .nest_service("/assets", serve_dir_service)
         .route("/api/getItemStatusChangedEvents", post(get_item_status_changed_events))
         .route("/api/getItemCreatedEvent", post(get_item_created_event))
+        .route("/api/sponsoredTransaction", post(handle_sponsored_transaction))
         .route("/health", get(health))
         .with_state(state)
         .layer(
@@ -298,4 +462,159 @@ async fn get_item_created_event(
     Ok(Json(StoredItemCreatedEventReturnValue {
         data: database_result,
     }))
+}
+
+async fn handle_sponsored_transaction(
+    State(mut state): State<Server>,
+    request: Result<Json<SponsoredTransactionParam>, JsonRejection>,
+) -> Result<Json<TransactionHash>, ServerError> {
+    let Json(request) = request?;
+
+    // We restrict submission of sponsored transactions via the backend
+    // to trusted/whitelisted accounts only. To enable untrusted accounts
+    // for sponsored transaction submissions, implement rate-limiting and/or
+    // other authorization mechanisms. This prevents untrusted accounts
+    // from sending an unlimited number of transactions,
+    // which could deplete the CCD balance in your sponsorer account.
+    tracing::debug!("Check if account {} is whitelisted  ...", request.signer);
+
+    if !state.whitelisted_accounts.contains(&request.signer) {
+        tracing::warn!("Signer account {} is not whitelisted.", request.signer);
+        return Err(ServerError::SignerNotWhitelisted);
+    }
+
+    tracing::debug!("Created payload: {:?}", request.payload);
+
+    let message: PermitMessage = PermitMessage {
+        contract_address: ContractAddress::new(request.contract_address, 0u64),
+        nonce:            request.nonce,
+        timestamp:        request.expiry_timestamp,
+        entry_point:      OwnedEntrypointName::new_unchecked(request.endpoint),
+        payload:          request.payload,
+    };
+
+    tracing::debug!("Created {:?}", message);
+
+    let mut signature = [0; 64];
+
+    if request.signature.len() != 128 {
+        return Err(ServerError::SignatureLengthError);
+    }
+
+    hex::decode_to_slice(request.signature, &mut signature).map_err(ServerError::SignatureError)?;
+
+    let mut inner_signature_map = BTreeMap::new();
+    inner_signature_map.insert(0, Signature::Ed25519(SignatureEd25519(signature)));
+
+    let mut signature_map = BTreeMap::new();
+    signature_map.insert(0, CredentialSignatures {
+        sigs: inner_signature_map,
+    });
+
+    tracing::debug!("Created signature_map {:?}", signature_map);
+
+    let param: PermitParam = PermitParam {
+        message,
+        signature: AccountSignatures {
+            sigs: signature_map,
+        },
+        signer: request.signer,
+    };
+
+    let parameter = smart_contracts::OwnedParameter::from_serial(&param)
+        .map_err(|_| ServerError::ParameterError)?;
+
+    tracing::debug!("Created {:?}", parameter);
+
+    let payload = transactions::UpdateContractPayload {
+        amount:       Amount::from_micro_ccd(0),
+        address:      ContractAddress::new(request.contract_address, 0u64),
+        receive_name: smart_contracts::OwnedReceiveName::new_unchecked(format!(
+            "{}.permit",
+            request.contract_name
+        )),
+        message:      parameter,
+    };
+
+    let context = ContractContext::new_from_payload(
+        state.key.address,
+        Energy { energy: ENERGY },
+        payload.clone(),
+    );
+
+    let info = state
+        .node_client
+        .invoke_instance(&BlockIdentifier::Best, &context)
+        .await;
+
+    let info = match info {
+        Ok(info) => info,
+        Err(e) => {
+            tracing::warn!("SimulationInvokeError {e}.");
+            return Err(ServerError::SimulationInvokeError(e));
+        }
+    };
+
+    let used_energy = match info.response {
+        InvokeContractResult::Success {
+            return_value: _,
+            events: _,
+            used_energy,
+        } => {
+            tracing::debug!(
+                "TransactionSimulationSuccess with used energy: {:#?}.",
+                used_energy
+            );
+            used_energy
+        }
+        InvokeContractResult::Failure {
+            return_value: _,
+            reason,
+            used_energy: _,
+        } => {
+            tracing::warn!("TransactionSimulationError with reason: {:#?}.", reason);
+            return Err(ServerError::TransactionSimulationError(RevertReason {
+                reason,
+            }));
+        }
+    };
+
+    // Transaction should expiry after one hour.
+    let transaction_expiry = TransactionTime::hours_after(1);
+
+    // Get the current nonce for the backend wallet and lock it. This is necessary
+    // since it is possible that API requests come in parallel. The nonce is
+    // increased by 1 and its lock is released after the transaction is submitted to
+    // the blockchain.
+    let mut nonce = state.nonce.lock().await;
+
+    let tx = transactions::send::make_and_sign_transaction(
+        &state.key.keys,
+        state.key.address,
+        *nonce,
+        transaction_expiry,
+        // We add a small amount of energy `EPSILON_ENERGY` to the previously simulated
+        // `used_energy` to cover variations (e.g. smart contract state changes) caused by
+        // transactions that have been executed meanwhile.
+        concordium_rust_sdk::types::transactions::send::GivenEnergy::Add(
+            used_energy + Energy::from(EPSILON_ENERGY),
+        ),
+        concordium_rust_sdk::types::transactions::Payload::Update { payload },
+    );
+
+    let bi = transactions::BlockItem::AccountTransaction(tx);
+
+    match state.node_client.send_block_item(&bi).await {
+        Ok(hash) => {
+            tracing::debug!("Submit transaction {} ...", hash);
+
+            *nonce = nonce.next();
+
+            Ok(hash.into())
+        }
+        Err(e) => {
+            tracing::warn!("SubmitSponsoredTransactionError {e}.");
+            Err(ServerError::SubmitSponsoredTransactionError(e))
+        }
+    }
 }

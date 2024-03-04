@@ -75,7 +75,7 @@ You have to build the front end in the folder `../frontend` before running this 
 ## Run the `server`
 
 ```console
-cargo run --bin server
+cargo run --bin server -- --account-key-file ./4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export --whitelisted-accounts 4bbdAUCDK2D6cUvUeprGr4FaSaHXKuYmYVjyCa4bXSCu3NUXzA 
 ```
 
 ## Configure the `server`
