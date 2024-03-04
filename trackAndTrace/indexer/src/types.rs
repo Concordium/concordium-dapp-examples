@@ -1,4 +1,5 @@
 pub use crate::db::DatabasePool;
+use crate::db::{StoredItemCreatedEvent, StoredItemStatusChangedEvent};
 use concordium_rust_sdk::{
     smart_contracts::{
         common as concordium_std,
@@ -18,6 +19,44 @@ use tokio::sync::Mutex;
 pub struct RevertReason {
     /// Smart contract revert reason.
     pub reason: RejectReason,
+}
+
+/// Struct returned by the `health` endpoint. It returns the version of the
+/// backend.
+#[derive(serde::Serialize)]
+pub struct Health {
+    /// The version of the backend.
+    pub version: &'static str,
+}
+
+/// Struct returned by the `getItemCreatedEvent` endpoint. It returns the
+/// itemCreatedEvent from the database if present.
+#[derive(serde::Serialize)]
+pub struct StoredItemCreatedEventReturnValue {
+    /// An option with the stored event when the item was created.
+    pub data: Option<StoredItemCreatedEvent>,
+}
+
+/// Struct returned by the `getItemStatusChangedEvents` endpoint. It returns a
+/// vector of ItemStatusChangedEvents from the database if present.
+#[derive(serde::Serialize)]
+pub struct StoredItemStatusChangedEventsReturnValue {
+    // A vector containing several events when the item status was changed.
+    pub data: Vec<StoredItemStatusChangedEvent>,
+}
+
+/// Parameter struct for the `getItemStatusChangedEvents` endpoint send in the
+/// request body.
+#[derive(serde::Deserialize)]
+pub struct GetItemstatusChangedEventsParam {
+    /// The item id.
+    pub item_id: u64,
+    /// Limit value (pagination) to limit the amoun of events requested from the
+    /// database.
+    pub limit:   u32,
+    /// Offset value (pagination) to limit the amoun of events requested from
+    /// the database.
+    pub offset:  u32,
 }
 
 /// Parameters passed from the front end to this back end when calling the API

@@ -1,6 +1,9 @@
-## Track and trace indexer
+## Track and trace indexer and server
 
-There are two binaries in this project. An `indexer` that indexes data into a database and a `server` that serves data from the database.
+There are two binaries in this project. An `indexer` that indexes data into a database and a `server`.
+The `server` serves the track and trace front end files and exposes:
+- two endpoints to query data from the database.
+- an endpoint for submitting sponsored transactions.
 
 ## Prerequisites
 
@@ -17,7 +20,7 @@ Create the `indexer` database:
 CREATE DATABASE indexer;
 ```
 
-Alternatively, you can run the Postgres database in a docker container. The command below will create an indexer db automatically:
+Alternatively, you can run the Postgres database in a docker container. The command below will create the database `indexer` automatically:
 ```
 docker run -p 5432:5432 -e POSTGRES_PASSWORD=password -e POSTGRES_DB="indexer" --rm postgres
 ```
@@ -62,21 +65,37 @@ There are a few options to configure the indexer:
 
 - `--node` is the endpoint to the Concordium node grpc v2 API. If not specified, the default value `https://grpc.testnet.concordium.com:20000` is used.
 
-- `--contract` is the contract index of the track-and-trace smart contract, e.g. <8144,0>.
+- `--contract` is the contract index of the track-and-trace smart contract, e.g. `<8144,0>`.
 
 - `--db-connection` should specify your postgreSQL database connection. If not specified, the default value `host=localhost dbname=indexer user=postgres password=password port=5432` is used.
 
 - `--log-level` specifies the maximum log level. Possible values are: `trace`, `debug`, `info`, `warn`, and `error`. If not specified, the default value `info` is used.
 
-## The `server` binary
+# The `server` binary
 
-You have to build the front end in the folder `../frontend` before running this command.
+The `server` serves the track and trace front end files and exposes four endpoints:
+ - `POST api/getItemCreatedEvent` (to serve data from the database)
+ - `POST api/getItemStatusChangedEvents` (to serve data from the database)
+ - `POST api/sponsoredTransaction` (to submit sponsored transactions)
+ - `GET health` (to return the backend version)
+
+The formats of requests and responses are JSON encoded.
+
+<b>Additional information to sponsoredTransactions:</b>
+The server is started with a list of trusted, whitelisted accounts.
+The flow is as follows, a whitelisted account signs a sponsored transaction message in the browser wallet at the front end and sends the signature together with the payload to this backend server via the `sponsoredTransaction` endpoint. The backend checks if the signer of the request is one of the whitelisted accounts. If the check passes, the backend creates a sponsored transaction and submits it to the `permit` function in the smart contract. The backend returns the transaction hash to the frontend. This backend server has to have access to a blockchain node and an account (with its associated private key) that is funded with some CCD to submit the sponsored transaction to the chain. The backend wallet will pay for the transaction fees.
 
 ## Run the `server`
 
+This server will serve the `track_and_trace` front end files. As a result, you have to build the front end files in the folder `../frontend` first before running the server command below:
+
 ```console
-cargo run --bin server -- --account-key-file ./4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export --whitelisted-accounts 4bbdAUCDK2D6cUvUeprGr4FaSaHXKuYmYVjyCa4bXSCu3NUXzA 
+cargo run --bin server -- --account-key-file ./4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export --whitelisted-accounts 4bbdAUCDK2D6cUvUeprGr4FaSaHXKuYmYVjyCa4bXSCu3NUXzA --log-level debug 
 ```
+
+To get your account file (the `4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export` file in the above example), export it from the [Concordium Browser wallet for web](http://developer.concordium.software/en/mainnet/net/guides/export-key.html).
+This account should be only used for this service. No transactions should be sent from the account by any other means to ensure the account nonce is tracked 
+correctly in the service (e.g. don't use the `4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX` account in the browser wallet to send transactions via the front end).
 
 ## Configure the `server`
 
@@ -89,3 +108,11 @@ There are a few options to configure the server:
 - `--db-connection` should specify your postgreSQL database connection. If not specified, the default value `host=localhost dbname=indexer user=postgres password=password port=5432` is used.
 
 - `--log-level` specifies the maximum log level. Possible values are: `trace`, `debug`, `info`, `warn`, and `error`. If not specified, the default value `info` is used.
+
+- `--node` the URL of the node's GRPC V2 interface. If not specified, the default value `https://grpc.testnet.concordium.com:20000` is used.
+
+- `--account-key-file` the path to a file which contains the key credentials for the sponsorer account, e.g. `--account-key-file ./4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export`.
+
+- `--whitelisted-accounts` A list of whitelisted account addresses. These accounts are allowed to submit transactions via the backend. You can use this flag several times e.g. `--whitelisted-accounts 32GKttZ8SB1DZvpK1czfWHLWht1oMDz1JqmV9Lo28Hqpf2RP2w --whitelisted-accounts 4EphLJK99TVEuMRscZHJziPWi1bVdb2YLxPoEVSw8FKidPfr5w`
+
+- `--request-timeout` the request timeout (both of request to the node and server requests) in milliseconds. The node timeout is 500 ms less than the server request-timeout to make sure we can fail properly in the server in case of connection timeout due to node connectivity problems. If not specified, the default value `10000` is used.

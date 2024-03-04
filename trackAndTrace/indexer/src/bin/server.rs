@@ -1,4 +1,7 @@
-use ::indexer::db::{DatabaseError, DatabasePool, StoredItemStatusChangedEvent};
+use ::indexer::{
+    db::{DatabaseError, DatabasePool},
+    types::*,
+};
 use anyhow::Context;
 use axum::{
     extract::{rejection::JsonRejection, State},
@@ -26,7 +29,6 @@ use concordium_rust_sdk::{
 };
 use hex::{self, FromHexError};
 use http::StatusCode;
-use indexer::{db::StoredItemCreatedEvent, types::*};
 use std::{collections::BTreeMap, fs, sync::Arc};
 use tokio::sync::Mutex;
 use tonic::transport::ClientTlsConfig;
@@ -107,7 +109,7 @@ impl axum::response::IntoResponse for ServerError {
                 )
             }
             ServerError::MaxRequestLimit(error) => {
-                tracing::debug!("Bad request: {error}.");
+                tracing::warn!("Bad request: {error}.");
                 (StatusCode::BAD_REQUEST, Json(format!("{}", error)))
             }
             ServerError::ParameterError => {
@@ -118,40 +120,34 @@ impl axum::response::IntoResponse for ServerError {
                 )
             }
             ServerError::SimulationInvokeError(error) => {
-                tracing::error!("Internal error: {error}.");
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(format!("{}", error)),
-                )
+                tracing::warn!("Bad request: {error}.");
+                (StatusCode::BAD_REQUEST, Json(format!("{}", error)))
             }
             ServerError::SubmitSponsoredTransactionError(error) => {
-                tracing::error!("Internal error: {error}.");
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(format!("{}", error)),
-                )
+                tracing::warn!("Bad request: {error}.");
+                (StatusCode::BAD_REQUEST, Json(format!("{}", error)))
             }
             ServerError::InvalidRequest(error) => {
-                tracing::debug!("Bad request: {error}.");
+                tracing::warn!("Bad request: {error}.");
                 (StatusCode::BAD_REQUEST, Json(format!("{}", error)))
             }
             ServerError::SignatureError(error) => {
-                tracing::debug!("Bad request: {error}.");
+                tracing::warn!("Bad request: {error}.");
                 (StatusCode::BAD_REQUEST, Json(format!("{}", error)))
             }
             ServerError::SignatureLengthError => {
-                tracing::debug!("Bad request:");
+                tracing::warn!("Bad request:");
                 (
                     StatusCode::BAD_REQUEST,
                     Json("Unable to parse signature because of wrong length".to_string()),
                 )
             }
             ServerError::TransactionSimulationError(error) => {
-                tracing::debug!("Bad request:");
+                tracing::warn!("Bad request:");
                 (StatusCode::BAD_REQUEST, Json(format!("{:?}", error.reason)))
             }
             ServerError::SignerNotWhitelisted => {
-                tracing::debug!("Bad request:");
+                tracing::warn!("Bad request:");
                 (
                     StatusCode::BAD_REQUEST,
                     Json("The signer account is not whitelisted".to_string()),
@@ -180,7 +176,6 @@ struct Args {
         env = "CCD_SERVER_FRONTEND"
     )]
     frontend_assets:      std::path::PathBuf,
-    /// Database connection string.
     #[arg(
         long = "db-connection",
         default_value = "host=localhost dbname=indexer user=postgres password=password port=5432",
@@ -189,7 +184,6 @@ struct Args {
         env = "CCD_SERVER_DB_CONNECTION"
     )]
     db_connection:        tokio_postgres::config::Config,
-    /// Maximum log level
     #[clap(
         long = "log-level",
         default_value = "info",
@@ -215,16 +209,17 @@ struct Args {
     #[structopt(
         long = "account-key-file",
         env = "ACCOUNT_KEY_FILE",
-        help = "Path to the account key file."
+        help = "Path to the account key file, e.g. `--account-key-file \
+                ./4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export`."
     )]
     keys_path:            std::path::PathBuf,
     #[clap(
         long = "whitelisted-accounts",
         env = "WHITELISTED_ACCOUNTS",
         help = "A list of whitelisted account addresses. These accounts are allowed to submit \
-                transactions via the backend. You can use this flag several times e.g. \
-                `--whitelisted-account 32GKttZ8SB1DZvpK1czfWHLWht1oMDz1JqmV9Lo28Hqpf2RP2w \
-                --whitelisted-account 4EphLJK99TVEuMRscZHJziPWi1bVdb2YLxPoEVSw8FKidPfr5w`"
+                transactions via the backend. You can use this flag several times, e.g. \
+                `--whitelisted-accounts 32GKttZ8SB1DZvpK1czfWHLWht1oMDz1JqmV9Lo28Hqpf2RP2w \
+                --whitelisted-accounts 4EphLJK99TVEuMRscZHJziPWi1bVdb2YLxPoEVSw8FKidPfr5w`."
     )]
     whitelisted_accounts: Vec<AccountAddress>,
 }
@@ -331,7 +326,10 @@ async fn main() -> anyhow::Result<()> {
                 .on_response(tower_http::trace::DefaultOnResponse::new()),
         )
         .layer(tower_http::limit::RequestBodyLimitLayer::new(1_000_000)) // at most 1000kB of data.
-        .layer(tower_http::compression::CompressionLayer::new());
+        .layer(tower_http::compression::CompressionLayer::new())
+        .layer(tower_http::timeout::TimeoutLayer::new(
+            std::time::Duration::from_millis(app.request_timeout),
+        ));
 
     tracing::info!("Listening at {}", app.listen_address);
 
@@ -387,34 +385,11 @@ fn set_shutdown() -> anyhow::Result<impl futures::Future<Output = ()>> {
     }
 }
 
-/// Struct returned by the `health` endpoint. It returns the version of the
-/// backend.
-#[derive(serde::Serialize)]
-struct Health {
-    version: &'static str,
-}
-
 /// Handles the `health` endpoint, returning the version of the backend.
 async fn health() -> Json<Health> {
     Json(Health {
         version: env!("CARGO_PKG_VERSION"),
     })
-}
-
-/// Struct returned by the `getItemStatusChangedEvents` endpoint. It returns a
-/// vector of ItemStatusChangedEvents from the database if present.
-#[derive(serde::Serialize)]
-struct StoredItemStatusChangedEventsReturnValue {
-    data: Vec<StoredItemStatusChangedEvent>,
-}
-
-/// Parameter struct for the `getItemStatusChangedEvents` endpoint send in the
-/// request body.
-#[derive(serde::Deserialize)]
-struct GetItemstatusChangedEventsParam {
-    item_id: u64,
-    limit:   u32,
-    offset:  u32,
 }
 
 /// Handles the `getItemStatusChangedEvents` endpoint, returning a vector of
@@ -440,13 +415,6 @@ async fn get_item_status_changed_events(
     }))
 }
 
-/// Struct returned by the `getItemCreatedEvent` endpoint. It returns the
-/// itemCreatedEvent from the database if present.
-#[derive(serde::Serialize)]
-struct StoredItemCreatedEventReturnValue {
-    data: Option<StoredItemCreatedEvent>,
-}
-
 /// Handles the `getItemCreatedEvent` endpoint, returning the itemCreatedEvent
 /// from the database if present.
 async fn get_item_created_event(
@@ -464,6 +432,8 @@ async fn get_item_created_event(
     }))
 }
 
+/// Handles the `sponsoredTransaction` endpoint, submitting a sponsored
+/// transaction on chain.
 async fn handle_sponsored_transaction(
     State(mut state): State<Server>,
     request: Result<Json<SponsoredTransactionParam>, JsonRejection>,
@@ -474,7 +444,7 @@ async fn handle_sponsored_transaction(
     // to trusted/whitelisted accounts only. To enable untrusted accounts
     // for sponsored transaction submissions, implement rate-limiting and/or
     // other authorization mechanisms. This prevents untrusted accounts
-    // from sending an unlimited number of transactions,
+    // from sending an unlimited amount of requests to this endpoint,
     // which could deplete the CCD balance in your sponsorer account.
     tracing::debug!("Check if account {} is whitelisted  ...", request.signer);
 
