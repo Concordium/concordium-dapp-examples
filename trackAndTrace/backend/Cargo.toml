@@ -32,4 +32,3 @@ hex = "0.4.3"
 
 [dependencies.concordium-rust-sdk]
 path = "../../deps/concordium-rust-sdk/"
-

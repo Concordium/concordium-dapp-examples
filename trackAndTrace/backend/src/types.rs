@@ -94,6 +94,8 @@ pub struct SponsoredTransactionParam {
     pub expiry_timestamp: Timestamp,
     /// The name of the contract.
     pub contract_name:    String,
+    /// The address index of the contract.
+    pub contract_address: u64,
     /// The name of the endpoint that should be invoked through the sponsored
     /// transaction mechanism.
     pub endpoint:         String,
@@ -101,7 +103,6 @@ pub struct SponsoredTransactionParam {
     /// `endpoint`.
     pub payload:          Vec<u8>,
 }
-
 /// The parameters for the permit function of the cis3 standard.
 #[derive(Debug, Serial)]
 pub struct PermitParam {
@@ -141,11 +142,9 @@ pub struct Server {
     /// Client to interact with the node.
     pub node_client: v2::Client,
     /// Key and address of the sponsorer account.
-    pub key: Arc<WalletAccount>,
-    /// Contract address of the track_and_trace contract.
-    pub track_and_trace_smart_contract: ContractAddress,
+    pub key:         Arc<WalletAccount>,
     /// Nonce of the sponsorer account.
-    pub nonce: Arc<Mutex<Nonce>>,
+    pub nonce:       Arc<Mutex<Nonce>>,
     /// The rate limit value for each user account is incremented
     /// every time this user account signs a `permit_message` at the front end
     /// and the signature is submitted to the `sponsoredTransaction` entry point

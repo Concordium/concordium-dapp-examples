@@ -17,27 +17,25 @@ All of the above is available by using `--help` to get usage information.
 
 An example to run the backend with basic settings and testnet node would be:
 ```shell
-cargo run -- --account-key-file <YourAccountPathToYourKeys> --track-and-trace-smart-contract-index 8219 --log-level debug
+cargo run -- --account-key-file <YourAccountPathToYourKeys> --log-level debug
 ```
 
 An example to run the backend with some filled in example settings would be:
 
 ```shell
-cargo run -- --account-key-file ./4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export --track-and-trace-smart-contract-index 8219 --log-level debug 
+cargo run -- --account-key-file ./4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export --log-level debug 
 ```
 
 To get your account file (the `4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export` file in the above example), export it from the [Concordium Browser wallet for web](http://developer.concordium.software/en/mainnet/net/guides/export-key.html).
 This account should be only used for this service. No transactions should be sent from the account by any other means to ensure the account nonce is tracked 
 correctly in the service (e.g. don't use the `4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX` account in the browser wallet to send transactions via the front end).
 
-Note: Use the same smart contract index for the frontend and backend. In other words, use the TRACK_AND_TRACE_CONTRACT_INDEX from the `../frontend/package.json` file when starting the backend server.
-
 # Using the tool
 
 The backend is a simple server that exposes one endpoint
  - `POST /sponsoredTransaction`
 
-The overall flow is that the user signs a sponsored transaction message in the browser wallet and sends the signature together with the payload to this backend server via the above endpoint. The backend creates a sponsored transaction and submits it to the `permit` function in the smart contract {index: TRACK_AND_TRACE_CONTRACT_INDEX, subindex: 0}. You can look up the TRACK_AND_TRACE_CONTRACT_INDEX in the `../frontend/package.json` file. The backend returns the transaction hash to the frontend. This backend server has to have access to a blockchain node and an account (with its associated private key) that is funded with some CCD to submit the sponsored transaction to the chain. The backend wallet will pay for the transaction fees.
+The overall flow is that the user signs a sponsored transaction message in the browser wallet and sends the signature together with the payload to this backend server via the above endpoint. The backend creates a sponsored transaction and submits it to the `permit` function in the smart contract. The backend returns the transaction hash to the frontend. This backend server has to have access to a blockchain node and an account (with its associated private key) that is funded with some CCD to submit the sponsored transaction to the chain. The backend wallet will pay for the transaction fees.
 
 See [src/main.rs](./src/main.rs) for the formats of requests and responses. Both
 requests and responses are JSON encoded.

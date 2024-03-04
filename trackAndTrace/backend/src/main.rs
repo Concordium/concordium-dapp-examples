@@ -49,14 +49,14 @@ struct App {
         default_value = "https://grpc.testnet.concordium.com:20000",
         env = "NODE"
     )]
-    endpoint: v2::Endpoint,
+    endpoint:        concordium_rust_sdk::v2::Endpoint,
     #[clap(
         long = "log-level",
         default_value = "info",
         help = "Maximum log level.",
         env = "LOG_LEVEL"
     )]
-    log_level: tracing_subscriber::filter::LevelFilter,
+    log_level:       tracing_subscriber::filter::LevelFilter,
     #[clap(
         long = "request-timeout",
         help = "Request timeout (both of request to the node and server requests) in milliseconds.",
@@ -70,7 +70,7 @@ struct App {
         help = "Address where the server will listen on.",
         env = "LISTEN_ADDRESS"
     )]
-    listen_address: std::net::SocketAddr,
+    listen_address:  std::net::SocketAddr,
     #[clap(
         long = "frontend",
         default_value = "../frontend/dist",
@@ -78,20 +78,12 @@ struct App {
         env = "FRONTEND"
     )]
     frontend_assets: std::path::PathBuf,
-    #[clap(
-        long = "track-and-trace-smart-contract-index",
-        default_value = "7723",
-        env = "TRACK_AND_TRACE_CONTRACT_INDEX",
-        help = "The track and trace smart contract index which the sponsored transaction is \
-                submitted to."
-    )]
-    track_and_trace_smart_contract_index: u64,
     #[structopt(
         long = "account-key-file",
         env = "ACCOUNT_KEY_FILE",
         help = "Path to the account key file."
     )]
-    keys_path: std::path::PathBuf,
+    keys_path:       std::path::PathBuf,
 }
 
 #[tokio::main]
@@ -164,10 +156,6 @@ async fn main() -> anyhow::Result<()> {
         node_client,
         nonce: Arc::new(Mutex::new(nonce_response.nonce)),
         rate_limits: Arc::new(Mutex::new(HashMap::new())),
-        track_and_trace_smart_contract: ContractAddress::new(
-            app.track_and_trace_smart_contract_index,
-            0,
-        ),
         key: sponsorer_key,
     };
 
@@ -214,7 +202,7 @@ async fn handle_sponsored_transaction(
     tracing::debug!("Created payload: {:?}", request.payload);
 
     let message: PermitMessage = PermitMessage {
-        contract_address: state.track_and_trace_smart_contract,
+        contract_address: ContractAddress::new(request.contract_address, 0u64),
         nonce:            request.nonce,
         timestamp:        request.expiry_timestamp,
         entry_point:      OwnedEntrypointName::new_unchecked(request.endpoint),
@@ -256,7 +244,7 @@ async fn handle_sponsored_transaction(
 
     let payload = transactions::UpdateContractPayload {
         amount:       Amount::from_micro_ccd(0),
-        address:      state.track_and_trace_smart_contract,
+        address:      ContractAddress::new(request.contract_address, 0u64),
         receive_name: smart_contracts::OwnedReceiveName::new_unchecked(format!(
             "{}.permit",
             request.contract_name
