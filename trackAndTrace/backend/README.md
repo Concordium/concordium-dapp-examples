@@ -10,7 +10,6 @@ The following parameters are supported
 - `log-level` maximum log level (defaults to `info` if not given).
 - `frontend` the path to the folder, which should be served, defaults to the `../frontent/dist` folder.
 - `account-key-file` the path to a file which contains the key credentials for the sponsorer account.
-- `track-and-trace-smart-contract-index` the smart contract index of the auction smart contract.
 - `request-timeout` the request timeout (both of request to the node and server requests) in milliseconds. The node timeout is 500 ms less than the request-timeout to make sure we can fail properly in the server in case of connection timeout due to node connectivity problems.
 
 All of the above is available by using `--help` to get usage information.
