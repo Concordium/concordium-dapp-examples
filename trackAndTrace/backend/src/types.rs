@@ -69,6 +69,7 @@ pub struct InputParams {
     pub contract_address: ContractAddress,
     /// The contract name without the "init_" prefix.
     pub contract_name:    String,
+    pub entrypoint_name:  String,
     pub parameter:        OwnedParameter,
 }
 

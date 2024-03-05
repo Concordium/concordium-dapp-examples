@@ -143,7 +143,7 @@ pub async fn handle_transaction(
         contract_address: request.contract_address,
         nonce:            request.nonce,
         timestamp:        request.expiry_time,
-        entry_point:      OwnedEntrypointName::new_unchecked("permit".into()),
+        entry_point:      OwnedEntrypointName::new_unchecked(request.entrypoint_name),
         parameter:        request.parameter,
     };
 
@@ -175,10 +175,8 @@ pub async fn handle_transaction(
         signer,
     };
 
-    let bytes = concordium_rust_sdk::smart_contracts::common::to_bytes(&param);
-
-    let parameter =
-        smart_contracts::OwnedParameter::try_from(bytes).map_err(|_| LogError::ParameterError)?;
+    let parameter = smart_contracts::OwnedParameter::from_serial(&param)
+        .map_err(|_| LogError::ParameterError)?;
 
     log::debug!("Simulate transaction to check its validity.");
 
