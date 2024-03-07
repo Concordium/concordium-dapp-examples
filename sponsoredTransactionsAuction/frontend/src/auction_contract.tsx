@@ -2,7 +2,6 @@ import * as AuctionContract from '../generated/sponsored_tx_enabled_auction_spon
 
 import {
     AccountTransactionType,
-    toBuffer,
     UpdateContractPayload,
     CcdAmount,
     ReceiveName,
@@ -13,17 +12,8 @@ import {
     ContractAddress,
     ConcordiumGRPCWebClient,
 } from '@concordium/web-sdk';
-import {
-    ADD_ITEM_PARAMETER_SCHEMA,
-    AUCTION_CONTRACT_NAME,
-    AUCTION_END,
-    AUCTION_START,
-    CONTRACT_SUB_INDEX,
-    EPSILON_ENERGY,
-    NODE,
-    PORT,
-} from './constants';
-import { TypedSmartContractParameters, WalletConnection } from '@concordium/wallet-connectors';
+import { AUCTION_CONTRACT_NAME, CONTRACT_SUB_INDEX, EPSILON_ENERGY, NODE, PORT } from './constants';
+import { WalletConnection } from '@concordium/wallet-connectors';
 
 import JSONbig from 'json-bigint';
 
@@ -73,24 +63,13 @@ export async function addItem(
         maxContractExecutionEnergy,
     };
 
-    // The `ccd-js-gen` tool is not fully integrated with the browser wallet yet and we need
-    // to manually convert from Cis2MultiContract.AddItemParameter to TypedSmartContractParameters.
-    const params: TypedSmartContractParameters = {
-        parameters: {
-            end: AUCTION_END, // Hardcoded value for simplicity for this demo dApp.
-            start: AUCTION_START, // Hardcoded value for simplicity for this demo dApp.
-            minimum_bid: addItemParameter.minimum_bid.toString(),
-            name: addItemParameter.name,
-            token_id: addItemParameter.token_id,
-        },
-        schema: {
-            type: 'TypeSchema',
-            value: toBuffer(ADD_ITEM_PARAMETER_SCHEMA, 'base64'),
-        },
-    };
-
     return connection
-        .signAndSendTransaction(AccountAddress.toBase58(accountAddress), AccountTransactionType.Update, payload, params)
+        .signAndSendTransaction(
+            AccountAddress.toBase58(accountAddress),
+            AccountTransactionType.Update,
+            payload,
+            AuctionContract.createAddItemParameterWebWallet(addItemParameter),
+        )
         .then(TransactionHash.fromHexString);
 }
 
