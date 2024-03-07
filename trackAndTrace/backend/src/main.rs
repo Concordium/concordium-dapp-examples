@@ -1,14 +1,20 @@
 mod types;
-use crate::{crypto_common::types::TransactionTime, types::*};
+use crate::types::*;
 use anyhow::Context;
+use axum::{
+    extract::{rejection::JsonRejection, State},
+    routing::post,
+    Json, Router,
+};
 use clap::Parser;
-use concordium_contracts_common::OwnedEntrypointName;
 use concordium_rust_sdk::{
-    common::{self as crypto_common},
+    common::types::TransactionTime,
     smart_contracts::common::{
-        AccountSignatures, Amount, CredentialSignatures, Signature, SignatureEd25519,
+        AccountSignatures, Amount, CredentialSignatures, OwnedEntrypointName, Signature,
+        SignatureEd25519,
     },
     types::{
+        hashes::TransactionHash,
         smart_contracts,
         smart_contracts::{ContractContext, InvokeContractResult},
         transactions, Energy, WalletAccount,
@@ -17,128 +23,209 @@ use concordium_rust_sdk::{
 };
 use std::{
     collections::{BTreeMap, HashMap},
-    convert::Infallible,
     path::PathBuf,
     sync::Arc,
 };
 use tokio::sync::Mutex;
 use tonic::transport::ClientTlsConfig;
-use warp::{http, http::StatusCode, Filter, Rejection};
+use tower_http::cors::CorsLayer;
 
 /// Structure used to receive the correct command line arguments.
 #[derive(clap::Parser, Debug)]
 #[clap(arg_required_else_help(true))]
 #[clap(version, author)]
-struct IdVerifierConfig {
+struct ServiceConfig {
     #[clap(
         long = "node",
         help = "GRPC V2 interface of the node.",
-        default_value = "http://localhost:20000"
+        default_value = "http://localhost:20000",
+        env = "CCD_SPONSORED_TRX_SERVICE_NODE"
     )]
-    endpoint:         concordium_rust_sdk::v2::Endpoint,
+    endpoint:          tonic::transport::Endpoint,
     #[clap(
-        long = "port",
-        default_value = "8100",
-        help = "Port on which the server will listen on."
+        long = "listen-address",
+        default_value = "0.0.0.0:8080",
+        help = "Address where the server will listen on.",
+        env = "CCD_SPONSORED_TRX_SERVICE_LISTEN_ADDRESS"
     )]
-    port:             u16,
+    listen_address:    std::net::SocketAddr,
     #[clap(
         long = "log-level",
         default_value = "debug",
-        help = "Maximum log level."
+        help = "Maximum log level.",
+        env = "CCD_SPONSORED_TRX_SERVICE_LOG_LEVEL"
     )]
-    log_level:        log::LevelFilter,
-    #[clap(long = "account", help = "Path to the account key file.")]
-    keys_path:        PathBuf,
+    log_level:         tracing_subscriber::filter::LevelFilter,
+    #[clap(
+        long = "request-timeout",
+        help = "Request timeout (both of request to the node and server requests) in milliseconds.",
+        default_value = "10000",
+        env = "CCD_SPONSORED_TRX_SERVICE_REQUEST_TIMEOUT"
+    )]
+    request_timeout:   u64,
+    #[clap(
+        long = "account",
+        help = "Path to the account key file.",
+        env = "CCD_SPONSORED_TRX_SERVICE_PRIVATE_KEY_FILE"
+    )]
+    keys_path:         PathBuf,
     #[clap(
         long = "allowed-accounts",
-        help = "A list of accounts allowed to submit transactions. Use 'any' if you have a custom \
-                authentication scheme in place."
+        help = "The accounts allowed to submit transactions. Either 'any', if you have a custom \
+                authentication scheme in front of the service OR a space-separated list of \
+                account addresses.",
+        env = "CCD_SPONSORED_TRX_SERVICE_ALLOWED_ACCOUNTS"
     )]
-    allowed_accounts: AllowedAccounts,
+    allowed_accounts:  AllowedAccounts,
+    #[clap(
+        long = "allowed-contracts",
+        help = "The contracts allowed to be used by the service. Either 'any' OR a \
+                space-separated list of contract addresses in the format `<123,0>`.",
+        env = "CCD_SPONSORED_TRX_SERVICE_ALLOWED_CONTRACTS"
+    )]
+    allowed_contracts: AllowedContracts,
 }
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let app = IdVerifierConfig::parse();
-    let mut log_builder = env_logger::Builder::new();
-    // only log the current module (main).
-    log_builder.filter_level(app.log_level); // filter filter_module(module_path!(), app.log_level);
-    log_builder.init();
+    let app = ServiceConfig::parse();
+
+    // Setup logging.
+    {
+        use tracing_subscriber::prelude::*;
+        let log_filter = tracing_subscriber::filter::Targets::new()
+            .with_target(module_path!(), app.log_level)
+            .with_target("tower_http", app.log_level);
+
+        tracing_subscriber::registry()
+            .with(tracing_subscriber::fmt::layer())
+            .with(log_filter)
+            .init();
+    }
 
     let endpoint = if app
         .endpoint
         .uri()
         .scheme()
-        .map_or(false, |x| x == &http::uri::Scheme::HTTPS)
+        // We compare on strings as they use different versions of the `http` crate, so the types cannot be compared.
+        .map_or(false, |x| x.as_str() == http::uri::Scheme::HTTPS.as_str())
     {
-        app.endpoint.tls_config(ClientTlsConfig::new())?
+        app.endpoint
+            .tls_config(ClientTlsConfig::new())
+            .context("Unable to construct a TLS connection for the Concordium API.")?
     } else {
         app.endpoint
     };
 
-    let mut client = concordium_rust_sdk::v2::Client::new(endpoint).await?;
-    log::debug!("Got a client");
-
-    let cors = warp::cors()
-        .allow_any_origin()
-        .allow_header("Content-Type")
-        .allow_methods(vec!["POST", "GET"]);
-
-    log::debug!("Acquire keys.");
-
-    // load account keys and sender address from a file
-    let keys: Arc<WalletAccount> = Arc::new(
-        serde_json::from_str(
-            &std::fs::read_to_string(app.keys_path).context("Could not read the keys file.")?,
-        )
-        .context("Could not parse the keys file.")?,
+    anyhow::ensure!(
+        app.request_timeout >= 1000,
+        "Request timeout should be at least 1000 ms."
     );
 
-    log::debug!("Acquire nonce of wallet account.");
+    // Make it 500ms less than the request timeout to make sure we can fail properly
+    // with a connection timeout in case of node connectivity problems.
+    let node_timeout = std::time::Duration::from_millis(app.request_timeout - 500);
 
-    let nonce_response = client
+    let endpoint = endpoint
+        .connect_timeout(node_timeout)
+        .timeout(node_timeout)
+        .http2_keep_alive_interval(std::time::Duration::from_secs(300))
+        .keep_alive_timeout(std::time::Duration::from_secs(10))
+        .keep_alive_while_idle(true);
+
+    let mut node_client = concordium_rust_sdk::v2::Client::new(endpoint)
+        .await
+        .context("Unable to establish connection to the node.")?;
+
+    // Load account keys and sender address from a file
+    let keys: WalletAccount = WalletAccount::from_json_file(app.keys_path)
+        .context("Could not get the account keys from a file.")?;
+
+    let nonce = node_client
         .get_next_account_sequence_number(&keys.address)
         .await
-        .map_err(|e| {
-            log::warn!("NonceQueryError {:#?}.", e);
-            LogError::NonceQueryError
-        })?;
+        .context("Could not query the account nonce.")?
+        .nonce;
+
+    tracing::debug!(
+        "Starting server with sponsorer {}. Current sponsorer nonce: {}.",
+        keys.address,
+        nonce,
+    );
 
     let state = Server {
-        nonce:       Arc::new(Mutex::new(nonce_response.nonce)),
+        node_client,
+        keys: Arc::new(keys),
+        nonce: Arc::new(Mutex::new(nonce)),
         rate_limits: Arc::new(Mutex::new(HashMap::new())),
+        allowed_accounts: app.allowed_accounts,
+        allowed_contracts: app.allowed_contracts,
     };
 
-    let provide_submit_transaction = warp::post()
-        .and(warp::filters::body::content_length_limit(50 * 1024))
-        .and(warp::path!("api" / "submitTransaction"))
-        .and(warp::body::json())
-        .and_then(move |request: InputParams| {
-            log::debug!("Process transaction.");
+    tracing::info!("Starting server...");
 
-            handle_transaction(client.clone(), keys.clone(), state.clone(), request)
-        });
+    let router = Router::new()
+        .route("/api/submitTransaction", post(handle_transaction))
+        .with_state(state)
+        .layer(CorsLayer::permissive()) // TODO: Do we want to restrict CORS?
+        .layer(
+            tower_http::trace::TraceLayer::new_for_http()
+                .make_span_with(tower_http::trace::DefaultMakeSpan::new())
+                .on_response(tower_http::trace::DefaultOnResponse::new()),
+        )
+        .layer(tower_http::timeout::TimeoutLayer::new(
+            std::time::Duration::from_millis(app.request_timeout),
+        ))
+        .layer(tower_http::limit::RequestBodyLimitLayer::new(1_000_000)) // at most 1000kB of data.
+        .layer(tower_http::compression::CompressionLayer::new());
 
-    log::debug!("Serve response back to frontend.");
+    tracing::info!("Listening at {}", app.listen_address);
 
-    let server = provide_submit_transaction
-        .recover(handle_rejection)
-        .with(cors)
-        .with(warp::trace::request());
-    warp::serve(server).run(([0, 0, 0, 0], app.port)).await;
+    let listener = tokio::net::TcpListener::bind(app.listen_address)
+        .await
+        .context("Listening on provided address")?;
+
+    axum::serve(listener, router)
+        .with_graceful_shutdown(set_shutdown()?)
+        .await?;
+
     Ok(())
 }
 
-const ENERGY: u64 = 6000;
+/// Before submitting a transaction we simulate/dry-run the transaction to get
+/// an estimate of the energy needed for executing the transaction. In addition,
+/// we allow an additional small amount of energy `EPSILON_ENERGY` to be
+/// consumed by the transaction to cover small variations (e.g. changes to the
+/// smart contract state) caused by transactions that have been executed
+/// meanwhile.
+const EPSILON_ENERGY: u64 = 1000;
+
+/// The default energy to use for simulating the contract call.
+const ENERGY: u64 = 10000;
+
+/// The rate limits per accounts.
 const RATE_LIMIT_PER_ACCOUNT: u8 = 30;
 
+/// Handle a request for a sponsored transaction.
 pub async fn handle_transaction(
-    mut client: concordium_rust_sdk::v2::Client,
-    key: Arc<WalletAccount>,
-    state: Server,
-    request: InputParams,
-) -> Result<impl warp::Reply, Rejection> {
+    State(mut state): State<Server>,
+    request: Result<Json<InputParams>, JsonRejection>,
+) -> Result<Json<TransactionHash>, ServerError> {
+    let Json(request) = request?;
+
+    if !state.allowed_accounts.allowed(&request.signer) {
+        tracing::debug!("Account not allowed: {}", request.signer);
+        return Err(ServerError::AccountNotAllowed {
+            account: request.signer,
+        });
+    }
+    if !state.allowed_contracts.allowed(&request.contract_address) {
+        tracing::debug!("Contract not allowed: {}", request.contract_address);
+        return Err(ServerError::ContractNotAllowed {
+            contract: request.contract_address,
+        });
+    }
+
     let message: PermitMessage = PermitMessage {
         contract_address: request.contract_address,
         nonce:            request.nonce,
@@ -147,15 +234,10 @@ pub async fn handle_transaction(
         parameter:        request.parameter,
     };
 
-    let signer = request.signer;
-    let request_signature = request.signature;
-    let contract_address = request.contract_address;
-
-    log::debug!("Create signature map.");
+    tracing::debug!("Create signature map.");
 
     let mut signature = [0; 64];
-    hex::decode_to_slice(request_signature, &mut signature)
-        .map_err(|_| LogError::SignatureError)?;
+    hex::decode_to_slice(request.signature.clone(), &mut signature)?;
 
     let mut inner_signature_map = BTreeMap::new();
     inner_signature_map.insert(0, Signature::Ed25519(SignatureEd25519(signature)));
@@ -165,78 +247,86 @@ pub async fn handle_transaction(
         sigs: inner_signature_map,
     });
 
-    log::debug!("Create Parameter.");
+    tracing::debug!("Create Parameter.");
 
     let param: PermitParam = PermitParam {
         message,
         signature: AccountSignatures {
             sigs: signature_map,
         },
-        signer,
+        signer: request.signer,
     };
 
     let parameter = smart_contracts::OwnedParameter::from_serial(&param)
-        .map_err(|_| LogError::ParameterError)?;
+        .map_err(|_| ServerError::ParameterError)?;
 
-    log::debug!("Simulate transaction to check its validity.");
+    tracing::debug!("Simulate transaction to check its validity.");
 
     let receive_name =
         smart_contracts::OwnedReceiveName::try_from(format!("{}.permit", request.contract_name))
-            .map_err(|_| LogError::ContractNameError(request.contract_name.clone()))?;
+            .map_err(|_| ServerError::ContractNameError {
+                invalid_name: request.contract_name.clone(),
+            })?;
 
     let context = ContractContext {
-        invoker:   Some(concordium_rust_sdk::types::Address::Account(key.address)),
-        contract:  contract_address,
+        invoker:   Some(concordium_rust_sdk::types::Address::Account(
+            state.keys.address,
+        )),
+        contract:  request.contract_address,
         amount:    Amount::zero(),
         method:    receive_name.clone(),
         parameter: parameter.clone(),
-        energy:    Energy { energy: ENERGY },
+        energy:    Some(ENERGY.into()),
     };
 
-    let info = client
+    let info = state
+        .node_client
         .invoke_instance(&BlockIdentifier::Best, &context)
         .await;
 
-    if info.is_err() {
-        log::error!("SimulationInvokeError {:#?}.", info);
+    let info = match info {
+        Ok(info) => info,
+        Err(e) => {
+            tracing::warn!("SimulationInvokeError: {e}.");
+            return Err(ServerError::SimulationInvokeError(e));
+        }
+    };
 
-        return Err(warp::reject::custom(LogError::SimulationInvokeError));
-    }
-
-    match &info.as_ref().unwrap().response {
+    let used_energy = match info.response {
         InvokeContractResult::Success {
             return_value: _,
             events: _,
-            used_energy: _,
-        } => log::debug!("TransactionSimulationSuccess"),
+            used_energy,
+        } => {
+            tracing::debug!(
+                "TransactionSimulationSuccess with used energy: {:#?}.",
+                used_energy
+            );
+            used_energy
+        }
         InvokeContractResult::Failure {
             return_value: _,
             reason,
             used_energy: _,
         } => {
-            log::error!("TransactionSimulationError {:#?}.", info);
-
-            return Err(warp::reject::custom(LogError::TransactionSimulationError(
-                RevertReason {
-                    reason: reason.clone(),
-                },
-            )));
+            tracing::warn!("TransactionSimulationError with reason: {:#?}.", reason);
+            return Err(ServerError::TransactionSimulationError(RevertReason {
+                reason,
+            }));
         }
-    }
-
-    log::debug!("Create transaction.");
-
-    let payload = transactions::Payload::Update {
-        payload: transactions::UpdateContractPayload {
-            amount: Amount::from_micro_ccd(0),
-            address: contract_address,
-            receive_name,
-            message: parameter,
-        },
     };
 
-    // Transaction should expiry after one hour.
-    let transaction_expiry_seconds = chrono::Utc::now().timestamp() as u64 + 3600;
+    tracing::debug!("Create transaction.");
+
+    let payload = transactions::UpdateContractPayload {
+        amount: Amount::from_micro_ccd(0),
+        address: request.contract_address,
+        receive_name,
+        message: parameter,
+    };
+
+    // Transaction should expire after one hour.
+    let transaction_expiry = TransactionTime::hours_after(1);
 
     // Get the current nonce for the backend wallet and lock it. This is necessary
     // since it is possible that API requests come in parallel. The nonce is
@@ -257,113 +347,95 @@ pub async fn handle_transaction(
     // added or a database that permanently keeps track of the rate_limits so
     // that the server can be restarted and reload the rate_limit values from the
     // database.
-    log::debug!("Check rate limit.");
+
+    tracing::debug!("Check rate limit of account {} ...", request.signer);
 
     let mut rate_limits = state.rate_limits.lock().await;
 
-    let limit = rate_limits.entry(signer).or_insert_with(|| 0u8);
+    // Account addresses on Concordium have account aliases. We track the
+    // rate-limits by using the alias 0 for every account.
+    // For more info on aliases, see: https://developer.concordium.software/en/mainnet/net/references/transactions.html#account-aliases
+    let alias_account_0 = request
+        .signer
+        .get_alias(0)
+        .ok_or_else(|| ServerError::NoAliasAccount)?;
 
-    if *limit >= RATE_LIMIT_PER_ACCOUNT {
-        log::error!("Rate limit for account {:#?} reached.", signer);
+    let rate_limit = rate_limits.entry(alias_account_0).or_insert_with(|| 0u8);
 
-        return Err(warp::reject::custom(LogError::RateLimitError));
+    if *rate_limit >= RATE_LIMIT_PER_ACCOUNT {
+        tracing::warn!("Rate limit for account {:#?} reached.", request.signer);
+
+        return Err(ServerError::RateLimitError);
     }
 
-    *limit += 1;
+    *rate_limit += 1;
 
     let tx = transactions::send::make_and_sign_transaction(
-        &key.keys,
-        key.address,
+        &state.keys.keys,
+        state.keys.address,
         *nonce,
-        TransactionTime {
-            seconds: transaction_expiry_seconds,
-        },
-        concordium_rust_sdk::types::transactions::send::GivenEnergy::Absolute(Energy {
-            energy: ENERGY,
-        }),
-        payload,
+        transaction_expiry,
+        // We add a small amount of energy `EPSILON_ENERGY` to the previously simulated
+        // `used_energy` to cover variations (e.g. smart contract state changes) caused by
+        // transactions that have been executed meanwhile.
+        concordium_rust_sdk::types::transactions::send::GivenEnergy::Add(
+            used_energy + Energy::from(EPSILON_ENERGY),
+        ),
+        concordium_rust_sdk::types::transactions::Payload::Update { payload },
     );
 
     let bi = transactions::BlockItem::AccountTransaction(tx);
 
-    log::debug!("Submit transaction.");
-
-    match client.send_block_item(&bi).await {
+    match state.node_client.send_block_item(&bi).await {
         Ok(hash) => {
+            tracing::debug!("Submit transaction {} ...", hash);
+
             *nonce = nonce.next();
 
-            Ok(warp::reply::json(&TxHash { tx_hash: hash }))
+            Ok(hash.into())
         }
         Err(e) => {
-            log::error!("SubmitSponsoredTransactionError {:#?}.", e);
-
-            Err(warp::reject::custom(
-                LogError::SubmitSponsoredTransactionError,
-            ))
+            tracing::warn!("SubmitSponsoredTransactionError {e}.");
+            Err(ServerError::SubmitSponsoredTransactionError(e))
         }
     }
 }
 
-pub async fn handle_rejection(err: Rejection) -> Result<impl warp::Reply, Infallible> {
-    if err.is_not_found() {
-        let code = StatusCode::NOT_FOUND;
-        let message = "Not found.";
-        Ok(mk_reply(message.into(), code))
-    } else if let Some(LogError::NodeAccess(e)) = err.find() {
-        let code = StatusCode::INTERNAL_SERVER_ERROR;
-        let message = format!("Cannot access the node: {}", e);
-        Ok(mk_reply(message, code))
-    } else if let Some(LogError::SimulationInvokeError) = err.find() {
-        let code = StatusCode::INTERNAL_SERVER_ERROR;
-        let message = "Simulation invoke error.";
-        Ok(mk_reply(message.into(), code))
-    } else if let Some(LogError::TransactionSimulationError(e)) = err.find() {
-        let code = StatusCode::INTERNAL_SERVER_ERROR;
-        let message = format!(
-            "Transaction simulation error. Your transaction would revert with the given input \
-             parameters: {}",
-            e
-        );
-        Ok(mk_reply(message, code))
-    } else if let Some(LogError::SubmitSponsoredTransactionError) = err.find() {
-        let code = StatusCode::INTERNAL_SERVER_ERROR;
-        let message = "Submit sponsored transaction error.";
-        Ok(mk_reply(message.into(), code))
-    } else if let Some(LogError::SignatureError) = err.find() {
-        let code = StatusCode::BAD_REQUEST;
-        let message = "Signature error.";
-        Ok(mk_reply(message.into(), code))
-    } else if let Some(LogError::RateLimitError) = err.find() {
-        let code = StatusCode::BAD_REQUEST;
-        let message = "Rate limit reached for the account. Use a different account.";
-        Ok(mk_reply(message.into(), code))
-    } else if let Some(LogError::ParameterError) = err.find() {
-        let code = StatusCode::BAD_REQUEST;
-        let message = "Parameter error.";
-        Ok(mk_reply(message.into(), code))
-    } else if let Some(LogError::NonceQueryError) = err.find() {
-        let code = StatusCode::BAD_REQUEST;
-        let message = "Account info query error.";
-        Ok(mk_reply(message.into(), code))
-    } else if err
-        .find::<warp::filters::body::BodyDeserializeError>()
-        .is_some()
+/// Construct a future for shutdown signals (for unix: SIGINT and SIGTERM) (for
+/// windows: ctrl c and ctrl break). The signal handler is set when the future
+/// is polled and until then the default signal handler.
+fn set_shutdown() -> anyhow::Result<impl futures::Future<Output = ()>> {
+    use futures::FutureExt;
+    #[cfg(unix)]
     {
-        let code = StatusCode::BAD_REQUEST;
-        let message = "Malformed body.";
-        Ok(mk_reply(message.into(), code))
-    } else {
-        let code = StatusCode::INTERNAL_SERVER_ERROR;
-        let message = "Internal error.";
-        Ok(mk_reply(message.into(), code))
-    }
-}
+        use tokio::signal::unix as unix_signal;
 
-/// Helper function to make the reply.
-fn mk_reply(message: String, code: StatusCode) -> impl warp::Reply {
-    let msg = ErrorResponse {
-        message,
-        code: code.as_u16(),
-    };
-    warp::reply::with_status(warp::reply::json(&msg), code)
+        let mut terminate_stream = unix_signal::signal(unix_signal::SignalKind::terminate())?;
+        let mut interrupt_stream = unix_signal::signal(unix_signal::SignalKind::interrupt())?;
+
+        Ok(async move {
+            futures::future::select(
+                Box::pin(terminate_stream.recv()),
+                Box::pin(interrupt_stream.recv()),
+            )
+            .map(|_| ())
+            .await
+        })
+    }
+    #[cfg(windows)]
+    {
+        use tokio::signal::windows as windows_signal;
+
+        let mut ctrl_break_stream = windows_signal::ctrl_break()?;
+        let mut ctrl_c_stream = windows_signal::ctrl_c()?;
+
+        Ok(async move {
+            futures::future::select(
+                Box::pin(ctrl_break_stream.recv()),
+                Box::pin(ctrl_c_stream.recv()),
+            )
+            .map(|_| ())
+            .await
+        })
+    }
 }
