@@ -24,14 +24,22 @@ The following parameters are supported
 An example to run the backend with basic settings and testnet node would be:
 
 ```shell
-cargo run --release -- --node http://node.testnet.concordium.com:20000 --account <YourAccountPathToYourKeys> --allowed-accounts "ACC_0 ACC_1 ACC_2" --allowed-contracts "any"
+cargo run --release -- \
+  --node http://node.testnet.concordium.com:20000 \
+  --account <YourAccountPathToYourKeys> \
+  --allowed-accounts "ACC_0 ACC_1 ACC_2" \
+  --allowed-contracts "any"
 
 ```
 
 An example to run the backend with some filled in example settings would be:
 
 ```shell
-cargo run --release -- --node http://node.testnet.concordium.com:20000 --account 3PXwJYYPf6fyVb4GJquxSZU8puxrHfzc4XogdMVot8MUQK53tW.export --allowed-accounts "3rsc7HNLVKnFz9vmKkAaEMVpNkFA4hZxJpZinCtUTJbBh58yYi 3kBx2h5Y2veb4hZgAJWPrr8RyQESKm5TjzF3ti1QQ4VSYLwK1G" --allowed-contracts "<123,0> <445,0> <555,0>"
+cargo run --release -- \
+  --node http://node.testnet.concordium.com:20000 \
+  --account 3PXwJYYPf6fyVb4GJquxSZU8puxrHfzc4XogdMVot8MUQK53tW.export \
+  --allowed-accounts "3rsc7HNLVKnFz9vmKkAaEMVpNkFA4hZxJpZinCtUTJbBh58yYi 3kBx2h5Y2veb4hZgAJWPrr8RyQESKm5TjzF3ti1QQ4VSYLwK1G" \
+  --allowed-contracts "<123,0> <445,0> <555,0>"
 ```
 
 To get your account file (the `3PXwJYYPf6fyVb4GJquxSZU8puxrHfzc4XogdMVot8MUQK53tW.export` file in the above example), [export it from the Concordium Browser wallet for web](https://developer.concordium.software/en/mainnet/net/guides/export-key.html).
