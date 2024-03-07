@@ -7,19 +7,19 @@ This service allows a sponsor account to pay for the smart contract updates of o
 The following parameters are supported
 
 - `node` the URL of the node's GRPC V2 interface, e.g., `http://node.testnet.concordium.com:20000`
- - Equivalent environment flag: `CCD_SPONSORED_TRX_SERVICE_NODE`.
+  - Equivalent environment flag: `CCD_SPONSORED_TRX_SERVICE_NODE`.
 - `listen-address` the address on which the server will listen for incoming requests, e.g., `0.0.0.0:8080`.
- - Equivalent environment flag: `CCD_SPONSORED_TRX_SERVICE_LISTEN_ADDRESS`.
+  - Equivalent environment flag: `CCD_SPONSORED_TRX_SERVICE_LISTEN_ADDRESS`.
 - `log-level` maximum log level (defaults to `debug` if not given).
- - Equivalent environment flag: `CCD_SPONSORED_TRX_SERVICE_LOG_LEVEL`.
+  - Equivalent environment flag: `CCD_SPONSORED_TRX_SERVICE_LOG_LEVEL`.
 - `request-timeout` the timeout for server and node requests in milliseconds. Defaults to `10000ms`.
- - Equivalent environment flag: `CCD_SPONSORED_TRX_SERVICE_REQUEST_TIMEOUT`.
+  - Equivalent environment flag: `CCD_SPONSORED_TRX_SERVICE_REQUEST_TIMEOUT`.
 - `account` the path to a file which contains the key credentials for the sponsor account.
- - Equivalent environment flag: `CCD_SPONSORED_TRX_SERVICE_PRIVATE_KEY_FILE`.
+  - Equivalent environment flag: `CCD_SPONSORED_TRX_SERVICE_PRIVATE_KEY_FILE`.
 - `allowed-accounts` The accounts allowed to submit transactions. Either 'any', if you have a custom authentication scheme in front of the service OR a space-separated list of account addresses.
- - Equivalent environment flag: `CCD_SPONSORED_TRX_SERVICE_ALLOWED_ACCOUNTS`.
+  - Equivalent environment flag: `CCD_SPONSORED_TRX_SERVICE_ALLOWED_ACCOUNTS`.
 - `allowed-contracts` The contracts allowed to be used by the service. Either 'any' OR a space-separated list of contract addresses in the format `<123,0>`.
- - Equivalent environment flag: `CCD_SPONSORED_TRX_SERVICE_ALLOWED_CONTRACTS`.
+  - Equivalent environment flag: `CCD_SPONSORED_TRX_SERVICE_ALLOWED_CONTRACTS`.
 
 An example to run the backend with basic settings and testnet node would be:
 
