@@ -2,7 +2,6 @@ import * as Cis2MultiContract from '../generated/cis2_multi_cis2_multi'; // Code
 
 import {
     AccountTransactionType,
-    toBuffer,
     UpdateContractPayload,
     CcdAmount,
     ReceiveName,
@@ -13,16 +12,8 @@ import {
     ContractAddress,
     ConcordiumGRPCWebClient,
 } from '@concordium/web-sdk';
-import {
-    CONTRACT_SUB_INDEX,
-    EPSILON_ENERGY,
-    METADATA_URL,
-    MINT_PARAMETER_SCHEMA,
-    NODE,
-    PORT,
-    SPONSORED_TX_CONTRACT_NAME,
-} from './constants';
-import { TypedSmartContractParameters, WalletConnection } from '@concordium/wallet-connectors';
+import { CONTRACT_SUB_INDEX, EPSILON_ENERGY, NODE, PORT, SPONSORED_TX_CONTRACT_NAME } from './constants';
+import { WalletConnection } from '@concordium/wallet-connectors';
 
 import JSONbig from 'json-bigint';
 
@@ -72,37 +63,14 @@ export async function mint(
         maxContractExecutionEnergy,
     };
 
-    if (mintParameter.owner.type == 'Account') {
-        // The `ccd-js-gen` tool is not fully integrated with the browser wallet yet and we need
-        // to manually convert from Cis2MultiContract.MintParameter to TypedSmartContractParameters.
-        const params: TypedSmartContractParameters = {
-            parameters: {
-                owner: { Account: [mintParameter.owner.content.address] },
-                metadata_url: {
-                    hash: {
-                        None: [],
-                    },
-                    url: METADATA_URL, // In production, you should consider using a different metadata file for each token_id.
-                },
-                token_id: mintParameter.token_id,
-            },
-            schema: {
-                type: 'TypeSchema',
-                value: toBuffer(MINT_PARAMETER_SCHEMA, 'base64'),
-            },
-        };
-
-        return connection
-            .signAndSendTransaction(
-                AccountAddress.toBase58(accountAddress),
-                AccountTransactionType.Update,
-                payload,
-                params,
-            )
-            .then(TransactionHash.fromHexString);
-    } else {
-        throw new Error('MintParameter.owner.type should be an Account.');
-    }
+    return connection
+        .signAndSendTransaction(
+            AccountAddress.toBase58(accountAddress),
+            AccountTransactionType.Update,
+            payload,
+            Cis2MultiContract.createMintParameterWebWallet(mintParameter),
+        )
+        .then(TransactionHash.fromHexString);
 }
 
 /**
