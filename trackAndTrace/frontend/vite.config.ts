@@ -10,6 +10,10 @@ if (
     throw Error('Environmental variable TRACK_AND_TRACE_CONTRACT_INDEX needs to be defined and set to a number');
 }
 
+if (process.env.SPONSORED_TRANSACTION_BACKEND_BASE_URL === undefined) {
+    throw Error('Environmental variable SPONSORED_TRANSACTION_BACKEND_BASE_URL needs to be set');
+}
+
 export default defineConfig({
     resolve: {
         alias: {
@@ -24,6 +28,7 @@ export default defineConfig({
     define: {
         global: 'globalThis',
         'process.env': {
+            SPONSORED_TRANSACTION_BACKEND_BASE_URL: process.env.SPONSORED_TRANSACTION_BACKEND_BASE_URL,
             TRACK_AND_TRACE_CONTRACT_INDEX: process.env.TRACK_AND_TRACE_CONTRACT_INDEX,
         },
     },

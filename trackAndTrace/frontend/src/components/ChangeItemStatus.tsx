@@ -7,6 +7,7 @@ import { TxHashLink } from './CCDScanLinks';
 import { TESTNET, WalletConnection, typeSchemaFromBase64 } from '@concordium/wallet-connectors';
 import {
     CHANGE_ITEM_STATUS_PARAMETER_SCHEMA,
+    CONTRACT_SUB_INDEX,
     REFRESH_INTERVAL,
     SERIALIZATION_HELPER_SCHEMA_PERMIT_MESSAGE,
 } from '../../constants';
@@ -136,7 +137,12 @@ export function ChangeItemStatus(props: Props) {
 
         if (connection && accountAddress) {
             try {
-                const [payload, serializedMessage] = await generateMessage(newStatus, itemID, expiryTimeSignature, nextNonce);
+                const [payload, serializedMessage] = await generateMessage(
+                    newStatus,
+                    itemID,
+                    expiryTimeSignature,
+                    nextNonce
+                );
 
                 const permitSignature = await connection.signMessage(accountAddress, {
                     type: 'BinaryMessage',
@@ -144,19 +150,26 @@ export function ChangeItemStatus(props: Props) {
                     schema: typeSchemaFromBase64(SERIALIZATION_HELPER_SCHEMA_PERMIT_MESSAGE),
                 });
 
-                const response = await fetch(`api/sponsoredTransaction`, {
-                    method: 'POST',
-                    headers: new Headers({ 'content-type': 'application/json' }),
-                    body: JSON.stringify({
-                        signer: accountAddress,
-                        nonce: Number(nextNonce),
-                        signature: permitSignature[0][0],
-                        expiry_timestamp: expiryTimeSignature,
-                        contract_name:    TrackAndTraceContract.contractName.value,
-                        endpoint:        "changeItemStatus",
-                        payload: Array.from(payload.buffer),
-                    }),
-                });
+                const response = await fetch(
+                    process.env.SPONSORED_TRANSACTION_BACKEND_BASE_URL + `/api/submitTransaction`,
+                    {
+                        method: 'POST',
+                        headers: new Headers({ 'content-type': 'application/json' }),
+                        body: JSONbig.stringify({
+                            signer: accountAddress,
+                            nonce: Number(nextNonce),
+                            signature: permitSignature[0][0],
+                            expiry_time: expiryTimeSignature,
+                            contract_address: {
+                                index: Number(process.env.TRACK_AND_TRACE_CONTRACT_INDEX),
+                                subindex: CONTRACT_SUB_INDEX,
+                            },
+                            contract_name: TrackAndTraceContract.contractName.value,
+                            entrypoint_name: 'changeItemStatus',
+                            parameter: Buffer.from(payload.buffer).toString('hex'),
+                        }),
+                    }
+                );
 
                 if (!response.ok) {
                     const error = (await response.json()) as Error;
