@@ -12,7 +12,7 @@ The following parameters are supported
   - Equivalent environment flag: `CCD_SPONSORED_TRX_SERVICE_LISTEN_ADDRESS`.
 - `log-level` maximum log level (defaults to `debug` if not given).
   - Equivalent environment flag: `CCD_SPONSORED_TRX_SERVICE_LOG_LEVEL`.
-- `request-timeout` the timeout for server and node requests in milliseconds. Defaults to `10000ms`.
+- `request-timeout` the timeout for server and node requests in milliseconds. Defaults to `10000`.
   - Equivalent environment flag: `CCD_SPONSORED_TRX_SERVICE_REQUEST_TIMEOUT`.
 - `account` the path to a file which contains the key credentials for the sponsor account.
   - Equivalent environment flag: `CCD_SPONSORED_TRX_SERVICE_PRIVATE_KEY_FILE`.
