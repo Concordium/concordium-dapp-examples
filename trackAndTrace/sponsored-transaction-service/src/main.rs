@@ -307,9 +307,9 @@ pub async fn handle_transaction(
             used_energy: _,
         } => {
             tracing::warn!("TransactionSimulationError with reason: {:#?}.", reason);
-            return Err(ServerError::TransactionSimulationError(RevertReason {
-                reason,
-            }));
+            return Err(ServerError::TransactionSimulationError {
+                reason: RevertReason { reason },
+            });
         }
     };
 

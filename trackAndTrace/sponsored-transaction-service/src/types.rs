@@ -20,7 +20,7 @@ use std::{
 use tokio::sync::Mutex;
 
 /// The rate limits per accounts.
-const RATE_LIMIT_PER_ACCOUNT_PER_HOUR: u8 = 30;
+pub(crate) const RATE_LIMIT_PER_ACCOUNT: u8 = 30;
 
 #[derive(Debug, thiserror::Error)]
 /// Errors that can occur in the server.
@@ -45,8 +45,7 @@ pub enum ServerError {
     TransactionSimulationError { reason: RevertReason },
     /// The signer account has reached its rate limit.
     #[error(
-        "The signer account reached its hourly rate limit of {RATE_LIMIT_PER_ACCOUNT_PER_HOUR} \
-         requests."
+        "The signer account reached its hourly rate limit of {RATE_LIMIT_PER_ACCOUNT} requests."
     )]
     RateLimitError,
     /// Sending the transaction failed.
