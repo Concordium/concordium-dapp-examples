@@ -32,6 +32,7 @@ jobs:
           - trackAndTrace/smart-contract/Cargo.toml
           - trackAndTrace/test-scripts/Cargo.toml
           - trackAndTrace/indexer/Cargo.toml
+          - trackAndTrace/sponsored-transaction-service/Cargo.toml
 
     steps:
       - name: Checkout
@@ -63,6 +64,7 @@ jobs:
           - trackAndTrace/smart-contract/Cargo.toml
           - trackAndTrace/test-scripts/Cargo.toml
           - trackAndTrace/indexer/Cargo.toml
+          - trackAndTrace/sponsored-transaction-service/Cargo.toml
 
     steps:
       - name: Checkout
@@ -87,6 +89,7 @@ jobs:
       matrix:
         crates:
           - trackAndTrace/indexer/Cargo.toml
+          - trackAndTrace/sponsored-transaction-service/Cargo.toml
           - trackAndTrace/test-scripts/Cargo.toml
 
     steps:

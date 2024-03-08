@@ -1,6 +1,6 @@
 [package]
 name = "sponsored-transaction-service"
-version = "2.0.0"
+version = "1.0.0"
 authors = ["Concordium AG <developers@concordium.com>"]
 edition = "2021"
 license-file = "../../LICENSE"
@@ -17,10 +17,9 @@ anyhow = "1.0"
 chrono = "0.4.19"
 thiserror = "1"
 rand = "0.8"
-uuid = { version = "1.2.2", features = ["v4", "serde"] }
 hex = "0.4.3"
 concordium-rust-sdk = "4.2.0"
-concordium-contracts-common = { version = "*", features = ["derive-serde"] }
+concordium-contracts-common = { version = "*", features = ["derive-serde"] } # Added directly to enable the 'derive-serde' feature.
 axum = "0.7"
 futures = "0.3"
 tower-http = { version = "0.5", features = [

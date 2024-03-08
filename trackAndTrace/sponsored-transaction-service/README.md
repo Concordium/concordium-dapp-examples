@@ -6,37 +6,37 @@ This service allows a sponsor account to pay for the smart contract updates of o
 
 The following parameters are supported
 
-- `node` the URL of the node's GRPC V2 interface, e.g., `http://node.testnet.concordium.com:20000`
-  - Equivalent environment flag: `CCD_SPONSORED_TRX_SERVICE_NODE`.
+- `node` the URL of the node's GRPC V2 interface, e.g., `https://grpc.testnet.concordium.com:20000`
+  - Equivalent environment variable: `CCD_SPONSORED_TRX_SERVICE_NODE`.
 - `listen-address` the address on which the server will listen for incoming requests, e.g., `0.0.0.0:8080`.
-  - Equivalent environment flag: `CCD_SPONSORED_TRX_SERVICE_LISTEN_ADDRESS`.
+  - Equivalent environment variable: `CCD_SPONSORED_TRX_SERVICE_LISTEN_ADDRESS`.
 - `log-level` maximum log level (defaults to `debug` if not given).
-  - Equivalent environment flag: `CCD_SPONSORED_TRX_SERVICE_LOG_LEVEL`.
+  - Equivalent environment variable: `CCD_SPONSORED_TRX_SERVICE_LOG_LEVEL`.
 - `request-timeout` the timeout for server and node requests in milliseconds. Defaults to `10000`.
-  - Equivalent environment flag: `CCD_SPONSORED_TRX_SERVICE_REQUEST_TIMEOUT`.
+  - Equivalent environment variable: `CCD_SPONSORED_TRX_SERVICE_REQUEST_TIMEOUT`.
 - `account` the path to a file which contains the key credentials for the sponsor account.
-  - Equivalent environment flag: `CCD_SPONSORED_TRX_SERVICE_PRIVATE_KEY_FILE`.
+  - Equivalent environment variable: `CCD_SPONSORED_TRX_SERVICE_PRIVATE_KEY_FILE`.
 - `allowed-accounts` The accounts allowed to submit transactions. Either 'any', if you have a custom authentication scheme in front of the service OR a space-separated list of account addresses.
-  - Equivalent environment flag: `CCD_SPONSORED_TRX_SERVICE_ALLOWED_ACCOUNTS`.
+  - Equivalent environment variable: `CCD_SPONSORED_TRX_SERVICE_ALLOWED_ACCOUNTS`.
 - `allowed-contracts` The contracts allowed to be used by the service. Either 'any' OR a space-separated list of contract addresses in the format `<123,0>`.
-  - Equivalent environment flag: `CCD_SPONSORED_TRX_SERVICE_ALLOWED_CONTRACTS`.
+  - Equivalent environment variable: `CCD_SPONSORED_TRX_SERVICE_ALLOWED_CONTRACTS`.
 
-An example to run the backend with basic settings and testnet node would be:
+An example to run the service with basic settings and testnet node would be:
 
 ```shell
 cargo run --release -- \
-  --node http://node.testnet.concordium.com:20000 \
+  --node https://grpc.testnet.concordium.com:20000 \
   --account <YourAccountPathToYourKeys> \
   --allowed-accounts "ACC_0 ACC_1 ACC_2" \
   --allowed-contracts "any"
 
 ```
 
-An example to run the backend with some filled in example settings would be:
+An example to run the service with some filled in example settings would be:
 
 ```shell
 cargo run --release -- \
-  --node http://node.testnet.concordium.com:20000 \
+  --node https://grpc.testnet.concordium.com:20000 \
   --account 3PXwJYYPf6fyVb4GJquxSZU8puxrHfzc4XogdMVot8MUQK53tW.export \
   --allowed-accounts "3rsc7HNLVKnFz9vmKkAaEMVpNkFA4hZxJpZinCtUTJbBh58yYi 3kBx2h5Y2veb4hZgAJWPrr8RyQESKm5TjzF3ti1QQ4VSYLwK1G" \
   --allowed-contracts "<123,0> <445,0> <555,0>"
@@ -52,10 +52,10 @@ The service is a simple server that exposes one endpoint
 
  - `POST /api/submitTransaction`
 
-The overall flow is that the user signs a sponsored message in the browser wallet (or mobile wallet via walletConnect) and sends the signature together with some input parameters to this backend server via the above endpoint.
-The backend creates a sponsored transaction and submits it to the `permit` function in the provided smart contract. 
-The backend returns the transaction hash to the frontend.
-This backend server has to have access to a blockchain node and an account (with its associated private key) that is funded with some CCD to submit the sponsored transaction to the chain.
+The overall flow is that the user signs a sponsored message in the browser wallet (or mobile wallet via walletConnect) and sends the signature together with some input parameters to this service via the above endpoint.
+The service creates a sponsored transaction and submits it to the `permit` function in the provided smart contract. 
+The service returns the transaction hash to the frontend.
+This service has to have access to a blockchain node and an account (with its associated private key) that is funded with some CCD to submit the sponsored transaction to the chain.
 The sponsor account wallet will pay for the transaction fees.
 
 The endpoint expects a JSON body with the fields shown in the example below:

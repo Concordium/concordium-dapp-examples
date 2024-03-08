@@ -19,6 +19,9 @@ use std::{
 };
 use tokio::sync::Mutex;
 
+/// The rate limits per accounts.
+const RATE_LIMIT_PER_ACCOUNT_PER_HOUR: u8 = 30;
+
 #[derive(Debug, thiserror::Error)]
 /// Errors that can occur in the server.
 pub enum ServerError {
@@ -29,19 +32,22 @@ pub enum ServerError {
     #[error("Unable to parse signature into a hex string: {0}.")]
     SignatureError(#[from] FromHexError),
     /// The signature does not have the right length.
-    #[error("Unable to parse signature because of wrong length.")]
+    #[error("Unable to parse signature because it wasn't 64 bytes long.")]
     SignatureLengthError,
     /// The parameter exceeds the length limit.
-    #[error("The parameter exceeds the length limit.")]
+    #[error("The parameter exceeds the length limit of 65535 bytes.")]
     ParameterError,
     /// The transaction simulation failed because the node couldn't be reached.
     #[error("Unable to invoke the node to simulate the transaction: {0}.")]
     SimulationInvokeError(#[from] QueryError),
     /// The transaction simulation returned with a contract rejection.
-    #[error("Simulation of transaction reverted in smart contract with reason: {0:?}.")]
-    TransactionSimulationError(RevertReason),
+    #[error("Simulation of transaction reverted in smart contract with reason: {:?}.", reason.reason)]
+    TransactionSimulationError { reason: RevertReason },
     /// The signer account has reached its rate limit.
-    #[error("The signer account reached its rate limit.")]
+    #[error(
+        "The signer account reached its hourly rate limit of {RATE_LIMIT_PER_ACCOUNT_PER_HOUR} \
+         requests."
+    )]
     RateLimitError,
     /// Sending the transaction failed.
     #[error("Unable to submit transaction on chain successfully: {0}.")]
@@ -50,13 +56,13 @@ pub enum ServerError {
     #[error("Unable to derive alias account of signer.")]
     NoAliasAccount,
     /// The provided contract name was invalid.
-    #[error("Invalid contract name: {invalid_name}")]
+    #[error("Invalid contract name: {invalid_name}.")]
     ContractNameError { invalid_name: String },
     /// The signer account is not allowed to use the service.
-    #[error("Signer account is not allowed to use the service: {account}")]
+    #[error("Signer account is not allowed to use the service: {account}.")]
     AccountNotAllowed { account: AccountAddress },
     /// The contract is not allowed to be used by the service.
-    #[error("Contract address is not allowed to be used by the service: {contract}")]
+    #[error("Contract address is not allowed to be used by the service: {contract}.")]
     ContractNotAllowed { contract: ContractAddress },
 }
 
@@ -195,8 +201,7 @@ pub type AllowedContracts = AllowedEntities<ContractAddress>;
 pub enum AllowedEntities<T> {
     /// Any entities allowed to use or be used by the service. This should only
     /// be used if other authorizations schemes are in place. Otherwise the
-    /// sponsor account can easily be drained of funds. Especially for the
-    /// accounts.
+    /// sponsor account can easily be drained of funds.
     Any,
     /// The restricted set entities allowed to use or be used by the service.
     LimitedTo { entities: BTreeSet<T> },

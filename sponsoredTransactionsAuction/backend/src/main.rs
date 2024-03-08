@@ -276,7 +276,7 @@ async fn handle_signature_bid(
     tracing::debug!("Created {:?}", parameter);
 
     let payload = transactions::UpdateContractPayload {
-        amount:       Amount::from_micro_ccd(0),
+        amount:       Amount::zero(),
         address:      state.cis2_token_smart_contract,
         receive_name: smart_contracts::OwnedReceiveName::new_unchecked(format!(
             "{}.permit",

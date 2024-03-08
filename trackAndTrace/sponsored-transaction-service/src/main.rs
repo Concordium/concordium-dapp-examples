@@ -203,9 +203,6 @@ const EPSILON_ENERGY: u64 = 1000;
 /// The default energy to use for simulating the contract call.
 const ENERGY: u64 = 10000;
 
-/// The rate limits per accounts.
-const RATE_LIMIT_PER_ACCOUNT: u8 = 30;
-
 /// Handle a request for a sponsored transaction.
 pub async fn handle_transaction(
     State(mut state): State<Server>,

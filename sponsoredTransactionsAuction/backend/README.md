@@ -44,12 +44,24 @@ The backend is a simple server that exposes one endpoint
 
 The overall flow is that the user signs a sponsored transaction bid message in the browser wallet and sends the signature together with some input parameters to this backend server via the above endpoint. The backend creates a sponsored transaction and submits it to the `permit` function in the smart contract {index: CIS2_TOKEN_CONTRACT_INDEX, subindex: 0}. You can look up the CIS2_TOKEN_CONTRACT_INDEX in the `../frontend/package.json` file. The backend returns the transaction hash to the frontend. This backend server has to have access to a blockchain node and an account (with its associated private key) that is funded with some CCD to submit the sponsored transaction to the chain. The backend wallet will pay for the transaction fees.
 
+The `/bid` endpoint expects a JSON body with the fields shown in the example below:
+
+``` json
+{
+   "signer":"2xoKcfFdJA1jCa7DEJborFdhxN78x3SuPhwu4haxdzUXRk5riH",
+   "nonce":8,
+   "signature":"b7cc2c4619c19876254f0f2f616b72396ffddcd70f9ed390c30c0ba76767cde31200152c1215c0c377de03e78efe467e017f59b542fec131a8cc53f94e28c70d",
+   "expiry_timestamp":"2024-03-08T08:23:21.449Z",
+   "token_id": "0f4a",
+   "from":"3PXwJYYPf6fyVb4GJquxSZU8puxrHfzc4XogdMVot8MUQK53tW",
+   "item_index_auction": 24,
+   "token_amount": "44"
+}
+```
+
 Note:
 The smart contract code at {index: CIS2_TOKEN_CONTRACT_INDEX, subindex: 0} can be found [here](https://github.com/Concordium/concordium-rust-smart-contracts/tree/main/examples/cis2-multi).
 The smart contract code at {index: AUCTION_CONTRACT_INDEX, subindex: 0} can be found [here](https://github.com/Concordium/concordium-rust-smart-contracts/tree/main/examples/sponsored-tx-enabled-auction).
-
-See [src/main.rs](./src/main.rs) for the formats of requests and responses. Both
-requests and responses are JSON encoded.
 
 # Contributing
 
