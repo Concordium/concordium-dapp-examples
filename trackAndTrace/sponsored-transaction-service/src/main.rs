@@ -23,7 +23,7 @@ use concordium_rust_sdk::{
 };
 use std::{collections::BTreeMap, path::PathBuf};
 use tonic::transport::ClientTlsConfig;
-use tower_http::cors::CorsLayer;
+use tower_http::cors::{AllowOrigin, CorsLayer};
 
 /// Structure used to receive the correct command line arguments.
 #[derive(clap::Parser, Debug)]
@@ -193,7 +193,9 @@ With the following configuration:
     let router = Router::new()
         .route("/api/submitTransaction", post(handle_transaction))
         .with_state(state)
-        .layer(CorsLayer::permissive()) // TODO: Do we want to restrict CORS?
+        .layer(CorsLayer::new()
+               .allow_origin(AllowOrigin::mirror_request())
+               .allow_methods([http::Method::POST]))
         .layer(
             tower_http::trace::TraceLayer::new_for_http()
                 .make_span_with(tower_http::trace::DefaultMakeSpan::new())
@@ -202,7 +204,7 @@ With the following configuration:
         .layer(tower_http::timeout::TimeoutLayer::new(
             std::time::Duration::from_millis(app.request_timeout),
         ))
-        .layer(tower_http::limit::RequestBodyLimitLayer::new(1_000_000)) // at most 1000kB of data.
+        .layer(tower_http::limit::RequestBodyLimitLayer::new(70_000)) // Allow at most 70kB of data. Enough for max parameter u16::MAX and the signatures etc.
         .layer(tower_http::compression::CompressionLayer::new());
 
     tracing::info!("Listening at {}", app.listen_address);
