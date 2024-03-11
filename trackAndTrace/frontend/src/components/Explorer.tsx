@@ -86,10 +86,14 @@ export function Explorer() {
 
     const [itemChanged, setItemChanged] = useState<ChangeItem[]>();
     const [itemCreated, setItemCreated] = useState<CreateItem>();
+    const [error, setError] = useState<string | undefined>(undefined);
 
     async function onSubmit() {
+        setError(undefined)
+        
         if (itemID === undefined) {
-            throw Error('itemID undefined');
+            setError(`'itemID' input field is undefined`)
+            throw Error(`'itemID' input field is undefined`);
         }
 
         // Clear table.
@@ -98,8 +102,12 @@ export function Explorer() {
             tableBody.innerHTML = '';
         }
 
-        await getItemCreatedEvent(itemID, setItemCreated);
-        await getItemStatusChangedEvents(itemID, setItemChanged);
+        try {
+            await getItemCreatedEvent(itemID, setItemCreated);
+            await getItemStatusChangedEvents(itemID, setItemChanged);
+        } catch (error) {
+            setError(`Couldn't get data from database. Orginal error: ${(error as Error).message}`);
+        }
     }
 
     return (
@@ -124,6 +132,7 @@ export function Explorer() {
                     </Button>
                 </Form>
 
+                {error && <Alert variant="danger">{error}</Alert>}
                 {itemChanged !== undefined && itemCreated !== undefined && (
                     <>
                         <br />

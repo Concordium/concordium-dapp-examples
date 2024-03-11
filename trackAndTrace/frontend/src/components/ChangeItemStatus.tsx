@@ -124,10 +124,12 @@ export function ChangeItemStatus(props: Props) {
         setError(undefined);
 
         if (newStatus === undefined) {
-            throw Error(`'newStatus' undefined`);
+            setError(`'newStatus' input field is undefined`);
+            throw Error(`'newStatus' input field is undefined`);
         }
         if (itemID === undefined) {
-            throw Error(`'itemID' undefined`);
+            setError(`'itemID' input field is undefined`);
+            throw Error(`'itemID' input field is undefined`);
         }
 
         // Signatures should expire in one day. Add 1 day to the current time.
@@ -175,18 +177,21 @@ export function ChangeItemStatus(props: Props) {
 
                 if (!response.ok) {
                     const error = (await response.json()) as Error;
-                    throw new Error(`Unable to get item's change status events: ${JSON.stringify(error)}`);
+                    setError(`Unable to get txHash from backend: ${JSON.stringify(error)}`);
                 }
                 const txHash = (await response.json()) as string;
 
                 if (txHash) {
                     setTxHash(txHash);
                 } else {
-                    throw new Error(`Unable to get item's change status events`);
+                    setError(`Unable to get txHash from backend`);
                 }
             } catch (err) {
                 setError((err as Error).message);
             }
+        } else {
+            setError(`Wallet is not connected`)
+            throw Error(`Wallet is not connected`);
         }
     }
 
@@ -230,13 +235,13 @@ export function ChangeItemStatus(props: Props) {
                     </Button>
                 </Form>
 
+                {error && <Alert variant="danger">{error}</Alert>}
+                {nextNonceError && <Alert variant="danger">Error: {nextNonceError}. </Alert>}
                 {txHash && (
                     <Alert variant="info">
                         <TxHashLink txHash={txHash} />
                     </Alert>
                 )}
-                {error && <Alert variant="danger">{error}</Alert>}
-                {nextNonceError && <Alert variant="danger">Error: {nextNonceError}. </Alert>}
             </div>
         </div>
     );
