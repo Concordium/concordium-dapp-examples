@@ -24,6 +24,7 @@ jobs:
           - gallery
           - sponsoredTransactions/frontend
           - sponsoredTransactionsAuction/frontend
+          - trackAndTrace/frontend
 
     steps:
       - name: Checkout
@@ -59,6 +60,7 @@ jobs:
           - dapp-template/frontend
           - euroe-demo
           - sponsoredTransactionsAuction/frontend
+          - trackAndTrace/frontend
 
     steps:
       - name: Checkout
@@ -101,6 +103,7 @@ jobs:
           - simpleAgeVerification
           - sponsoredTransactions/frontend
           - sponsoredTransactionsAuction/frontend
+          - trackAndTrace/frontend
 
     steps:
       - name: Checkout
