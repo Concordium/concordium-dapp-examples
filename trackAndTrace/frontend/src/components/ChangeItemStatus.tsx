@@ -190,7 +190,7 @@ export function ChangeItemStatus(props: Props) {
                 setError((err as Error).message);
             }
         } else {
-            setError(`Wallet is not connected`)
+            setError(`Wallet is not connected`);
             throw Error(`Wallet is not connected`);
         }
     }
@@ -203,7 +203,7 @@ export function ChangeItemStatus(props: Props) {
                 <Form onSubmit={handleSubmit(onSubmit)}>
                     <Form.Group className="col mb-3">
                         <Form.Label>Item ID</Form.Label>
-                        <Form.Control {...register('itemID', { required: true })} placeholder="12345" />
+                        <Form.Control {...register('itemID', { required: true })} type="number" placeholder="12345" />
                         {formState.errors.itemID && <Alert variant="info"> Item ID is required </Alert>}
                         <Form.Text />
                     </Form.Group>

@@ -10,6 +10,7 @@ import { AccountAddress } from '@concordium/web-sdk';
 import { TxHashLink } from './CCDScanLinks';
 import { addRole, removeRole } from '../track_and_trace_contract';
 import * as TrackAndTraceContract from '../../generated/module_track_and_trace';
+import { validateAccountAddress } from '../utils';
 
 interface Props {
     connection: WalletConnection | undefined;
@@ -42,15 +43,15 @@ export function AdminChangeRoles(props: Props) {
     const [error, setError] = useState<string | undefined>(undefined);
 
     function onSubmit() {
-        setError(undefined)
+        setError(undefined);
 
         if (address === undefined) {
-            setError(`'address' input field is undefined`)
+            setError(`'address' input field is undefined`);
             throw Error(`'address' input field is undefined`);
         }
 
         if (role === undefined) {
-            setError(`'role' input field is undefined`)
+            setError(`'role' input field is undefined`);
             throw Error(`'role' input field is undefined`);
         }
 
@@ -66,7 +67,7 @@ export function AdminChangeRoles(props: Props) {
                     setTxHash(txHash);
                 });
             } else {
-                setError(`Wallet is not connected`)
+                setError(`Wallet is not connected`);
                 throw Error(`Wallet is not connected`);
             }
         } else {
@@ -81,7 +82,7 @@ export function AdminChangeRoles(props: Props) {
                     setTxHash(txHash);
                 });
             } else {
-                setError(`Wallet is not connected`)
+                setError(`Wallet is not connected`);
                 throw Error(`Wallet is not connected`);
             }
         }
@@ -135,10 +136,12 @@ export function AdminChangeRoles(props: Props) {
                     <Form.Group className="col mb-3">
                         <Form.Label>Address</Form.Label>
                         <Form.Control
-                            {...register('address', { required: true })}
+                            {...register('address', { required: true, validate: validateAccountAddress })}
                             placeholder="4bbdAUCDK2D6cUvUeprGr4FaSaHXKuYmYVjyCa4bXSCu3NUXzA"
                         />
-                        {formState.errors.address && <Alert variant="info"> Address is required </Alert>}
+                        {formState.errors.address && (
+                            <Alert variant="info">Address is required. {formState.errors.address.message}</Alert>
+                        )}
                         <Form.Text />
                     </Form.Group>
                     <Button variant="secondary" type="submit">

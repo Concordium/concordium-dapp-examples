@@ -31,10 +31,10 @@ export function AdminCreateItem(props: Props) {
     const [error, setError] = useState<string | undefined>(undefined);
 
     function onSubmit() {
-        setError(undefined)
+        setError(undefined);
 
         if (url === undefined) {
-            setError(`'url' input field is undefined`)
+            setError(`'url' input field is undefined`);
             throw Error(`'url' input field is undefined`);
         }
         const parameter: TrackAndTraceContract.CreateItemParameter = {
@@ -51,7 +51,7 @@ export function AdminCreateItem(props: Props) {
                 setTxHash(txHash);
             });
         } else {
-            setError(`Wallet is not connected`)
+            setError(`Wallet is not connected`);
             throw Error(`Wallet is not connected`);
         }
     }
