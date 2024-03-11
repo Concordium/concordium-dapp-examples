@@ -39,14 +39,19 @@ export function AdminChangeRoles(props: Props) {
     });
 
     const [txHash, setTxHash] = useState<string | undefined>(undefined);
+    const [error, setError] = useState<string | undefined>(undefined);
 
     function onSubmit() {
+        setError(undefined)
+
         if (address === undefined) {
-            throw Error(`'address' undefined`);
+            setError(`'address' input field is undefined`)
+            throw Error(`'address' input field is undefined`);
         }
 
         if (role === undefined) {
-            throw Error(`'role' undefined`);
+            setError(`'role' input field is undefined`)
+            throw Error(`'role' input field is undefined`);
         }
 
         if (toggle) {
@@ -60,6 +65,9 @@ export function AdminChangeRoles(props: Props) {
                 addRole(connection, AccountAddress.fromBase58(accountAddress), parameter).then((txHash: string) => {
                     setTxHash(txHash);
                 });
+            } else {
+                setError(`Wallet is not connected`)
+                throw Error(`Wallet is not connected`);
             }
         } else {
             const parameter: TrackAndTraceContract.RevokeRoleParameter = {
@@ -72,6 +80,9 @@ export function AdminChangeRoles(props: Props) {
                 removeRole(connection, AccountAddress.fromBase58(accountAddress), parameter).then((txHash: string) => {
                     setTxHash(txHash);
                 });
+            } else {
+                setError(`Wallet is not connected`)
+                throw Error(`Wallet is not connected`);
             }
         }
     }
@@ -135,6 +146,7 @@ export function AdminChangeRoles(props: Props) {
                     </Button>
                 </Form>
 
+                {error && <Alert variant="danger">{error}</Alert>}
                 {txHash && (
                     <Alert variant="info">
                         <TxHashLink txHash={txHash} />

@@ -28,10 +28,14 @@ export function AdminCreateItem(props: Props) {
     });
 
     const [txHash, setTxHash] = useState<string | undefined>(undefined);
+    const [error, setError] = useState<string | undefined>(undefined);
 
     function onSubmit() {
+        setError(undefined)
+
         if (url === undefined) {
-            throw Error('URL undefined');
+            setError(`'url' input field is undefined`)
+            throw Error(`'url' input field is undefined`);
         }
         const parameter: TrackAndTraceContract.CreateItemParameter = {
             type: 'Some',
@@ -46,6 +50,9 @@ export function AdminCreateItem(props: Props) {
             createItem(connection, AccountAddress.fromBase58(accountAddress), parameter).then((txHash) => {
                 setTxHash(txHash);
             });
+        } else {
+            setError(`Wallet is not connected`)
+            throw Error(`Wallet is not connected`);
         }
     }
 
@@ -66,6 +73,7 @@ export function AdminCreateItem(props: Props) {
                     </Button>
                 </Form>
 
+                {error && <Alert variant="danger">{error}</Alert>}
                 {txHash && (
                     <Alert variant="info">
                         <TxHashLink txHash={txHash} />
