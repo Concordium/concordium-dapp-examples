@@ -1,4 +1,5 @@
 use axum::{extract::rejection::JsonRejection, http::StatusCode, Json};
+use chrono::{prelude::*, TimeDelta};
 use concordium_rust_sdk::{
     endpoints::{QueryError, RPCError},
     smart_contracts::{
@@ -18,9 +19,6 @@ use std::{
     sync::Arc,
 };
 use tokio::sync::Mutex;
-
-/// The rate limits per accounts.
-pub(crate) const RATE_LIMIT_PER_ACCOUNT: u8 = 30;
 
 #[derive(Debug, thiserror::Error)]
 /// Errors that can occur in the server.
@@ -45,9 +43,12 @@ pub enum ServerError {
     TransactionSimulationError { reason: RevertReason },
     /// The signer account has reached its rate limit.
     #[error(
-        "The signer account reached its hourly rate limit of {RATE_LIMIT_PER_ACCOUNT} requests."
+        "The signer account reached its hourly rate limit of {rate_limit_per_account_per_hour} \
+         requests."
     )]
-    RateLimitError,
+    RateLimitError {
+        rate_limit_per_account_per_hour: u16,
+    },
     /// Sending the transaction failed.
     #[error("Unable to submit transaction on chain successfully: {0}.")]
     SubmitSponsoredTransactionError(#[from] RPCError),
@@ -171,18 +172,91 @@ pub struct PermitMessage {
 /// The state of the server.
 pub struct Server {
     /// A connection to a node.
-    pub node_client:       concordium_rust_sdk::v2::Client,
+    pub node_client: concordium_rust_sdk::v2::Client,
     /// The accounts keys for the account sponsoring the transactions.
-    pub keys:              Arc<WalletAccount>,
+    pub keys: Arc<WalletAccount>,
     /// The next nonce of the sponsor account.
-    pub nonce:             Arc<Mutex<Nonce>>,
-    /// Rate limits for accounts. The rate limits are transient and are reset on
-    /// server restarts.
-    pub rate_limits:       Arc<Mutex<HashMap<AccountAddress, u8>>>,
+    pub nonce: Arc<Mutex<Nonce>>,
+    /// Rate limits for accounts per hour. The rate limits are reset once per
+    /// hour.
+    pub rate_limits: Arc<Mutex<HashMap<AccountAddress, u16>>>,
+    /// The rate limit per account per hour.
+    pub rate_limit_per_account_per_hour: u16,
+    /// Timestamp for last reset of the rate limits.
+    pub last_rate_limit_reset: Arc<Mutex<DateTime<Utc>>>,
     /// The allowed accounts.
-    pub allowed_accounts:  AllowedAccounts,
+    pub allowed_accounts: AllowedAccounts,
     /// The allowed contracts.
     pub allowed_contracts: AllowedContracts,
+}
+
+impl Server {
+    /// Create a new [`Server`].
+    pub(crate) fn new(
+        node_client: concordium_rust_sdk::v2::Client,
+        keys: WalletAccount,
+        nonce: Nonce,
+        rate_limit_per_account_per_hour: u16,
+        allowed_accounts: AllowedAccounts,
+        allowed_contracts: AllowedContracts,
+    ) -> Self {
+        Self {
+            node_client,
+            keys: Arc::new(keys),
+            nonce: Arc::new(Mutex::new(nonce)),
+            rate_limits: Arc::new(Mutex::new(HashMap::new())),
+            rate_limit_per_account_per_hour,
+            last_rate_limit_reset: Arc::new(Mutex::new(Utc::now())),
+            allowed_accounts,
+            allowed_contracts,
+        }
+    }
+
+    /// Reset the rate limits map if at least one hour has passed since the last
+    /// reset.
+    ///
+    /// The rate limits are primarily used to limit the costs in terms of CCD of
+    /// the sponsor account. It is therefore not necessary to limit bursts of
+    /// requests from a single account. The implementation here is thus very
+    /// simple, where all limits are reset once per hour. This means that an
+    /// account can actually use twice the rate limit within a few minutes
+    /// if the transactions are timed just before and after the limit reset.
+    pub(crate) async fn reset_rate_limits_if_expired(&self) {
+        let now = Utc::now();
+        let mut last_rate_limit_reset = self.last_rate_limit_reset.lock().await;
+        if now.signed_duration_since(*last_rate_limit_reset) >= TimeDelta::try_hours(1).unwrap() {
+            // Clear all saved limits.
+            self.rate_limits.lock().await.clear();
+            *last_rate_limit_reset = now;
+        }
+    }
+
+    /// Check the rate limit for the account. It also updates the counter for
+    /// the account.
+    ///
+    /// Since account addresses have aliases, we track the rate-limit by using
+    /// the 0th alias for everyone account. The check is made against the
+    /// 0th account alias to reduce For more info on aliases, see: https://developer.concordium.software/en/mainnet/net/references/transactions.html#account-aliases
+    pub(crate) async fn check_rate_limit(
+        &self,
+        account: AccountAddress,
+    ) -> Result<(), ServerError> {
+        let mut rate_limits = self.rate_limits.lock().await;
+
+        let alias_account_0 = account
+            .get_alias(0)
+            .ok_or_else(|| ServerError::NoAliasAccount)?;
+
+        let rate_limit = rate_limits.entry(alias_account_0).or_insert_with(|| 0u16);
+
+        if *rate_limit >= self.rate_limit_per_account_per_hour {
+            return Err(ServerError::RateLimitError {
+                rate_limit_per_account_per_hour: self.rate_limit_per_account_per_hour,
+            });
+        }
+        *rate_limit += 1;
+        Ok(())
+    }
 }
 
 /// The accounts allowed to use the service.

@@ -20,6 +20,8 @@ The following parameters are supported
   - Equivalent environment variable: `CCD_SPONSORED_TRX_SERVICE_ALLOWED_ACCOUNTS`.
 - `allowed-contracts` The contracts allowed to be used by the service. Either 'any' OR a space-separated list of contract addresses in the format `<123,0>`.
   - Equivalent environment variable: `CCD_SPONSORED_TRX_SERVICE_ALLOWED_CONTRACTS`.
+- `rate-limit` The limit of requests per account per hour. Defaults to `30`.
+  - Equivalent environment variable: `CCD_SPONSORED_TRX_SERVICE_RATE_LIMIT`.
 
 An example to run the service with basic settings and testnet node would be:
 

@@ -21,12 +21,7 @@ use concordium_rust_sdk::{
     },
     v2::BlockIdentifier,
 };
-use std::{
-    collections::{BTreeMap, HashMap},
-    path::PathBuf,
-    sync::Arc,
-};
-use tokio::sync::Mutex;
+use std::{collections::BTreeMap, path::PathBuf};
 use tonic::transport::ClientTlsConfig;
 use tower_http::cors::CorsLayer;
 
@@ -41,34 +36,34 @@ struct ServiceConfig {
         default_value = "http://localhost:20000",
         env = "CCD_SPONSORED_TRX_SERVICE_NODE"
     )]
-    endpoint:          tonic::transport::Endpoint,
+    endpoint: tonic::transport::Endpoint,
     #[clap(
         long = "listen-address",
         default_value = "0.0.0.0:8080",
         help = "Address where the server will listen on.",
         env = "CCD_SPONSORED_TRX_SERVICE_LISTEN_ADDRESS"
     )]
-    listen_address:    std::net::SocketAddr,
+    listen_address: std::net::SocketAddr,
     #[clap(
         long = "log-level",
         default_value = "debug",
         help = "Maximum log level.",
         env = "CCD_SPONSORED_TRX_SERVICE_LOG_LEVEL"
     )]
-    log_level:         tracing_subscriber::filter::LevelFilter,
+    log_level: tracing_subscriber::filter::LevelFilter,
     #[clap(
         long = "request-timeout",
         help = "Request timeout (both of request to the node and server requests) in milliseconds.",
         default_value = "10000",
         env = "CCD_SPONSORED_TRX_SERVICE_REQUEST_TIMEOUT"
     )]
-    request_timeout:   u64,
+    request_timeout: u64,
     #[clap(
         long = "account",
         help = "Path to the account key file.",
         env = "CCD_SPONSORED_TRX_SERVICE_PRIVATE_KEY_FILE"
     )]
-    keys_path:         PathBuf,
+    keys_path: PathBuf,
     #[clap(
         long = "allowed-accounts",
         help = "The accounts allowed to submit transactions. Either 'any', if you have a custom \
@@ -76,7 +71,7 @@ struct ServiceConfig {
                 account addresses.",
         env = "CCD_SPONSORED_TRX_SERVICE_ALLOWED_ACCOUNTS"
     )]
-    allowed_accounts:  AllowedAccounts,
+    allowed_accounts: AllowedAccounts,
     #[clap(
         long = "allowed-contracts",
         help = "The contracts allowed to be used by the service. Either 'any' OR a \
@@ -84,11 +79,28 @@ struct ServiceConfig {
         env = "CCD_SPONSORED_TRX_SERVICE_ALLOWED_CONTRACTS"
     )]
     allowed_contracts: AllowedContracts,
+    #[clap(
+        long = "rate-limit",
+        default_value = "30",
+        help = "The limit of requests per account per hour. Defaults to `30`.",
+        env = "CCD_SPONSORED_TRX_SERVICE_RATE_LIMIT"
+    )]
+    rate_limit_per_account_per_hour: u16,
 }
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let app = ServiceConfig::parse();
+
+    anyhow::ensure!(
+        app.rate_limit_per_account_per_hour >= 1,
+        "Rate limit per account per hour must be at least 1."
+    );
+
+    anyhow::ensure!(
+        app.request_timeout >= 1000,
+        "Request timeout should be at least 1000 ms."
+    );
 
     // Setup logging.
     {
@@ -116,11 +128,6 @@ async fn main() -> anyhow::Result<()> {
     } else {
         app.endpoint
     };
-
-    anyhow::ensure!(
-        app.request_timeout >= 1000,
-        "Request timeout should be at least 1000 ms."
-    );
 
     // Make it 500ms less than the request timeout to make sure we can fail properly
     // with a connection timeout in case of node connectivity problems.
@@ -153,14 +160,14 @@ async fn main() -> anyhow::Result<()> {
         nonce,
     );
 
-    let state = Server {
+    let state = Server::new(
         node_client,
-        keys: Arc::new(keys),
-        nonce: Arc::new(Mutex::new(nonce)),
-        rate_limits: Arc::new(Mutex::new(HashMap::new())),
-        allowed_accounts: app.allowed_accounts,
-        allowed_contracts: app.allowed_contracts,
-    };
+        keys,
+        nonce,
+        app.rate_limit_per_account_per_hour,
+        app.allowed_accounts,
+        app.allowed_contracts,
+    );
 
     tracing::info!("Starting server...");
 
@@ -200,9 +207,6 @@ async fn main() -> anyhow::Result<()> {
 /// meanwhile.
 const EPSILON_ENERGY: u64 = 1000;
 
-/// The default energy to use for simulating the contract call.
-const ENERGY: u64 = 10000;
-
 /// Handle a request for a sponsored transaction.
 pub async fn handle_transaction(
     State(mut state): State<Server>,
@@ -231,20 +235,15 @@ pub async fn handle_transaction(
         parameter:        request.parameter,
     };
 
-    tracing::debug!("Create signature map.");
-
+    // Create signature map.
     let mut signature = [0; 64];
     hex::decode_to_slice(request.signature.clone(), &mut signature)?;
-
     let mut inner_signature_map = BTreeMap::new();
     inner_signature_map.insert(0, Signature::Ed25519(SignatureEd25519(signature)));
-
     let mut signature_map = BTreeMap::new();
     signature_map.insert(0, CredentialSignatures {
         sigs: inner_signature_map,
     });
-
-    tracing::debug!("Create Parameter.");
 
     let param: PermitParam = PermitParam {
         message,
@@ -256,8 +255,6 @@ pub async fn handle_transaction(
 
     let parameter = smart_contracts::OwnedParameter::from_serial(&param)
         .map_err(|_| ServerError::ParameterError)?;
-
-    tracing::debug!("Simulate transaction to check its validity.");
 
     let receive_name =
         smart_contracts::OwnedReceiveName::try_from(format!("{}.permit", request.contract_name))
@@ -273,7 +270,7 @@ pub async fn handle_transaction(
         amount:    Amount::zero(),
         method:    receive_name.clone(),
         parameter: parameter.clone(),
-        energy:    Some(ENERGY.into()),
+        energy:    None,
     };
 
     let info = state
@@ -313,8 +310,6 @@ pub async fn handle_transaction(
         }
     };
 
-    tracing::debug!("Create transaction.");
-
     let payload = transactions::UpdateContractPayload {
         amount: Amount::from_micro_ccd(0),
         address: request.contract_address,
@@ -331,41 +326,11 @@ pub async fn handle_transaction(
     // the blockchain.
     let mut nonce = state.nonce.lock().await;
 
-    // There should be rate limiting in place to prevent the sponsor wallet from
-    // being drained. We only allow up to RATE_LIMIT_PER_ACCOUNT API calls to
-    // this backend. The rate_limits are transient and are reset on server
-    // restart.
+    // Reset the rate limits if an hour has passed since the last reset.
+    state.reset_rate_limits_if_expired().await;
 
-    // We only check the rate_limits after acquiring the nonce lock. If we do it
-    // before we don't have guarantees due to possible parallel API requests.
-
-    // On mainnet, a user can only create around 25 accounts per identity.
-    // In production, a user registration/authentication at the frontend can be
-    // added or a database that permanently keeps track of the rate_limits so
-    // that the server can be restarted and reload the rate_limit values from the
-    // database.
-
-    tracing::debug!("Check rate limit of account {} ...", request.signer);
-
-    let mut rate_limits = state.rate_limits.lock().await;
-
-    // Account addresses on Concordium have account aliases. We track the
-    // rate-limits by using the alias 0 for every account.
-    // For more info on aliases, see: https://developer.concordium.software/en/mainnet/net/references/transactions.html#account-aliases
-    let alias_account_0 = request
-        .signer
-        .get_alias(0)
-        .ok_or_else(|| ServerError::NoAliasAccount)?;
-
-    let rate_limit = rate_limits.entry(alias_account_0).or_insert_with(|| 0u8);
-
-    if *rate_limit >= RATE_LIMIT_PER_ACCOUNT {
-        tracing::warn!("Rate limit for account {:#?} reached.", request.signer);
-
-        return Err(ServerError::RateLimitError);
-    }
-
-    *rate_limit += 1;
+    // Check the rate limits for the account.
+    state.check_rate_limit(request.signer).await?;
 
     let tx = transactions::send::make_and_sign_transaction(
         &state.keys.keys,
