@@ -3,19 +3,19 @@ import { Alert, Button, Form } from 'react-bootstrap';
 import { useForm, useWatch } from 'react-hook-form';
 
 type ChangeItem = {
-    block_time: string,
-    transaction_hash: string,
-    new_status: string,
-    additional_data: { bytes: Array<number> },
-    event_index: number,
-    item_id: number
-}
+    block_time: string;
+    transaction_hash: string;
+    new_status: string;
+    additional_data: { bytes: Array<number> };
+    event_index: number;
+    item_id: number;
+};
 
 type CreateItem = {
-    block_time: string,
-    transaction_hash: string,
-    event_index: number,
-}
+    block_time: string;
+    transaction_hash: string;
+    event_index: number;
+};
 
 /**
  * This function gets the historical ItemStatusChangedEvents for a given itemID.
@@ -39,9 +39,9 @@ async function getItemStatusChangedEvents(itemID: number, setItemChanged: Dispat
         const error = (await response.json()) as Error;
         throw new Error(`Unable to get item's change status events: ${JSON.stringify(error)}`);
     }
-    const dataItemChanged = (await response.json());
+    const dataItemChanged = await response.json();
     if (dataItemChanged) {
-        setItemChanged(dataItemChanged.data)
+        setItemChanged(dataItemChanged.data);
     } else {
         throw new Error(`Unable to get item's change status events`);
     }
@@ -65,9 +65,9 @@ async function getItemCreatedEvent(itemID: number, setItemCreated: Dispatch<Crea
         const error = (await response.json()) as Error;
         throw new Error(`Unable to get item's created event: ${JSON.stringify(error)}`);
     }
-    const dataItemCreated = (await response.json());
+    const dataItemCreated = await response.json();
     if (dataItemCreated) {
-        setItemCreated(dataItemCreated.data)
+        setItemCreated(dataItemCreated.data);
     } else {
         throw new Error(`Unable to get item's created event`);
     }
@@ -89,10 +89,10 @@ export function Explorer() {
     const [error, setError] = useState<string | undefined>(undefined);
 
     async function onSubmit() {
-        setError(undefined)
-        
+        setError(undefined);
+
         if (itemID === undefined) {
-            setError(`'itemID' input field is undefined`)
+            setError(`'itemID' input field is undefined`);
             throw Error(`'itemID' input field is undefined`);
         }
 
@@ -146,14 +146,17 @@ export function Explorer() {
                             </thead>
                             <tbody id="table"></tbody>
 
-                            <tr >
+                            <tr>
                                 <td>{new Date(itemCreated.block_time).toLocaleString()}</td>
                                 <td>
-                                    <a className="link"
+                                    <a
+                                        className="link"
                                         target="_blank"
                                         rel="noreferrer"
-                                        href={`https://testnet.ccdscan.io/?dcount=1&dentity=transaction&dhash=${itemCreated.transaction_hash}`}>
-                                        {itemCreated.transaction_hash.slice(0, 5)}...{itemCreated.transaction_hash.slice(-5)}
+                                        href={`https://testnet.ccdscan.io/?dcount=1&dentity=transaction&dhash=${itemCreated.transaction_hash}`}
+                                    >
+                                        {itemCreated.transaction_hash.slice(0, 5)}...
+                                        {itemCreated.transaction_hash.slice(-5)}
                                     </a>
                                 </td>
                                 <td>Created</td>
@@ -161,18 +164,22 @@ export function Explorer() {
 
                             {itemChanged.map((event: ChangeItem, parentIndex) => {
                                 return (
-                                    <tr key={parentIndex} >
+                                    <tr key={parentIndex}>
                                         <td>{new Date(event.block_time).toLocaleString()}</td>
                                         <td>
-                                            <a className="link"
+                                            <a
+                                                className="link"
                                                 target="_blank"
                                                 rel="noreferrer"
-                                                href={`https://testnet.ccdscan.io/?dcount=1&dentity=transaction&dhash=${event.transaction_hash}`}>
-                                                {event.transaction_hash.slice(0, 5)}...{event.transaction_hash.slice(-5)}
+                                                href={`https://testnet.ccdscan.io/?dcount=1&dentity=transaction&dhash=${event.transaction_hash}`}
+                                            >
+                                                {event.transaction_hash.slice(0, 5)}...
+                                                {event.transaction_hash.slice(-5)}
                                             </a>
                                         </td>
                                         <td>{event.new_status}</td>
-                                    </tr>)
+                                    </tr>
+                                );
                             })}
                         </table>
                     </>
