@@ -1,21 +1,35 @@
-import { AccountAddress, serializeTypeValue, toBuffer } from '@concordium/web-sdk';
 import { useCallback, useEffect, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Alert, Button, Form } from 'react-bootstrap';
 import Select from 'react-select';
-import { TxHashLink } from './CCDScanLinks';
+import { Buffer } from 'buffer/';
+import JSONbig from 'json-bigint';
+
 import { TESTNET, WalletConnection, typeSchemaFromBase64 } from '@concordium/wallet-connectors';
+import { useGrpcClient } from '@concordium/react-components';
+import { AccountAddress, serializeTypeValue, toBuffer } from '@concordium/web-sdk';
+
+import { TxHashLink } from './CCDScanLinks';
 import {
     CHANGE_ITEM_STATUS_PARAMETER_SCHEMA,
     CONTRACT_SUB_INDEX,
     REFRESH_INTERVAL,
     SERIALIZATION_HELPER_SCHEMA_PERMIT_MESSAGE,
 } from '../../constants';
-import { Buffer } from 'buffer/';
 import { nonceOf } from '../track_and_trace_contract';
-import { useGrpcClient } from '@concordium/react-components';
 import * as TrackAndTraceContract from '../../generated/module_track_and_trace'; // Code generated from a smart contract module. The naming convention of the generated file is `moduleName_smartContractName`.
-import JSONbig from 'json-bigint';
+
+interface Props {
+    connection: WalletConnection | undefined;
+    accountAddress: string | undefined;
+}
+
+const NEW_STATUS_OPTIONS = [
+    { label: 'Produced', value: 'Produced' },
+    { label: 'InTransit', value: 'InTransit' },
+    { label: 'InStore', value: 'InStore' },
+    { label: 'Sold', value: 'Sold' },
+];
 
 async function generateMessage(newStatus: string, itemID: bigint, expiryTimeSignature: string, nonce: number | bigint) {
     try {
@@ -57,18 +71,6 @@ async function generateMessage(newStatus: string, itemID: bigint, expiryTimeSign
     }
 }
 
-interface Props {
-    connection: WalletConnection | undefined;
-    accountAddress: string | undefined;
-}
-
-const NEW_STATUS_OPTIONS = [
-    { label: 'Produced', value: 'Produced' },
-    { label: 'InTransit', value: 'InTransit' },
-    { label: 'InStore', value: 'InStore' },
-    { label: 'Sold', value: 'Sold' },
-];
-
 export function ChangeItemStatus(props: Props) {
     const { connection, accountAddress } = props;
 
@@ -91,7 +93,7 @@ export function ChangeItemStatus(props: Props) {
     const grpcClient = useGrpcClient(TESTNET);
 
     /**
-     * This function querries the nonce (CIS3 standard) of an acccount in the cis2_multi contract.
+     * This function querries the nonce (CIS3 standard) of an acccount in the track-and-trace contract.
      */
     const refreshNonce = useCallback(() => {
         if (grpcClient && accountAddress) {

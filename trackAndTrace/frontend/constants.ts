@@ -2,8 +2,6 @@ import { BrowserWalletConnector, ephemeralConnectorType } from '@concordium/reac
 
 import moment from 'moment';
 
-export const VERIFIER_URL = '/api';
-
 export const NODE = 'https://grpc.testnet.concordium.com';
 
 export const PORT = 20000;

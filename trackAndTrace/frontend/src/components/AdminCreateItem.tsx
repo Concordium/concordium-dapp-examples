@@ -1,11 +1,13 @@
-import { createItem } from '../track_and_trace_contract';
-import * as TrackAndTraceContract from '../../generated/module_track_and_trace';
-import { AccountAddress } from '@concordium/web-sdk';
 import { useState } from 'react';
 import { Alert, Button, Form } from 'react-bootstrap';
-import { WalletConnection } from '@concordium/wallet-connectors';
 import { useForm, useWatch } from 'react-hook-form';
+
+import { WalletConnection } from '@concordium/wallet-connectors';
+import { AccountAddress } from '@concordium/web-sdk';
+
 import { TxHashLink } from './CCDScanLinks';
+import { createItem } from '../track_and_trace_contract';
+import * as TrackAndTraceContract from '../../generated/module_track_and_trace';
 
 interface Props {
     connection: WalletConnection | undefined;
