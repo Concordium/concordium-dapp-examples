@@ -80,18 +80,20 @@ impl axum::response::IntoResponse for ServerError {
                 tracing::error!("Internal error: {error}.");
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(format!(
+                    Json(
                         "An internal error occured while simulating the contract update."
-                    )),
+                            .to_string(),
+                    ),
                 )
             }
             ServerError::SubmitSponsoredTransactionError(error) => {
                 tracing::error!("Internal error: {error}.");
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(format!(
+                    Json(
                         "An internal error occured while submitting the contract update."
-                    )),
+                            .to_string(),
+                    ),
                 )
             }
             error => {
@@ -316,7 +318,7 @@ where
                 f,
                 "[{}]",
                 entities
-                    .into_iter()
+                    .iter()
                     .map(ToString::to_string)
                     .collect::<Vec<_>>()
                     .join(", ")
