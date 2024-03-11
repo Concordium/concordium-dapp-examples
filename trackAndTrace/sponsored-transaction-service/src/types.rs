@@ -305,6 +305,26 @@ where
     }
 }
 
+impl<T> fmt::Display for AllowedEntities<T>
+where
+    T: fmt::Display,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            AllowedEntities::Any => write!(f, "Any"),
+            AllowedEntities::LimitedTo { entities } => write!(
+                f,
+                "[{}]",
+                entities
+                    .into_iter()
+                    .map(ToString::to_string)
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ),
+        }
+    }
+}
+
 impl<T: Ord> AllowedEntities<T> {
     /// Check whether the entity is allowed.
     pub fn allowed(&self, entity: &T) -> bool {

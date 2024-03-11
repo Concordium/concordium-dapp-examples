@@ -133,6 +133,8 @@ async fn main() -> anyhow::Result<()> {
     // with a connection timeout in case of node connectivity problems.
     let node_timeout = std::time::Duration::from_millis(app.request_timeout - 500);
 
+    let endpoint_uri = endpoint.uri().clone();
+
     let endpoint = endpoint
         .connect_timeout(node_timeout)
         .timeout(node_timeout)
@@ -145,7 +147,7 @@ async fn main() -> anyhow::Result<()> {
         .context("Unable to establish connection to the node.")?;
 
     // Load account keys and sender address from a file
-    let keys: WalletAccount = WalletAccount::from_json_file(app.keys_path)
+    let keys: WalletAccount = WalletAccount::from_json_file(app.keys_path.clone())
         .context("Could not get the account keys from a file.")?;
 
     let nonce = node_client
@@ -154,10 +156,29 @@ async fn main() -> anyhow::Result<()> {
         .context("Could not query the account nonce.")?
         .nonce;
 
+    tracing::info!("Starting server...");
     tracing::debug!(
-        "Starting server with sponsorer {}. Current sponsorer nonce: {}.",
+        r#"
+With the following configuration:
+    Node endpoint: {}
+    Listen address: {}
+    Log level: {}
+    Request timeout: {}
+    Path to sponsor keys: {:#?}
+    Sponsor account: {} 
+        With initial nonce: {}
+    Allowed accounts: {}
+    Allowed contracts: {}
+"#,
+        endpoint_uri,
+        app.listen_address,
+        app.log_level,
+        app.request_timeout,
+        app.keys_path,
         keys.address,
         nonce,
+        app.allowed_accounts,
+        app.allowed_contracts,
     );
 
     let state = Server::new(
@@ -168,8 +189,6 @@ async fn main() -> anyhow::Result<()> {
         app.allowed_accounts,
         app.allowed_contracts,
     );
-
-    tracing::info!("Starting server...");
 
     let router = Router::new()
         .route("/api/submitTransaction", post(handle_transaction))
