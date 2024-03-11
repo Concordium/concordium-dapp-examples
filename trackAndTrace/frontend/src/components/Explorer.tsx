@@ -1,6 +1,21 @@
-import { useState } from 'react';
+import { Dispatch, useState } from 'react';
 import { Alert, Button, Form } from 'react-bootstrap';
 import { useForm, useWatch } from 'react-hook-form';
+
+type ChangeItem = {
+    block_time: string,
+    transaction_hash: string,
+    new_status: string,
+    additional_data: { bytes: Array<number> },
+    event_index: number,
+    item_id: number
+}
+
+type CreateItem = {
+    block_time: string,
+    transaction_hash: string,
+    event_index: number,
+}
 
 /**
  * This function gets the historical ItemStatusChangedEvents for a given itemID.
@@ -9,7 +24,7 @@ import { useForm, useWatch } from 'react-hook-form';
  * @throws If the server responds with an error or the response of the server is malformed.
  * @returns A json object including a vector of historical ItemStatusChangedEvents.
  */
-export async function getItemStatusChangedEvents(itemID: number) {
+async function getItemStatusChangedEvents(itemID: number, setItemChanged: Dispatch<ChangeItem[]>) {
     const response = await fetch(`api/getItemStatusChangedEvents`, {
         method: 'POST',
         headers: new Headers({ 'content-type': 'application/json' }),
@@ -24,11 +39,12 @@ export async function getItemStatusChangedEvents(itemID: number) {
         const error = (await response.json()) as Error;
         throw new Error(`Unable to get item's change status events: ${JSON.stringify(error)}`);
     }
-    const body = (await response.json()) as string;
-    if (body) {
-        return body;
+    const dataItemChanged = (await response.json());
+    if (dataItemChanged) {
+        setItemChanged(dataItemChanged.data)
+    } else {
+        throw new Error(`Unable to get item's change status events`);
     }
-    throw new Error(`Unable to get item's change status events`);
 }
 
 /**
@@ -38,7 +54,7 @@ export async function getItemStatusChangedEvents(itemID: number) {
  * @throws If the server responds with an error or the response of the server is malformed.
  * @returns A json object including an option of the historical ItemCreateEvent.
  */
-export async function getItemCreatedEvent(itemID: number) {
+async function getItemCreatedEvent(itemID: number, setItemCreated: Dispatch<CreateItem>) {
     const response = await fetch(`api/getItemCreatedEvent`, {
         method: 'POST',
         headers: new Headers({ 'content-type': 'application/json' }),
@@ -49,11 +65,12 @@ export async function getItemCreatedEvent(itemID: number) {
         const error = (await response.json()) as Error;
         throw new Error(`Unable to get item's created event: ${JSON.stringify(error)}`);
     }
-    const body = (await response.json()) as string;
-    if (body) {
-        return body;
+    const dataItemCreated = (await response.json());
+    if (dataItemCreated) {
+        setItemCreated(dataItemCreated.data)
+    } else {
+        throw new Error(`Unable to get item's created event`);
     }
-    throw new Error(`Unable to get item's created event`);
 }
 
 export function Explorer() {
@@ -67,63 +84,13 @@ export function Explorer() {
         name: ['itemID'],
     });
 
-    const [isDataFetched, setIsDataFetched] = useState(false);
-
-    // Function to render item changed data into the table
-    function renderItemChangedData(data: any) {
-        const tableBody = document.getElementById('table');
-        if (tableBody) {
-            data.data.forEach((event: any) => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${new Date(event.block_time).toLocaleString()}</td>
-                    <td>
-                        <a class="link"
-                            target="_blank"
-                            rel="noreferrer"
-                            href="https://testnet.ccdscan.io/?dcount=1&dentity=transaction&dhash=${event.transaction_hash}">
-                            ${event.transaction_hash.slice(0, 5)}...${event.transaction_hash.slice(-5)}
-                        </a>
-                    </td>
-                    <td>${event.new_status}</td>
-                `;
-                tableBody.appendChild(row);
-            });
-        }
-    }
-
-    // Function to render item created data into the table
-    function renderItemCreatedData(data: any) {
-        const tableBody = document.getElementById('table');
-        let event = data.data;
-
-        if (tableBody) {
-            const row = document.createElement('tr');
-
-            row.innerHTML = `
-            <td>${new Date(event.block_time).toLocaleString()}</td>
-            <td>
-                <a class="link"
-                   target="_blank"
-                   rel="noreferrer"
-                   href="https://testnet.ccdscan.io/?dcount=1&dentity=transaction&dhash=${event.transaction_hash}">
-                   ${event.transaction_hash.slice(0, 5)}...${event.transaction_hash.slice(-5)}
-                </a>
-            </td>
-            <td>Created</td>
-        `;
-            tableBody.appendChild(row);
-        }
-    }
+    const [itemChanged, setItemChanged] = useState<ChangeItem[]>();
+    const [itemCreated, setItemCreated] = useState<CreateItem>();
 
     async function onSubmit() {
-        setIsDataFetched(false);
-
         if (itemID === undefined) {
             throw Error('itemID undefined');
         }
-
-        setIsDataFetched(true);
 
         // Clear table.
         const tableBody = document.getElementById('table');
@@ -131,11 +98,8 @@ export function Explorer() {
             tableBody.innerHTML = '';
         }
 
-        let dataItemCreated = await getItemCreatedEvent(itemID);
-        renderItemCreatedData(dataItemCreated);
-
-        let dataItemChanged = await getItemStatusChangedEvents(itemID);
-        renderItemChangedData(dataItemChanged);
+        await getItemCreatedEvent(itemID, setItemCreated);
+        await getItemStatusChangedEvents(itemID, setItemChanged);
     }
 
     return (
@@ -160,7 +124,7 @@ export function Explorer() {
                     </Button>
                 </Form>
 
-                {isDataFetched && (
+                {itemChanged !== undefined && itemCreated !== undefined && (
                     <>
                         <br />
                         <table>
@@ -172,6 +136,35 @@ export function Explorer() {
                                 </tr>
                             </thead>
                             <tbody id="table"></tbody>
+
+                            <tr >
+                                <td>{new Date(itemCreated.block_time).toLocaleString()}</td>
+                                <td>
+                                    <a className="link"
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        href={`https://testnet.ccdscan.io/?dcount=1&dentity=transaction&dhash=${itemCreated.transaction_hash}`}>
+                                        {itemCreated.transaction_hash.slice(0, 5)}...{itemCreated.transaction_hash.slice(-5)}
+                                    </a>
+                                </td>
+                                <td>Created</td>
+                            </tr>
+
+                            {itemChanged.map((event: ChangeItem, parentIndex) => {
+                                return (
+                                    <tr key={parentIndex} >
+                                        <td>{new Date(event.block_time).toLocaleString()}</td>
+                                        <td>
+                                            <a className="link"
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                href={`https://testnet.ccdscan.io/?dcount=1&dentity=transaction&dhash=${event.transaction_hash}`}>
+                                                {event.transaction_hash.slice(0, 5)}...{event.transaction_hash.slice(-5)}
+                                            </a>
+                                        </td>
+                                        <td>{event.new_status}</td>
+                                    </tr>)
+                            })}
                         </table>
                     </>
                 )}

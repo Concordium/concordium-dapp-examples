@@ -1,9 +1,8 @@
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
+import { Button } from 'react-bootstrap';
 
-import { Explorer } from './components/Explorer';
-import './styles.scss';
 import {
     WithWalletConnector,
     WalletConnectionProps,
@@ -12,10 +11,11 @@ import {
     TESTNET,
 } from '@concordium/react-components';
 
+import './styles.scss';
 import { AdminCreateItem } from './components/AdminCreateItem';
 import { AdminChangeRoles } from './components/AdminChangeRoles';
 import { ChangeItemStatus } from './components/ChangeItemStatus';
-import { Button } from 'react-bootstrap';
+import { Explorer } from './components/Explorer';
 import { BROWSER_WALLET } from '../constants';
 
 const App = (props: WalletConnectionProps) => {
