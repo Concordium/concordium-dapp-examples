@@ -80,14 +80,18 @@ impl axum::response::IntoResponse for ServerError {
                 tracing::error!("Internal error: {error}.");
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(format!("{}", error)),
+                    Json(format!(
+                        "An internal error occured while simulating the contract update."
+                    )),
                 )
             }
             ServerError::SubmitSponsoredTransactionError(error) => {
                 tracing::error!("Internal error: {error}.");
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(format!("{}", error)),
+                    Json(format!(
+                        "An internal error occured while submitting the contract update."
+                    )),
                 )
             }
             error => {
@@ -121,6 +125,7 @@ pub struct ErrorResponse {
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 /// The input parameters for the `/api/submitTransaction` endpoint.
 pub struct InputParams {
     /// The signer of the transaction.
@@ -293,7 +298,7 @@ where
         }
         let entities = s
             .split_whitespace()
-            .map(|e| T::from_str(e))
+            .map(T::from_str)
             .collect::<Result<BTreeSet<_>, _>>()
             .map_err(|_| clap::Error::new(clap::error::ErrorKind::InvalidValue))?;
         Ok(Self::LimitedTo { entities })

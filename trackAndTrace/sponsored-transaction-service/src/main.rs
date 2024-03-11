@@ -34,34 +34,34 @@ struct ServiceConfig {
         long = "node",
         help = "GRPC V2 interface of the node.",
         default_value = "http://localhost:20000",
-        env = "CCD_SPONSORED_TRX_SERVICE_NODE"
+        env = "CCD_SPONSORED_TRANSACTION_SERVICE_NODE"
     )]
     endpoint: tonic::transport::Endpoint,
     #[clap(
         long = "listen-address",
         default_value = "0.0.0.0:8080",
         help = "Address where the server will listen on.",
-        env = "CCD_SPONSORED_TRX_SERVICE_LISTEN_ADDRESS"
+        env = "CCD_SPONSORED_TRANSACTION_SERVICE_LISTEN_ADDRESS"
     )]
     listen_address: std::net::SocketAddr,
     #[clap(
         long = "log-level",
         default_value = "debug",
         help = "Maximum log level.",
-        env = "CCD_SPONSORED_TRX_SERVICE_LOG_LEVEL"
+        env = "CCD_SPONSORED_TRANSACTION_SERVICE_LOG_LEVEL"
     )]
     log_level: tracing_subscriber::filter::LevelFilter,
     #[clap(
         long = "request-timeout",
         help = "Request timeout (both of request to the node and server requests) in milliseconds.",
         default_value = "10000",
-        env = "CCD_SPONSORED_TRX_SERVICE_REQUEST_TIMEOUT"
+        env = "CCD_SPONSORED_TRANSACTION_SERVICE_REQUEST_TIMEOUT"
     )]
     request_timeout: u64,
     #[clap(
         long = "account",
         help = "Path to the account key file.",
-        env = "CCD_SPONSORED_TRX_SERVICE_PRIVATE_KEY_FILE"
+        env = "CCD_SPONSORED_TRANSACTION_SERVICE_PRIVATE_KEY_FILE"
     )]
     keys_path: PathBuf,
     #[clap(
@@ -69,21 +69,21 @@ struct ServiceConfig {
         help = "The accounts allowed to submit transactions. Either 'any', if you have a custom \
                 authentication scheme in front of the service OR a space-separated list of \
                 account addresses.",
-        env = "CCD_SPONSORED_TRX_SERVICE_ALLOWED_ACCOUNTS"
+        env = "CCD_SPONSORED_TRANSACTION_SERVICE_ALLOWED_ACCOUNTS"
     )]
     allowed_accounts: AllowedAccounts,
     #[clap(
         long = "allowed-contracts",
         help = "The contracts allowed to be used by the service. Either 'any' OR a \
                 space-separated list of contract addresses in the format `<123,0>`.",
-        env = "CCD_SPONSORED_TRX_SERVICE_ALLOWED_CONTRACTS"
+        env = "CCD_SPONSORED_TRANSACTION_SERVICE_ALLOWED_CONTRACTS"
     )]
     allowed_contracts: AllowedContracts,
     #[clap(
         long = "rate-limit",
         default_value = "30",
         help = "The limit of requests per account per hour. Defaults to `30`.",
-        env = "CCD_SPONSORED_TRX_SERVICE_RATE_LIMIT"
+        env = "CCD_SPONSORED_TRANSACTION_SERVICE_RATE_LIMIT"
     )]
     rate_limit_per_account_per_hour: u16,
 }
@@ -215,13 +215,11 @@ pub async fn handle_transaction(
     let Json(request) = request?;
 
     if !state.allowed_accounts.allowed(&request.signer) {
-        tracing::debug!("Account not allowed: {}", request.signer);
         return Err(ServerError::AccountNotAllowed {
             account: request.signer,
         });
     }
     if !state.allowed_contracts.allowed(&request.contract_address) {
-        tracing::debug!("Contract not allowed: {}", request.contract_address);
         return Err(ServerError::ContractNotAllowed {
             contract: request.contract_address,
         });
@@ -281,7 +279,6 @@ pub async fn handle_transaction(
     let info = match info {
         Ok(info) => info,
         Err(e) => {
-            tracing::warn!("SimulationInvokeError: {e}.");
             return Err(ServerError::SimulationInvokeError(e));
         }
     };
@@ -291,19 +288,12 @@ pub async fn handle_transaction(
             return_value: _,
             events: _,
             used_energy,
-        } => {
-            tracing::debug!(
-                "TransactionSimulationSuccess with used energy: {:#?}.",
-                used_energy
-            );
-            used_energy
-        }
+        } => used_energy,
         InvokeContractResult::Failure {
             return_value: _,
             reason,
             used_energy: _,
         } => {
-            tracing::warn!("TransactionSimulationError with reason: {:#?}.", reason);
             return Err(ServerError::TransactionSimulationError {
                 reason: RevertReason { reason },
             });
@@ -356,10 +346,7 @@ pub async fn handle_transaction(
 
             Ok(hash.into())
         }
-        Err(e) => {
-            tracing::warn!("SubmitSponsoredTransactionError {e}.");
-            Err(ServerError::SubmitSponsoredTransactionError(e))
-        }
+        Err(e) => Err(ServerError::SubmitSponsoredTransactionError(e)),
     }
 }
 

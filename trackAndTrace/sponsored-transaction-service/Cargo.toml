@@ -19,7 +19,6 @@ thiserror = "1"
 rand = "0.8"
 hex = "0.4.3"
 concordium-rust-sdk = "4.2.0"
-concordium-contracts-common = { version = "*", features = ["derive-serde"] } # Added directly to enable the 'derive-serde' feature.
 axum = "0.7"
 futures = "0.3"
 tower-http = { version = "0.5", features = [

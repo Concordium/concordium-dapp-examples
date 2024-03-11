@@ -7,21 +7,21 @@ This service allows a sponsor account to pay for the smart contract updates of o
 The following parameters are supported
 
 - `node` the URL of the node's GRPC V2 interface, e.g., `https://grpc.testnet.concordium.com:20000`
-  - Equivalent environment variable: `CCD_SPONSORED_TRX_SERVICE_NODE`.
+  - Equivalent environment variable: `CCD_SPONSORED_TRANSACTION_SERVICE_NODE`.
 - `listen-address` the address on which the server will listen for incoming requests, e.g., `0.0.0.0:8080`.
-  - Equivalent environment variable: `CCD_SPONSORED_TRX_SERVICE_LISTEN_ADDRESS`.
+  - Equivalent environment variable: `CCD_SPONSORED_TRANSACTION_SERVICE_LISTEN_ADDRESS`.
 - `log-level` maximum log level (defaults to `debug` if not given).
-  - Equivalent environment variable: `CCD_SPONSORED_TRX_SERVICE_LOG_LEVEL`.
+  - Equivalent environment variable: `CCD_SPONSORED_TRANSACTION_SERVICE_LOG_LEVEL`.
 - `request-timeout` the timeout for server and node requests in milliseconds. Defaults to `10000`.
-  - Equivalent environment variable: `CCD_SPONSORED_TRX_SERVICE_REQUEST_TIMEOUT`.
+  - Equivalent environment variable: `CCD_SPONSORED_TRANSACTION_SERVICE_REQUEST_TIMEOUT`.
 - `account` the path to a file which contains the key credentials for the sponsor account.
-  - Equivalent environment variable: `CCD_SPONSORED_TRX_SERVICE_PRIVATE_KEY_FILE`.
+  - Equivalent environment variable: `CCD_SPONSORED_TRANSACTION_SERVICE_PRIVATE_KEY_FILE`.
 - `allowed-accounts` The accounts allowed to submit transactions. Either 'any', if you have a custom authentication scheme in front of the service OR a space-separated list of account addresses.
-  - Equivalent environment variable: `CCD_SPONSORED_TRX_SERVICE_ALLOWED_ACCOUNTS`.
+  - Equivalent environment variable: `CCD_SPONSORED_TRANSACTION_SERVICE_ALLOWED_ACCOUNTS`.
 - `allowed-contracts` The contracts allowed to be used by the service. Either 'any' OR a space-separated list of contract addresses in the format `<123,0>`.
-  - Equivalent environment variable: `CCD_SPONSORED_TRX_SERVICE_ALLOWED_CONTRACTS`.
+  - Equivalent environment variable: `CCD_SPONSORED_TRANSACTION_SERVICE_ALLOWED_CONTRACTS`.
 - `rate-limit` The limit of requests per account per hour. Defaults to `30`.
-  - Equivalent environment variable: `CCD_SPONSORED_TRX_SERVICE_RATE_LIMIT`.
+  - Equivalent environment variable: `CCD_SPONSORED_TRANSACTION_SERVICE_RATE_LIMIT`.
 
 An example to run the service with basic settings and testnet node would be:
 
@@ -67,13 +67,13 @@ The endpoint expects a JSON body with the fields shown in the example below:
    "signer":"2xoKcfFdJA1jCa7DEJborFdhxN78x3SuPhwu4haxdzUXRk5riH",
    "nonce":8,
    "signature":"b7cc2c4619c19876254f0f2f616b72396ffddcd70f9ed390c30c0ba76767cde31200152c1215c0c377de03e78efe467e017f59b542fec131a8cc53f94e28c70d",
-   "expiry_time":"2024-03-08T08:23:21.449Z",
-   "contract_address":{
+   "expiryTime":"2024-03-08T08:23:21.449Z",
+   "contractAddress":{
       "index":6372,
       "subindex":0
    },
-   "contract_name":"cis3_nft",
-   "entrypoint_name":"updateOperator",
+   "contractName":"cis3_nft",
+   "entrypointName":"updateOperator",
    "parameter":"01000100721f8939a01c4307df5d9b97984c5e59bbf6d8ae7c4d8b62085117f46f15947e"
 }
 ```
