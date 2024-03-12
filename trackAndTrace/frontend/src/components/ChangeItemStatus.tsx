@@ -22,6 +22,7 @@ import * as TrackAndTraceContract from '../../generated/module_track_and_trace';
 interface Props {
     connection: WalletConnection | undefined;
     accountAddress: string | undefined;
+    activeConnectorError: string | undefined;
 }
 
 const NEW_STATUS_OPTIONS = [
@@ -72,7 +73,7 @@ async function generateMessage(newStatus: string, itemID: bigint, expiryTimeSign
 }
 
 export function ChangeItemStatus(props: Props) {
-    const { connection, accountAddress } = props;
+    const { connection, accountAddress, activeConnectorError } = props;
 
     type FormType = {
         itemID: bigint | undefined;
@@ -163,13 +164,13 @@ export function ChangeItemStatus(props: Props) {
                             signer: accountAddress,
                             nonce: Number(nextNonce),
                             signature: permitSignature[0][0],
-                            expiry_time: expiryTimeSignature,
-                            contract_address: {
+                            expiryTime: expiryTimeSignature,
+                            contractAddress: {
                                 index: Number(process.env.TRACK_AND_TRACE_CONTRACT_INDEX),
                                 subindex: CONTRACT_SUB_INDEX,
                             },
-                            contract_name: TrackAndTraceContract.contractName.value,
-                            entrypoint_name: 'changeItemStatus',
+                            contractName: TrackAndTraceContract.contractName.value,
+                            entrypointName: 'changeItemStatus',
                             parameter: Buffer.from(payload.buffer).toString('hex'),
                         }),
                     }
@@ -177,20 +178,20 @@ export function ChangeItemStatus(props: Props) {
 
                 if (!response.ok) {
                     const error = (await response.json()) as Error;
-                    setError(`Unable to get txHash from backend: ${JSON.stringify(error)}`);
+                    throw new Error(`Unable to get txHash from backend: ${JSON.stringify(error)}`);
                 }
                 const txHash = (await response.json()) as string;
 
                 if (txHash) {
                     setTxHash(txHash);
                 } else {
-                    setError(`Unable to get txHash from backend`);
+                    throw new Error(`Unable to get txHash from backend`);
                 }
             } catch (err) {
                 setError((err as Error).message);
             }
         } else {
-            setError(`Wallet is not connected`);
+            setError(`Wallet is not connected. Click 'Connect Wallet' button.`);
         }
     }
 
@@ -235,6 +236,11 @@ export function ChangeItemStatus(props: Props) {
                 </Form>
 
                 {error && <Alert variant="danger">{error}</Alert>}
+                {activeConnectorError && (
+                    <Alert variant="danger">
+                        Connect Error: {activeConnectorError}. Refresh page if you have the browser wallet installed.
+                    </Alert>
+                )}
                 {nextNonceError && <Alert variant="danger">Error: {nextNonceError}. </Alert>}
                 {txHash && (
                     <Alert variant="info">

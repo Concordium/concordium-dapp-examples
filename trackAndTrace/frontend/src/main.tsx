@@ -67,27 +67,37 @@ const App = (props: WalletConnectionProps) => {
                 </Button>
             </div>
 
-            <div className="centeredBox">
-                {activeConnectorError && (
-                    <Alert variant="danger">
-                        Connect Error: {activeConnectorError}. Refresh page if you have the browser wallet installed.
-                    </Alert>
-                )}
-            </div>
-
             <Routes>
                 <Route path="/explorer" element={<Explorer />} />
                 <Route
                     path="/adminCreateItem"
-                    element={<AdminCreateItem connection={connection} accountAddress={account} />}
+                    element={
+                        <AdminCreateItem
+                            activeConnectorError={activeConnectorError}
+                            connection={connection}
+                            accountAddress={account}
+                        />
+                    }
                 />
                 <Route
                     path="/adminChangeRoles"
-                    element={<AdminChangeRoles connection={connection} accountAddress={account} />}
+                    element={
+                        <AdminChangeRoles
+                            activeConnectorError={activeConnectorError}
+                            connection={connection}
+                            accountAddress={account}
+                        />
+                    }
                 />
                 <Route
                     path="/changeItemStatus"
-                    element={<ChangeItemStatus connection={connection} accountAddress={account} />}
+                    element={
+                        <ChangeItemStatus
+                            activeConnectorError={activeConnectorError}
+                            connection={connection}
+                            accountAddress={account}
+                        />
+                    }
                 />
                 <Route path="/" element={<div></div>} />
             </Routes>
