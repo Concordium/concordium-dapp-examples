@@ -63,13 +63,13 @@ async function getItemCreatedEvent(itemID: number, setItemCreated: Dispatch<Crea
 
     if (!response.ok) {
         const error = (await response.json()) as Error;
-        throw new Error(`Unable to get item's created event: ${JSON.stringify(error)}`);
+        throw new Error(`Unable to get item's create event: ${JSON.stringify(error)}`);
     }
     const dataItemCreated = await response.json();
     if (dataItemCreated) {
         setItemCreated(dataItemCreated.data);
     } else {
-        throw new Error(`Unable to get item's created event`);
+        throw new Error(`Unable to get item's create event`);
     }
 }
 

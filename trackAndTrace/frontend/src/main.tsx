@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
-import { Button } from 'react-bootstrap';
+import { Alert, Button } from 'react-bootstrap';
 
 import {
     WithWalletConnector,
@@ -19,7 +19,7 @@ import { Explorer } from './components/Explorer';
 import { BROWSER_WALLET } from '../constants';
 
 const App = (props: WalletConnectionProps) => {
-    const { setActiveConnectorType, activeConnector, connectedAccounts, genesisHashes } = props;
+    const { setActiveConnectorType, activeConnectorError, activeConnector, connectedAccounts, genesisHashes } = props;
 
     const { connection, setConnection, account } = useConnection(connectedAccounts, genesisHashes);
     const { connect } = useConnect(activeConnector, setConnection);
@@ -53,9 +53,26 @@ const App = (props: WalletConnectionProps) => {
                 <Link className="secondary" to="/adminChangeRoles">
                     Admin3
                 </Link>
-                <Button variant="primary" id="account" onClick={connect}>
-                    {account ? account.slice(0, 5) + '...' + account.slice(-5) : 'Connect Wallet'}
+                <Button
+                    variant="primary"
+                    id="account"
+                    disabled={activeConnector && !account ? false : true}
+                    onClick={connect}
+                >
+                    {account
+                        ? account.slice(0, 5) + '...' + account.slice(-5)
+                        : activeConnector
+                          ? 'Connect Wallet'
+                          : 'Loading...'}
                 </Button>
+            </div>
+
+            <div className="centeredBox">
+                {activeConnectorError && (
+                    <Alert variant="danger">
+                        Connect Error: {activeConnectorError}. Refresh page if you have the browser wallet installed.
+                    </Alert>
+                )}
             </div>
 
             <Routes>

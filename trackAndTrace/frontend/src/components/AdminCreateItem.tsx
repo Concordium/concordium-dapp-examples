@@ -1,18 +1,29 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, Button, Form } from 'react-bootstrap';
 import { useForm, useWatch } from 'react-hook-form';
 
-import { WalletConnection } from '@concordium/wallet-connectors';
-import { AccountAddress } from '@concordium/web-sdk';
+import { TESTNET, WalletConnection } from '@concordium/wallet-connectors';
+import {
+    AccountAddress,
+    TransactionHash,
+    TransactionKindString,
+    TransactionSummaryType,
+    UpdatedEvent,
+} from '@concordium/web-sdk';
 
 import { TxHashLink } from './CCDScanLinks';
 import { createItem } from '../track_and_trace_contract';
 import * as TrackAndTraceContract from '../../generated/module_track_and_trace';
+import { useGrpcClient } from '@concordium/react-components';
 
 interface Props {
     connection: WalletConnection | undefined;
     accountAddress: string | undefined;
 }
+
+type PartialItemCreatedEvent = {
+    item_id: number | bigint;
+};
 
 export function AdminCreateItem(props: Props) {
     const { connection, accountAddress } = props;
@@ -29,6 +40,40 @@ export function AdminCreateItem(props: Props) {
 
     const [txHash, setTxHash] = useState<string | undefined>(undefined);
     const [error, setError] = useState<string | undefined>(undefined);
+
+    const [newItemId, setNewItemId] = useState<number | bigint | undefined>(undefined);
+    const [itemIdError, setItemIdError] = useState<string | undefined>(undefined);
+
+    const grpcClient = useGrpcClient(TESTNET);
+
+    // Wait until the submitted transaction is finalized.
+    // Once the transaction is finalized, extract the
+    // newly created ItemIndex from the event emitted within the transaction.
+    useEffect(() => {
+        if (connection && grpcClient && txHash !== undefined) {
+            grpcClient
+                .waitForTransactionFinalization(TransactionHash.fromHexString(txHash))
+                .then((report) => {
+                    if (
+                        report.summary.type === TransactionSummaryType.AccountTransaction &&
+                        report.summary.transactionType === TransactionKindString.Update
+                    ) {
+                        const eventList = report.summary.events[0] as UpdatedEvent;
+
+                        const parsedEvent = TrackAndTraceContract.parseEvent(eventList.events[0]);
+                        let itemCreatedEvent = parsedEvent.content as unknown as PartialItemCreatedEvent;
+
+                        setNewItemId(itemCreatedEvent.item_id);
+                    } else {
+                        setItemIdError('Tansaction failed and event decoding failed.');
+                    }
+                })
+                .catch((e) => {
+                    setNewItemId(undefined);
+                    setItemIdError((e as Error).message);
+                });
+        }
+    }, [connection, grpcClient, txHash]);
 
     function onSubmit() {
         setError(undefined);
@@ -52,7 +97,6 @@ export function AdminCreateItem(props: Props) {
             });
         } else {
             setError(`Wallet is not connected`);
-            throw Error(`Wallet is not connected`);
         }
     }
 
@@ -75,10 +119,15 @@ export function AdminCreateItem(props: Props) {
 
                 {error && <Alert variant="danger">{error}</Alert>}
                 {txHash && (
-                    <Alert variant="info">
-                        <TxHashLink txHash={txHash} />
-                    </Alert>
+                    <>
+                        <Alert variant="info">
+                            <TxHashLink txHash={txHash} />
+                        </Alert>
+                        <Alert variant="info">You will see the item id below after the transaction is finalized.</Alert>
+                    </>
                 )}
+                {newItemId !== undefined && <Alert variant="info">Item ID: {newItemId.toString()}</Alert>}
+                {itemIdError && <Alert variant="danger">Error: {itemIdError}</Alert>}
             </div>
         </div>
     );

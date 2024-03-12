@@ -191,7 +191,6 @@ export function ChangeItemStatus(props: Props) {
             }
         } else {
             setError(`Wallet is not connected`);
-            throw Error(`Wallet is not connected`);
         }
     }
 
