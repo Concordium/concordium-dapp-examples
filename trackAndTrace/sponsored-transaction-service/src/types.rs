@@ -242,8 +242,7 @@ impl Server {
     /// the account.
     ///
     /// Since account addresses have aliases, we track the rate-limit by using
-    /// the 0th alias for everyone account. The check is made against the
-    /// 0th account alias to reduce For more info on aliases, see: https://developer.concordium.software/en/mainnet/net/references/transactions.html#account-aliases
+    /// the 0th alias for everyone account. For more info on aliases, see: https://developer.concordium.software/en/mainnet/net/references/transactions.html#account-aliases
     pub(crate) async fn check_rate_limit(
         &self,
         account: AccountAddress,

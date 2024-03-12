@@ -25,6 +25,14 @@ use std::{collections::BTreeMap, path::PathBuf};
 use tonic::transport::ClientTlsConfig;
 use tower_http::cors::{AllowOrigin, CorsLayer};
 
+/// Before submitting a transaction we simulate/dry-run the transaction to get
+/// an estimate of the energy needed for executing the transaction. In addition,
+/// we allow an additional small amount of energy `EPSILON_ENERGY` to be
+/// consumed by the transaction to cover small variations (e.g. changes to the
+/// smart contract state) caused by transactions that have been executed
+/// meanwhile.
+const EPSILON_ENERGY: u64 = 1000;
+
 /// Structure used to receive the correct command line arguments.
 #[derive(clap::Parser, Debug)]
 #[clap(arg_required_else_help(true))]
@@ -59,7 +67,7 @@ struct ServiceConfig {
     )]
     request_timeout: u64,
     #[clap(
-        long = "account",
+        long = "private-key-file",
         help = "Path to the account key file.",
         env = "CCD_SPONSORED_TRANSACTION_SERVICE_PRIVATE_KEY_FILE"
     )]
@@ -219,14 +227,6 @@ With the following configuration:
 
     Ok(())
 }
-
-/// Before submitting a transaction we simulate/dry-run the transaction to get
-/// an estimate of the energy needed for executing the transaction. In addition,
-/// we allow an additional small amount of energy `EPSILON_ENERGY` to be
-/// consumed by the transaction to cover small variations (e.g. changes to the
-/// smart contract state) caused by transactions that have been executed
-/// meanwhile.
-const EPSILON_ENERGY: u64 = 1000;
 
 /// Handle a request for a sponsored transaction.
 pub async fn handle_transaction(

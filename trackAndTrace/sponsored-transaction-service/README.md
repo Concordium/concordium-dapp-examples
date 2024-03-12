@@ -14,7 +14,7 @@ The following parameters are supported
   - Equivalent environment variable: `CCD_SPONSORED_TRANSACTION_SERVICE_LOG_LEVEL`.
 - `request-timeout` the timeout for server and node requests in milliseconds. Defaults to `10000`.
   - Equivalent environment variable: `CCD_SPONSORED_TRANSACTION_SERVICE_REQUEST_TIMEOUT`.
-- `account` the path to a file which contains the key credentials for the sponsor account.
+- `private-key-file` the path to a file which contains the key credentials for the sponsor account.
   - Equivalent environment variable: `CCD_SPONSORED_TRANSACTION_SERVICE_PRIVATE_KEY_FILE`.
 - `allowed-accounts` The accounts allowed to submit transactions. Either 'any', if you have a custom authentication scheme in front of the service OR a space-separated list of account addresses.
   - Equivalent environment variable: `CCD_SPONSORED_TRANSACTION_SERVICE_ALLOWED_ACCOUNTS`.
