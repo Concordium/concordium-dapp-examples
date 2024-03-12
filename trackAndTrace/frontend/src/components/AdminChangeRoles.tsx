@@ -15,6 +15,7 @@ import { validateAccountAddress } from '../utils';
 interface Props {
     connection: WalletConnection | undefined;
     accountAddress: string | undefined;
+    activeConnectorError: string | undefined;
 }
 
 const ROLE_OPTIONS = [
@@ -25,7 +26,7 @@ const ROLE_OPTIONS = [
 ];
 
 export function AdminChangeRoles(props: Props) {
-    const { connection, accountAddress } = props;
+    const { connection, accountAddress, activeConnectorError } = props;
 
     type FormType = {
         address: string | undefined;
@@ -67,7 +68,7 @@ export function AdminChangeRoles(props: Props) {
                     setTxHash(txHash);
                 });
             } else {
-                setError(`Wallet is not connected`);
+                setError(`Wallet is not connected. Click 'Connect Wallet' button.`);
             }
         } else {
             const parameter: TrackAndTraceContract.RevokeRoleParameter = {
@@ -81,7 +82,7 @@ export function AdminChangeRoles(props: Props) {
                     setTxHash(txHash);
                 });
             } else {
-                setError(`Wallet is not connected`);
+                setError(`Wallet is not connected. Click 'Connect Wallet' button.`);
             }
         }
     }
@@ -148,6 +149,11 @@ export function AdminChangeRoles(props: Props) {
                 </Form>
 
                 {error && <Alert variant="danger">{error}</Alert>}
+                {activeConnectorError && (
+                    <Alert variant="danger">
+                        Connect Error: {activeConnectorError}. Refresh page if you have the browser wallet installed.
+                    </Alert>
+                )}
                 {txHash && (
                     <Alert variant="info">
                         <TxHashLink txHash={txHash} />
