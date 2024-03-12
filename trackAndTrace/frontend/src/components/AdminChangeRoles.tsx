@@ -68,7 +68,6 @@ export function AdminChangeRoles(props: Props) {
                 });
             } else {
                 setError(`Wallet is not connected`);
-                throw Error(`Wallet is not connected`);
             }
         } else {
             const parameter: TrackAndTraceContract.RevokeRoleParameter = {
@@ -83,7 +82,6 @@ export function AdminChangeRoles(props: Props) {
                 });
             } else {
                 setError(`Wallet is not connected`);
-                throw Error(`Wallet is not connected`);
             }
         }
     }
