@@ -203,6 +203,7 @@ With the following configuration:
         .with_state(state)
         .layer(CorsLayer::new()
                .allow_origin(AllowOrigin::mirror_request())
+               .allow_headers([http::header::CONTENT_TYPE])
                .allow_methods([http::Method::POST]))
         .layer(
             tower_http::trace::TraceLayer::new_for_http()
