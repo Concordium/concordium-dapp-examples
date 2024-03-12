@@ -28,7 +28,7 @@ An example to run the service with basic settings and testnet node would be:
 ```shell
 cargo run --release -- \
   --node https://grpc.testnet.concordium.com:20000 \
-  --account <YourAccountPathToYourKeys> \
+  --private-key-file <YourAccountPathToYourKeys> \
   --allowed-accounts "ACC_0 ACC_1 ACC_2" \
   --allowed-contracts "any"
 
@@ -39,7 +39,7 @@ An example to run the service with some filled in example settings would be:
 ```shell
 cargo run --release -- \
   --node https://grpc.testnet.concordium.com:20000 \
-  --account 3PXwJYYPf6fyVb4GJquxSZU8puxrHfzc4XogdMVot8MUQK53tW.export \
+  --private-key-file 3PXwJYYPf6fyVb4GJquxSZU8puxrHfzc4XogdMVot8MUQK53tW.export \
   --allowed-accounts "3rsc7HNLVKnFz9vmKkAaEMVpNkFA4hZxJpZinCtUTJbBh58yYi 3kBx2h5Y2veb4hZgAJWPrr8RyQESKm5TjzF3ti1QQ4VSYLwK1G" \
   --allowed-contracts "<123,0> <445,0> <555,0>"
 ```
