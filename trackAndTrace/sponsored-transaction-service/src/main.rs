@@ -8,30 +8,20 @@ use axum::{
 };
 use clap::Parser;
 use concordium_rust_sdk::{
-    common::types::TransactionTime,
+    contract_client::ContractClient,
     smart_contracts::common::{
         AccountSignatures, Amount, CredentialSignatures, OwnedEntrypointName, Signature,
         SignatureEd25519,
     },
     types::{
         hashes::TransactionHash,
-        smart_contracts,
-        smart_contracts::{ContractContext, InvokeContractResult},
-        transactions, Energy, WalletAccount,
+        smart_contracts::{self, OwnedContractName},
+        WalletAccount,
     },
-    v2::BlockIdentifier,
 };
 use std::{collections::BTreeMap, path::PathBuf};
 use tonic::transport::ClientTlsConfig;
 use tower_http::cors::{AllowOrigin, CorsLayer};
-
-/// Before submitting a transaction we simulate/dry-run the transaction to get
-/// an estimate of the energy needed for executing the transaction. In addition,
-/// we allow an additional small amount of energy `EPSILON_ENERGY` to be
-/// consumed by the transaction to cover small variations (e.g. changes to the
-/// smart contract state) caused by transactions that have been executed
-/// meanwhile.
-const EPSILON_ENERGY: u64 = 1000;
 
 /// Structure used to receive the correct command line arguments.
 #[derive(clap::Parser, Debug)]
@@ -127,8 +117,7 @@ async fn main() -> anyhow::Result<()> {
         .endpoint
         .uri()
         .scheme()
-        // We compare on strings as they use different versions of the `http` crate, so the types cannot be compared.
-        .map_or(false, |x| x.as_str() == http::uri::Scheme::HTTPS.as_str())
+        .map_or(false, |x| *x == concordium_rust_sdk::v2::Scheme::HTTPS)
     {
         app.endpoint
             .tls_config(ClientTlsConfig::new())
@@ -231,7 +220,7 @@ With the following configuration:
 
 /// Handle a request for a sponsored transaction.
 pub async fn handle_transaction(
-    State(mut state): State<Server>,
+    State(state): State<Server>,
     request: Result<Json<InputParams>, JsonRejection>,
 ) -> Result<Json<TransactionHash>, ServerError> {
     let Json(request) = request?;
@@ -276,61 +265,15 @@ pub async fn handle_transaction(
     let parameter = smart_contracts::OwnedParameter::from_serial(&param)
         .map_err(|_| ServerError::ParameterError)?;
 
-    let receive_name =
-        smart_contracts::OwnedReceiveName::try_from(format!("{}.permit", request.contract_name))
-            .map_err(|_| ServerError::ContractNameError {
-                invalid_name: request.contract_name.clone(),
-            })?;
+    let mut contract_client = ContractClient::<()>::new(
+        state.node_client.clone(),
+        request.contract_address,
+        OwnedContractName::new(format!("init_{}", request.contract_name))?,
+    );
 
-    let context = ContractContext {
-        invoker:   Some(concordium_rust_sdk::types::Address::Account(
-            state.keys.address,
-        )),
-        contract:  request.contract_address,
-        amount:    Amount::zero(),
-        method:    receive_name.clone(),
-        parameter: parameter.clone(),
-        energy:    None,
-    };
-
-    let info = state
-        .node_client
-        .invoke_instance(&BlockIdentifier::Best, &context)
-        .await;
-
-    let info = match info {
-        Ok(info) => info,
-        Err(e) => {
-            return Err(ServerError::SimulationInvokeError(e));
-        }
-    };
-
-    let used_energy = match info.response {
-        InvokeContractResult::Success {
-            return_value: _,
-            events: _,
-            used_energy,
-        } => used_energy,
-        InvokeContractResult::Failure {
-            return_value: _,
-            reason,
-            used_energy: _,
-        } => {
-            return Err(ServerError::TransactionSimulationError {
-                reason: RevertReason { reason },
-            });
-        }
-    };
-
-    let payload = transactions::UpdateContractPayload {
-        amount: Amount::from_micro_ccd(0),
-        address: request.contract_address,
-        receive_name,
-        message: parameter,
-    };
-
-    // Transaction should expire after one hour.
-    let transaction_expiry = TransactionTime::hours_after(1);
+    let dry_run = contract_client
+        .dry_run_update_raw::<ServerError>("permit", Amount::zero(), state.keys.address, parameter)
+        .await?;
 
     // Get the current nonce for the backend wallet and lock it. This is necessary
     // since it is possible that API requests come in parallel. The nonce is
@@ -344,32 +287,17 @@ pub async fn handle_transaction(
     // Check the rate limits for the account.
     state.check_rate_limit(request.signer).await?;
 
-    let tx = transactions::send::make_and_sign_transaction(
-        &state.keys.keys,
-        state.keys.address,
-        *nonce,
-        transaction_expiry,
-        // We add a small amount of energy `EPSILON_ENERGY` to the previously simulated
-        // `used_energy` to cover variations (e.g. smart contract state changes) caused by
-        // transactions that have been executed meanwhile.
-        concordium_rust_sdk::types::transactions::send::GivenEnergy::Add(
-            used_energy + Energy::from(EPSILON_ENERGY),
-        ),
-        concordium_rust_sdk::types::transactions::Payload::Update { payload },
-    );
+    let tx_hash = dry_run
+        .nonce(*nonce)
+        .send(&state.keys)
+        .await
+        .map_err(ServerError::SubmitSponsoredTransactionError)?
+        .hash();
 
-    let bi = transactions::BlockItem::AccountTransaction(tx);
+    tracing::debug!("Submitted transaction {} ...", tx_hash);
 
-    match state.node_client.send_block_item(&bi).await {
-        Ok(hash) => {
-            tracing::debug!("Submit transaction {} ...", hash);
-
-            *nonce = nonce.next();
-
-            Ok(hash.into())
-        }
-        Err(e) => Err(ServerError::SubmitSponsoredTransactionError(e)),
-    }
+    *nonce = nonce.next();
+    Ok(tx_hash.into())
 }
 
 /// Construct a future for shutdown signals (for unix: SIGINT and SIGTERM) (for

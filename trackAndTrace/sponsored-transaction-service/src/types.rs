@@ -1,12 +1,12 @@
 use axum::{extract::rejection::JsonRejection, http::StatusCode, Json};
 use chrono::{prelude::*, TimeDelta};
 use concordium_rust_sdk::{
-    endpoints::{QueryError, RPCError},
+    endpoints::QueryError,
     smart_contracts::{
         common as concordium_std,
         common::{
-            AccountAddress, AccountSignatures, ContractAddress, OwnedEntrypointName,
-            OwnedParameter, Serial, Timestamp,
+            AccountAddress, AccountSignatures, ContractAddress, NewContractNameError,
+            NewReceiveNameError, OwnedEntrypointName, OwnedParameter, Serial, Timestamp,
         },
     },
     types::{Nonce, RejectReason, WalletAccount},
@@ -39,8 +39,8 @@ pub enum ServerError {
     #[error("Unable to invoke the node to simulate the transaction: {0}.")]
     SimulationInvokeError(#[from] QueryError),
     /// The transaction simulation returned with a contract rejection.
-    #[error("Simulation of transaction reverted in smart contract with reason: {:?}.", reason.reason)]
-    TransactionSimulationError { reason: RevertReason },
+    #[error("Simulation of transaction rejected in smart contract with reason: {0:?}.")]
+    TransactionSimulationError(RejectReason),
     /// The signer account has reached its rate limit.
     #[error(
         "The signer account reached its hourly rate limit of {rate_limit_per_account_per_hour} \
@@ -51,13 +51,17 @@ pub enum ServerError {
     },
     /// Sending the transaction failed.
     #[error("Unable to submit transaction on chain successfully: {0}.")]
-    SubmitSponsoredTransactionError(#[from] RPCError),
+    SubmitSponsoredTransactionError(QueryError),
     /// Deriving the alias account failed.
     #[error("Unable to derive alias account of signer.")]
     NoAliasAccount,
     /// The provided contract name was invalid.
-    #[error("Invalid contract name: {invalid_name}.")]
-    ContractNameError { invalid_name: String },
+    #[error("Invalid contract name: {0}")]
+    ContractNameError(#[from] NewContractNameError),
+    /// The receive name constructed from a contract name and entrypoint is
+    /// invalid.
+    #[error("Invalid receive name: {0}")]
+    ReceiveNameError(#[from] NewReceiveNameError),
     /// The signer account is not allowed to use the service.
     #[error("Signer account is not allowed to use the service: {account}.")]
     AccountNotAllowed { account: AccountAddress },
@@ -105,15 +109,10 @@ impl axum::response::IntoResponse for ServerError {
     }
 }
 
-/// Struct to store the revert reason.
-#[derive(serde::Serialize, Debug)]
-pub struct RevertReason {
-    /// Smart contract revert reason.
-    pub reason: RejectReason,
-}
-
-impl fmt::Display for RevertReason {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { write!(f, "reason: {:?}", self.reason) }
+// TODO: Use `#[from] RejectReason` instead when [`RejectReason`] implements
+// `std::error::Error`.
+impl From<RejectReason> for ServerError {
+    fn from(value: RejectReason) -> Self { Self::TransactionSimulationError(value) }
 }
 
 #[derive(serde::Serialize)]
