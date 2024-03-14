@@ -1,4 +1,3 @@
-import { WalletApi, detectConcordiumProvider } from '@concordium/browser-wallet-api-helpers';
 import {
   Dialog,
   DialogTitle,
@@ -34,6 +33,7 @@ import {
   CIS2,
   CIS2Contract,
   ConcordiumGRPCClient,
+  ConcordiumGRPCWebClient,
   ContractAddress,
   CredentialRegistrationId,
   Energy,
@@ -50,11 +50,12 @@ import SportsBarOutlinedIcon from '@mui/icons-material/SportsBarOutlined';
 import { green } from '@mui/material/colors';
 import CheckIcon from '@mui/icons-material/Check';
 import PublishRoundedIcon from '@mui/icons-material/PublishRounded';
+import { ConnectorType, TypedSmartContractParameters, WalletConnection, WalletConnectionProps, typeSchemaFromBase64, useConnect, useConnection, } from '@concordium/react-components';
 
 const CONTRACT_ADDRESS = ContractAddress.create(7260);
 const RECEIVER_ADDRESS = AccountAddress.fromBase58('4DnXB9GTJ178e3YWHpCZQxwY5kVN9CJvQeBNbGczjnT8A7Wfcx');
 
-async function submitTransaction(items: bigint, account: AccountAddress.Type, wallet: WalletApi, client: CIS2Contract) {
+async function submitTransaction(items: bigint, account: AccountAddress.Type, connection: WalletConnection, client: CIS2Contract) {
   const transfer: CIS2.Transfer = {
     tokenId: '',
     tokenAmount: items * 1000000n,
@@ -71,24 +72,29 @@ async function submitTransaction(items: bigint, account: AccountAddress.Type, wa
   const transferMetadata: CIS2.CreateTransactionMetadata = {
     energy: Energy.create(dryRun.usedEnergy.value + 100n),
   };
-  const transferTx = await client.createTransfer(transferMetadata, transfer);
+  const transferTx = client.createTransfer(transferMetadata, transfer);
+  const typedParams: TypedSmartContractParameters = {
+    parameters: transferTx.parameter.json,
+    schema: typeSchemaFromBase64(transferTx.schema.value + '=')
+  };
 
-  const transaction = await wallet
-    .sendTransaction(
+  /* eslint-disable @typescript-eslint/no-unused-vars */
+  const { message, ...payloadWithoutMessage } = transferTx.payload;
+
+  const transaction = await connection.signAndSendTransaction(
       AccountAddress.toBase58(account),
       AccountTransactionType.Update,
-      transferTx.payload,
-      transferTx.parameter.json,
-      transferTx.schema,
-    )
-    .then(TransactionHash.fromHexString);
+      payloadWithoutMessage,
+      typedParams
+    ).then(TransactionHash.fromHexString);
+  
   return transaction;
 }
 
 type SubmitButtonsProps = {
   client: ConcordiumGRPCClient;
   contractClient: CIS2Contract;
-  wallet: WalletApi;
+  connection: WalletConnection;
   account: AccountAddress.Type;
   open: boolean;
   setOpen: (open: boolean) => void;
@@ -98,7 +104,7 @@ type SubmitButtonsProps = {
 
 function CircularIntegration({
   client,
-  wallet,
+  connection,
   account,
   contractClient,
   open,
@@ -126,7 +132,7 @@ function CircularIntegration({
       setSuccess(false);
       setLoading(true);
       try {
-        const hash = await submitTransaction(BigInt(selectedItems.length), account, wallet, contractClient);
+        const hash = await submitTransaction(BigInt(selectedItems.length), account, connection, contractClient);
         const result = await client.waitForTransactionFinalization(hash);
         const summary = result.summary;
         if (isUpdateContractSummary(summary)) {
@@ -225,11 +231,11 @@ type CheckboxesGroupProps = {
   account: AccountAddress.Type;
   contractClient: CIS2Contract;
   client: ConcordiumGRPCClient;
-  wallet: WalletApi;
+  connection: WalletConnection;
   setUpdateBalance: (updated: boolean) => void;
 };
 
-function CheckboxesGroup({ account, contractClient, client, wallet, setUpdateBalance }: CheckboxesGroupProps) {
+function CheckboxesGroup({ account, contractClient, client, connection, setUpdateBalance }: CheckboxesGroupProps) {
   const [state, setState] = React.useState([
     {
       name: 'Alderaanian Ale',
@@ -276,7 +282,7 @@ function CheckboxesGroup({ account, contractClient, client, wallet, setUpdateBal
       <CircularIntegration
         client={client}
         contractClient={contractClient}
-        wallet={wallet}
+        connection={connection}
         account={account}
         open={open}
         setOpen={setOpen}
@@ -335,18 +341,41 @@ function renderBalance(balance: bigint): string {
   return before.toString() + '.' + removeTrailingZeros(after.toString().padStart(6, '0'));
 }
 
-export default function BeerStore() {
-  const [isVerified, setVerified] = useState<
-    [AccountAddress.Type, CIS2Contract, WalletApi, ConcordiumGRPCClient] | undefined
-  >(undefined);
-  const [euroeBalance, seteuroeBalance] = useState<string | undefined>(undefined);
-  const [isFailed, setFailed] = useState(false);
+export default function BeerStore(props: WalletConnectionProps & { connectorType: ConnectorType }) {
+  const { activeConnector, connectedAccounts, genesisHashes, setActiveConnectorType } = props;
+  const { connection, setConnection } = useConnection(connectedAccounts, genesisHashes);
+  const { connect, connectError } = useConnect(activeConnector, setConnection);
 
+  // This triggers after `connect()` is called by pressing the verify age button and the
+  // user has opened a connection to the dApp.
+  useEffect(() => {
+    if (connection) {
+      ageCheck(connection);
+    }
+  }, [connection]);
+
+  useEffect(() => {
+    if (connectError) {
+      alert(connectError);
+    }
+  }, [connectError]);
+
+  const [isVerified, setVerified] = useState<
+    [AccountAddress.Type, CIS2Contract, WalletConnection, ConcordiumGRPCClient] | undefined
+  >(undefined);
+  const [euroeBalance, setEuroeBalance] = useState<string | undefined>(undefined);
+  const [isFailed, setFailed] = useState(false);
   const [open, setOpen] = useState(false);
 
   const handleClose = () => {
     setOpen(false);
   };
+
+  useEffect(() => {
+    if (!activeConnector) {
+      setActiveConnectorType(props.connectorType);
+    }
+  }, [props.connectorType, setActiveConnectorType, activeConnector]);
 
   const card = (
     <React.Fragment>
@@ -359,18 +388,16 @@ export default function BeerStore() {
         </Typography>
       </CardContent>
       <CardActions>
-        <Button fullWidth={true} variant="contained" size="large" onClick={ageCheck}>
+        <Button fullWidth={true} variant="contained" size="large" onClick={connect} disabled={connection !== undefined}>
           Verify age
         </Button>
       </CardActions>
     </React.Fragment>
   );
 
-  async function ageCheck() {
-    const provider = await detectConcordiumProvider();
+  async function ageCheck(connection: WalletConnection) {
+  
     try {
-      const accounts = await provider.requestAccounts();
-
       // TODO Replace add range with addMinimumAge(18) when SDK is fixed.
       const statementBuilder = new Web3StatementBuilder().addForIdentityCredentials([0, 1, 2, 3, 4, 5], (b) =>
         b.addRange('dob', MIN_DATE, getPastDate(18, 1)),
@@ -381,28 +408,25 @@ export default function BeerStore() {
 
       // Requesting ID proof to check if user is 18 years old
       try {
-        const presentation = await provider.requestVerifiablePresentation(challenge, statement);
+        console.log('Send request');
+        const presentation = await connection.requestVerifiablePresentation(challenge, statement);
+        console.log('Got presentation');
         const did = presentation.verifiableCredential[0].credentialSubject.id;
         const credId = did.substring('did:ccd:testnet:cred:'.length);
-        const client = new ConcordiumGRPCClient(provider.grpcTransport);
+        
+        // TODO Move the URL into the configuration.
+        const client = new ConcordiumGRPCWebClient('https://grpc.testnet.concordium.com', 20000);
         const account = await client.getAccountInfo(CredentialRegistrationId.fromHexString(credId));
-        if (!accounts.includes(AccountAddress.toBase58(account.accountAddress))) {
-          throw new Error(
-            `The account that was used to verify ${AccountAddress.toBase58(
-              account.accountAddress,
-            )} is not whitelisted.`,
-          );
-        }
         const contractClient = await CIS2Contract.create(client, CONTRACT_ADDRESS);
         const query: CIS2.BalanceOfQuery = {
           tokenId: '',
           address: account.accountAddress,
         };
         const balance = await contractClient.balanceOf(query);
-        seteuroeBalance(renderBalance(balance));
+        setEuroeBalance(renderBalance(balance));
         // TODO: Verify the proof
         // User is 18 year old, show something
-        setVerified([account.accountAddress, contractClient, provider, client]);
+        setVerified([account.accountAddress, contractClient, connection, client]);
         setFailed(false);
       } catch (e) {
         console.error(`Failed to get proof: ${e}.`);
@@ -427,7 +451,7 @@ export default function BeerStore() {
       };
       isVerified[1]
         .balanceOf(query)
-        .then((balance) => seteuroeBalance(renderBalance(balance)))
+        .then((balance) => setEuroeBalance(renderBalance(balance)))
         .catch((e) => console.error(e));
     }
   }, [isVerified, isUpdatedBalance]);
@@ -447,7 +471,7 @@ export default function BeerStore() {
               <img style={{ borderRadius: 30 }} width={'800px'} src={beers} alt="beers" />
               <CheckboxesGroup
                 account={isVerified[0]}
-                wallet={isVerified[2]}
+                connection={isVerified[2]}
                 contractClient={isVerified[1]}
                 client={isVerified[3]}
                 setUpdateBalance={setUpdatedBalance}
