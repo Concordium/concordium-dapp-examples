@@ -1,0 +1,62 @@
+version: '3.8'
+
+# This docker compose setup has two important configuration options, which reside in the `.env` file.
+# Namely the:
+#  - The Concordium node gRPC endpoint (which should point at the correct net, e.g., mainnet or testnet)
+#  - The contract index for the relevant track and trace contract
+#  - The location of the private key file for the sponsor account
+
+services:
+  sponsored-transaction-service:
+    build:
+      dockerfile: ./dockerfiles/sponsored-transaction-service.Dockerfile
+    restart: always
+    volumes:
+      - ./private-keys:/private-keys
+    environment:
+      CCD_SPONSORED_TRANSACTION_SERVICE_ALLOWED_ACCOUNTS: Any
+      CCD_SPONSORED_TRANSACTION_SERVICE_ALLOWED_CONTRACTS: <${TRACK_AND_TRACE_CONTRACT_INDEX},0>
+      CCD_SPONSORED_TRANSACTION_SERVICE_PRIVATE_KEY_FILE: ${TRACK_AND_TRACE_PRIVATE_KEY_FILE}
+      CCD_SPONSORED_TRANSACTION_SERVICE_LISTEN_ADDRESS: 0.0.0.0:8000
+      CCD_SPONSORED_TRANSACTION_SERVICE_NODE: ${TRACK_AND_TRACE_NODE}
+
+  server:
+    build:
+      dockerfile: ./dockerfiles/server.Dockerfile
+      args:
+        TRACK_AND_TRACE_CONTRACT_INDEX: ${TRACK_AND_TRACE_CONTRACT_INDEX}
+        SPONSORED_TRANSACTION_BACKEND_BASE_URL: "http://localhost:8000"
+    restart: always
+    environment:
+      CCD_SERVER_DB_CONNECTION: "host=postgres dbname=indexer user=postgres password=password port=5432"
+    ports:
+      - 8080:8080
+    depends_on:
+      - postgres
+      - indexer
+
+  indexer:
+    build:
+      dockerfile: ./dockerfiles/indexer.Dockerfile
+    restart: always
+    environment:
+      CCD_INDEXER_CONTRACT: <${TRACK_AND_TRACE_CONTRACT_INDEX},0>
+      CCD_INDEXER_NODE: ${TRACK_AND_TRACE_NODE}
+      CCD_INDEXER_DB_CONNECTION: "host=postgres dbname=indexer user=postgres password=password port=5432"
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:latest
+    ports:
+      - 5432:5432
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: indexer
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+
+volumes:
+  postgres_data:

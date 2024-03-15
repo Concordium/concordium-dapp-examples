@@ -4,8 +4,8 @@
     "version": "1.0.0",
     "type": "module",
     "scripts": {
-        "dev": "SPONSORED_TRANSACTION_BACKEND_BASE_URL='http://localhost:8000' TRACK_AND_TRACE_CONTRACT_INDEX=8219 vite",
-        "build": "tsc && SPONSORED_TRANSACTION_BACKEND_BASE_URL='http://localhost:8000' TRACK_AND_TRACE_CONTRACT_INDEX=8219 vite build",
+        "dev": "vite",
+        "build": "vite build",
         "lint": "eslint",
         "fmt-check": "prettier --check .",
         "fmt": "prettier --write .",
