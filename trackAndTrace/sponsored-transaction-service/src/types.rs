@@ -9,7 +9,7 @@ use concordium_rust_sdk::{
             NewReceiveNameError, OwnedEntrypointName, OwnedParameter, Serial, Timestamp,
         },
     },
-    types::{Nonce, RejectReason, WalletAccount},
+    types::{smart_contracts::ExceedsParameterSize, Nonce, RejectReason, WalletAccount},
 };
 use hex::FromHexError;
 use std::{
@@ -33,8 +33,8 @@ pub enum ServerError {
     #[error("Unable to parse signature because it wasn't 64 bytes long.")]
     SignatureLengthError,
     /// The parameter exceeds the length limit.
-    #[error("The parameter exceeds the length limit of 65535 bytes.")]
-    ParameterError,
+    #[error("The parameter exceeds the size limit: {0}")]
+    ParameterError(#[from] ExceedsParameterSize),
     /// The transaction simulation failed because the node couldn't be reached.
     #[error("Unable to invoke the node to simulate the transaction: {0}.")]
     SimulationInvokeError(#[from] QueryError),
@@ -73,11 +73,11 @@ pub enum ServerError {
 impl axum::response::IntoResponse for ServerError {
     fn into_response(self) -> axum::response::Response {
         let r = match self {
-            ServerError::ParameterError => {
-                tracing::error!("Internal error: Unable to create parameter.");
+            ServerError::ParameterError(error) => {
+                tracing::error!("Internal error: {error}");
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
-                    Json("Unable to create parameter.".to_string()),
+                    Json(format!("Unable to create parameter because: {error}")),
                 )
             }
             ServerError::SimulationInvokeError(error) => {

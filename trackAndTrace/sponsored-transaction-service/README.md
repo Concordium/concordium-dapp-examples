@@ -2,13 +2,13 @@
 
 This service allows a sponsor account to pay for the smart contract updates of other accounts, following the [CIS-3](https://proposals.concordium.software/CIS/cis-3.html) standard.
 
-# Configuration options
+## Configuration options
 
 The following parameters are supported
 
-- `node` the URL of the node's GRPC V2 interface, e.g., `https://grpc.testnet.concordium.com:20000`
+- `node` the URL of the node's GRPC V2 interface. Defaults to `https://grpc.testnet.concordium.com:20000`.
   - Equivalent environment variable: `CCD_SPONSORED_TRANSACTION_SERVICE_NODE`.
-- `listen-address` the address on which the server will listen for incoming requests, e.g., `0.0.0.0:8080`.
+- `listen-address` the address on which the server will listen for incoming requests. Defaults to `0.0.0.0:8080`.
   - Equivalent environment variable: `CCD_SPONSORED_TRANSACTION_SERVICE_LISTEN_ADDRESS`.
 - `log-level` maximum log level (defaults to `debug` if not given).
   - Equivalent environment variable: `CCD_SPONSORED_TRANSACTION_SERVICE_LOG_LEVEL`.
@@ -48,7 +48,7 @@ To get your account file (the `3PXwJYYPf6fyVb4GJquxSZU8puxrHfzc4XogdMVot8MUQK53t
 This account should be only used for this service. No transactions should be sent from the account by any other means to ensure the account nonce is tracked 
 correctly in the service (e.g. don't use the `3PXwJYYPf6fyVb4GJquxSZU8puxrHfzc4XogdMVot8MUQK53tW` account in the browser wallet to send transactions via the front end).
 
-# Using the service 
+## Using the service
 
 The service is a simple server that exposes one endpoint
 
@@ -80,7 +80,7 @@ The endpoint expects a JSON body with the fields shown in the example below:
 
 The `parameter` is the serialized parameter to the `entrypoint_name` in hex encoding. One way to create it is with the [Concordium JS SDK](https://developer.concordium.software/concordium-node-sdk-js/functions/schema.serializeTypeValue.html).
 
-# Contributing
+## Contributing
 
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.0-4baaaa.svg)](https://github.com/Concordium/.github/blob/main/.github/CODE_OF_CONDUCT.md)
 

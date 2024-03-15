@@ -13,11 +13,7 @@ use concordium_rust_sdk::{
         AccountSignatures, Amount, CredentialSignatures, OwnedEntrypointName, Signature,
         SignatureEd25519,
     },
-    types::{
-        hashes::TransactionHash,
-        smart_contracts::{self, OwnedContractName},
-        WalletAccount,
-    },
+    types::{hashes::TransactionHash, smart_contracts::OwnedContractName, WalletAccount},
 };
 use std::{collections::BTreeMap, path::PathBuf};
 use tonic::transport::ClientTlsConfig;
@@ -31,7 +27,7 @@ struct ServiceConfig {
     #[clap(
         long = "node",
         help = "GRPC V2 interface of the node.",
-        default_value = "http://localhost:20000",
+        default_value = "https://grpc.testnet.concordium.com:20000",
         env = "CCD_SPONSORED_TRANSACTION_SERVICE_NODE"
     )]
     endpoint: tonic::transport::Endpoint,
@@ -161,6 +157,7 @@ With the following configuration:
     Listen address: {}
     Log level: {}
     Request timeout: {}
+    Rate limit per account per hour: {}
     Path to sponsor keys: {:#?}
     Sponsor account: {} 
         With initial nonce: {}
@@ -171,6 +168,7 @@ With the following configuration:
         app.listen_address,
         app.log_level,
         app.request_timeout,
+        app.rate_limit_per_account_per_hour,
         app.keys_path,
         keys.address,
         nonce,
@@ -262,9 +260,6 @@ pub async fn handle_transaction(
         signer: request.signer,
     };
 
-    let parameter = smart_contracts::OwnedParameter::from_serial(&param)
-        .map_err(|_| ServerError::ParameterError)?;
-
     let mut contract_client = ContractClient::<()>::new(
         state.node_client.clone(),
         request.contract_address,
@@ -272,7 +267,7 @@ pub async fn handle_transaction(
     );
 
     let dry_run = contract_client
-        .dry_run_update_raw::<ServerError>("permit", Amount::zero(), state.keys.address, parameter)
+        .dry_run_update::<_, ServerError>("permit", Amount::zero(), state.keys.address, &param)
         .await?;
 
     // Get the current nonce for the backend wallet and lock it. This is necessary
@@ -285,6 +280,18 @@ pub async fn handle_transaction(
     state.reset_rate_limits_if_expired().await;
 
     // Check the rate limits for the account.
+    //
+    // By checking and updating the rate limit *after* the dry run, we ensure that
+    // it indeed is the specified signer account that sent the request (since the
+    // signature is checked).
+    //
+    // By contrast, if we had checked and updated the rate limit *before* the dry
+    // run, then it would be easy for attackers to block other accounts from using
+    // the service by spamming requests with the victim account specified as the
+    // signer.
+    //
+    // We could also add a general rate limit based on IP addresses or similar to
+    // hinder DDOS attacks.
     state.check_rate_limit(request.signer).await?;
 
     let tx_hash = dry_run
