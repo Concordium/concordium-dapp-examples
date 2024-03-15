@@ -155,15 +155,11 @@ async fn main() -> anyhow::Result<()> {
     let serve_dir_service = ServeDir::new(app.frontend_assets.join("assets"));
 
     let router = Router::new()
-        .route("/", get(|| async { Html(index_file) }))
-        .nest_service("/explorer", ServeDir::new(&app.frontend_assets))
-        .nest_service("/changeItemStatus", ServeDir::new(&app.frontend_assets))
-        .nest_service("/adminCreateItem", ServeDir::new(&app.frontend_assets))
-        .nest_service("/adminChangeRoles", ServeDir::new(&app.frontend_assets))
-        .nest_service("/assets", serve_dir_service)
         .route("/api/getItemStatusChangedEvents", post(get_item_status_changed_events))
         .route("/api/getItemCreatedEvent", post(get_item_created_event))
         .route("/health", get(health))
+        .nest_service("/assets", serve_dir_service)
+        .fallback(get(|| async { Html(index_file) }))
         .with_state(state)
         .layer(
             tower_http::trace::TraceLayer::new_for_http()
