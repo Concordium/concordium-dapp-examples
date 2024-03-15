@@ -7,15 +7,10 @@ import JSONbig from 'json-bigint';
 
 import { TESTNET, WalletConnection, typeSchemaFromBase64 } from '@concordium/wallet-connectors';
 import { useGrpcClient } from '@concordium/react-components';
-import { AccountAddress, serializeTypeValue, toBuffer } from '@concordium/web-sdk';
+import { AccountAddress, ContractAddress, Timestamp } from '@concordium/web-sdk';
 
 import { TxHashLink } from './CCDScanLinks';
-import {
-    CHANGE_ITEM_STATUS_PARAMETER_SCHEMA,
-    CONTRACT_SUB_INDEX,
-    REFRESH_INTERVAL,
-    SERIALIZATION_HELPER_SCHEMA_PERMIT_MESSAGE,
-} from '../../constants';
+import { CONTRACT_SUB_INDEX, REFRESH_INTERVAL, SERIALIZATION_HELPER_SCHEMA_PERMIT_MESSAGE } from '../../constants';
 import { nonceOf } from '../track_and_trace_contract';
 import * as TrackAndTraceContract from '../../generated/module_track_and_trace'; // Code generated from a smart contract module. The naming convention of the generated file is `moduleName_smartContractName`.
 
@@ -32,39 +27,39 @@ const NEW_STATUS_OPTIONS = [
     { label: 'Sold', value: 'Sold' },
 ];
 
-async function generateMessage(newStatus: string, itemID: bigint, expiryTimeSignature: string, nonce: number | bigint) {
+async function generateMessage(
+    newStatus: 'Produced' | 'InTransit' | 'InStore' | 'Sold' | undefined,
+    itemID: bigint,
+    expiryTimeSignature: Date,
+    nonce: number | bigint
+) {
     try {
+        if (newStatus === undefined) {
+            throw Error(`'newStatus' input field is undefined`);
+        }
+
         // Create ChangeItemStatus parameter
-        let changeItemStatusParameter = {
+        const changeItemStatusParameter: TrackAndTraceContract.ChangeItemStatusParameter = {
             additional_data: {
                 bytes: [],
             },
             item_id: Number(itemID),
             new_status: {
-                [newStatus]: [],
+                type: newStatus,
             },
         };
 
-        const payload = serializeTypeValue(
-            changeItemStatusParameter,
-            toBuffer(CHANGE_ITEM_STATUS_PARAMETER_SCHEMA, 'base64')
-        );
+        let payload = TrackAndTraceContract.createChangeItemStatusParameter(changeItemStatusParameter);
 
-        const message = {
-            contract_address: {
-                index: Number(process.env.TRACK_AND_TRACE_CONTRACT_INDEX),
-                subindex: 0,
-            },
+        const message: TrackAndTraceContract.SerializationHelperParameter = {
+            contract_address: ContractAddress.create(Number(process.env.TRACK_AND_TRACE_CONTRACT_INDEX), 0),
             nonce: Number(nonce),
-            timestamp: expiryTimeSignature,
+            timestamp: Timestamp.fromDate(expiryTimeSignature),
             entry_point: 'changeItemStatus',
             payload: Array.from(payload.buffer),
         };
 
-        const serializedMessage = serializeTypeValue(
-            message,
-            toBuffer(SERIALIZATION_HELPER_SCHEMA_PERMIT_MESSAGE, 'base64')
-        );
+        let serializedMessage = TrackAndTraceContract.createSerializationHelperParameter(message);
 
         return [payload, serializedMessage];
     } catch (error) {
@@ -134,11 +129,8 @@ export function ChangeItemStatus(props: Props) {
         }
 
         // Signatures should expire in one day. Add 1 day to the current time.
-        const date = new Date();
-        date.setTime(date.getTime() + 86400 * 1000);
-
-        // RFC 3339 format (e.g. 2030-08-08T05:15:00Z)
-        const expiryTimeSignature = date.toISOString();
+        const expiryTimeSignature = new Date();
+        expiryTimeSignature.setTime(expiryTimeSignature.getTime() + 86400 * 1000);
 
         if (connection && accountAddress) {
             try {
@@ -164,7 +156,8 @@ export function ChangeItemStatus(props: Props) {
                             signer: accountAddress,
                             nonce: Number(nextNonce),
                             signature: permitSignature[0][0],
-                            expiryTime: expiryTimeSignature,
+                            // RFC 3339 format (e.g. 2030-08-08T05:15:00Z)
+                            expiryTime: expiryTimeSignature.toISOString(),
                             contractAddress: {
                                 index: Number(process.env.TRACK_AND_TRACE_CONTRACT_INDEX),
                                 subindex: CONTRACT_SUB_INDEX,

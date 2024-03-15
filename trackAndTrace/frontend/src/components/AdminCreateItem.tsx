@@ -83,6 +83,7 @@ export function AdminCreateItem(props: Props) {
             setError(`'url' input field is undefined`);
             throw Error(`'url' input field is undefined`);
         }
+
         const parameter: TrackAndTraceContract.CreateItemParameter = {
             type: 'Some',
             content: {
