@@ -22,6 +22,7 @@ jobs:
           - dapp-template/frontend
           - euroe-demo
           - gallery
+          - signMessage
           - sponsoredTransactions/frontend
           - sponsoredTransactionsAuction/frontend
 
@@ -58,6 +59,7 @@ jobs:
         packages:
           - dapp-template/frontend
           - euroe-demo
+          - signMessage
           - sponsoredTransactionsAuction/frontend
 
     steps:
