@@ -200,7 +200,8 @@ With the following configuration:
         .layer(tower_http::timeout::TimeoutLayer::new(
             std::time::Duration::from_millis(app.request_timeout),
         ))
-        .layer(tower_http::limit::RequestBodyLimitLayer::new(70_000)) // Allow at most 70kB of data. Enough for max parameter u16::MAX and the signatures etc.
+        // Allow at most 70kB of data. Enough for max parameter u16::MAX and the signatures etc.
+        .layer(tower_http::limit::RequestBodyLimitLayer::new(70_000))
         .layer(tower_http::compression::CompressionLayer::new());
 
     tracing::info!("Listening at {}", app.listen_address);
