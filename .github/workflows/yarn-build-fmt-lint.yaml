@@ -23,6 +23,7 @@ jobs:
           - euroe-demo
           - gallery
           - signMessage
+          - simpleAgeVerification
           - sponsoredTransactions/frontend
           - sponsoredTransactionsAuction/frontend
 
@@ -60,6 +61,7 @@ jobs:
           - dapp-template/frontend
           - euroe-demo
           - signMessage
+          - simpleAgeVerification
           - sponsoredTransactionsAuction/frontend
 
     steps:
