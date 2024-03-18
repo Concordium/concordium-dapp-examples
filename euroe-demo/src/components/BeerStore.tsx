@@ -444,7 +444,7 @@ export default function BeerStore(props: WalletConnectionProps & { connectorType
         </Typography>
       </CardContent>
       <CardActions>
-        <Button fullWidth={true} variant="contained" size="large" onClick={() => !connection ? connect() : ageCheck(connection)} disabled={isConnecting}>
+        <Button fullWidth={true} variant="contained" size="large" onClick={() => !connection ? connect() : ageCheck()} disabled={isConnecting}>
           Verify age
         </Button>
       </CardActions>
