@@ -344,7 +344,7 @@ function renderBalance(balance: bigint): string {
 export default function BeerStore(props: WalletConnectionProps & { connectorType: ConnectorType }) {
   const { activeConnector, connectedAccounts, genesisHashes, setActiveConnectorType } = props;
   const { connection, setConnection } = useConnection(connectedAccounts, genesisHashes);
-  const { connect, connectError } = useConnect(activeConnector, setConnection);
+  const { connect, isConnecting, connectError } = useConnect(activeConnector, setConnection);
 
   // This triggers after `connect()` is called by pressing the verify age button and the
   // user has opened a connection to the dApp.
@@ -388,7 +388,7 @@ export default function BeerStore(props: WalletConnectionProps & { connectorType
         </Typography>
       </CardContent>
       <CardActions>
-        <Button fullWidth={true} variant="contained" size="large" onClick={connect} disabled={connection !== undefined}>
+        <Button fullWidth={true} variant="contained" size="large" onClick={() => !connection ? connect() : ageCheck(connection)} disabled={isConnecting}>
           Verify age
         </Button>
       </CardActions>
@@ -408,9 +408,7 @@ export default function BeerStore(props: WalletConnectionProps & { connectorType
 
       // Requesting ID proof to check if user is 18 years old
       try {
-        console.log('Send request');
         const presentation = await connection.requestVerifiablePresentation(challenge, statement);
-        console.log('Got presentation');
         const did = presentation.verifiableCredential[0].credentialSubject.id;
         const credId = did.substring('did:ccd:testnet:cred:'.length);
         
