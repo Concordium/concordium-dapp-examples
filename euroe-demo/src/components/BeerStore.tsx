@@ -25,7 +25,7 @@ import {
   Snackbar,
   CardActions,
 } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import beers from '../../image/beers.jpg';
 import {
   AccountAddress,
@@ -51,6 +51,7 @@ import { green } from '@mui/material/colors';
 import CheckIcon from '@mui/icons-material/Check';
 import PublishRoundedIcon from '@mui/icons-material/PublishRounded';
 import { ConnectorType, TypedSmartContractParameters, WalletConnection, WalletConnectionProps, typeSchemaFromBase64, useConnect, useConnection, } from '@concordium/react-components';
+import { grpcPort, grpcUrl } from '../config';
 
 const CONTRACT_ADDRESS = ContractAddress.create(7260);
 const RECEIVER_ADDRESS = AccountAddress.fromBase58('4DnXB9GTJ178e3YWHpCZQxwY5kVN9CJvQeBNbGczjnT8A7Wfcx');
@@ -75,6 +76,8 @@ async function submitTransaction(items: bigint, account: AccountAddress.Type, co
   const transferTx = client.createTransfer(transferMetadata, transfer);
   const typedParams: TypedSmartContractParameters = {
     parameters: transferTx.parameter.json,
+    // Add missing padding to the base64 encoding. Ideally the method would allow for base64 without
+    // padding, or the CIS2 client would use padding.
     schema: typeSchemaFromBase64(transferTx.schema.value + '=')
   };
 
@@ -343,22 +346,8 @@ function renderBalance(balance: bigint): string {
 
 export default function BeerStore(props: WalletConnectionProps & { connectorType: ConnectorType }) {
   const { activeConnector, connectedAccounts, genesisHashes, setActiveConnectorType } = props;
-  const { connection, setConnection } = useConnection(connectedAccounts, genesisHashes);
+  const { connection, setConnection, account: connectedAccount } = useConnection(connectedAccounts, genesisHashes);
   const { connect, isConnecting, connectError } = useConnect(activeConnector, setConnection);
-
-  // This triggers after `connect()` is called by pressing the verify age button and the
-  // user has opened a connection to the dApp.
-  useEffect(() => {
-    if (connection) {
-      ageCheck(connection);
-    }
-  }, [connection]);
-
-  useEffect(() => {
-    if (connectError) {
-      alert(connectError);
-    }
-  }, [connectError]);
 
   const [isVerified, setVerified] = useState<
     [AccountAddress.Type, CIS2Contract, WalletConnection, ConcordiumGRPCClient] | undefined
@@ -370,6 +359,73 @@ export default function BeerStore(props: WalletConnectionProps & { connectorType
   const handleClose = () => {
     setOpen(false);
   };
+
+  const ageCheck = useCallback(async () => {
+    if (!connection) {
+      return;
+    }
+
+    try {
+      // TODO Replace add range with addMinimumAge(18) when SDK is fixed.
+      const statementBuilder = new Web3StatementBuilder().addForIdentityCredentials([0, 1, 2, 3, 4, 5], (b) =>
+        b.addRange('dob', MIN_DATE, getPastDate(18, 1)),
+      );
+      const statement = statementBuilder.getStatements();
+      // In a production scenario the challenge should not be hardcoded, in order to avoid accepting proofs created for other contexts.
+      const challenge = 'beefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeef';
+
+      // Requesting ID proof to check if user is 18 years old
+      try {
+        const presentation = await connection.requestVerifiablePresentation(challenge, statement);
+        const did = presentation.verifiableCredential[0].credentialSubject.id;
+        const credId = did.substring('did:ccd:testnet:cred:'.length);
+        const client = new ConcordiumGRPCWebClient(grpcUrl, grpcPort);
+        const account = await client.getAccountInfo(CredentialRegistrationId.fromHexString(credId));
+
+        if (connectedAccount !== AccountAddress.toBase58(account.accountAddress)) {
+          throw new Error(
+            `The account that was used to verify ${AccountAddress.toBase58(
+              account.accountAddress,
+            )} is not the connected account.`,
+          );
+        }
+
+        const contractClient = await CIS2Contract.create(client, CONTRACT_ADDRESS);
+        const query: CIS2.BalanceOfQuery = {
+          tokenId: '',
+          address: account.accountAddress,
+        };
+        const balance = await contractClient.balanceOf(query);
+        setEuroeBalance(renderBalance(balance));
+        // TODO: Verify the proof
+        // User is 18 year old, show something
+        setVerified([account.accountAddress, contractClient, connection, client]);
+        setFailed(false);
+      } catch (e) {
+        console.error(`Failed to get proof: ${e}.`);
+        setFailed(true);
+        setOpen(true);
+        return;
+      }
+    } catch (error) {
+      console.error(error); // from creation or business logic
+      alert('Please connect');
+    }
+  }, [connection, connectedAccount]);
+
+  // This triggers after `connect()` is called by pressing the verify age button and the
+  // user has opened a connection to the dApp.
+  useEffect(() => {
+    if (connection) {
+      ageCheck();
+    }
+  }, [connection, ageCheck]);
+
+  useEffect(() => {
+    if (connectError) {
+      alert(connectError);
+    }
+  }, [connectError]);
 
   useEffect(() => {
     if (!activeConnector) {
@@ -394,50 +450,7 @@ export default function BeerStore(props: WalletConnectionProps & { connectorType
       </CardActions>
     </React.Fragment>
   );
-
-  async function ageCheck(connection: WalletConnection) {
-  
-    try {
-      // TODO Replace add range with addMinimumAge(18) when SDK is fixed.
-      const statementBuilder = new Web3StatementBuilder().addForIdentityCredentials([0, 1, 2, 3, 4, 5], (b) =>
-        b.addRange('dob', MIN_DATE, getPastDate(18, 1)),
-      );
-      const statement = statementBuilder.getStatements();
-      // In a production scenario the challenge should not be hardcoded, in order to avoid accepting proofs created for other contexts.
-      const challenge = 'beefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeef';
-
-      // Requesting ID proof to check if user is 18 years old
-      try {
-        const presentation = await connection.requestVerifiablePresentation(challenge, statement);
-        const did = presentation.verifiableCredential[0].credentialSubject.id;
-        const credId = did.substring('did:ccd:testnet:cred:'.length);
-        
-        // TODO Move the URL into the configuration.
-        const client = new ConcordiumGRPCWebClient('https://grpc.testnet.concordium.com', 20000);
-        const account = await client.getAccountInfo(CredentialRegistrationId.fromHexString(credId));
-        const contractClient = await CIS2Contract.create(client, CONTRACT_ADDRESS);
-        const query: CIS2.BalanceOfQuery = {
-          tokenId: '',
-          address: account.accountAddress,
-        };
-        const balance = await contractClient.balanceOf(query);
-        setEuroeBalance(renderBalance(balance));
-        // TODO: Verify the proof
-        // User is 18 year old, show something
-        setVerified([account.accountAddress, contractClient, connection, client]);
-        setFailed(false);
-      } catch (e) {
-        console.error(`Failed to get proof: ${e}.`);
-        setFailed(true);
-        setOpen(true);
-        return;
-      }
-    } catch (error) {
-      console.error(error); // from creation or business logic
-      alert('Please connect');
-    }
-  }
-
+    
   const [isUpdatedBalance, setUpdatedBalance] = useState(false);
 
   useEffect(() => {
