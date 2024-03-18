@@ -50,13 +50,26 @@ import SportsBarOutlinedIcon from '@mui/icons-material/SportsBarOutlined';
 import { green } from '@mui/material/colors';
 import CheckIcon from '@mui/icons-material/Check';
 import PublishRoundedIcon from '@mui/icons-material/PublishRounded';
-import { ConnectorType, TypedSmartContractParameters, WalletConnection, WalletConnectionProps, typeSchemaFromBase64, useConnect, useConnection, } from '@concordium/react-components';
+import {
+  ConnectorType,
+  TypedSmartContractParameters,
+  WalletConnection,
+  WalletConnectionProps,
+  typeSchemaFromBase64,
+  useConnect,
+  useConnection,
+} from '@concordium/react-components';
 import { grpcPort, grpcUrl } from '../config';
 
 const CONTRACT_ADDRESS = ContractAddress.create(7260);
 const RECEIVER_ADDRESS = AccountAddress.fromBase58('4DnXB9GTJ178e3YWHpCZQxwY5kVN9CJvQeBNbGczjnT8A7Wfcx');
 
-async function submitTransaction(items: bigint, account: AccountAddress.Type, connection: WalletConnection, client: CIS2Contract) {
+async function submitTransaction(
+  items: bigint,
+  account: AccountAddress.Type,
+  connection: WalletConnection,
+  client: CIS2Contract,
+) {
   const transfer: CIS2.Transfer = {
     tokenId: '',
     tokenAmount: items * 1000000n,
@@ -78,19 +91,21 @@ async function submitTransaction(items: bigint, account: AccountAddress.Type, co
     parameters: transferTx.parameter.json,
     // Add missing padding to the base64 encoding. Ideally the method would allow for base64 without
     // padding, or the CIS2 client would use padding.
-    schema: typeSchemaFromBase64(transferTx.schema.value + '=')
+    schema: typeSchemaFromBase64(transferTx.schema.value + '='),
   };
 
   /* eslint-disable @typescript-eslint/no-unused-vars */
   const { message, ...payloadWithoutMessage } = transferTx.payload;
 
-  const transaction = await connection.signAndSendTransaction(
+  const transaction = await connection
+    .signAndSendTransaction(
       AccountAddress.toBase58(account),
       AccountTransactionType.Update,
       payloadWithoutMessage,
-      typedParams
-    ).then(TransactionHash.fromHexString);
-  
+      typedParams,
+    )
+    .then(TransactionHash.fromHexString);
+
   return transaction;
 }
 
@@ -444,13 +459,19 @@ export default function BeerStore(props: WalletConnectionProps & { connectorType
         </Typography>
       </CardContent>
       <CardActions>
-        <Button fullWidth={true} variant="contained" size="large" onClick={() => !connection ? connect() : ageCheck()} disabled={isConnecting}>
+        <Button
+          fullWidth={true}
+          variant="contained"
+          size="large"
+          onClick={() => (!connection ? connect() : ageCheck())}
+          disabled={isConnecting}
+        >
           Verify age
         </Button>
       </CardActions>
     </React.Fragment>
   );
-    
+
   const [isUpdatedBalance, setUpdatedBalance] = useState(false);
 
   useEffect(() => {
