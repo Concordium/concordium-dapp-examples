@@ -44,7 +44,13 @@ jobs:
           cache: 'yarn'
           cache-dependency-path: ${{ matrix.packages }}/yarn.lock
 
+      - name: Install Low Code NFT Marketplace Dependencies
+        if: ${{ matrix.packages == 'low-code-nft-marketplace/market-ui' || matrix.packages == 'low-code-nft-marketplace/mint-ui' }}
+        working-directory: low-code-nft-marketplace
+        run: yarn install && yarn workspace common-ui build
+
       - name: Run install
+        if: ${{ matrix.packages != 'low-code-nft-marketplace/market-ui' && matrix.packages != 'low-code-nft-marketplace/mint-ui' }}
         working-directory: ${{ matrix.packages }}
         run: yarn install
 
@@ -86,7 +92,13 @@ jobs:
           cache: 'yarn'
           cache-dependency-path: ${{ matrix.packages }}/yarn.lock
 
+      - name: Install Low Code NFT Marketplace Dependencies
+        if: ${{ matrix.packages == 'low-code-nft-marketplace/market-ui' || matrix.packages == 'low-code-nft-marketplace/mint-ui' }}
+        working-directory: low-code-nft-marketplace
+        run: yarn install && yarn workspace common-ui build
+
       - name: Run install
+        if: ${{ matrix.packages != 'low-code-nft-marketplace/market-ui' && matrix.packages != 'low-code-nft-marketplace/mint-ui' }}
         working-directory: ${{ matrix.packages }}
         run: yarn install
 
