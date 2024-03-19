@@ -16,6 +16,8 @@
         "deploy:smart-contract": "yarn workspace cis2-market run deploy",
         "clean:tsc": "npx tsc -b --clean",
         "debug:market-ui": "yarn workspace market-ui run start",
-        "debug:mint-ui": "yarn workspace mint-ui run start"
+        "debug:mint-ui": "yarn workspace mint-ui run start",
+        "lint:all": "yarn workspace common-ui run lint && yarn workspace market-ui run lint && yarn workspace mint-ui run lint",
+        "fmt:all": "yarn workspace common-ui run fmt && yarn workspace market-ui run fmt && yarn workspace mint-ui run fmt"
     }
 }

@@ -18,7 +18,7 @@ import {
 
 export interface ContractInfo {
     schemaBuffer: Buffer;
-    contractName: 'cis2_multi' | 'Market-NFT' | string;
+    contractName: string;
     moduleRef?: ModuleReference;
 }
 
@@ -43,7 +43,7 @@ export async function initContract(
     account: string,
     params?: SmartContractParameters,
     maxContractExecutionEnergy = BigInt(9999),
-    ccdAmount = BigInt(0)
+    ccdAmount = BigInt(0),
 ): Promise<ContractAddress> {
     const { moduleRef, schemaBuffer, contractName } = contractInfo;
     if (!moduleRef) {
@@ -59,8 +59,8 @@ export async function initContract(
             initName: contractName,
             maxContractExecutionEnergy,
         },
-        params as SmartContractParameters,
-        schemaBuffer.toString('base64')
+        params!,
+        schemaBuffer.toString('base64'),
     );
 
     let outcomes = await waitForTransaction(provider, txnHash);
@@ -84,7 +84,7 @@ export async function invokeContract<T>(
     contract: ContractAddress,
     methodName: string,
     params?: T,
-    invoker?: ContractAddress | AccountAddress
+    invoker?: ContractAddress | AccountAddress,
 ): Promise<Buffer> {
     const { schemaBuffer, contractName } = contractInfo;
     const parameter = params ? serializeParams(contractName, schemaBuffer, methodName, params) : undefined;
@@ -136,7 +136,7 @@ export async function updateContract(
     contractAddress: ContractAddress,
     methodName: string,
     maxContractExecutionEnergy = BigInt(9999),
-    amount = BigInt(0)
+    amount = BigInt(0),
 ): Promise<BlockItemSummaryInBlock> {
     const { schemaBuffer, contractName } = contractInfo;
     const txnHash = await provider.sendTransaction(
@@ -148,8 +148,8 @@ export async function updateContract(
             amount: toCcd(amount),
             receiveName: `${contractName}.${methodName}`,
         } as UpdateContractPayload,
-        paramJson as any,
-        schemaBuffer.toString('base64')
+        paramJson,
+        schemaBuffer.toString('base64'),
     );
 
     return await waitAndThrowError(provider, txnHash);
@@ -207,7 +207,7 @@ function _wait(
     provider: WalletApi,
     txnHash: string,
     res: (p: BlockItemSummaryInBlock) => void,
-    rej: (reason: any) => void
+    rej: (reason: unknown) => void,
 ) {
     setTimeout(() => {
         provider
@@ -254,4 +254,7 @@ export function toParamContractAddress(marketAddress: ContractAddress): ParamCon
     };
 }
 
-export type ParamContractAddress = { index: number; subindex: number };
+export interface ParamContractAddress {
+    index: number;
+    subindex: number;
+}

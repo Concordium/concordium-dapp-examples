@@ -29,7 +29,7 @@ const enum MethodNames {
 export async function list(
     grpcClient: ConcordiumGRPCClient,
     marketContractAddress: ContractAddress,
-    contractInfo: ContractInfo
+    contractInfo: ContractInfo,
 ): Promise<TokenList> {
     const retValue = await invokeContract(grpcClient, contractInfo, marketContractAddress, MethodNames.list);
 
@@ -37,21 +37,18 @@ export async function list(
         retValue,
         contractInfo.schemaBuffer,
         contractInfo.contractName,
-        MethodNames.list
-    );
+        MethodNames.list,
+    ) as TokenListItemJSON[][];
 
-    const tokens = retValueDe[0].map(
-        (t: any) =>
-            ({
-                contract: t.contract,
-                owner: t.owner,
-                price: BigInt(t.price),
-                primaryOwner: t.primary_owner,
-                quantity: BigInt(t.quantity),
-                royalty: t.royalty,
-                tokenId: t.token_id,
-            } as TokenListItem)
-    );
+    const tokens = retValueDe[0].map((t: TokenListItemJSON) => ({
+        contract: t.contract,
+        owner: t.owner,
+        price: BigInt(t.price),
+        primaryOwner: t.primary_owner,
+        quantity: BigInt(t.quantity),
+        royalty: t.royalty,
+        tokenId: t.token_id,
+    }));
     return tokens;
 }
 
@@ -70,7 +67,7 @@ export async function add(
     marketContractAddress: ContractAddress,
     paramJson: AddParams,
     contractInfo: ContractInfo,
-    maxContractExecutionEnergy = BigInt(9999)
+    maxContractExecutionEnergy = BigInt(9999),
 ): Promise<BlockItemSummaryInBlock> {
     return updateContract(
         provider,
@@ -79,7 +76,7 @@ export async function add(
         account,
         marketContractAddress,
         MethodNames.add,
-        maxContractExecutionEnergy
+        maxContractExecutionEnergy,
     );
 }
 
@@ -104,7 +101,7 @@ export async function transfer(
     owner: string,
     quantity: bigint,
     contractInfo: ContractInfo,
-    maxContractExecutionEnergy = BigInt(9999)
+    maxContractExecutionEnergy = BigInt(9999),
 ): Promise<BlockItemSummaryInBlock> {
     const paramJson: TransferParams = {
         cis_contract_address: toParamContractAddress(nftContractAddress),
@@ -122,7 +119,7 @@ export async function transfer(
         marketContractAddress,
         MethodNames.transfer,
         maxContractExecutionEnergy,
-        priceCcd * quantity
+        priceCcd * quantity,
     );
 }
 
@@ -139,6 +136,16 @@ export interface TokenListItem {
     royalty: number;
     primaryOwner: string;
     quantity: bigint;
+}
+
+interface TokenListItemJSON {
+    token_id: string;
+    contract: ContractAddress;
+    price: number;
+    owner: string;
+    royalty: number;
+    primary_owner: string;
+    quantity: number;
 }
 
 export interface AddParams {

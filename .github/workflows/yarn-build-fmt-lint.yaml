@@ -22,6 +22,9 @@ jobs:
           - dapp-template/frontend
           - euroe-demo
           - gallery
+          - low-code-nft-marketplace/common-ui
+          - low-code-nft-marketplace/market-ui
+          - low-code-nft-marketplace/mint-ui
           - signMessage
           - simpleAgeVerification
           - sponsoredTransactions/frontend
@@ -60,6 +63,9 @@ jobs:
         packages:
           - dapp-template/frontend
           - euroe-demo
+          - low-code-nft-marketplace/common-ui
+          - low-code-nft-marketplace/market-ui
+          - low-code-nft-marketplace/mint-ui
           - signMessage
           - simpleAgeVerification
           - sponsoredTransactionsAuction/frontend

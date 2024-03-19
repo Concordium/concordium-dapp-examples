@@ -1,29 +1,30 @@
-import "./index.css";
+import './index.css';
 
-import React from "react";
-import ReactDOM from "react-dom/client";
-import { HashRouter } from "react-router-dom";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { HashRouter } from 'react-router-dom';
 
-import { createTheme, ThemeProvider } from "@mui/material";
+import { createTheme, ThemeProvider } from '@mui/material';
 
-import App from "./App";
+import App from './App';
 
-const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
+const root = ReactDOM.createRoot(document.getElementById('root')!);
 
 const customTheme = createTheme({
-  palette: {
-    mode: "light",
-    primary: {
-      main: "#181817",
-      contrastText: "#FBFBF9",
+    palette: {
+        mode: 'light',
+        primary: {
+            main: '#181817',
+            contrastText: '#FBFBF9',
+        },
     },
-  },
 });
 
 root.render(
-  <HashRouter>
-    <ThemeProvider theme={customTheme}>
-      <App />
-    </ThemeProvider>
-  </HashRouter>,
+    <HashRouter>
+        <ThemeProvider theme={customTheme}>
+            <App />
+        </ThemeProvider>
+    </HashRouter>,
 );
