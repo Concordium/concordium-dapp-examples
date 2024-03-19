@@ -2,8 +2,8 @@
 
 ## 0.1.2
 
-- Add link to tutorial
+-   Add link to tutorial
 
 ## 0.1.1
 
-- Initial gallery front end
+-   Initial gallery front end

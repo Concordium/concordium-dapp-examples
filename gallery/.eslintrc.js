@@ -1,37 +1,40 @@
 module.exports = {
+    root: true,
+    env: { browser: true, es2020: true },
+    extends: [
+        'eslint:recommended',
+        'plugin:@typescript-eslint/recommended-type-checked',
+        'plugin:@typescript-eslint/stylistic-type-checked',
+        'plugin:react-hooks/recommended',
+        'plugin:react/recommended',
+        'plugin:react/jsx-runtime',
+        'plugin:jsx-a11y/recommended',
+        'prettier',
+    ],
     parser: '@typescript-eslint/parser',
-    extends: ['plugin:prettier/recommended', 'plugin:@typescript-eslint/recommended'],
-    parserOptions: {
-        ecmaVersion: 2020,
-        sourceType: 'module',
-        ecmaFeatures: {
-            jsx: true,
-        },
-        project: 'tsconfig.json',
-        createDefaultProgram: true,
-    },
-    env: {
-        browser: true,
-        jest: true,
-        node: true,
-    },
+    plugins: ['react', 'react-refresh'],
     rules: {
-        'import/prefer-default-export': 0,
-        'no-restricted-exports': 0,
-        'no-restricted-syntax': ['error', 'ForInStatement', 'LabeledStatement', 'WithStatement'],
-        'react/jsx-props-no-spreading': 0,
-        'react/require-default-props': 0,
-        'class-methods-use-this': 0,
-        'jsx-a11y/no-autofocus': 0,
-        'no-await-in-loop': 0,
-        'prettier/prettier': [
+        'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+        '@typescript-eslint/unbound-method': 0,
+        '@typescript-eslint/no-misused-promises': [
             'error',
             {
-                trailingComma: 'es5',
-                singleQuote: true,
-                printWidth: 120,
-                tabWidth: 4,
+                checksVoidReturn: {
+                    attributes: false,
+                },
             },
         ],
+    },
+    parserOptions: {
+        ecmaVersion: 'latest',
+        ecmaFeatures: { jsx: true },
+        sourceType: 'module',
+        project: ['./tsconfig.json'],
+        tsconfigRootDir: __dirname,
+    },
+    settings: {
+        react: {
+            version: 'detect',
+        },
     },
 };

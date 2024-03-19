@@ -1,0 +1,6 @@
+.eslintrc.cjs
+esbuild.config.ts
+.yarn/
+node_modules/
+dist/
+types/*.d.ts
