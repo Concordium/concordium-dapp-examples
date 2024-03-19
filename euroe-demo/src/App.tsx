@@ -1,7 +1,7 @@
 import BeerStore from './components/BeerStore';
 
 function App() {
-  return <BeerStore />;
+    return <BeerStore />;
 }
 
 export default App;

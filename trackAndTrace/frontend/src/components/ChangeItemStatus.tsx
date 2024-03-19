@@ -31,7 +31,7 @@ async function generateMessage(
     newStatus: 'Produced' | 'InTransit' | 'InStore' | 'Sold' | undefined,
     itemID: bigint,
     expiryTimeSignature: Date,
-    nonce: number | bigint
+    nonce: number | bigint,
 ) {
     try {
         if (newStatus === undefined) {
@@ -138,7 +138,7 @@ export function ChangeItemStatus(props: Props) {
                     newStatus,
                     itemID,
                     expiryTimeSignature,
-                    nextNonce
+                    nextNonce,
                 );
 
                 const permitSignature = await connection.signMessage(accountAddress, {
@@ -166,7 +166,7 @@ export function ChangeItemStatus(props: Props) {
                             entrypointName: 'changeItemStatus',
                             parameter: Buffer.from(payload.buffer).toString('hex'),
                         }),
-                    }
+                    },
                 );
 
                 if (!response.ok) {
