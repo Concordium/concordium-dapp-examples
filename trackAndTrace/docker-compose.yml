@@ -11,6 +11,8 @@ services:
     build:
       dockerfile: ./dockerfiles/sponsored-transaction-service.Dockerfile
     restart: always
+    ports:
+      - 8000:8000
     volumes:
       - ./private-keys:/private-keys
     environment:
