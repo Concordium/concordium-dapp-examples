@@ -22,7 +22,7 @@ pub enum ServerError {
     InvalidRequest(#[from] JsonRejection),
     #[error("Unable to parse signature into a hex string: {0}.")]
     SignatureError(#[from] FromHexError),
-    #[error("Unable to parse signature because of wrong length.")]
+    #[error("Unable to parse signature because it wasn't 64 bytes long.")]
     SignatureLengthError,
     #[error("Unable to create parameter.")]
     ParameterError,

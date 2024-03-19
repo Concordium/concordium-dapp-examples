@@ -29,6 +29,7 @@ jobs:
           - simpleAgeVerification
           - sponsoredTransactions/frontend
           - sponsoredTransactionsAuction/frontend
+          - trackAndTrace/frontend
 
     steps:
       - name: Checkout
@@ -77,6 +78,7 @@ jobs:
           - simpleAgeVerification
           - sponsoredTransactions/frontend
           - sponsoredTransactionsAuction/frontend
+          - trackAndTrace/frontend
 
     steps:
       - name: Checkout
@@ -125,6 +127,7 @@ jobs:
           - simpleAgeVerification
           - sponsoredTransactions/frontend
           - sponsoredTransactionsAuction/frontend
+          - trackAndTrace/frontend
 
     steps:
       - name: Checkout
