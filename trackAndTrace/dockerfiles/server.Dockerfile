@@ -2,8 +2,6 @@
 
 ARG RUST_IMAGE=rust:1.74
 ARG NODE_IMAGE=node:18-slim
-ARG TRACK_AND_TRACE_CONTRACT_INDEX=8219
-ARG SPONSORED_TRANSACTION_BACKEND_BASE_URL=http://localhost:8000
 
 # Build frontend
 FROM ${NODE_IMAGE} AS frontend
@@ -18,6 +16,8 @@ COPY ./frontend/index.html ./index.html
 COPY ./frontend/generated ./generated
 COPY ./frontend/src ./src
 RUN yarn
+ARG TRACK_AND_TRACE_CONTRACT_INDEX=8219
+ARG SPONSORED_TRANSACTION_BACKEND_BASE_URL="http://localhost:8000"
 # Forward the build args to `yarn build` via environment variables.
 # We do not use the docker `ENV` as those are only used for the final `CMD`.
 RUN TRACK_AND_TRACE_CONTRACT_INDEX=${TRACK_AND_TRACE_CONTRACT_INDEX} \
