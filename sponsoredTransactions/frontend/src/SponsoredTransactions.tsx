@@ -1,5 +1,4 @@
 /* eslint-disable no-console */
-/* eslint-disable no-alert */
 /* eslint-disable consistent-return */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React, { useEffect, useState, ChangeEvent, useCallback } from 'react';
