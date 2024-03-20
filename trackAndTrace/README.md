@@ -4,12 +4,12 @@ This project contains a complete implementation of a track and trace solution wi
 
 It has five primary components.
 
-- A [smart contract](/smart-contract/README.md), located in `./smart-contract`
-- A [frontend](/frontend/README.md), located in `./frontend`
-- An [indexer](/indexer/README.md) service, located in `./indexer`
-- A [sponsored transaction service](/sponsored-transaction-service/README.md), located in `./sponsored-transaction-service`
+- A [smart contract](./smart-contract/README.md), located in `./smart-contract`
+- A [frontend](./frontend/README.md), located in `./frontend`
+- An [indexer](./indexer/README.md) service, located in `./indexer`
+- A [sponsored transaction service](./sponsored-transaction-service/README.md), located in `./sponsored-transaction-service`
   - This service is generic and compatible with any CIS-3 contracts.
-- A [server](/indexer/README.md) that hosts the frontend, located in `./indexer`
+- A [server](./indexer/README.md) that hosts the frontend, located in `./indexer`
 
 Explanations for each component reside in README.md files inside their respective folder.
 
