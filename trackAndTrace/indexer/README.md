@@ -2,6 +2,8 @@
 
 There are two binaries in this project. An `indexer` that indexes data into a database and a `server` that serves data from the database.
 
+The easiest way to run the `indexer` and `server` is to use [docker-compose](https://docs.docker.com/compose/) as described in the Track and Trace project's main [README.md](../README.md) file.
+
 ## Prerequisites
 
 - `PostgreSQL` installed or running it in a docker container: https://www.postgresql.org/download/

@@ -18,7 +18,7 @@ yarn install
 
 ### Development
 
-Adjust the two environmental variables `SPONSORED_TRANSACTION_BACKEND_BASE_URL` and the `TRACK_AND_TRACE_CONTRACT_INDEX` in the `package.json` file.
+Set the two environmental variables `SPONSORED_TRANSACTION_BACKEND_BASE_URL` and the `TRACK_AND_TRACE_CONTRACT_INDEX`, or prefix them before the `yarn dev` call below.
 
 `SPONSORED_TRANSACTION_BACKEND_BASE_URL` is the base url of your [sponsored transaction backend service](https://github.com/Concordium/concordium-dapp-examples/tree/main/trackAndTrace/sponsored-transaction-service)
 
@@ -39,11 +39,11 @@ yarn dev
 
 This will launch a development server with hot module replacement enabled.
 
-If you want to set up the whole project together with running the backend services so that the 3 endpoints work. Follow the `README.md` files at the backend services. In detail, the front end files need to be served through the [backend server](https://github.com/Concordium/concordium-dapp-examples/tree/main/trackAndTrace/indexer) and the `SPONSORED_TRANSACTION_BACKEND_BASE_URL` needs to be set correctly and its backend service needs to be up and running.
+If you want to set up the whole project together with running the backend services so that the 3 endpoints work. Follow the instructions in the project's [README.md](../README.md).
 
 ### Build
 
-Adjust the two environmental variables `SPONSORED_TRANSACTION_BACKEND_BASE_URL` and the `TRACK_AND_TRACE_CONTRACT_INDEX` in the `package.json` file.
+Set the two environmental variables `SPONSORED_TRANSACTION_BACKEND_BASE_URL` and the `TRACK_AND_TRACE_CONTRACT_INDEX`, or prefix them before the `yarn build` call below.
 
 `SPONSORED_TRANSACTION_BACKEND_BASE_URL` is the base url of your [sponsored transaction backend service](https://github.com/Concordium/concordium-dapp-examples/tree/main/trackAndTrace/sponsored-transaction-service)
 
