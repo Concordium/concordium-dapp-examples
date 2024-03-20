@@ -35,4 +35,19 @@ jobs:
       working-directory: ${{ matrix.image.dir }}
       run:
         docker build -f ${{ matrix.image.dockerfile }} .
-      
+
+  compose-build:
+    name: Building with docker-compose
+    # Don't run on draft pull requests
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Build with docker-compose
+      working-directory: trackAndTrace
+      run:
+        docker-compose build
