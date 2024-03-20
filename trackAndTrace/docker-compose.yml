@@ -9,6 +9,7 @@ version: '3.8'
 services:
   sponsored-transaction-service:
     build:
+      context: .
       dockerfile: ./dockerfiles/sponsored-transaction-service.Dockerfile
     restart: always
     ports:
@@ -24,6 +25,7 @@ services:
 
   server:
     build:
+      context: .
       dockerfile: ./dockerfiles/server.Dockerfile
       args:
         TRACK_AND_TRACE_CONTRACT_INDEX: ${TRACK_AND_TRACE_CONTRACT_INDEX}
@@ -39,6 +41,7 @@ services:
 
   indexer:
     build:
+      context: .
       dockerfile: ./dockerfiles/indexer.Dockerfile
     restart: always
     environment:
