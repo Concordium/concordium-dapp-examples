@@ -7,7 +7,7 @@ on:
 
   push:
     tags:
-      - 'track-and-trace/*.*.*'   
+      - 'track-and-trace/indexer/*.*.*'   
 
 env:
   REGISTRY: docker.io
