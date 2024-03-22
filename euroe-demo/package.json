@@ -13,13 +13,15 @@
     },
     "dependencies": {
         "@concordium/browser-wallet-api-helpers": "^3",
+        "@concordium/react-components": "^0.5.1",
         "@concordium/web-sdk": "^7.1.0",
         "@emotion/react": "^11.11.1",
         "@emotion/styled": "^11.11.0",
         "@mui/icons-material": "^5.14.6",
         "@mui/material": "^5.15.1",
         "react": "^18.2.0",
-        "react-dom": "^18.2.0"
+        "react-dom": "^18.2.0",
+        "react-router-dom": "^6.22.3"
     },
     "devDependencies": {
         "@types/react": "^18.2.43",
