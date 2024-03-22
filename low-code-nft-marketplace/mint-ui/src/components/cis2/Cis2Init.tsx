@@ -1,5 +1,5 @@
 import { Cis2ContractInfo, initContract } from 'common-ui';
- 
+
 import React, { FormEvent, useState } from 'react';
 
 import { WalletApi } from '@concordium/browser-wallet-api-helpers';

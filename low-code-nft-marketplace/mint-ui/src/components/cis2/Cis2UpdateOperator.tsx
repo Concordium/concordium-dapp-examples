@@ -1,5 +1,5 @@
 import { waitAndThrowError } from 'common-ui';
- 
+
 import React, { useEffect, useState } from 'react';
 
 import { SchemaWithContext, WalletApi } from '@concordium/browser-wallet-api-helpers';

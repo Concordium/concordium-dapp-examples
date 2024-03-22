@@ -1,5 +1,5 @@
 import { ContractInfo, mint } from 'common-ui';
- 
+
 import React, { useState } from 'react';
 
 import { WalletApi } from '@concordium/browser-wallet-api-helpers';

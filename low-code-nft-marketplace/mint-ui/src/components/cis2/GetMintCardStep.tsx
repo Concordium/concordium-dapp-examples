@@ -1,4 +1,3 @@
- 
 import React from 'react';
 
 import { CIS2 } from '@concordium/web-sdk';

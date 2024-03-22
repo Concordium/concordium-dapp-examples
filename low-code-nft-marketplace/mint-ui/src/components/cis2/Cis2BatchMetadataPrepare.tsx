@@ -1,5 +1,5 @@
 import { Cis2ContractInfo, toTokenId } from 'common-ui';
- 
+
 import React, { useState } from 'react';
 
 import { CIS2 } from '@concordium/web-sdk';

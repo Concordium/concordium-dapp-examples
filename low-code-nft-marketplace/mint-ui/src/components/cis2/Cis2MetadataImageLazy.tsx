@@ -1,5 +1,5 @@
 import { fetchJson, Metadata } from 'common-ui';
- 
+
 import React, { useEffect, useState } from 'react';
 
 import { CIS2Contract } from '@concordium/web-sdk';

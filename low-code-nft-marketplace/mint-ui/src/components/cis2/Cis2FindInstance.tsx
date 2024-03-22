@@ -1,5 +1,5 @@
 import { Cis2ContractInfo } from 'common-ui';
- 
+
 import React, { FormEvent, useState } from 'react';
 
 import { CIS0, cis0Supports, ConcordiumGRPCClient, ContractAddress } from '@concordium/web-sdk';

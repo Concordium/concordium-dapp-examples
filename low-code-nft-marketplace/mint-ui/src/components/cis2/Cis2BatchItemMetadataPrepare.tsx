@@ -1,6 +1,6 @@
 import { Buffer } from 'buffer/';
 import { Metadata, PinataClient, tokenIdToNftImageFileName, tokenIdToNftMetadataFileName } from 'common-ui';
- 
+
 import React, { FormEvent, useState } from 'react';
 
 import { CIS2, sha256 } from '@concordium/web-sdk';

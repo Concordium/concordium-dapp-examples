@@ -1,5 +1,5 @@
 import { ContractInfo } from 'common-ui';
- 
+
 import React from 'react';
 
 import { CIS2 } from '@concordium/web-sdk';

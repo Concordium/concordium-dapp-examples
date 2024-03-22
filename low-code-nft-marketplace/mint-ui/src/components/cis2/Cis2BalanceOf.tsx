@@ -1,4 +1,3 @@
- 
 import React, { useState } from 'react';
 
 import { CIS2Contract, InvokeContractFailedResult, RejectReasonTag } from '@concordium/web-sdk';
