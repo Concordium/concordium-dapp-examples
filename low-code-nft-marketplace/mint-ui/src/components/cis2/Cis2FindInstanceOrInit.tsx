@@ -1,5 +1,5 @@
 import { Cis2ContractInfo } from 'common-ui';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 import React from 'react';
 
 import { WalletApi } from '@concordium/browser-wallet-api-helpers';

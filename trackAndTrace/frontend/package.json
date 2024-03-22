@@ -6,7 +6,8 @@
     "scripts": {
         "dev": "SPONSORED_TRANSACTION_BACKEND_BASE_URL='http://localhost:8000' TRACK_AND_TRACE_CONTRACT_INDEX=8219 vite",
         "build": "tsc && SPONSORED_TRANSACTION_BACKEND_BASE_URL='http://localhost:8000' TRACK_AND_TRACE_CONTRACT_INDEX=8219 vite build",
-        "lint": "eslint",
+        "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+        "lint-fix": "yarn lint --fix",
         "fmt-check": "prettier --check .",
         "fmt": "prettier --write .",
         "preview": "vite preview",

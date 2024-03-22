@@ -1,5 +1,5 @@
 import { ContractInfo, mint } from 'common-ui';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 import React, { useState } from 'react';
 
 import { WalletApi } from '@concordium/browser-wallet-api-helpers';

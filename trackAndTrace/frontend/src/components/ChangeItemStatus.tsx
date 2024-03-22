@@ -49,7 +49,7 @@ async function generateMessage(
             },
         };
 
-        let payload = TrackAndTraceContract.createChangeItemStatusParameter(changeItemStatusParameter);
+        const payload = TrackAndTraceContract.createChangeItemStatusParameter(changeItemStatusParameter);
 
         const message: TrackAndTraceContract.SerializationHelperParameter = {
             contract_address: ContractAddress.create(Number(process.env.TRACK_AND_TRACE_CONTRACT_INDEX), 0),
@@ -59,7 +59,7 @@ async function generateMessage(
             payload: Array.from(payload.buffer),
         };
 
-        let serializedMessage = TrackAndTraceContract.createSerializationHelperParameter(message);
+        const serializedMessage = TrackAndTraceContract.createSerializationHelperParameter(message);
 
         return [payload, serializedMessage];
     } catch (error) {

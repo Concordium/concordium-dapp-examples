@@ -38,7 +38,7 @@ export async function createItem(
     accountAddress: AccountAddress.Type,
     createItemParameter: TrackAndTraceContract.CreateItemParameter,
 ): Promise<string> {
-    let contractInvokeMetadata: ContractInvokeMetadata = {
+    const contractInvokeMetadata: ContractInvokeMetadata = {
         invoker: accountAddress,
     };
 
@@ -69,7 +69,7 @@ export async function createItem(
         maxContractExecutionEnergy,
     };
 
-    let webWalletParameter = TrackAndTraceContract.createCreateItemParameterWebWallet(createItemParameter);
+    const webWalletParameter = TrackAndTraceContract.createCreateItemParameterWebWallet(createItemParameter);
 
     return connection.signAndSendTransaction(
         accountAddress.address,
@@ -93,7 +93,7 @@ export async function removeRole(
     accountAddress: AccountAddress.Type,
     revokeRoleParameter: TrackAndTraceContract.RevokeRoleParameter,
 ): Promise<string> {
-    let contractInvokeMetadata: ContractInvokeMetadata = {
+    const contractInvokeMetadata: ContractInvokeMetadata = {
         invoker: accountAddress,
     };
 
@@ -124,7 +124,7 @@ export async function removeRole(
         maxContractExecutionEnergy,
     };
 
-    let webWalletParameter = TrackAndTraceContract.createRevokeRoleParameterWebWallet(revokeRoleParameter);
+    const webWalletParameter = TrackAndTraceContract.createRevokeRoleParameterWebWallet(revokeRoleParameter);
 
     return connection.signAndSendTransaction(
         accountAddress.address,
@@ -148,7 +148,7 @@ export async function addRole(
     accountAddress: AccountAddress.Type,
     grantRoleParameter: TrackAndTraceContract.GrantRoleParameter,
 ): Promise<string> {
-    let contractInvokeMetadata: ContractInvokeMetadata = {
+    const contractInvokeMetadata: ContractInvokeMetadata = {
         invoker: accountAddress,
     };
 
@@ -179,7 +179,7 @@ export async function addRole(
         maxContractExecutionEnergy,
     };
 
-    let webWalletParameter = TrackAndTraceContract.createGrantRoleParameterWebWallet(grantRoleParameter);
+    const webWalletParameter = TrackAndTraceContract.createGrantRoleParameterWebWallet(grantRoleParameter);
 
     return connection.signAndSendTransaction(
         accountAddress.address,

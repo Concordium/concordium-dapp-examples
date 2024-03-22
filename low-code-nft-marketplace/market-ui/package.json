@@ -48,7 +48,7 @@
         "eject": "react-scripts eject",
         "predeploy": "yarn build",
         "deploy": "gh-pages -d build",
-        "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+        "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0 --ignore-path ../.eslintignore",
         "lint-fix": "yarn run lint --fix",
         "fmt": "prettier -w ."
     },

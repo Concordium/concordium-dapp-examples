@@ -62,7 +62,7 @@ export function AdminCreateItem(props: Props) {
                         const eventList = report.summary.events[0] as UpdatedEvent;
 
                         const parsedEvent = TrackAndTraceContract.parseEvent(eventList.events[0]);
-                        let itemCreatedEvent = parsedEvent.content as unknown as PartialItemCreatedEvent;
+                        const itemCreatedEvent = parsedEvent.content as unknown as PartialItemCreatedEvent;
 
                         setNewItemId(itemCreatedEvent.item_id);
                     } else {

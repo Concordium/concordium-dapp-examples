@@ -42,7 +42,7 @@
         "build:cjs": "tsc --module commonjs --outDir dist/cjs",
         "prepare": "yarn run build",
         "prepublishOnly": "yarn test && yarn run prettier && yarn run lint",
-        "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+        "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0 --ignore-path ../.eslintignore",
         "lint-fix": "yarn run lint --fix",
         "fmt": "prettier -w ."
     }

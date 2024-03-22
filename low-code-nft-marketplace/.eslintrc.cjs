@@ -29,7 +29,7 @@ module.exports = {
         ecmaVersion: 'latest',
         ecmaFeatures: { jsx: true },
         sourceType: 'module',
-        project: ['./tsconfig.json'],
+        project: ['common-ui/tsconfig.json', 'market-ui/tsconfig.json', 'mint-ui/tsconfig.json'],
         tsconfigRootDir: __dirname,
     },
     settings: {

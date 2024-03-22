@@ -1,4 +1,4 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 import React, { useEffect, useState } from 'react';
 
 import { CIS2Contract, ContractAddress } from '@concordium/web-sdk';

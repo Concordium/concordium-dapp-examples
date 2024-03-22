@@ -1,6 +1,6 @@
 import './App.css';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 import React, { useCallback, useEffect, useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 

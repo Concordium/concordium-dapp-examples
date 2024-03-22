@@ -1,5 +1,5 @@
 import { Typography } from '@mui/material';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 import React from 'react';
 
 function DisplayError(props: { error?: string }) {

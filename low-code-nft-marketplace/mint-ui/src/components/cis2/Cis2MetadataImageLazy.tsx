@@ -1,5 +1,5 @@
 import { fetchJson, Metadata } from 'common-ui';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 import React, { useEffect, useState } from 'react';
 
 import { CIS2Contract } from '@concordium/web-sdk';

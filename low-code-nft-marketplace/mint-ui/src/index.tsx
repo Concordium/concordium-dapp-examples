@@ -1,5 +1,5 @@
 import './index.css';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { HashRouter } from 'react-router-dom';

@@ -1,5 +1,5 @@
 import { waitAndThrowError } from 'common-ui';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 import React, { useEffect, useState } from 'react';
 
 import { SchemaWithContext, WalletApi } from '@concordium/browser-wallet-api-helpers';

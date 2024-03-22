@@ -1,5 +1,5 @@
 import { Cis2ContractInfo } from 'common-ui';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 import React, { useState } from 'react';
 
 import { CIS2 } from '@concordium/web-sdk';
