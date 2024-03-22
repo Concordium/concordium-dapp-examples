@@ -7,7 +7,16 @@
         "./cis2-market"
     ],
     "devDependencies": {
-        "typescript": "^5.1.6"
+        "typescript": "^5.4.3",
+        "prettier": "^3.2.5",
+        "@typescript-eslint/eslint-plugin": "^7.1.1",
+        "@typescript-eslint/parser": "^7.1.1",
+        "eslint": "^8.57.0",
+        "eslint-config-prettier": "^9.1.0",
+        "eslint-plugin-jsx-a11y": "^6.8.0",
+        "eslint-plugin-react": "^7.34.0",
+        "eslint-plugin-react-hooks": "^4.6.0",
+        "eslint-plugin-react-refresh": "^0.4.5"
     },
     "scripts": {
         "build:all": "yarn run build:tsc && yarn run build:smart-contract",
@@ -17,7 +26,8 @@
         "clean:tsc": "npx tsc -b --clean",
         "debug:market-ui": "yarn workspace market-ui run start",
         "debug:mint-ui": "yarn workspace mint-ui run start",
-        "lint:all": "yarn workspace common-ui run lint && yarn workspace market-ui run lint && yarn workspace mint-ui run lint",
-        "fmt:all": "yarn workspace common-ui run fmt && yarn workspace market-ui run fmt && yarn workspace mint-ui run fmt"
+        "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+        "lint-fix": "yarn run lint --fix",
+        "fmt": "prettier -w ."
     }
 }

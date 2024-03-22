@@ -22,9 +22,7 @@ jobs:
           - dapp-template/frontend
           - euroe-demo
           - gallery
-          - low-code-nft-marketplace/common-ui
-          - low-code-nft-marketplace/market-ui
-          - low-code-nft-marketplace/mint-ui
+          - low-code-nft-marketplace
           - signMessage
           - simpleAgeVerification
           - sponsoredTransactions/frontend
@@ -45,13 +43,7 @@ jobs:
           cache: 'yarn'
           cache-dependency-path: ${{ matrix.packages }}/yarn.lock
 
-      - name: Install Low Code NFT Marketplace Dependencies
-        if: ${{ matrix.packages == 'low-code-nft-marketplace/market-ui' || matrix.packages == 'low-code-nft-marketplace/mint-ui' }}
-        working-directory: low-code-nft-marketplace
-        run: yarn install && yarn workspace common-ui build
-
       - name: Run install
-        if: ${{ matrix.packages != 'low-code-nft-marketplace/market-ui' && matrix.packages != 'low-code-nft-marketplace/mint-ui' }}
         working-directory: ${{ matrix.packages }}
         run: yarn install
 
@@ -92,15 +84,9 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'yarn'
-          cache-dependency-path: ${{ matrix.packages }}/yarn.lock
-
-      - name: Install Low Code NFT Marketplace Dependencies
-        if: ${{ matrix.packages == 'low-code-nft-marketplace/market-ui' || matrix.packages == 'low-code-nft-marketplace/mint-ui' }}
-        working-directory: low-code-nft-marketplace
-        run: yarn install && yarn workspace common-ui build
+          cache-dependency-path: ${{ matrix.packages }}/yarn.lock=
 
       - name: Run install
-        if: ${{ matrix.packages != 'low-code-nft-marketplace/market-ui' && matrix.packages != 'low-code-nft-marketplace/mint-ui' }}
         working-directory: ${{ matrix.packages }}
         run: yarn install
 

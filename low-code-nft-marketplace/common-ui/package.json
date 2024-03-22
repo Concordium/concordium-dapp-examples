@@ -15,16 +15,7 @@
         "gh-pages": "^5.0.0",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
-        "typescript": "^5.0.4",
-        "prettier": "^3.2.5",
-        "@typescript-eslint/eslint-plugin": "^7.1.1",
-        "@typescript-eslint/parser": "^7.1.1",
-        "eslint": "^8.57.0",
-        "eslint-config-prettier": "^9.1.0",
-        "eslint-plugin-jsx-a11y": "^6.8.0",
-        "eslint-plugin-react": "^7.34.0",
-        "eslint-plugin-react-hooks": "^4.6.0",
-        "eslint-plugin-react-refresh": "^0.4.5"
+        "typescript": "^5.0.4"
     },
     "peerDependencies": {
         "react": ">=16"
@@ -41,9 +32,6 @@
         "build:esm": "tsc",
         "build:cjs": "tsc --module commonjs --outDir dist/cjs",
         "prepare": "yarn run build",
-        "prepublishOnly": "yarn test && yarn run prettier && yarn run lint",
-        "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0 --ignore-path ../.eslintignore",
-        "lint-fix": "yarn run lint --fix",
-        "fmt": "prettier -w . --ignore-path ../.prettierignore"
+        "prepublishOnly": "yarn test && yarn run prettier && yarn run lint"
     }
 }
