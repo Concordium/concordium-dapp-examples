@@ -84,7 +84,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'yarn'
-          cache-dependency-path: ${{ matrix.packages }}/yarn.lock=
+          cache-dependency-path: ${{ matrix.packages }}/yarn.lock
 
       - name: Run install
         working-directory: ${{ matrix.packages }}
