@@ -463,7 +463,12 @@ export default function BeerStore(props: WalletConnectionProps & { connectorType
           fullWidth={true}
           variant="contained"
           size="large"
-          onClick={() => (!connection ? connect() : ageCheck())}
+          onClick={() => {
+            if (!connect) {
+              return;
+            }
+            !connection ? connect() : ageCheck();
+          }}
           disabled={isConnecting}
         >
           Verify age
