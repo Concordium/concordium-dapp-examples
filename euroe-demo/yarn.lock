@@ -307,15 +307,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@concordium/react-components@npm:^0.5.0":
-  version: 0.5.0
-  resolution: "@concordium/react-components@npm:0.5.0"
+"@concordium/react-components@npm:^0.5.1":
+  version: 0.5.1
+  resolution: "@concordium/react-components@npm:0.5.1"
   dependencies:
-    "@concordium/wallet-connectors": ^0.5.0
+    "@concordium/wallet-connectors": ^0.5.1
   peerDependencies:
     "@concordium/web-sdk": 7.x
     react: ^18
-  checksum: a0af37128bbcf9416395801df88e1aa3605bf18a40d397f2a12cc29b78fb0c882c5b1d1686fb29427ec9e8561035f7e271c4ef57b46fc92528c7d86fe75f7047
+  checksum: 2f543f7d05e0935328fdf8a278ee824a9181a367b37427af25995c81d5c45e43d057a7fe61cecbeae78884e092e52281e64d08a4916b4f8e7c0bf6e9a3cf25b3
   languageName: node
   linkType: hard
 
@@ -326,16 +326,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@concordium/wallet-connectors@npm:^0.5.0":
-  version: 0.5.0
-  resolution: "@concordium/wallet-connectors@npm:0.5.0"
+"@concordium/wallet-connectors@npm:^0.5.1":
+  version: 0.5.1
+  resolution: "@concordium/wallet-connectors@npm:0.5.1"
   dependencies:
     "@concordium/browser-wallet-api-helpers": ^3.0.0
     "@walletconnect/qrcode-modal": ^1.8.0
     "@walletconnect/sign-client": ^2.1.4
   peerDependencies:
     "@concordium/web-sdk": 7.x
-  checksum: a6961304857e743f7de2b5f0f65bea25bd8f97a3bedc03dbeebac91d13d9080044e263673b4aa2eabeee545c1e2ddf3ee40d045476c320ebb6a6735495905e62
+  checksum: 9d861087068daa3c6b66d7cd3018e825ab5cff1d6ad70b96532652fdc7df4d892e0565cc7714026496da675f592cca1c212665c4812d5574ed4d6afee2f2d492
   languageName: node
   linkType: hard
 
@@ -3242,7 +3242,7 @@ __metadata:
   resolution: "euroe-demo@workspace:."
   dependencies:
     "@concordium/browser-wallet-api-helpers": ^3
-    "@concordium/react-components": ^0.5.0
+    "@concordium/react-components": ^0.5.1
     "@concordium/web-sdk": ^7.1.0
     "@emotion/react": ^11.11.1
     "@emotion/styled": ^11.11.0
