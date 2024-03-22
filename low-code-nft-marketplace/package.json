@@ -26,8 +26,8 @@
         "clean:tsc": "npx tsc -b --clean",
         "debug:market-ui": "yarn workspace market-ui run start",
         "debug:mint-ui": "yarn workspace mint-ui run start",
-        "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+        "lint": "yarn run build:tsc && eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
         "lint-fix": "yarn run lint --fix",
-        "fmt": "prettier -w ."
+        "fmt": "yarn run build:tsc && prettier -w ."
     }
 }
