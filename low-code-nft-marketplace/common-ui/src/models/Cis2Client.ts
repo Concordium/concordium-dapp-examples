@@ -1,4 +1,4 @@
-import { SmartContractParameters, WalletApi } from "@concordium/browser-wallet-api-helpers";
+import { SmartContractParameters, WalletApi } from '@concordium/browser-wallet-api-helpers';
 import { BlockItemSummaryInBlock, CIS2, ContractAddress } from '@concordium/web-sdk';
 
 import * as conClient from './ConcordiumContractClient';
@@ -36,10 +36,10 @@ export interface Attribute {
 export async function mint(
     provider: WalletApi,
     account: string,
-    tokens: { [tokenId: string]: [CIS2.MetadataUrl, string] },
+    tokens: Record<string, [CIS2.MetadataUrl, string]>,
     tokenContractAddress: ContractAddress,
     contractInfo: conClient.ContractInfo,
-    maxContractExecutionEnergy = BigInt(9999)
+    maxContractExecutionEnergy = BigInt(9999),
 ): Promise<BlockItemSummaryInBlock> {
     const paramJson = {
         owner: {
@@ -71,10 +71,10 @@ export async function mint(
         tokenContractAddress,
         'mint',
         maxContractExecutionEnergy,
-        BigInt(0)
+        BigInt(0),
     );
 }
 
 export const toTokenId = (integer: number, contractInfo: conClient.Cis2ContractInfo) => {
-  return integer.toString(16).padStart(contractInfo.tokenIdByteSize * 2, "0");
+    return integer.toString(16).padStart(contractInfo.tokenIdByteSize * 2, '0');
 };

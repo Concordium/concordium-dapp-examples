@@ -31,7 +31,7 @@ async function generateMessage(
     newStatus: 'Produced' | 'InTransit' | 'InStore' | 'Sold' | undefined,
     itemID: bigint,
     expiryTimeSignature: Date,
-    nonce: number | bigint
+    nonce: number | bigint,
 ) {
     try {
         if (newStatus === undefined) {
@@ -49,7 +49,7 @@ async function generateMessage(
             },
         };
 
-        let payload = TrackAndTraceContract.createChangeItemStatusParameter(changeItemStatusParameter);
+        const payload = TrackAndTraceContract.createChangeItemStatusParameter(changeItemStatusParameter);
 
         const message: TrackAndTraceContract.SerializationHelperParameter = {
             contract_address: ContractAddress.create(Number(process.env.TRACK_AND_TRACE_CONTRACT_INDEX), 0),
@@ -59,7 +59,7 @@ async function generateMessage(
             payload: Array.from(payload.buffer),
         };
 
-        let serializedMessage = TrackAndTraceContract.createSerializationHelperParameter(message);
+        const serializedMessage = TrackAndTraceContract.createSerializationHelperParameter(message);
 
         return [payload, serializedMessage];
     } catch (error) {
@@ -138,7 +138,7 @@ export function ChangeItemStatus(props: Props) {
                     newStatus,
                     itemID,
                     expiryTimeSignature,
-                    nextNonce
+                    nextNonce,
                 );
 
                 const permitSignature = await connection.signMessage(accountAddress, {
@@ -166,7 +166,7 @@ export function ChangeItemStatus(props: Props) {
                             entrypointName: 'changeItemStatus',
                             parameter: Buffer.from(payload.buffer).toString('hex'),
                         }),
-                    }
+                    },
                 );
 
                 if (!response.ok) {

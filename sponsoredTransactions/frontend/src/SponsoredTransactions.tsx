@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
-/* eslint-disable no-alert */
 /* eslint-disable consistent-return */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React, { useEffect, useState, ChangeEvent, useCallback } from 'react';
 import Switch from 'react-switch';
 import {
@@ -83,12 +83,12 @@ const InputFieldStyle = {
     padding: '10px 20px',
 };
 
-async function generateTransferMessage(
+function generateTransferMessage(
     expiryTimeSignature: string,
     nonce: string,
     tokenID: string,
     from: string,
-    to: string
+    to: string,
 ) {
     if (nonce === '') {
         alert('Insert a nonce.');
@@ -163,11 +163,11 @@ async function generateTransferMessage(
     return serializedMessage;
 }
 
-async function generateUpdateOperatorMessage(
+function generateUpdateOperatorMessage(
     expiryTimeSignature: string,
     nonce: string,
     operator: string,
-    addOperator: boolean
+    addOperator: boolean,
 ) {
     if (nonce === '') {
         alert('Insert a nonce.');
@@ -240,7 +240,7 @@ async function getNonceOf(rpcClient: ConcordiumGRPCClient, account: string) {
                 },
             ],
         },
-        toBuffer(NONCE_OF_PARAMETER_SCHEMA, 'base64')
+        toBuffer(NONCE_OF_PARAMETER_SCHEMA, 'base64'),
     );
 
     const res = await rpcClient.invokeContract({
@@ -251,21 +251,21 @@ async function getNonceOf(rpcClient: ConcordiumGRPCClient, account: string) {
 
     if (!res || res.tag === 'failure' || !res.returnValue) {
         throw new Error(
-            `RPC call 'invokeContract' on method '${SPONSORED_TX_CONTRACT_NAME}.nonceOf' of contract SMART_CONTRACT_INDEX failed`
+            `RPC call 'invokeContract' on method '${SPONSORED_TX_CONTRACT_NAME}.nonceOf' of contract SMART_CONTRACT_INDEX failed`,
         );
     }
 
     // eslint-disable-next-line  @typescript-eslint/ban-ts-comment
     // @ts-ignore
     // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-    const returnValues: any[][] = deserializeTypeValue(
+    const returnValues: number[][] | undefined = deserializeTypeValue(
         toBuffer(res.returnValue, 'hex'),
-        toBuffer(NONCE_OF_RETURN_VALUE_SCHEMA, 'base64')
+        toBuffer(NONCE_OF_RETURN_VALUE_SCHEMA, 'base64'),
     );
 
     if (returnValues === undefined) {
         throw new Error(
-            `Deserializing the returnValue from the '${SPONSORED_TX_CONTRACT_NAME}.nonceOf' method of contract SMART_CONTRACT_INDEX failed`
+            `Deserializing the returnValue from the '${SPONSORED_TX_CONTRACT_NAME}.nonceOf' method of contract SMART_CONTRACT_INDEX failed`,
         );
     } else {
         // Return next nonce of a user
@@ -475,7 +475,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                                 window.open(
                                     `https://testnet.ccdscan.io/?dcount=1&dentity=account&daddress=${account}`,
                                     '_blank',
-                                    'noopener,noreferrer'
+                                    'noopener,noreferrer',
                                 );
                             }}
                         >
@@ -565,13 +565,13 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                             <button
                                 style={ButtonStyle}
                                 type="button"
-                                onClick={async () => {
+                                onClick={() => {
                                     setTxHash('');
                                     setTransactionError('');
                                     setWaitingForUser(true);
                                     const tx = mint(connection, account);
                                     tx.then(setTxHash)
-                                        .catch((err: Error) => setTransactionError((err as Error).message))
+                                        .catch((err: Error) => setTransactionError(err.message))
                                         .finally(() => setWaitingForUser(false));
                                 }}
                             >
@@ -626,7 +626,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                     <button
                         style={ButtonStyle}
                         type="button"
-                        onClick={async () => {
+                        onClick={() => {
                             setSigningError('');
                             setSignature('');
 
@@ -639,8 +639,8 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                             setExpiryTime(expiryTimeSignature);
 
                             const serializedMessage = isUpdateOperatorTab
-                                ? await generateUpdateOperatorMessage(expiryTimeSignature, nonce, operator, addOperator)
-                                : await generateTransferMessage(expiryTimeSignature, nonce, tokenID, from, to);
+                                ? generateUpdateOperatorMessage(expiryTimeSignature, nonce, operator, addOperator)
+                                : generateTransferMessage(expiryTimeSignature, nonce, tokenID, from, to);
 
                             if (serializedMessage !== '') {
                                 const promise = connection.signMessage(account, {
@@ -653,7 +653,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                                     .then((permitSignature) => {
                                         setSignature(permitSignature[0][0]);
                                     })
-                                    .catch((err: Error) => setSigningError((err as Error).message));
+                                    .catch((err: Error) => setSigningError(err.message));
                             } else {
                                 setSigningError('Serialization Error');
                             }
@@ -685,7 +685,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                         style={signature === '' ? ButtonStyleDisabled : ButtonStyle}
                         disabled={signature === ''}
                         type="button"
-                        onClick={async () => {
+                        onClick={() => {
                             setTxHash('');
                             setTransactionError('');
                             setWaitingForUser(true);
@@ -698,7 +698,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                                       signature,
                                       expiryTime,
                                       operator,
-                                      addOperator
+                                      addOperator,
                                   )
                                 : submitTransfer(VERIFIER_URL, signer, nonce, signature, expiryTime, tokenID, from, to);
 
@@ -715,7 +715,10 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                                     clearInputFields();
                                 }
                             })
-                                .catch((err: Error) => setTransactionError((err as Error).message))
+                                .catch((err: Error) => {
+                                    setTransactionError(err.message);
+                                    alert(err.message);
+                                })
                                 .finally(() => {
                                     setWaitingForUser(false);
                                 });
@@ -744,7 +747,7 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                                     window.open(
                                         `https://testnet.ccdscan.io/?dcount=1&dentity=transaction&dhash=${txHash}`,
                                         '_blank',
-                                        'noopener,noreferrer'
+                                        'noopener,noreferrer',
                                     );
                                 }}
                             >

@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React, { useCallback } from 'react';
 import { detectConcordiumProvider } from '@concordium/browser-wallet-api-helpers';
 import { getStatement, getChallenge, authorize } from './util';
@@ -19,7 +20,8 @@ export default function Connection({ verifier, account, authToken, setAccount, s
             detectConcordiumProvider()
                 .then((provider) => provider.connect())
                 .then(setAccount),
-        []
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [],
     );
 
     const handleAuthorize = useCallback(async () => {
@@ -32,6 +34,7 @@ export default function Connection({ verifier, account, authToken, setAccount, s
         const proof = await provider.requestIdProof(account, statement, challenge);
         const newAuthToken = await authorize(verifier, challenge, proof);
         setAuthToken(newAuthToken);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [account]);
 
     return (
@@ -47,7 +50,7 @@ export default function Connection({ verifier, account, authToken, setAccount, s
                             window.open(
                                 `https://testnet.ccdscan.io/?dcount=1&dentity=account&daddress=${account}`,
                                 '_blank',
-                                'noopener,noreferrer'
+                                'noopener,noreferrer',
                             );
                         }}
                     >
@@ -58,7 +61,7 @@ export default function Connection({ verifier, account, authToken, setAccount, s
                             <button
                                 className="connect-button"
                                 type="button"
-                                onClick={() => handleAuthorize().catch((e) => alert(e.message))}
+                                onClick={() => handleAuthorize().catch((e: Error) => alert(e.message))}
                             >
                                 Authorize
                             </button>

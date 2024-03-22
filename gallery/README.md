@@ -32,12 +32,17 @@ The backend for this demo can be found in the [verifier](./verifier/) folder:
 To have hot-reload on the front-end (useful for development), run `yarn watch` in a separate terminal instead of `yarn build` in the first step.
 
 ## Run as docker
+
 The dockerfile must be run from the project's root folder, ex:
+
 ```
 docker build -t gallery -f gallery/Dockerfile .
 ```
+
 The image can then be run with:
+
 ```
 docker run gallery -p 8100:8100
 ```
+
 See the [docker file](./Dockerfile) to see which environment variables can used to overwrite parameters.

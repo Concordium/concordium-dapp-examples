@@ -1,4 +1,5 @@
 import { fetchJson, Metadata } from 'common-ui';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React, { useEffect, useState } from 'react';
 
 import { CIS2Contract } from '@concordium/web-sdk';
@@ -24,7 +25,8 @@ function Cis2MetadataImageLazy(props: { account: string; tokenId: string; cis2Co
             .then((metadata) => {
                 setState({ ...state, loading: false, metadata });
             })
-            .catch((_) => setState({ ...state, loading: false, error: 'Failed to load metadata' }));
+            .catch(() => setState({ ...state, loading: false, error: 'Failed to load metadata' }));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [props.tokenId, props.cis2Contract]);
 
     if (state.error) {
@@ -42,6 +44,7 @@ function Cis2MetadataImageLazy(props: { account: string; tokenId: string; cis2Co
     }
 
     return (
+        // eslint-disable-next-line jsx-a11y/img-redundant-alt
         <img
             src={toIpfsGatewayUrl(state.metadata?.display?.url)}
             alt="Failed to load image"

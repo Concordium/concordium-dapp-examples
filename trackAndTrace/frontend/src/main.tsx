@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
-import { Alert, Button } from 'react-bootstrap';
+import { Button } from 'react-bootstrap';
 
 import {
     WithWalletConnector,
@@ -108,5 +108,5 @@ const App = (props: WalletConnectionProps) => {
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
         <WithWalletConnector network={TESTNET}>{(props) => <App {...props} />}</WithWalletConnector>
-    </React.StrictMode>
+    </React.StrictMode>,
 );

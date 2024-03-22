@@ -1,5 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React, { useCallback } from 'react';
 import {
     ConnectorType,
@@ -32,11 +35,12 @@ export function WalletConnectionTypeButton(props: Props) {
     const { isSelected, isConnected, isDisabled, select } = useWalletConnectorSelector(
         connectorType,
         connection,
-        props
+        props,
     );
     const onClick = useCallback(() => {
         setWaitingForUser(false);
         select();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [select]);
     return (
         <button

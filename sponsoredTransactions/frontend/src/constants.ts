@@ -37,5 +37,5 @@ const WALLET_CONNECT_OPTS: SignClientTypes.Options = {
 
 export const BROWSER_WALLET = ephemeralConnectorType(BrowserWalletConnector.create);
 export const WALLET_CONNECT = ephemeralConnectorType(
-    WalletConnectConnector.create.bind(undefined, WALLET_CONNECT_OPTS)
+    WalletConnectConnector.create.bind(undefined, WALLET_CONNECT_OPTS),
 );
