@@ -8,20 +8,18 @@ import {
     EntrypointName,
     Energy,
     AccountAddress,
-    ContractAddress,
     ConcordiumGRPCWebClient,
     ContractInvokeMetadata,
 } from '@concordium/web-sdk';
-import { CONTRACT_SUB_INDEX, EPSILON_ENERGY, NODE, PORT } from '../constants';
-
 import JSONbig from 'json-bigint';
 import { WalletConnection } from '@concordium/wallet-connectors';
+import * as constants from './constants';
 
-const grpc = new ConcordiumGRPCWebClient(NODE, PORT);
+const grpc = new ConcordiumGRPCWebClient(constants.NODE_HOST, constants.NODE_PORT);
 
 const contract = TrackAndTraceContract.createUnchecked(
     grpc,
-    ContractAddress.create(Number(process.env.TRACK_AND_TRACE_CONTRACT_INDEX), CONTRACT_SUB_INDEX)
+    constants.CONTRACT_ADDRESS,
 );
 
 /**
@@ -53,14 +51,14 @@ export async function createItem(
 
         throw new Error(
             `RPC call 'invokeContract' on method '${TrackAndTraceContract.contractName.value}.createItem' of contract '${
-                process.env.TRACK_AND_TRACE_CONTRACT_INDEX
+                constants.CONTRACT_ADDRESS.index
             }' failed. Decoded error code: ${JSONbig.stringify(
                 parsedErrorCode
             )}. Original response: ${JSONbig.stringify(dryRunResult)}`
         );
     }
 
-    const maxContractExecutionEnergy = Energy.create(dryRunResult.usedEnergy.value + EPSILON_ENERGY);
+    const maxContractExecutionEnergy = Energy.create(dryRunResult.usedEnergy.value + constants.EPSILON_ENERGY);
 
     const payload: Omit<UpdateContractPayload, 'message'> = {
         amount: CcdAmount.zero(),
@@ -108,14 +106,14 @@ export async function removeRole(
 
         throw new Error(
             `RPC call 'invokeContract' on method '${TrackAndTraceContract.contractName.value}.revokeRole' of contract '${
-                process.env.TRACK_AND_TRACE_CONTRACT_INDEX
+                constants.CONTRACT_ADDRESS.index
             }' failed. Decoded error code: ${JSONbig.stringify(
                 parsedErrorCode
             )}. Original response: ${JSONbig.stringify(dryRunResult)}`
         );
     }
 
-    const maxContractExecutionEnergy = Energy.create(dryRunResult.usedEnergy.value + EPSILON_ENERGY);
+    const maxContractExecutionEnergy = Energy.create(dryRunResult.usedEnergy.value + constants.EPSILON_ENERGY);
 
     const payload: Omit<UpdateContractPayload, 'message'> = {
         amount: CcdAmount.zero(),
@@ -163,14 +161,14 @@ export async function addRole(
 
         throw new Error(
             `RPC call 'invokeContract' on method '${TrackAndTraceContract.contractName.value}.grantRole' of contract '${
-                process.env.TRACK_AND_TRACE_CONTRACT_INDEX
+                constants.CONTRACT_ADDRESS.index
             }' failed. Decoded error code: ${JSONbig.stringify(
                 parsedErrorCode
             )}. Original response: ${JSONbig.stringify(dryRunResult)}`
         );
     }
 
-    const maxContractExecutionEnergy = Energy.create(dryRunResult.usedEnergy.value + EPSILON_ENERGY);
+    const maxContractExecutionEnergy = Energy.create(dryRunResult.usedEnergy.value + constants.EPSILON_ENERGY);
 
     const payload: Omit<UpdateContractPayload, 'message'> = {
         amount: CcdAmount.zero(),
@@ -206,7 +204,7 @@ export async function nonceOf(
 
         throw new Error(
             `RPC call 'invokeContract' on method '${TrackAndTraceContract.contractName.value}.nonceOf' of contract '${
-                process.env.TRACK_AND_TRACE_CONTRACT_INDEX
+                constants.CONTRACT_ADDRESS.index
             }' failed. Decoded error code: ${JSONbig.stringify(
                 parsedErrorCode
             )}. Original response: ${JSONbig.stringify(dryRunResult)}`
@@ -217,7 +215,7 @@ export async function nonceOf(
 
     if (parsedReturnValue === undefined) {
         throw new Error(
-            `Deserializing the returnValue from the '${TrackAndTraceContract.contractName.value}.nonceOf' method of contract '${process.env.TRACK_AND_TRACE_CONTRACT_INDEX}' failed`
+            `Deserializing the returnValue from the '${TrackAndTraceContract.contractName.value}.nonceOf' method of contract '${constants.CONTRACT_ADDRESS.index}' failed`
         );
     } else {
         return parsedReturnValue;

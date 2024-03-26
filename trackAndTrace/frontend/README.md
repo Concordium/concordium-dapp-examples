@@ -18,20 +18,17 @@ yarn install
 
 ### Development
 
-Set the two environmental variables `SPONSORED_TRANSACTION_BACKEND_BASE_URL` and the `TRACK_AND_TRACE_CONTRACT_INDEX`, or prefix them before the `yarn dev` call below.
-
-`SPONSORED_TRANSACTION_BACKEND_BASE_URL` is the base url of your [sponsored transaction backend service](https://github.com/Concordium/concordium-dapp-examples/tree/main/trackAndTrace/sponsored-transaction-service)
-
-`TRACK_AND_TRACE_CONTRACT_INDEX` is the track and trace contract address.
+Set the environment variable `TRACK_AND_TRACE_CONTRACT_ADDRESS`, or prefix it before the `yarn dev` call below.
 
 This front end calls three backend endpoints:
 
--   `/api/submitTransaction` from the [sponsored transaction backend service](https://github.com/Concordium/concordium-dapp-examples/tree/main/trackAndTrace/sponsored-transaction-service)
--   `/api/getItemStatusChangedEvents` from the [backend server](https://github.com/Concordium/concordium-dapp-examples/tree/main/trackAndTrace/indexer)
--   `/api/getItemCreatedEvent` from the [backend server](https://github.com/Concordium/concordium-dapp-examples/tree/main/trackAndTrace/indexer)
+-   `/api/submitTransaction` from the [sponsored transaction backend service](../sponsored-transaction-service)
+-   `/api/getItemStatusChangedEvents` from the [backend server](../indexer)
+-   `/api/getItemCreatedEvent` from the [backend server](../indexer)
 
-You can build and launch this front end without setting up the backend services as described in this paragraph. In that case, calling the above endpoints via the front end will fail. To start
-a development environment make sure to first generate the smart contract clients, then run the following from the `frontend` directory:
+See the [Environment variables](#environment-variables) section below for configuration options regarding the sponsored service.
+
+To start a development environment make sure to first generate the smart contract clients, then run the following from the `frontend` directory:
 
 ```bash
 yarn dev
@@ -39,21 +36,25 @@ yarn dev
 
 This will launch a development server with hot module replacement enabled.
 
+*Please note that calls to the backend server does not work in the development setup.*
+
 If you want to set up the whole project together with running the backend services so that the 3 endpoints work. Follow the instructions in the project's [README.md](../README.md).
 
+### Environment variables
+
+These environment variables are available in the frontend.
+You must always set `TRACK_AND_TRACE_CONTRACT_ADDRESS`. The rest have default values that may work for your setup.
+
+When hosting the frontend via the [backend server](../indexer), the values environment variables are passed in via the server.
+
+```bash
+TRACK_AND_TRACE_CONTRACT_ADDRESS=<8351,0> # Contract address of the track and trace contract. *Must be set.*
+TRACK_AND_TRACE_NETWORK=testnet # The network to use mainnet/testnet (defaults to 'testnet')
+TRACK_AND_TRACE_NODE=https://grpc.testnet.concordium.com:20000 # The gRPC endpoint of a node in the chosen network (defaults to 'https://grpc.testnet.concordium.com:20000')
+TRACK_AND_TRACE_SPONSORED_BACKEND_API=http://localhost:8000 # Endpoint to the sponsored transaction service (defaults to 'http://localhost:8000')
+```
+
 ### Build
-
-Set the two environmental variables `SPONSORED_TRANSACTION_BACKEND_BASE_URL` and the `TRACK_AND_TRACE_CONTRACT_INDEX`, or prefix them before the `yarn build` call below.
-
-`SPONSORED_TRANSACTION_BACKEND_BASE_URL` is the base url of your [sponsored transaction backend service](https://github.com/Concordium/concordium-dapp-examples/tree/main/trackAndTrace/sponsored-transaction-service)
-
-`TRACK_AND_TRACE_CONTRACT_INDEX` is the track and trace contract index.
-
-This front end calls three backend endpoints:
-
--   `/api/submitTransaction` from the [sponsored transaction backend service](https://github.com/Concordium/concordium-dapp-examples/tree/main/trackAndTrace/sponsored-transaction-service)
--   `/api/getItemStatusChangedEvents` from the [backend server](https://github.com/Concordium/concordium-dapp-examples/tree/main/trackAndTrace/indexer)
--   `/api/getItemCreatedEvent` from the [backend server](https://github.com/Concordium/concordium-dapp-examples/tree/main/trackAndTrace/indexer)
 
 To start building the frontend make sure to first generate the smart contract clients, then run the following from the `frontend` directory:
 
@@ -61,9 +62,7 @@ To start building the frontend make sure to first generate the smart contract cl
 yarn build
 ```
 
-This will bundle the project into `frontend/dist` directory.
-
-Note: If you want to build the front end with working backend services, make sure you set the value `SPONSORED_TRANSACTION_BACKEND_BASE_URL` in the `package.json` file correctly and its backend service is up and running.
+This will bundle the project into `frontend/dist` directory which should be hosted by the [backend server](../indexer).
 
 ### Generate smart contract clients
 
