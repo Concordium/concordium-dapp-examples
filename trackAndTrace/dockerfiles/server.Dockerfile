@@ -4,7 +4,7 @@
 # - TRACK_AND_TRACE_CONTRACT_ADDRESS
 # - TRACK_AND_TRACE_BACKEND_BASE_URL
 
-ARG RUST_IMAGE=rust:1.74
+ARG RUST_IMAGE=rust:1.74-bookworm
 ARG NODE_IMAGE=node:18-slim
 
 # Build frontend
@@ -24,7 +24,6 @@ RUN yarn build
 
 # Build server
 FROM ${RUST_IMAGE} AS server
-COPY --from=frontend ./frontend/dist ./frontend/dist
 COPY ./smart-contract ./smart-contract
 WORKDIR /server
 COPY ./indexer/Cargo.toml ./Cargo.toml
@@ -33,5 +32,13 @@ COPY ./indexer/src ./src
 COPY ./indexer/resources ./resources
 RUN cargo build --release
 
+FROM debian:bookworm
+
+# In order to use TLS when connecting to the node we need certificates.
+RUN apt-get update && apt-get install -y ca-certificates
+
+COPY --from=frontend ./frontend/dist ./frontend/dist
+COPY --from=server ./server/target/release/server ./server
+
 # Run server
-CMD ["cargo", "run", "--release", "--bin", "server"]
+CMD ["./server"]
