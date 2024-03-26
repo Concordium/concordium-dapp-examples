@@ -147,24 +147,21 @@ export function ChangeItemStatus(props: Props) {
                     schema: typeSchemaFromBase64(constants.SERIALIZATION_HELPER_SCHEMA_PERMIT_MESSAGE),
                 });
 
-                const response = await fetch(
-                    constants.SPONSORED_TRANSACTION_BACKEND + `api/submitTransaction`,
-                    {
-                        method: 'POST',
-                        headers: new Headers({ 'content-type': 'application/json' }),
-                        body: JSONbig.stringify({
-                            signer: accountAddress,
-                            nonce: Number(nextNonce),
-                            signature: permitSignature[0][0],
-                            // RFC 3339 format (e.g. 2030-08-08T05:15:00Z)
-                            expiryTime: expiryTimeSignature.toISOString(),
-                            contractAddress: constants.CONTRACT_ADDRESS,
-                            contractName: TrackAndTraceContract.contractName.value,
-                            entrypointName: 'changeItemStatus',
-                            parameter: Buffer.from(payload.buffer).toString('hex'),
-                        }),
-                    }
-                );
+                const response = await fetch(constants.SPONSORED_TRANSACTION_BACKEND + `api/submitTransaction`, {
+                    method: 'POST',
+                    headers: new Headers({ 'content-type': 'application/json' }),
+                    body: JSONbig.stringify({
+                        signer: accountAddress,
+                        nonce: Number(nextNonce),
+                        signature: permitSignature[0][0],
+                        // RFC 3339 format (e.g. 2030-08-08T05:15:00Z)
+                        expiryTime: expiryTimeSignature.toISOString(),
+                        contractAddress: constants.CONTRACT_ADDRESS,
+                        contractName: TrackAndTraceContract.contractName.value,
+                        entrypointName: 'changeItemStatus',
+                        parameter: Buffer.from(payload.buffer).toString('hex'),
+                    }),
+                });
 
                 if (!response.ok) {
                     const error = (await response.json()) as Error;

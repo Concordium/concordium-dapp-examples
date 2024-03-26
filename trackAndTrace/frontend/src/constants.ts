@@ -3,7 +3,7 @@ import { BrowserWalletConnector, ephemeralConnectorType } from '@concordium/reac
 import { ContractAddress } from '@concordium/web-sdk';
 import { TESTNET, MAINNET } from '@concordium/wallet-connectors';
 
-const { protocol, hostname, port} = new URL(CONFIG.node);
+const { protocol, hostname, port } = new URL(CONFIG.node);
 export const NODE_HOST = `${protocol}//${hostname}`;
 export const NODE_PORT = Number(port);
 
@@ -18,7 +18,6 @@ export const CONTRACT_ADDRESS = ContractAddress.fromSerializable(CONFIG.contract
 export const NETWORK = CONFIG.network === 'mainnet' ? MAINNET : TESTNET;
 
 export const CCD_SCAN_URL = NETWORK === MAINNET ? 'https://ccdscan.io' : 'https://testnet.ccdscan.io';
-
 
 // Before submitting a transaction we simulate/dry-run the transaction to get an
 // estimate of the energy needed for executing the transaction. In addition, we
