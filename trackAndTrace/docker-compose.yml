@@ -1,6 +1,6 @@
 version: '3.8'
 
-# This docker compose setup has two important configuration options, which reside in the `.env` file.
+# This docker compose setup has the following important configuration options, which reside in the `.env` file.
 # Namely the:
 #  - The network to use (mainnet/testnet)
 #  - The Concordium node gRPC endpoint (which should point at the correct net, e.g., mainnet or testnet)
