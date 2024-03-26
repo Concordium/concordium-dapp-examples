@@ -3,12 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import { Button } from 'react-bootstrap';
 
-import {
-    WithWalletConnector,
-    WalletConnectionProps,
-    useConnection,
-    useConnect,
-} from '@concordium/react-components';
+import { WithWalletConnector, WalletConnectionProps, useConnection, useConnect } from '@concordium/react-components';
 
 import './styles.scss';
 import { AdminCreateItem } from './components/AdminCreateItem';
@@ -37,7 +32,7 @@ const App = (props: WalletConnectionProps) => {
                         rel="noreferrer"
                         href={`https://${constants.NETWORK.name}.ccdscan.io/?dcount=1&dentity=contract&dcontractAddressIndex=${constants.CONTRACT_ADDRESS.index}&dcontractAddressSubIndex=${constants.CONTRACT_ADDRESS.subindex}`}
                     >
-            &lt;{Number(constants.CONTRACT_ADDRESS.index)},{Number(constants.CONTRACT_ADDRESS.subindex)}&gt;
+                        &lt;{Number(constants.CONTRACT_ADDRESS.index)},{Number(constants.CONTRACT_ADDRESS.subindex)}&gt;
                     </a>
                 </div>
                 <Link className="secondary" to="/explorer">

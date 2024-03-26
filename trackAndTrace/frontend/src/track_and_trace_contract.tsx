@@ -17,10 +17,7 @@ import * as constants from './constants';
 
 const grpc = new ConcordiumGRPCWebClient(constants.NODE_HOST, constants.NODE_PORT);
 
-const contract = TrackAndTraceContract.createUnchecked(
-    grpc,
-    constants.CONTRACT_ADDRESS,
-);
+const contract = TrackAndTraceContract.createUnchecked(grpc, constants.CONTRACT_ADDRESS);
 
 /**
  * This function submits a transaction to create an item in the track and trace contract.
