@@ -11,7 +11,7 @@ on:
 
 env:
   REGISTRY: docker.io
-  IMAGE_NAME: concordium/dapp-gallery
+  IMAGE_NAME: dapp-gallery
 
 jobs:
   build-and-push-image:
