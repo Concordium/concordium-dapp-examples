@@ -1,6 +1,7 @@
 import { Dispatch, useState } from 'react';
 import { Alert, Button, Form } from 'react-bootstrap';
 import { useForm, useWatch } from 'react-hook-form';
+import * as constants from '../constants';
 
 type ChangeItem = {
     block_time: string;
@@ -144,8 +145,7 @@ export function Explorer() {
                                     <th>New Status</th>
                                 </tr>
                             </thead>
-                            <tbody id="table"></tbody>
-
+                            <tbody id="table">
                             <tr>
                                 <td>{new Date(itemCreated.block_time).toLocaleString()}</td>
                                 <td>
@@ -153,7 +153,7 @@ export function Explorer() {
                                         className="link"
                                         target="_blank"
                                         rel="noreferrer"
-                                        href={`https://testnet.ccdscan.io/?dcount=1&dentity=transaction&dhash=${itemCreated.transaction_hash}`}
+                                        href={`${constants.CCD_SCAN_URL}/?dcount=1&dentity=transaction&dhash=${itemCreated.transaction_hash}`}
                                     >
                                         {itemCreated.transaction_hash.slice(0, 5)}...
                                         {itemCreated.transaction_hash.slice(-5)}
@@ -171,7 +171,7 @@ export function Explorer() {
                                                 className="link"
                                                 target="_blank"
                                                 rel="noreferrer"
-                                                href={`https://testnet.ccdscan.io/?dcount=1&dentity=transaction&dhash=${event.transaction_hash}`}
+                                                href={`${constants.CCD_SCAN_URL}/?dcount=1&dentity=transaction&dhash=${event.transaction_hash}`}
                                             >
                                                 {event.transaction_hash.slice(0, 5)}...
                                                 {event.transaction_hash.slice(-5)}
@@ -181,6 +181,7 @@ export function Explorer() {
                                     </tr>
                                 );
                             })}
+                            </tbody>
                         </table>
                     </>
                 )}
