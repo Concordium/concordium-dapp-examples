@@ -142,7 +142,8 @@ struct Args {
         env = "CCD_SERVER_NETWORK",
     )]
     network: concordium_rust_sdk::web3id::did::Network,
-    /// The contract address of the election contract (passed to frontend).
+    /// The contract address of the track and trace contract (passed to
+    /// frontend).
     #[clap(
         long = "contract-address",
         help = "The contract address of the track and trace contract. Expected format '<123,0>'.",
@@ -220,10 +221,6 @@ async fn main() -> anyhow::Result<()> {
         .nest_service("/assets", serve_dir_service)
         .fallback(get(|| async { Html(index_html) }))
         .with_state(state)
-        // .layer(CorsLayer::permissive())
-               // .allow_origin(AllowOrigin::mirror_request())
-               // .allow_headers([http::header::CONTENT_TYPE])
-               // .allow_methods([http::Method::POST, http::Method::GET]))
         .layer(
             tower_http::trace::TraceLayer::new_for_http()
                 .make_span_with(tower_http::trace::DefaultMakeSpan::new())
