@@ -1,3 +1,5 @@
+import * as constants from '../constants';
+
 interface TxHashLinkProps {
     txHash: string;
 }
@@ -15,7 +17,7 @@ export const TxHashLink = function TxHashLink(props: TxHashLinkProps) {
                 className="link"
                 target="_blank"
                 rel="noreferrer"
-                href={`https://testnet.ccdscan.io/?dcount=1&dentity=transaction&dhash=${txHash}`}
+                href={`${constants.CCD_SCAN_URL}/?dcount=1&dentity=transaction&dhash=${txHash}`}
             >
                 {txHash}
             </a>

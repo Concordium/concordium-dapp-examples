@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Alert, Button, Form } from 'react-bootstrap';
 import { useForm, useWatch } from 'react-hook-form';
 
-import { TESTNET, WalletConnection } from '@concordium/wallet-connectors';
+import { WalletConnection } from '@concordium/wallet-connectors';
 import {
     AccountAddress,
     TransactionHash,
@@ -10,11 +10,12 @@ import {
     TransactionSummaryType,
     UpdatedEvent,
 } from '@concordium/web-sdk';
+import { useGrpcClient } from '@concordium/react-components';
 
+import * as constants from '../constants';
 import { TxHashLink } from './CCDScanLinks';
 import { createItem } from '../track_and_trace_contract';
 import * as TrackAndTraceContract from '../../generated/module_track_and_trace';
-import { useGrpcClient } from '@concordium/react-components';
 
 interface Props {
     connection: WalletConnection | undefined;
@@ -45,7 +46,7 @@ export function AdminCreateItem(props: Props) {
     const [newItemId, setNewItemId] = useState<number | bigint | undefined>(undefined);
     const [itemIdError, setItemIdError] = useState<string | undefined>(undefined);
 
-    const grpcClient = useGrpcClient(TESTNET);
+    const grpcClient = useGrpcClient(constants.NETWORK);
 
     // Wait until the submitted transaction is finalized.
     // Once the transaction is finalized, extract the
