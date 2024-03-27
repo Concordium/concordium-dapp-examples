@@ -13,7 +13,6 @@ on:
 env:
   REGISTRY: docker.io
   IMAGE_NAME: dapp-track-and-trace-server
-  SPONSORED_TRANSACTION_BACKEND_BASE_URL: "https://trackntrace.testnet.concordium.com:8000"
 
 jobs:
   build-and-push-image:
@@ -31,10 +30,9 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Extract version tag from package.json/Cargo.toml and the TRACK_AND_TRACE_CONTRACT_INDEX from the `.env` file
+      - name: Extract version tag from package.json/Cargo.toml
         id: meta
         run: |
-          export TRACK_AND_TRACE_CONTRACT_INDEX=$(grep -v '^#' .env | grep TRACK_AND_TRACE_CONTRACT_INDEX | cut -d '=' -f 2)
           export FRONTEND_VERSION=$(jq -r .version trackAndTrace/frontend/package.json)
           export BACKEND_VERSION=$(yq .package.version trackAndTrace/indexer/Cargo.toml)
           export FULL_IMAGE_TAG="${{ env.REGISTRY }}/concordium/$IMAGE_NAME:$FRONTEND_VERSION-$BACKEND_VERSION"
@@ -44,19 +42,14 @@ jobs:
              echo "::error ${FULL_IMAGE_TAG} already exists"
              exit 1
           else
-             # Store the TRACK_AND_TRACE_CONTRACT_INDEX value into a track_and_trace_contract_index variable for the following step 
+             # Store the full image tag into a tag variable for the following step  
              echo "tag=${FULL_IMAGE_TAG}" > "$GITHUB_OUTPUT"
-             # Store the full image tag into a tag variable for the following step 
-             echo "track_and_trace_contract_index=${TRACK_AND_TRACE_CONTRACT_INDEX}" > "$GITHUB_OUTPUT"
           fi
       - name: Build and push Docker image
         uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
         with:
           context: .
-          file: ./dockerfiles/server.Dockerfile
+          file: ./trackAndTrace/dockerfiles/server.Dockerfile
           push: true
           platforms: linux/amd64
           tags: ${{ steps.meta.outputs.tag }}
-        build-args:
-          SPONSORED_TRANSACTION_BACKEND_BASE_URL: ${{ SPONSORED_TRANSACTION_BACKEND_BASE_URL }}
-          TRACK_AND_TRACE_CONTRACT_INDEX: ${{ steps.meta.outputs.track_and_trace_contract_index }}
