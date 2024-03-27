@@ -49,5 +49,9 @@ jobs:
 
     - name: Build with docker-compose
       working-directory: trackAndTrace
+      env:
+        # Dummy values set because `docker-compose build` enforces the variables only needed on runtime when building.
+        TRACK_AND_TRACE_CONTRACT_ADDRESS: "<8351,0>"
+        TRACK_AND_TRACE_PRIVATE_KEY_FILE: "./trackAndTrace/README.md"
       run:
         docker-compose build
