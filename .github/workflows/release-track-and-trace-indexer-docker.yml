@@ -11,7 +11,7 @@ on:
 
     # Temporary development trigger
     branches:
-      - add-release-github-actions-track-and-trace
+      - test-release-job
 
 env:
   REGISTRY: docker.io
@@ -50,7 +50,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
         with:
-          context: .
+          context: ./trackAndTrace
           file: ./trackAndTrace/dockerfiles/indexer.Dockerfile
           push: false
           platforms: linux/amd64
