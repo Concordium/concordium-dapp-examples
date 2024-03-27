@@ -20,12 +20,12 @@ However, the easiest option is to use [docker-compose](https://docs.docker.com/c
 For this to work, you should do the following:
 
 1. Deploy and initialize your version of the Track and Trace smart contract.
-2. [Export your account keys from the Browser Wallet](https://developer.concordium.software/en/mainnet/net/guides/export-key.html) and place the keys at `./private-keys/my-account.export` (or configure the path as described below).
-3. Configure the `./.env` file:
+2. [Export your account keys from the Browser Wallet](https://developer.concordium.software/en/mainnet/net/guides/export-key.html) and note the location you save the keys.
+3. Set the following environment variables:
    - Set the `TRACK_AND_TRACE_CONTRACT_ADDRESS` variable to the contract address of your contract instance.
-   - Set the `TRACK_AND_TRACE_NETWORK` variable to the correct net (testnet/mainnet).
-   - Set the `TRACK_AND_TRACE_NODE` to the gRPC endpoint of the node you want to use. Make sure it runs on the right net, i.e., testnet or mainnet.
-   - (Optional) Set the `TRACK_AND_TRACE_PRIVATE_KEY_FILE` path to a different path, if you place the sponsor account keys file somewhere else.
+   - Set the `TRACK_AND_TRACE_PRIVATE_KEY_FILE` variable to the path of your keys from step 2.
+   - (Optional) Set the `TRACK_AND_TRACE_NETWORK` variable to the correct net (testnet/mainnet). Defaults to testnet.
+   - (Optional) Set the `TRACK_AND_TRACE_NODE` to the gRPC endpoint of the node you want to use. Make sure it runs on the right net, i.e., testnet or mainnet. Defaults to `https://grpc.testnet.concordium.com:20000`.
 4. Run `docker-compose up` to build and start all the services.
 5. Access the frontend at `http://localhost:8080`
    - The sponsored transaction service runs on port `8000` by default, and the postgres database runs on `5432`. Both are configurable in the `./docker-compose.yml` file.
