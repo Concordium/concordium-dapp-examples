@@ -111,7 +111,7 @@ In order to contribute you should make a pull request and ask a person familiar 
 The project is a pure Rust project, and can be built by running
 
 ```shell
-cargo build --release
+cargo build --release --locked
 ```
 
 This produces a single binary `target/release/sponsored-transaction-service`.
