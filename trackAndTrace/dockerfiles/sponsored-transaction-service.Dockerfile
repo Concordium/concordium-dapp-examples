@@ -4,9 +4,7 @@ ARG RUST_IMAGE=rust:1.74-bookworm
 
 # Build service
 FROM ${RUST_IMAGE} as build
-COPY ./sponsored-transaction-service/Cargo.toml ./Cargo.toml
-COPY ./sponsored-transaction-service/Cargo.lock ./Cargo.lock
-COPY ./sponsored-transaction-service/src ./src
+COPY ./sponsored-transaction-service ./
 RUN cargo build --release
 
 FROM debian:bookworm

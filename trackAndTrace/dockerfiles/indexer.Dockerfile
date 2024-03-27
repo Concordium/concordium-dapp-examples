@@ -6,10 +6,7 @@ ARG RUST_IMAGE=rust:1.74-bookworm
 FROM ${RUST_IMAGE} as build
 COPY ./smart-contract ./smart-contract
 WORKDIR /indexer
-COPY ./indexer/Cargo.toml ./Cargo.toml
-COPY ./indexer/Cargo.lock ./Cargo.lock
-COPY ./indexer/src ./src
-COPY ./indexer/resources ./resources
+COPY ./indexer ./
 RUN cargo build --release
 
 FROM debian:bookworm

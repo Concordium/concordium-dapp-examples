@@ -129,16 +129,7 @@ jobs:
         working-directory: ${{ matrix.packages }}
         run: yarn install
 
-      - name: Build trackAndTrace package
-        if: ${{ matrix.packages == 'trackAndTrace/frontend' }}
-        working-directory: ${{ matrix.packages }}
-        env:
-          TRACK_AND_TRACE_CONTRACT_INDEX: 8219
-          SPONSORED_TRANSACTION_BACKEND_BASE_URL: http://localhost:8000
-        run: yarn build
-
-      - name: Build other packages
-        if: ${{ matrix.packages != 'trackAndTrace/frontend' }}
+      - name: Build
         working-directory: ${{ matrix.packages }}
         run: yarn build
 

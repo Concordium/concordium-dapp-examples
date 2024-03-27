@@ -36,7 +36,7 @@ yarn dev
 
 This will launch a development server with hot module replacement enabled.
 
-_Please note that calls to the backend server does not work in the development setup._
+_Please note that calls to the backend server do not work in the development setup._
 
 If you want to set up the whole project together with running the backend services so that the 3 endpoints work. Follow the instructions in the project's [README.md](../README.md).
 
