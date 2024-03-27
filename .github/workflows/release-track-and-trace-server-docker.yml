@@ -50,6 +50,6 @@ jobs:
         with:
           context: .
           file: ./trackAndTrace/dockerfiles/server.Dockerfile
-          push: true
+          push: false
           platforms: linux/amd64
           tags: ${{ steps.meta.outputs.tag }}
