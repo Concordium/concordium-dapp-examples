@@ -9,4 +9,5 @@ RUN corepack yarn build
 
 FROM nginx
 COPY --from=build ./app/dist ./usr/share/nginx/html
+COPY ./image/favicon.svg ./usr/share/nginx/html/favicon.svg
 COPY ./scripts/nginx.conf /etc/nginx/conf.d/default.conf
