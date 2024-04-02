@@ -29,7 +29,7 @@ jobs:
       - name: Extract version tag from package.json
         id: meta
         run: |
-          export VERSION=$(jq -r .version apps/voting/package.json)
+          export VERSION=$(jq -r .version euroe-demo/package.json)
           export FULL_IMAGE_TAG="${{ env.REGISTRY }}/concordium/$IMAGE_NAME:$VERSION"
           echo "::notice FULL_IMAGE_TAG=${FULL_IMAGE_TAG}"
           # Make sure the image does not exist. Abort if we can retrieve any metadata.
