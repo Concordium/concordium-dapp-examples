@@ -24,7 +24,9 @@ tonic = { version = "0.10", features = ["tls-roots", "tls"] }
 thiserror = "1.0"
 chrono = "0.4"
 concordium-rust-sdk = { version = "4.2"}
-track-and-trace = { path = "../smart-contract", features = ["serde"]}
+# It is essential that the bump_alloc feature is **not** enabled since it will
+# globally set an inefficient allocator.
+track-and-trace = { path = "../smart-contract", features = ["std", "serde"], default-features=false } 
 tokio = { version = "1.35", features = ["rt-multi-thread", "macros", "sync", "signal"] }
 tokio-postgres = { version = "0.7", features = [
   "with-serde_json-1",
