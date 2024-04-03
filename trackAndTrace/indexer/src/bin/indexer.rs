@@ -4,7 +4,7 @@
 //! `ItemCreatedEvent` are indexed in their respective tables. A third table
 //! `settings` exists to store global configurations. Each event can be uniquely
 //! identified by the `transaction_hash` and `event_index`.
-use ::indexer::db::DatabasePool;
+use ::indexer::db::{Database, DatabasePool};
 use anyhow::Context;
 use clap::Parser;
 use concordium_rust_sdk::{
@@ -63,8 +63,8 @@ struct Args {
 /// A handler for storing monitored events in the database. This implements
 /// the `indexer::ProcessEvent` trait to store events in the database.
 struct StoreEvents {
-    /// A database pool used for reconnects.
-    db_pool: DatabasePool,
+    /// A database connection.
+    conn: Database,
 }
 
 #[indexer::async_trait]
@@ -83,11 +83,10 @@ impl indexer::ProcessEvent for StoreEvents {
         &mut self,
         (block_info, contract_update_info): &Self::Data,
     ) -> Result<Self::Description, Self::Error> {
-        let mut conn = self.db_pool.get().await?;
-
         // It is typically easiest to reason about a database if blocks are inserted
         // in a single database transaction. So we do that here.
-        let db_transaction = conn
+        let db_transaction = self
+            .conn
             .client
             .transaction()
             .await
@@ -253,7 +252,7 @@ async fn main() -> anyhow::Result<()> {
     let consensus_info = client.get_consensus_info().await?;
 
     // Establish connection to the postgres database.
-    let db_pool = DatabasePool::create(app.db_connection.clone(), 2, true)
+    let db_pool = DatabasePool::create(app.db_connection.clone(), 1, true)
         .await
         .context("Could not create database pool")?;
     let db = db_pool
@@ -311,7 +310,7 @@ async fn main() -> anyhow::Result<()> {
         }
     };
 
-    handle_indexing(endpoint, start_block, app.contract_address, db_pool).await
+    handle_indexing(endpoint, start_block, app.contract_address, db).await
 }
 
 /// Handle indexing events.
@@ -319,7 +318,7 @@ async fn handle_indexing(
     endpoint: sdk::Endpoint,
     start: AbsoluteBlockHeight,
     contract_address: ContractAddress,
-    db_pool: DatabasePool,
+    db: Database,
 ) -> anyhow::Result<()> {
     tracing::info!("Indexing from block height {}.", start);
 
@@ -327,7 +326,7 @@ async fn handle_indexing(
 
     let traverse_config = indexer::TraverseConfig::new_single(endpoint, start);
 
-    let events = StoreEvents { db_pool };
+    let events = StoreEvents { conn: db };
 
     // The program terminates only
     // when the processor terminates, which in this example can only happen if
