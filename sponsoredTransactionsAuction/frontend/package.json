@@ -29,7 +29,9 @@
         "react-bootstrap": "^2.8.0",
         "react-dom": "^18.2.0",
         "react-hook-form": "^7.48.2",
-        "tsx": "^4.7.0"
+        "rollup-plugin-node-polyfills": "^0.2.1",
+        "tsx": "^4.7.0",
+        "vite-plugin-node-polyfills": "^0.21.0"
     },
     "devDependencies": {
         "@concordium/ccd-js-gen": "^1.2.0",

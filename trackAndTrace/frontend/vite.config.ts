@@ -4,6 +4,7 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 import wasm from 'vite-plugin-wasm';
 import topLevelAwait from 'vite-plugin-top-level-await';
 import handlebars from 'vite-plugin-handlebars';
+import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import 'dotenv/config';
 
 const DEFAULT_NETWORK = 'testnet';
@@ -72,9 +73,15 @@ const viteConfig: UserConfig = {
     worker: {
         plugins: () => [topLevelAwait(), wasm() as PluginOption],
     },
+    build: {
+        rollupOptions: {
+            plugins: [nodePolyfills()],
+        },
+    },
     resolve: {
         alias: {
-            '@concordium/rust-bindings': '@concordium/rust-bindings/bundler', // Resolve bundler-specific wasm entrypoints.
+            '@concordium/rust-bindings': '@concordium/rust-bindings/bundler',
+            stream: 'rollup-plugin-node-polyfills/polyfills/stream',
         },
     },
 };

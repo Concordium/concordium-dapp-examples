@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react-swc';
+import { nodePolyfills } from 'vite-plugin-node-polyfills';
 // Uncomment commented code when @concordium/web-sdk is upgraded to v10
 // import wasm from 'vite-plugin-wasm';
 // import topLevelAwait from 'vite-plugin-top-level-await';
@@ -13,17 +14,22 @@ if (process.env.AUCTION_CONTRACT_INDEX === undefined || Number.isNaN(process.env
 
 // https://vitejs.dev/config/
 export default defineConfig({
-    // resolve: {
-    //     alias: {
-    //         '@concordium/rust-bindings': '@concordium/rust-bindings/bundler', // Resolve bundler-specific wasm entrypoints.
-    //     }
-    // },
     plugins: [
         react(),
 
         // wasm(),
         // topLevelAwait(), // For legacy browser compatibility
     ],
+    build: {
+        rollupOptions: {
+            plugins: [nodePolyfills()],
+        },
+    },
+    resolve: {
+        alias: {
+            stream: 'rollup-plugin-node-polyfills/polyfills/stream',
+        },
+    },
     optimizeDeps: {
         exclude: ['js-big-decimal'],
     },

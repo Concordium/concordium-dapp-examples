@@ -28,7 +28,9 @@
         "react-hook-form": "^7.50.1",
         "react-router-dom": "^6.22.1",
         "react-select": "^5.8.0",
-        "react-switch": "^7.0.0"
+        "react-switch": "^7.0.0",
+        "rollup-plugin-node-polyfills": "^0.2.1",
+        "vite-plugin-node-polyfills": "^0.21.0"
     },
     "devDependencies": {
         "@concordium/ccd-js-gen": "^1.2.0",
