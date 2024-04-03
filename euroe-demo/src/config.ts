@@ -11,7 +11,7 @@ const WALLET_CONNECT_OPTS: SignClientTypes.Options = {
   metadata: {
     name: 'EuroE demo',
     description: 'Example dApp for accessing an age restricted store where EuroE can be used to buy items.',
-    url: '#',
+    url: window.location.origin,
     icons: ['https://euroe-demo.testnet.concordium.com/beer-logo.png'],
   },
 };

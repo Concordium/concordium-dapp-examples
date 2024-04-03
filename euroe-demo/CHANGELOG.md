@@ -1,3 +1,7 @@
+## 0.2.2
+
+Set URL in wallet-connect popup.
+
 ## 0.2.1
 
 Use icon for wallet connect proof request.
