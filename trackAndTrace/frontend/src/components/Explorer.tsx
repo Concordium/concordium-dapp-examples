@@ -68,7 +68,11 @@ async function getItemCreatedEvent(itemID: number, setItemCreated: Dispatch<Crea
     }
     const dataItemCreated = await response.json();
     if (dataItemCreated) {
-        setItemCreated(dataItemCreated.data);
+        if (dataItemCreated.data) {
+            setItemCreated(dataItemCreated.data);
+        } else {
+            throw new Error(`Item not found in database.`);
+        }
     } else {
         throw new Error(`Unable to get item's create event`);
     }
@@ -85,12 +89,14 @@ export function Explorer() {
         name: ['itemID'],
     });
 
-    const [itemChanged, setItemChanged] = useState<ChangeItem[]>();
-    const [itemCreated, setItemCreated] = useState<CreateItem>();
+    const [itemChanged, setItemChanged] = useState<ChangeItem[] | undefined>(undefined);
+    const [itemCreated, setItemCreated] = useState<CreateItem | undefined>(undefined);
     const [error, setError] = useState<string | undefined>(undefined);
 
     async function onSubmit() {
         setError(undefined);
+        setItemChanged(undefined);
+        setItemCreated(undefined);
 
         if (itemID === undefined) {
             setError(`'itemID' input field is undefined`);
@@ -161,26 +167,29 @@ export function Explorer() {
                                     </td>
                                     <td>Created</td>
                                 </tr>
-
-                                {itemChanged.map((event: ChangeItem, parentIndex) => {
-                                    return (
-                                        <tr key={parentIndex}>
-                                            <td>{new Date(event.block_time).toLocaleString()}</td>
-                                            <td>
-                                                <a
-                                                    className="link"
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                    href={`${constants.CCD_SCAN_URL}/?dcount=1&dentity=transaction&dhash=${event.transaction_hash}`}
-                                                >
-                                                    {event.transaction_hash.slice(0, 5)}...
-                                                    {event.transaction_hash.slice(-5)}
-                                                </a>
-                                            </td>
-                                            <td>{event.new_status}</td>
-                                        </tr>
-                                    );
-                                })}
+                                {itemChanged.length > 0 && (
+                                    <>
+                                        {itemChanged.map((event: ChangeItem, parentIndex) => {
+                                            return (
+                                                <tr key={parentIndex}>
+                                                    <td>{new Date(event.block_time).toLocaleString()}</td>
+                                                    <td>
+                                                        <a
+                                                            className="link"
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            href={`${constants.CCD_SCAN_URL}/?dcount=1&dentity=transaction&dhash=${event.transaction_hash}`}
+                                                        >
+                                                            {event.transaction_hash.slice(0, 5)}...
+                                                            {event.transaction_hash.slice(-5)}
+                                                        </a>
+                                                    </td>
+                                                    <td>{event.new_status}</td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </>
+                                )}
                             </tbody>
                         </table>
                     </>
