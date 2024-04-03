@@ -12,7 +12,7 @@ const WALLET_CONNECT_OPTS: SignClientTypes.Options = {
     name: 'EuroE demo',
     description: 'Example dApp for accessing an age restricted store where EuroE can be used to buy items.',
     url: '#',
-    icons: ['https://walletconnect.com/walletconnect-logo.png'],
+    icons: ['https://euroe-demo.testnet.concordium.com/beer-logo.png'],
   },
 };
 

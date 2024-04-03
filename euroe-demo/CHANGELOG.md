@@ -1,3 +1,7 @@
+## 0.2.1
+
+Use icon for wallet connect proof request.
+
 ## 0.2.0
 
 Add support for wallet-connect.
