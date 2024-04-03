@@ -167,29 +167,25 @@ export function Explorer() {
                                     </td>
                                     <td>Created</td>
                                 </tr>
-                                {itemChanged.length > 0 && (
-                                    <>
-                                        {itemChanged.map((event: ChangeItem, parentIndex) => {
-                                            return (
-                                                <tr key={parentIndex}>
-                                                    <td>{new Date(event.block_time).toLocaleString()}</td>
-                                                    <td>
-                                                        <a
-                                                            className="link"
-                                                            target="_blank"
-                                                            rel="noreferrer"
-                                                            href={`${constants.CCD_SCAN_URL}/?dcount=1&dentity=transaction&dhash=${event.transaction_hash}`}
-                                                        >
-                                                            {event.transaction_hash.slice(0, 5)}...
-                                                            {event.transaction_hash.slice(-5)}
-                                                        </a>
-                                                    </td>
-                                                    <td>{event.new_status}</td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </>
-                                )}
+                                {itemChanged.map((event: ChangeItem, parentIndex) => {
+                                    return (
+                                        <tr key={parentIndex}>
+                                            <td>{new Date(event.block_time).toLocaleString()}</td>
+                                            <td>
+                                                <a
+                                                    className="link"
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    href={`${constants.CCD_SCAN_URL}/?dcount=1&dentity=transaction&dhash=${event.transaction_hash}`}
+                                                >
+                                                    {event.transaction_hash.slice(0, 5)}...
+                                                    {event.transaction_hash.slice(-5)}
+                                                </a>
+                                            </td>
+                                            <td>{event.new_status}</td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </>
