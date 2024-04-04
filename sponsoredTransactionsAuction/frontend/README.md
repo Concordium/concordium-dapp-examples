@@ -23,7 +23,7 @@ The smart contract code at {index: AUCTION_CONTRACT_INDEX, subindex: 0} can be f
 
 -   Run `yarn install` in a terminal in this folder.
 -   Run `yarn build` in a terminal in this folder.
--   Run `yarn dev` in a terminal in this folder.
+-   Run `TRACK_AND_TRACE_CONTRACT_ADDRESS="<8219,0>" yarn dev` in a terminal in this folder.
 -   Open URL logged in console (typically http://127.0.0.1:5173).
 
 Hot-reload (useful for development) is enabled.

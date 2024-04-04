@@ -33,7 +33,7 @@ function validateURL(envField: string, allowUnset = true): void {
     }
 }
 
-function getConfig(): Config {
+function getConfig() {
     // Validate network
     if (![undefined, 'mainnet', 'testnet'].includes(process.env.TRACK_AND_TRACE_NETWORK)) {
         throw new Error(
@@ -82,6 +82,15 @@ const viteConfig: UserConfig = {
         alias: {
             '@concordium/rust-bindings': '@concordium/rust-bindings/bundler',
             stream: 'rollup-plugin-node-polyfills/polyfills/stream',
+        },
+    },
+    define: {
+        global: 'globalThis',
+        'process.env': {
+            TRACK_AND_TRACE_NETWORK: process.env.TRACK_AND_TRACE_NETWORK,
+            TRACK_AND_TRACE_SPONSORED_BACKEND_API: process.env.TRACK_AND_TRACE_SPONSORED_BACKEND_API,
+            TRACK_AND_TRACE_NODE: process.env.TRACK_AND_TRACE_NODE,
+            TRACK_AND_TRACE_CONTRACT_ADDRESS: process.env.TRACK_AND_TRACE_CONTRACT_ADDRESS,
         },
     },
 };

@@ -11,6 +11,7 @@ import { AdminChangeRoles } from './components/AdminChangeRoles';
 import { ChangeItemStatus } from './components/ChangeItemStatus';
 import { Explorer } from './components/Explorer';
 import * as constants from './constants';
+import { version } from '../package.json';
 
 const App = (props: WalletConnectionProps) => {
     const { setActiveConnectorType, activeConnectorError, activeConnector, connectedAccounts, genesisHashes } = props;
@@ -26,13 +27,23 @@ const App = (props: WalletConnectionProps) => {
         <Router>
             <div className="navbar">
                 <div>
-                    Track And Trace{' '}
+                    Track And Trace:{' '}
+                    <a
+                        target="_blank"
+                        rel="noreferrer"
+                        href={`https://github.com/Concordium/concordium-dapp-examples/tree/main/trackAndTrace`}
+                    >
+                        Version {version}
+                    </a>
+                    <br />
+                    Contract:{' '}
                     <a
                         target="_blank"
                         rel="noreferrer"
                         href={`https://${constants.NETWORK.name}.ccdscan.io/?dcount=1&dentity=contract&dcontractAddressIndex=${constants.CONTRACT_ADDRESS.index}&dcontractAddressSubIndex=${constants.CONTRACT_ADDRESS.subindex}`}
                     >
-                        &lt;{Number(constants.CONTRACT_ADDRESS.index)},{Number(constants.CONTRACT_ADDRESS.subindex)}&gt;
+                        &lt;{Number(constants.CONTRACT_ADDRESS.index)},{Number(constants.CONTRACT_ADDRESS.subindex)}
+                        &gt;
                     </a>
                 </div>
                 <Link className="secondary" to="/explorer">
