@@ -1,5 +1,9 @@
 ## Unreleased changes
 
+## 1.0.2
+
+-   Fix `Writable` error via polyfill in `walletConnect` dependency.
+
 ## 1.0.1
 
 -   Fix explorer page crash when item does not exist in the database.

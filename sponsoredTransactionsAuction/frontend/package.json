@@ -1,7 +1,7 @@
 {
     "name": "auction-sponsored-transactions",
     "private": true,
-    "version": "1.0.2",
+    "version": "1.0.3",
     "type": "module",
     "engines": {
         "npm": ">=10.0.0",
