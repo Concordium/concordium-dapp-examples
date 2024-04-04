@@ -1,5 +1,9 @@
 ## Unreleased changes
 
+## 1.0.3
+
+-   Fix `Writable` error via polyfill in `walletConnect` dependency.
+
 ## 1.0.2
 
 -   Update `ccd-js-gen` tool to version "^1.2.0".
