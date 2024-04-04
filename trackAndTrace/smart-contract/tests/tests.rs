@@ -13,9 +13,9 @@ const ADMIN_ADDR: Address = Address::Account(AccountAddress([0; 32]));
 const PRODUCER: AccountAddress = AccountAddress([1; 32]);
 const PRODUCER_ADDR: Address = Address::Account(AccountAddress([1; 32]));
 const TRANSPORTER: AccountAddress = AccountAddress([2; 32]);
-const TRANSPORTER_ADDR: Address = Address::Account(AccountAddress([2; 32]));
 const SELLER: AccountAddress = AccountAddress([3; 32]);
 const SELLER_ADDR: Address = Address::Account(AccountAddress([3; 32]));
+const NEW_ADDR: AccountAddress = AccountAddress([4; 32]);
 
 const SIGNER: Signer = Signer::with_one_key();
 const ACC_INITIAL_BALANCE: Amount = Amount::from_ccd(10000);
@@ -29,6 +29,174 @@ const DUMMY_SIGNATURE: SignatureEd25519 = SignatureEd25519([
 struct AccountKeypairs {
     admin:    AccountKeys,
     producer: AccountKeys,
+}
+
+/// Test that the `hasRole` view function works.
+#[test]
+fn test_has_role() {
+    let (chain, _, track_and_trace_contract_address) = initialize_chain_and_contract();
+
+    let param = HasRoleParams {
+        address: ADMIN_ADDR,
+        role:    Roles::Admin,
+    };
+
+    let invoke = chain
+        .contract_invoke(
+            ADMIN,
+            ADMIN_ADDR,
+            Energy::from(10000),
+            UpdateContractPayload {
+                amount:       Amount::zero(),
+                receive_name: OwnedReceiveName::new_unchecked(
+                    "track_and_trace.hasRole".to_string(),
+                ),
+                address:      track_and_trace_contract_address,
+                message:      OwnedParameter::from_serial(&param).expect("Serialize parameter"),
+            },
+        )
+        .expect("Invoke hasRole");
+
+    let has_role: bool = invoke.parse_return_value().expect("hasRole return value");
+
+    assert_eq!(has_role, true, "Admin should have role");
+}
+
+/// Test adding and removing state transition edges.
+#[test]
+fn test_add_and_remove_of_state_transition_edges() {
+    let (mut chain, _, track_and_trace_contract_address) = initialize_chain_and_contract();
+
+    let from_status = Status::InStore;
+    let to_status = Status::Sold;
+    let new_address = NEW_ADDR;
+
+    let param = IsTransitionEdgeParams {
+        account: new_address,
+        from_status,
+        to_status,
+    };
+
+    let invoke = chain
+        .contract_invoke(
+            ADMIN,
+            ADMIN_ADDR,
+            Energy::from(10000),
+            UpdateContractPayload {
+                amount:       Amount::zero(),
+                receive_name: OwnedReceiveName::new_unchecked(
+                    "track_and_trace.isTransitionEdge".to_string(),
+                ),
+                address:      track_and_trace_contract_address,
+                message:      OwnedParameter::from_serial(&param).expect("Serialize parameter"),
+            },
+        )
+        .expect("Invoke isTransitionEdge");
+
+    let is_transition_edge: bool = invoke
+        .parse_return_value()
+        .expect("isTransitionEdge return value");
+
+    assert_eq!(
+        is_transition_edge, false,
+        "Transition edge should not exist"
+    );
+
+    // Add a new transition edge.
+    let mut update_transition_edge = UpdateStateMachineParams {
+        address: NEW_ADDR,
+        from_status,
+        to_status,
+        update: Update::Add,
+    };
+
+    // Check the ADMIN can update the state machine (add transition).
+    let _update = chain
+        .contract_update(
+            SIGNER,
+            ADMIN,
+            ADMIN_ADDR,
+            Energy::from(10000),
+            UpdateContractPayload {
+                amount:       Amount::from_ccd(0),
+                address:      track_and_trace_contract_address,
+                receive_name: OwnedReceiveName::new_unchecked(
+                    "track_and_trace.updateStateMachine".to_string(),
+                ),
+                message:      OwnedParameter::from_serial(&update_transition_edge)
+                    .expect("Serialize parameter"),
+            },
+        )
+        .expect("Should be able to update the state machine");
+
+    let invoke = chain
+        .contract_invoke(
+            ADMIN,
+            ADMIN_ADDR,
+            Energy::from(10000),
+            UpdateContractPayload {
+                amount:       Amount::zero(),
+                receive_name: OwnedReceiveName::new_unchecked(
+                    "track_and_trace.isTransitionEdge".to_string(),
+                ),
+                address:      track_and_trace_contract_address,
+                message:      OwnedParameter::from_serial(&param).expect("Serialize parameter"),
+            },
+        )
+        .expect("Invoke isTransitionEdge");
+
+    let is_transition_edge: bool = invoke
+        .parse_return_value()
+        .expect("isTransitionEdge return value");
+
+    assert_eq!(is_transition_edge, true, "Transition edge should exist");
+
+    // Remove a transition edge.
+    update_transition_edge.update = Update::Remove;
+
+    // Check the ADMIN can update the state machine (remove transition).
+    let _update = chain
+        .contract_update(
+            SIGNER,
+            ADMIN,
+            ADMIN_ADDR,
+            Energy::from(10000),
+            UpdateContractPayload {
+                amount:       Amount::from_ccd(0),
+                address:      track_and_trace_contract_address,
+                receive_name: OwnedReceiveName::new_unchecked(
+                    "track_and_trace.updateStateMachine".to_string(),
+                ),
+                message:      OwnedParameter::from_serial(&update_transition_edge)
+                    .expect("Serialize parameter"),
+            },
+        )
+        .expect("Should be able to update the state machine");
+
+    let invoke = chain
+        .contract_invoke(
+            ADMIN,
+            ADMIN_ADDR,
+            Energy::from(10000),
+            UpdateContractPayload {
+                amount:       Amount::zero(),
+                receive_name: OwnedReceiveName::new_unchecked(
+                    "track_and_trace.isTransitionEdge".to_string(),
+                ),
+                address:      track_and_trace_contract_address,
+                message:      OwnedParameter::from_serial(&param).expect("Serialize parameter"),
+            },
+        )
+        .expect("Invoke isTransitionEdge");
+
+    let is_transition_edge: bool = invoke
+        .parse_return_value()
+        .expect("isTransitionEdge return value");
+
+    assert_eq!(
+        is_transition_edge, false,
+        "Transition edge should not exist"
+    );
 }
 
 // 1. Test that the ADMIN can create a new item.
@@ -296,6 +464,7 @@ fn initialize_chain_and_contract() -> (Chain, AccountKeypairs, ContractAddress) 
     let seller_keys = AccountKeys::singleton(&mut rng);
 
     // Create some accounts on the chain.
+    chain.create_account(Account::new(NEW_ADDR, ACC_INITIAL_BALANCE));
     chain.create_account(Account::new_with_keys(ADMIN, balance, (&admin_keys).into()));
     chain.create_account(Account::new_with_keys(
         PRODUCER,
@@ -372,77 +541,6 @@ fn initialize_chain_and_contract() -> (Chain, AccountKeypairs, ContractAddress) 
         })
         .expect("Initialize track_and_trace contract");
 
-    // Grant PRODUCER role
-    let grant_role_params = GrantRoleParams {
-        address: PRODUCER_ADDR,
-        role:    Roles::Producer,
-    };
-
-    let _update = chain
-        .contract_update(
-            SIGNER,
-            ADMIN,
-            ADMIN_ADDR,
-            Energy::from(10000),
-            UpdateContractPayload {
-                amount:       Amount::zero(),
-                receive_name: OwnedReceiveName::new_unchecked(
-                    "track_and_trace.grantRole".to_string(),
-                ),
-                address:      track_and_trace.contract_address,
-                message:      OwnedParameter::from_serial(&grant_role_params)
-                    .expect("GrantRole params"),
-            },
-        )
-        .expect("PRODUCER should be granted role");
-
-    // Grant TRANSPORTER role
-    let grant_role_params = GrantRoleParams {
-        address: TRANSPORTER_ADDR,
-        role:    Roles::Transporter,
-    };
-
-    let _update = chain
-        .contract_update(
-            SIGNER,
-            ADMIN,
-            ADMIN_ADDR,
-            Energy::from(10000),
-            UpdateContractPayload {
-                amount:       Amount::zero(),
-                receive_name: OwnedReceiveName::new_unchecked(
-                    "track_and_trace.grantRole".to_string(),
-                ),
-                address:      track_and_trace.contract_address,
-                message:      OwnedParameter::from_serial(&grant_role_params)
-                    .expect("GrantRole params"),
-            },
-        )
-        .expect("TRANSPORTER should be granted role");
-
-    // Grant SELLER role
-    let grant_role_params = GrantRoleParams {
-        address: SELLER_ADDR,
-        role:    Roles::Seller,
-    };
-
-    let _update = chain
-        .contract_update(
-            SIGNER,
-            ADMIN,
-            ADMIN_ADDR,
-            Energy::from(10000),
-            UpdateContractPayload {
-                amount:       Amount::zero(),
-                receive_name: OwnedReceiveName::new_unchecked(
-                    "track_and_trace.grantRole".to_string(),
-                ),
-                address:      track_and_trace.contract_address,
-                message:      OwnedParameter::from_serial(&grant_role_params)
-                    .expect("GrantRole params"),
-            },
-        )
-        .expect("SELLER should be granted role");
     (chain, account_keypairs, track_and_trace.contract_address)
 }
 

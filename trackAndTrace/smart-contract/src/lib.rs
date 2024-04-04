@@ -2,18 +2,15 @@
 //!
 //! ## Grant and Revoke roles:
 //! The contract has access control roles. The available roles are Admin (can
-//! grant/revoke roles, create a new item), Producer, Transporter, and Seller.
-//! The state machine defines which roles are authorized to update an item given
-//! its current status. Several addresses can have the same role and an address
-//! can have several roles.
+//! grant/revoke roles, create a new item).
 //!
 //! ## State machine:
 //! The track-and-trace contract is modeled based on a state machine. The state
 //! machine is initialized when the contract is initialized. The flow of the
 //! state machine is as follows: The Admin creates a new item with status
 //! `Produced`. Each new item is assigned the `next_item_id`. The `next_item_id`
-//! value is sequentially increased by 1 in the contract's state. The different
-//! roles can update the item's status based on the rules of the state machine.
+//! value is sequentially increased by 1 in the contract's state. The item's
+//! status can be updated based on the rules of the state machine.
 //!
 //! For example to initialize the state machine with a linear supply chain use
 //! the following input parameter when the contract is initialized:
@@ -151,12 +148,6 @@ struct AddressRoleState<S> {
 pub enum Roles {
     /// Admin role.
     Admin,
-    /// Producer role.
-    Producer,
-    /// Transporter role.
-    Transporter,
-    /// Seller role.
-    Seller,
 }
 
 /// Enum of the statuses that an item can have.
@@ -247,6 +238,8 @@ pub enum CustomContractError {
     WrongEntryPoint, // -14
     /// Failed signature verification: Signature is expired.
     Expired, // -15
+    /// Update of state machine was unsuccessful.
+    UnSuccessful, // -16
 }
 
 /// Mapping account signature error to CustomContractError
@@ -324,6 +317,24 @@ impl<S: HasStateApi> State<S> {
             });
         let mut targets = transition.targets(builder, address);
         targets.insert(to)
+    }
+
+    /// Remove a transition. Return if the transition was removed successfully.
+    pub fn remove(
+        &mut self,
+        builder: &mut StateBuilder<S>,
+        from: Status,
+        address: AccountAddress,
+        to: Status,
+    ) -> bool {
+        let mut transition = self
+            .transitions
+            .entry(from)
+            .or_insert_with(|| StatusTransitions {
+                transitions: builder.new_map(),
+            });
+        let mut targets = transition.targets(builder, address);
+        targets.remove(&to)
     }
 
     /// Get the item and the possible state transitions for that item in its
@@ -636,6 +647,84 @@ fn change_item_status(
     Ok(())
 }
 
+/// The update of a state transition.
+#[derive(Debug, Serialize, Clone, Copy, SchemaType, PartialEq, Eq)]
+pub enum Update {
+    /// Remove a state transition.
+    Remove,
+    /// Add a state transition.
+    Add,
+}
+
+/// The parameter for the contract function `updateStateMachine` which updates
+/// the state machine.
+#[derive(Serialize, SchemaType)]
+pub struct UpdateStateMachineParams {
+    /// The address that is involved in the state transition.
+    pub address:     AccountAddress,
+    /// The from state of the state transition.
+    pub from_status: Status,
+    /// The to state of the state transition.
+    pub to_status:   Status,
+    /// The update (remove or add).
+    pub update:      Update,
+}
+
+/// Update the state machine by adding or removing a transition.
+///
+/// It rejects if:
+/// - It fails to parse the parameter.
+/// - The sender is not the Admin of the contract instance.
+/// - The state machine cannot be updated with the given state transition.
+#[receive(
+    contract = "track_and_trace",
+    name = "updateStateMachine",
+    parameter = "UpdateStateMachineParams",
+    error = "CustomContractError",
+    mutable
+)]
+fn contract_update_state_machine(
+    ctx: &ReceiveContext,
+    host: &mut Host<State>,
+) -> ContractResult<()> {
+    // Parse the parameter.
+    let params: UpdateStateMachineParams = ctx.parameter_cursor().get()?;
+
+    let (state, state_builder) = host.state_and_builder();
+
+    // Get the sender who invoked this contract function.
+    let sender = ctx.sender();
+    // Check that only the Admin is authorized to update the state machine.
+    ensure!(
+        state.has_role(&sender, Roles::Admin),
+        CustomContractError::Unauthorized
+    );
+
+    match params.update {
+        Update::Add => {
+            let success = state.add(
+                state_builder,
+                params.from_status,
+                params.address,
+                params.to_status,
+            );
+            ensure!(success, CustomContractError::UnSuccessful);
+        }
+        Update::Remove => {
+            let success = state.remove(
+                state_builder,
+                params.from_status,
+                params.address,
+                params.to_status,
+            );
+
+            ensure!(success, CustomContractError::UnSuccessful);
+        }
+    };
+
+    Ok(())
+}
+
 /// The parameter for the contract function `grantRole` which grants a role to
 /// an address.
 #[derive(Serialize, SchemaType)]
@@ -679,6 +768,7 @@ fn contract_grant_role(
 
     // Grant role.
     state.grant_role(&params.address, params.role, state_builder);
+
     // Log a GrantRoleEvent.
     logger.log(&Event::<AdditionalData>::GrantRole(GrantRoleEvent {
         address: params.address,
@@ -1015,4 +1105,62 @@ fn contract_nonce_of(
         response.push(nonce);
     }
     Ok(NonceOfQueryResponse::from(response))
+}
+
+/// The parameter for the `hasRole` function.
+#[derive(Debug, Serialize, Clone, Copy, SchemaType, PartialEq, Eq)]
+pub struct HasRoleParams {
+    /// The address to be checked.
+    pub address: Address,
+    /// The role to check for.
+    pub role:    Roles,
+}
+
+/// Check if an address has a specific role.
+///
+/// It rejects if:
+/// - It fails to parse the parameter.
+#[receive(
+    contract = "track_and_trace",
+    name = "hasRole",
+    parameter = "HasRoleParams",
+    return_value = "bool",
+    error = "CustomContractError"
+)]
+fn has_role(ctx: &ReceiveContext, host: &Host<State>) -> ContractResult<bool> {
+    // Parse the parameter.
+    let params: HasRoleParams = ctx.parameter_cursor().get()?;
+    Ok(host.state().has_role(&params.address, params.role))
+}
+
+/// The parameter for the `isTransitionEdge` function.
+#[derive(Debug, Serialize, Clone, Copy, SchemaType, PartialEq, Eq)]
+pub struct IsTransitionEdgeParams {
+    /// The account to be checked.
+    pub account:     AccountAddress,
+    /// The from_status to check for.
+    pub from_status: Status,
+    /// The to_status to check for.
+    pub to_status:   Status,
+}
+
+/// Check if a transition edge exists in the state machine.
+///
+/// It rejects if:
+/// - It fails to parse the parameter.
+#[receive(
+    contract = "track_and_trace",
+    name = "isTransitionEdge",
+    parameter = "IsTransitionEdgeParams",
+    return_value = "bool",
+    error = "CustomContractError"
+)]
+fn is_transition_edge(ctx: &ReceiveContext, host: &Host<State>) -> ContractResult<bool> {
+    // Parse the parameter.
+    let params: IsTransitionEdgeParams = ctx.parameter_cursor().get()?;
+
+    let Some(transitions) = host.state().transitions.get(&params.from_status) else {
+        return Ok(false);
+    };
+    Ok(transitions.check(&params.account, &params.to_status))
 }
