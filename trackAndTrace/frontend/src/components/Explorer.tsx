@@ -103,11 +103,11 @@ export function Explorer() {
             throw Error(`'itemID' input field is undefined`);
         }
 
-        // Clear table.
-        const tableBody = document.getElementById('table');
-        if (tableBody) {
-            tableBody.innerHTML = '';
-        }
+        // // Clear table.
+        // const tableBody = document.getElementById('table');
+        // if (tableBody) {
+        //     tableBody.innerHTML = '';
+        // }
 
         try {
             await getItemCreatedEvent(itemID, setItemCreated);

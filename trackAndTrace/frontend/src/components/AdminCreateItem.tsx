@@ -95,9 +95,13 @@ export function AdminCreateItem(props: Props) {
 
         // Send transaction
         if (accountAddress && connection) {
-            createItem(connection, AccountAddress.fromBase58(accountAddress), parameter).then((txHash) => {
-                setTxHash(txHash);
-            });
+            createItem(connection, AccountAddress.fromBase58(accountAddress), parameter)
+                .then((txHash) => {
+                    setTxHash(txHash);
+                })
+                .catch((e) => {
+                    setError((e as Error).message);
+                });
         } else {
             setError(`Wallet is not connected. Click 'Connect Wallet' button.`);
         }

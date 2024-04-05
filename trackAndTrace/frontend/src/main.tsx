@@ -10,6 +10,7 @@ import { AdminCreateItem } from './components/AdminCreateItem';
 import { AdminChangeRoles } from './components/AdminChangeRoles';
 import { ChangeItemStatus } from './components/ChangeItemStatus';
 import { Explorer } from './components/Explorer';
+import { AddTransitionRule } from './components/AddTransitionRule';
 import * as constants from './constants';
 import { version } from '../package.json';
 
@@ -58,6 +59,9 @@ const App = (props: WalletConnectionProps) => {
                 <Link className="secondary" to="/adminChangeRoles">
                     Admin3
                 </Link>
+                <Link className="secondary" to="/addTransitionRule">
+                    Admin4
+                </Link>
                 <Button
                     variant="primary"
                     id="account"
@@ -98,6 +102,16 @@ const App = (props: WalletConnectionProps) => {
                     path="/changeItemStatus"
                     element={
                         <ChangeItemStatus
+                            activeConnectorError={activeConnectorError}
+                            connection={connection}
+                            accountAddress={account}
+                        />
+                    }
+                />
+                <Route
+                    path="/addTransitionRule"
+                    element={
+                        <AddTransitionRule
                             activeConnectorError={activeConnectorError}
                             connection={connection}
                             accountAddress={account}
