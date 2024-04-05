@@ -7,7 +7,8 @@ on:
 
   push:
     tags:
-      - 'sponsored-transactions/*.*.*'
+      # The versioning is of the format: `frontend_version-backend_version`.
+      - 'sponsored-transactions/*.*.*-*.*.*'
 
 env:
   REGISTRY: docker.io
@@ -32,8 +33,9 @@ jobs:
       - name: Extract tag from package.json
         id: meta
         run: |
-          export VERSION=$(jq -r .version sponsoredTransactions/frontend/package.json)
-          export FULL_IMAGE_TAG="${{ env.REGISTRY }}/concordium/$IMAGE_NAME:$VERSION"
+          export FRONTEND_VERSION=$(jq -r .version sponsoredTransactions/frontend/package.json)
+          export BACKEND_VERSION=$(yq .package.version sponsoredTransactions/backend/Cargo.toml)
+          export FULL_IMAGE_TAG="${{ env.REGISTRY }}/concordium/$IMAGE_NAME:$FRONTEND_VERSION-$BACKEND_VERSION"
           echo "::notice FULL_IMAGE_TAG=${FULL_IMAGE_TAG}"
           # Make sure the image does not exist. Abort if we can retrieve any metadata.
           if docker manifest inspect ${FULL_IMAGE_TAG} > /dev/null; then
