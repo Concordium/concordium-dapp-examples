@@ -130,6 +130,65 @@ export async function removeRole(
 }
 
 /**
+ * This function submits a transaction to update the state machine.
+ *
+ * @param provider - The wallet provider to use for sending the transaction.
+ * @param accountAddress - The account address to send from.
+ * @param updateStateMachineParameter - The parameter for the updateStateMachine function.
+ * @throws If simulating the contract update fails.
+ * @returns A promise resolving with the corresponding {@linkcode string}
+ */
+export async function updateStateMachine(
+    connection: WalletConnection,
+    accountAddress: AccountAddress.Type,
+    updateStateMachineParameter: TrackAndTraceContract.UpdateStateMachineParameter
+): Promise<string> {
+    let contractInvokeMetadata: ContractInvokeMetadata = {
+        invoker: accountAddress,
+    };
+
+    const dryRunResult = await TrackAndTraceContract.dryRunUpdateStateMachine(
+        contract,
+        updateStateMachineParameter,
+        contractInvokeMetadata
+    );
+
+    if (!dryRunResult || dryRunResult.tag === 'failure' || !dryRunResult.returnValue) {
+        const parsedErrorCode = TrackAndTraceContract.parseErrorMessageUpdateStateMachine(dryRunResult)?.type;
+
+        throw new Error(
+            `RPC call 'invokeContract' on method '${TrackAndTraceContract.contractName.value}.updateStateMachine' of contract '${
+                constants.CONTRACT_ADDRESS.index
+            }' failed. Decoded error code: ${JSONbig.stringify(
+                parsedErrorCode
+            )}. Original response: ${JSONbig.stringify(dryRunResult)}`
+        );
+    }
+
+    const maxContractExecutionEnergy = Energy.create(dryRunResult.usedEnergy.value + constants.EPSILON_ENERGY);
+
+    const payload: Omit<UpdateContractPayload, 'message'> = {
+        amount: CcdAmount.zero(),
+        address: contract.contractAddress,
+        receiveName: ReceiveName.create(
+            TrackAndTraceContract.contractName,
+            EntrypointName.fromString('updateStateMachine')
+        ),
+        maxContractExecutionEnergy,
+    };
+
+    let webWalletParameter =
+        TrackAndTraceContract.createUpdateStateMachineParameterWebWallet(updateStateMachineParameter);
+
+    return connection.signAndSendTransaction(
+        accountAddress.address,
+        AccountTransactionType.Update,
+        payload,
+        webWalletParameter
+    );
+}
+
+/**
  * This function submits a transaction to create an item in the track and trace contract.
  *
  * @param provider - The wallet provider to use for sending the transaction.

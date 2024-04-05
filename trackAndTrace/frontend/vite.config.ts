@@ -9,7 +9,7 @@ import 'dotenv/config';
 
 const DEFAULT_NETWORK = 'testnet';
 const DEFAULT_NODE = 'https://grpc.testnet.concordium.com:20000';
-const DEFAULT_SPONSORED_API = 'http://localhost:8000';
+const DEFAULT_SPONSORED_API = 'http://localhost:8000/';
 
 /**
  * Validates environment variable present at `envField` as a URL.
