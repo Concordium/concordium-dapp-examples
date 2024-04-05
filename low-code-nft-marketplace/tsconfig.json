@@ -1,23 +1,23 @@
 {
-  "compilerOptions": {
-    "jsx": "react-jsx",
-    "esModuleInterop": true,
-    "target": "ES2021",
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "moduleResolution": "Node",
-    "outDir": "dist"
-  },
-  "references": [
-    {
-      "path": "./common-ui/tsconfig.json"
+    "compilerOptions": {
+        "jsx": "react-jsx",
+        "esModuleInterop": true,
+        "target": "ES2021",
+        "lib": ["dom", "dom.iterable", "esnext"],
+        "moduleResolution": "Node",
+        "outDir": "dist"
     },
-    {
-      "path": "./market-ui/tsconfig.json"
-    },
-    {
-      "path": "./mint-ui/tsconfig.json"
-    }
-  ],
-  "include": ["./common-ui/src/**/*", "./market-ui/src/**/*", "./mint-ui/src/**/*"],
-  "exclude": ["./node_modules"]
+    "references": [
+        {
+            "path": "./common-ui/tsconfig.json"
+        },
+        {
+            "path": "./market-ui/tsconfig.json"
+        },
+        {
+            "path": "./mint-ui/tsconfig.json"
+        }
+    ],
+    "include": ["./common-ui/src/**/*", "./market-ui/src/**/*", "./mint-ui/src/**/*"],
+    "exclude": ["./node_modules"]
 }

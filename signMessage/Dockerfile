@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-ARG build_image="node:16-slim"
+ARG build_image="node:18-slim"
 FROM ${build_image} AS build
 WORKDIR /build
 COPY package.json yarn.lock ./

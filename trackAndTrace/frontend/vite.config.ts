@@ -37,7 +37,7 @@ function getConfig(): Config {
     // Validate network
     if (![undefined, 'mainnet', 'testnet'].includes(process.env.TRACK_AND_TRACE_NETWORK)) {
         throw new Error(
-            `Unexpected value for environment variable "TRACK_AND_TRACE_NETWORK": ${process.env.TRACK_AND_TRACE_NETWORK} (should be either "testnet" or "mainnet")`
+            `Unexpected value for environment variable "TRACK_AND_TRACE_NETWORK": ${process.env.TRACK_AND_TRACE_NETWORK} (should be either "testnet" or "mainnet")`,
         );
     }
 
@@ -45,7 +45,7 @@ function getConfig(): Config {
         process.env.TRACK_AND_TRACE_CONTRACT_ADDRESS?.match(/<(\d*),(\d*)>/) ??
         (() => {
             throw new Error(
-                'Environment variable "TRACK_AND_TRACE_CONTRACT_ADDRESS" must be specified in the format "<1234,0>"'
+                'Environment variable "TRACK_AND_TRACE_CONTRACT_ADDRESS" must be specified in the format "<1234,0>"',
             );
         })();
 
@@ -95,7 +95,7 @@ export default defineConfig(({ command }) => {
             handlebars({
                 context: { config: JSON.stringify(config) },
                 compileOptions: { noEscape: true },
-            }) as PluginOption
+            }) as PluginOption,
         );
     }
 

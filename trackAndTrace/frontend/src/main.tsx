@@ -102,5 +102,5 @@ const App = (props: WalletConnectionProps) => {
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
         <WithWalletConnector network={constants.NETWORK}>{(props) => <App {...props} />}</WithWalletConnector>
-    </React.StrictMode>
+    </React.StrictMode>,
 );

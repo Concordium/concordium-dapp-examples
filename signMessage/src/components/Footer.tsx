@@ -1,5 +1,5 @@
 import { Col } from 'react-bootstrap';
-import packageInfo from '../package.json';
+import packageInfo from '../../package.json';
 
 function Footer() {
     return (

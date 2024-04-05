@@ -1,19 +1,19 @@
 import {
-  BrowserWalletConnector,
-  CONCORDIUM_WALLET_CONNECT_PROJECT_ID,
-  WalletConnectConnector,
-  ephemeralConnectorType,
+    BrowserWalletConnector,
+    CONCORDIUM_WALLET_CONNECT_PROJECT_ID,
+    WalletConnectConnector,
+    ephemeralConnectorType,
 } from '@concordium/react-components';
 import { SignClientTypes } from '@walletconnect/types';
 
 const WALLET_CONNECT_OPTS: SignClientTypes.Options = {
-  projectId: CONCORDIUM_WALLET_CONNECT_PROJECT_ID,
-  metadata: {
-    name: 'EuroE demo',
-    description: 'Example dApp for accessing an age restricted store where EuroE can be used to buy items.',
-    url: window.location.origin,
-    icons: ['https://euroe-demo.testnet.concordium.com/beer-logo.png'],
-  },
+    projectId: CONCORDIUM_WALLET_CONNECT_PROJECT_ID,
+    metadata: {
+        name: 'EuroE demo',
+        description: 'Example dApp for accessing an age restricted store where EuroE can be used to buy items.',
+        url: window.location.origin,
+        icons: ['https://euroe-demo.testnet.concordium.com/beer-logo.png'],
+    },
 };
 
 export const BROWSER_WALLET = ephemeralConnectorType(BrowserWalletConnector.create);
