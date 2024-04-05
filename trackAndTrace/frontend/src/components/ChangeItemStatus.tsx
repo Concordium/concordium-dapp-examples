@@ -5,12 +5,12 @@ import Select from 'react-select';
 import { Buffer } from 'buffer/';
 import JSONbig from 'json-bigint';
 
-import { TESTNET, WalletConnection, typeSchemaFromBase64 } from '@concordium/wallet-connectors';
+import { WalletConnection, typeSchemaFromBase64 } from '@concordium/wallet-connectors';
 import { useGrpcClient } from '@concordium/react-components';
-import { AccountAddress, ContractAddress, Timestamp } from '@concordium/web-sdk';
+import { AccountAddress, Timestamp } from '@concordium/web-sdk';
 
 import { TxHashLink } from './CCDScanLinks';
-import { CONTRACT_SUB_INDEX, REFRESH_INTERVAL, SERIALIZATION_HELPER_SCHEMA_PERMIT_MESSAGE } from '../../constants';
+import * as constants from '.././constants';
 import { nonceOf } from '../track_and_trace_contract';
 import * as TrackAndTraceContract from '../../generated/module_track_and_trace'; // Code generated from a smart contract module. The naming convention of the generated file is `moduleName_smartContractName`.
 
@@ -52,7 +52,7 @@ async function generateMessage(
         const payload = TrackAndTraceContract.createChangeItemStatusParameter(changeItemStatusParameter);
 
         const message: TrackAndTraceContract.SerializationHelperParameter = {
-            contract_address: ContractAddress.create(Number(process.env.TRACK_AND_TRACE_CONTRACT_INDEX), 0),
+            contract_address: constants.CONTRACT_ADDRESS,
             nonce: Number(nonce),
             timestamp: Timestamp.fromDate(expiryTimeSignature),
             entry_point: 'changeItemStatus',
@@ -86,7 +86,7 @@ export function ChangeItemStatus(props: Props) {
     const [nextNonceError, setNextNonceError] = useState<undefined | string>(undefined);
     const [nextNonce, setNextNonce] = useState<number | bigint>(0);
 
-    const grpcClient = useGrpcClient(TESTNET);
+    const grpcClient = useGrpcClient(constants.NETWORK);
 
     /**
      * This function querries the nonce (CIS3 standard) of an acccount in the track-and-trace contract.
@@ -112,7 +112,7 @@ export function ChangeItemStatus(props: Props) {
     useEffect(() => {
         refreshNonce();
         // Refresh the next nonce value periodically.
-        const interval = setInterval(refreshNonce, REFRESH_INTERVAL.asMilliseconds());
+        const interval = setInterval(refreshNonce, constants.REFRESH_INTERVAL.asMilliseconds());
         return () => clearInterval(interval);
     }, [refreshNonce]);
 
@@ -144,30 +144,24 @@ export function ChangeItemStatus(props: Props) {
                 const permitSignature = await connection.signMessage(accountAddress, {
                     type: 'BinaryMessage',
                     value: Buffer.from(serializedMessage.buffer),
-                    schema: typeSchemaFromBase64(SERIALIZATION_HELPER_SCHEMA_PERMIT_MESSAGE),
+                    schema: typeSchemaFromBase64(constants.SERIALIZATION_HELPER_SCHEMA_PERMIT_MESSAGE),
                 });
 
-                const response = await fetch(
-                    process.env.SPONSORED_TRANSACTION_BACKEND_BASE_URL + `/api/submitTransaction`,
-                    {
-                        method: 'POST',
-                        headers: new Headers({ 'content-type': 'application/json' }),
-                        body: JSONbig.stringify({
-                            signer: accountAddress,
-                            nonce: Number(nextNonce),
-                            signature: permitSignature[0][0],
-                            // RFC 3339 format (e.g. 2030-08-08T05:15:00Z)
-                            expiryTime: expiryTimeSignature.toISOString(),
-                            contractAddress: {
-                                index: Number(process.env.TRACK_AND_TRACE_CONTRACT_INDEX),
-                                subindex: CONTRACT_SUB_INDEX,
-                            },
-                            contractName: TrackAndTraceContract.contractName.value,
-                            entrypointName: 'changeItemStatus',
-                            parameter: Buffer.from(payload.buffer).toString('hex'),
-                        }),
-                    },
-                );
+                const response = await fetch(constants.SPONSORED_TRANSACTION_BACKEND + `api/submitTransaction`, {
+                    method: 'POST',
+                    headers: new Headers({ 'content-type': 'application/json' }),
+                    body: JSONbig.stringify({
+                        signer: accountAddress,
+                        nonce: Number(nextNonce),
+                        signature: permitSignature[0][0],
+                        // RFC 3339 format (e.g. 2030-08-08T05:15:00Z)
+                        expiryTime: expiryTimeSignature.toISOString(),
+                        contractAddress: constants.CONTRACT_ADDRESS,
+                        contractName: TrackAndTraceContract.contractName.value,
+                        entrypointName: 'changeItemStatus',
+                        parameter: Buffer.from(payload.buffer).toString('hex'),
+                    }),
+                });
 
                 if (!response.ok) {
                     const error = (await response.json()) as Error;

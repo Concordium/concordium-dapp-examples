@@ -60,5 +60,8 @@ This project has a `serde` feature. The smart contract can not be built with thi
 For example, the `indexer` and the `test-scripts` derive the feature in the `../indexer/Cargo.toml` and the `../test-scripts/Cargo.toml` files with the command:
 
 ```
-track-and-trace = { path = "../smart-contract", features = ["serde"]}
+track-and-trace = { path = "../smart-contract", default-features=false, features = ["std", "serde"] } 
 ```
+
+Note: The bump allocator (`bump_alloc`) does not free/release memory allocation. Using bump allocators as a memory allocation strategy is optimized for on-chain deployed smart contracts, since the contracts are short lived when they are loaded in the memory of the node during a transaction execution on-chain. 
+In contrast, it is essential that the global allocator is not set to `bump/wee_alloc` when the contract is used as a dependency in long-running services such as an indexer because it will leak memory (memory is not freed), hence the `default-features` are disabled in above statement.

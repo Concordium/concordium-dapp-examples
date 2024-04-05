@@ -1,6 +1,7 @@
 import { Dispatch, useState } from 'react';
 import { Alert, Button, Form } from 'react-bootstrap';
 import { useForm, useWatch } from 'react-hook-form';
+import * as constants from '../constants';
 
 type ChangeItem = {
     block_time: string;
@@ -67,7 +68,11 @@ async function getItemCreatedEvent(itemID: number, setItemCreated: Dispatch<Crea
     }
     const dataItemCreated = await response.json();
     if (dataItemCreated) {
-        setItemCreated(dataItemCreated.data);
+        if (dataItemCreated.data) {
+            setItemCreated(dataItemCreated.data);
+        } else {
+            throw new Error(`Item not found in database.`);
+        }
     } else {
         throw new Error(`Unable to get item's create event`);
     }
@@ -84,12 +89,14 @@ export function Explorer() {
         name: ['itemID'],
     });
 
-    const [itemChanged, setItemChanged] = useState<ChangeItem[]>();
-    const [itemCreated, setItemCreated] = useState<CreateItem>();
+    const [itemChanged, setItemChanged] = useState<ChangeItem[] | undefined>(undefined);
+    const [itemCreated, setItemCreated] = useState<CreateItem | undefined>(undefined);
     const [error, setError] = useState<string | undefined>(undefined);
 
     async function onSubmit() {
         setError(undefined);
+        setItemChanged(undefined);
+        setItemCreated(undefined);
 
         if (itemID === undefined) {
             setError(`'itemID' input field is undefined`);
@@ -144,43 +151,42 @@ export function Explorer() {
                                     <th>New Status</th>
                                 </tr>
                             </thead>
-                            <tbody id="table"></tbody>
-
-                            <tr>
-                                <td>{new Date(itemCreated.block_time).toLocaleString()}</td>
-                                <td>
-                                    <a
-                                        className="link"
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        href={`https://testnet.ccdscan.io/?dcount=1&dentity=transaction&dhash=${itemCreated.transaction_hash}`}
-                                    >
-                                        {itemCreated.transaction_hash.slice(0, 5)}...
-                                        {itemCreated.transaction_hash.slice(-5)}
-                                    </a>
-                                </td>
-                                <td>Created</td>
-                            </tr>
-
-                            {itemChanged.map((event: ChangeItem, parentIndex) => {
-                                return (
-                                    <tr key={parentIndex}>
-                                        <td>{new Date(event.block_time).toLocaleString()}</td>
-                                        <td>
-                                            <a
-                                                className="link"
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                href={`https://testnet.ccdscan.io/?dcount=1&dentity=transaction&dhash=${event.transaction_hash}`}
-                                            >
-                                                {event.transaction_hash.slice(0, 5)}...
-                                                {event.transaction_hash.slice(-5)}
-                                            </a>
-                                        </td>
-                                        <td>{event.new_status}</td>
-                                    </tr>
-                                );
-                            })}
+                            <tbody id="table">
+                                <tr>
+                                    <td>{new Date(itemCreated.block_time).toLocaleString()}</td>
+                                    <td>
+                                        <a
+                                            className="link"
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            href={`${constants.CCD_SCAN_URL}/?dcount=1&dentity=transaction&dhash=${itemCreated.transaction_hash}`}
+                                        >
+                                            {itemCreated.transaction_hash.slice(0, 5)}...
+                                            {itemCreated.transaction_hash.slice(-5)}
+                                        </a>
+                                    </td>
+                                    <td>Created</td>
+                                </tr>
+                                {itemChanged.map((event: ChangeItem, parentIndex) => {
+                                    return (
+                                        <tr key={parentIndex}>
+                                            <td>{new Date(event.block_time).toLocaleString()}</td>
+                                            <td>
+                                                <a
+                                                    className="link"
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    href={`${constants.CCD_SCAN_URL}/?dcount=1&dentity=transaction&dhash=${event.transaction_hash}`}
+                                                >
+                                                    {event.transaction_hash.slice(0, 5)}...
+                                                    {event.transaction_hash.slice(-5)}
+                                                </a>
+                                            </td>
+                                            <td>{event.new_status}</td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
                         </table>
                     </>
                 )}

@@ -26,7 +26,7 @@ The following examples are available.
   interactions of a store that sells restricted items, and supports payment in
   EUROe tokens (or generally any CIS2 token).
 
-- [track-and-trace](./track-and-trace/) demonstrates an example frontend, backend, smart contract and event indexer to track items along the supply chain.
+- [track-and-trace](./track-and-trace/) demonstrates an example frontend, backend, smart contract and event indexer to track items along the supply chain. It also has a [CIS-3](https://proposals.concordium.software/CIS/cis-3.html) sponsored transactions service that is compatible with any CIS-3 contract.
 
 ## Setup
 
