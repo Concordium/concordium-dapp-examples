@@ -29,7 +29,7 @@ async function getItemStatusChangedEvents(itemID: number, setItemChanged: Dispat
     const response = await fetch(`api/getItemStatusChangedEvents`, {
         method: 'POST',
         headers: new Headers({ 'content-type': 'application/json' }),
-        body: JSON.stringify({
+        body:    JSON.stringify({
             item_id: Number(itemID),
             limit: 30,
             offset: 0,
