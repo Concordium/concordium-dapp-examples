@@ -26,7 +26,7 @@ However, the easiest option is to use [docker-compose](https://docs.docker.com/c
 For this to work, you should do the following:
 
 1. Deploy and initialize your version of the Track and Trace smart contract.
-2. [Export your account keys from the Browser Wallet](https://developer.concordium.software/en/mainnet/net/guides/export-key.html) and generate a `./private-keys` folder to save the keys into it.
+2. [Export your account keys from the Browser Wallet](https://developer.concordium.software/en/mainnet/net/guides/export-key.html) and generate a `./private-keys` folder to save the key file into it.
 3. Set the following environment variables:
    - Set the `TRACK_AND_TRACE_CONTRACT_ADDRESS` variable to the contract address of your contract instance.
    - Set the `TRACK_AND_TRACE_PRIVATE_KEY_FILE` variable to the path of your keys from step 2.
