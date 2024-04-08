@@ -6,7 +6,7 @@
     "scripts": {
         "dev": "vite",
         "build": "tsc && vite build",
-        "lint": "eslint",
+        "lint": "eslint . --cache --max-warnings 0 --ext .ts,.tsx",
         "lint-fix": "yarn lint --fix",
         "fmt-check": "prettier --check .",
         "fmt": "prettier --write .",

@@ -3,20 +3,20 @@ import { Alert, Button, Form } from 'react-bootstrap';
 import { useForm, useWatch } from 'react-hook-form';
 import * as constants from '../constants';
 
-type ChangeItem = {
+interface ChangeItem {
     block_time: string;
     transaction_hash: string;
     new_status: string;
-    additional_data: { bytes: Array<number> };
+    additional_data: { bytes: number[] };
     event_index: number;
     item_id: number;
-};
+}
 
-type CreateItem = {
+interface CreateItem {
     block_time: string;
     transaction_hash: string;
     event_index: number;
-};
+}
 
 /**
  * This function gets the historical ItemStatusChangedEvents for a given itemID.
@@ -29,7 +29,7 @@ async function getItemStatusChangedEvents(itemID: number, setItemChanged: Dispat
     const response = await fetch(`api/getItemStatusChangedEvents`, {
         method: 'POST',
         headers: new Headers({ 'content-type': 'application/json' }),
-        body:    JSON.stringify({
+        body: JSON.stringify({
             item_id: Number(itemID),
             limit: 30,
             offset: 0,
@@ -79,9 +79,9 @@ async function getItemCreatedEvent(itemID: number, setItemCreated: Dispatch<Crea
 }
 
 export function Explorer() {
-    type FormType = {
+    interface FormType {
         itemID: number | undefined;
-    };
+    }
     const { control, register, formState, handleSubmit } = useForm<FormType>({ mode: 'all' });
 
     const [itemID] = useWatch({

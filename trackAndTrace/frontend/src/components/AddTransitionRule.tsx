@@ -28,12 +28,12 @@ const STATE_OPTIONS = [
 export function AddTransitionRule(props: Props) {
     const { connection, accountAddress, activeConnectorError } = props;
 
-    type FormType = {
+    interface FormType {
         address: string | undefined;
         fromStatus: 'Produced' | 'InTransit' | 'InStore' | 'Sold' | undefined;
         toStatus: 'Produced' | 'InTransit' | 'InStore' | 'Sold' | undefined;
         isUpdateAdd: boolean;
-    };
+    }
     const { control, register, formState, handleSubmit } = useForm<FormType>({ mode: 'all' });
 
     const [isUpdateAdd, fromStatus, toStatus, address] = useWatch({
