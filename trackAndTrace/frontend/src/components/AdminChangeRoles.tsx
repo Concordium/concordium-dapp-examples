@@ -22,13 +22,14 @@ export function AdminChangeRoles(props: Props) {
 
     type FormType = {
         address: string | undefined;
-        toggle: boolean;
+        addAdmin: boolean;
     };
     const { control, register, formState, handleSubmit } = useForm<FormType>({ mode: 'all' });
 
-    const [toggle, address] = useWatch({
+    const [addAdmin, address] = useWatch({
         control: control,
-        name: ['toggle', 'address'],
+        name: ['addAdmin', 'address'],
+        defaultValue: { addAdmin: true },
     });
 
     const [txHash, setTxHash] = useState<string | undefined>(undefined);
@@ -47,9 +48,9 @@ export function AdminChangeRoles(props: Props) {
             role: { type: 'Admin' },
         };
 
-        // Send transaction
-        if (toggle) {
-            if (accountAddress && connection) {
+        if (accountAddress && connection) {
+            // Send transaction
+            if (addAdmin) {
                 addRole(connection, AccountAddress.fromBase58(accountAddress), parameter)
                     .then((txHash: string) => {
                         setTxHash(txHash);
@@ -58,10 +59,6 @@ export function AdminChangeRoles(props: Props) {
                         setError((e as Error).message);
                     });
             } else {
-                setError(`Wallet is not connected. Click 'Connect Wallet' button.`);
-            }
-        } else {
-            if (accountAddress && connection) {
                 removeRole(connection, AccountAddress.fromBase58(accountAddress), parameter)
                     .then((txHash: string) => {
                         setTxHash(txHash);
@@ -69,9 +66,9 @@ export function AdminChangeRoles(props: Props) {
                     .catch((e) => {
                         setError((e as Error).message);
                     });
-            } else {
-                setError(`Wallet is not connected. Click 'Connect Wallet' button.`);
             }
+        } else {
+            setError(`Wallet is not connected. Click 'Connect Wallet' button.`);
         }
     }
 
@@ -84,16 +81,16 @@ export function AdminChangeRoles(props: Props) {
                     <Form.Group className="containerSwitch">
                         Add
                         <Controller
-                            name="toggle"
+                            name="addAdmin"
                             control={control}
-                            defaultValue={false}
-                            render={({ field: { onChange } }) => (
+                            defaultValue={true}
+                            render={({ field: { onChange, value } }) => (
                                 <Switch
                                     onChange={() => {
-                                        onChange(!toggle);
+                                        onChange(!value);
                                     }}
                                     onColor="#808080"
-                                    checked={!toggle}
+                                    checked={!value}
                                     checkedIcon={false}
                                     uncheckedIcon={false}
                                 />
@@ -114,7 +111,7 @@ export function AdminChangeRoles(props: Props) {
                         <Form.Text />
                     </Form.Group>
                     <Button variant="secondary" type="submit">
-                        {toggle ? 'Add Admin Role' : 'Remove Admin Role'}
+                        {addAdmin ? 'Add Admin Role' : 'Remove Admin Role'}
                     </Button>
                 </Form>
 
