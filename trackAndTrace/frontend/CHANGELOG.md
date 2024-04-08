@@ -1,5 +1,9 @@
 ## Unreleased changes
 
+## 1.1.0
+
+-   Add transition edges management by admin to front end.
+
 ## 1.0.2
 
 -   Fix `Writable` error via polyfill in `walletConnect` dependency.
