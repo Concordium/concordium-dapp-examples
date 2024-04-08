@@ -23,16 +23,16 @@ interface Props {
     activeConnectorError: string | undefined;
 }
 
-type PartialItemCreatedEvent = {
+interface PartialItemCreatedEvent {
     item_id: number | bigint;
-};
+}
 
 export function AdminCreateItem(props: Props) {
     const { connection, accountAddress, activeConnectorError } = props;
 
-    type FormType = {
+    interface FormType {
         url: string | undefined;
-    };
+    }
     const { control, register, formState, handleSubmit } = useForm<FormType>({ mode: 'all' });
 
     const [url] = useWatch({

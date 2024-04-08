@@ -18,7 +18,7 @@ declare namespace NodeJS {
 /**
  * The configuration built into the application when served from the backend API
  */
-type Config = {
+interface Config {
     /** The URL of the node. Must have grpc-web enabled. */
     node: string;
     /** The contract address of the track and trace instance used. */
@@ -27,7 +27,7 @@ type Config = {
     network: TargetNetwork;
     /** The URL of the sponsored transaction backend API. */
     sponsoredTransactionBackend: string;
-};
+}
 
 /** The configuration built into the application when served from the backend API */
 declare const CONFIG: Config;

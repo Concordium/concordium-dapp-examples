@@ -20,10 +20,10 @@ interface Props {
 export function AdminChangeRoles(props: Props) {
     const { connection, accountAddress, activeConnectorError } = props;
 
-    type FormType = {
+    interface FormType {
         address: string | undefined;
         addAdmin: boolean;
-    };
+    }
     const { control, register, formState, handleSubmit } = useForm<FormType>({ mode: 'all' });
 
     const [addAdmin, address] = useWatch({

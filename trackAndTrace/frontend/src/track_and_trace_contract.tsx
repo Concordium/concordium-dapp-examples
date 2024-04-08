@@ -141,16 +141,16 @@ export async function removeRole(
 export async function updateStateMachine(
     connection: WalletConnection,
     accountAddress: AccountAddress.Type,
-    updateStateMachineParameter: TrackAndTraceContract.UpdateStateMachineParameter
+    updateStateMachineParameter: TrackAndTraceContract.UpdateStateMachineParameter,
 ): Promise<string> {
-    let contractInvokeMetadata: ContractInvokeMetadata = {
+    const contractInvokeMetadata: ContractInvokeMetadata = {
         invoker: accountAddress,
     };
 
     const dryRunResult = await TrackAndTraceContract.dryRunUpdateStateMachine(
         contract,
         updateStateMachineParameter,
-        contractInvokeMetadata
+        contractInvokeMetadata,
     );
 
     if (!dryRunResult || dryRunResult.tag === 'failure' || !dryRunResult.returnValue) {
@@ -160,8 +160,8 @@ export async function updateStateMachine(
             `RPC call 'invokeContract' on method '${TrackAndTraceContract.contractName.value}.updateStateMachine' of contract '${
                 constants.CONTRACT_ADDRESS.index
             }' failed. Decoded error code: ${JSONbig.stringify(
-                parsedErrorCode
-            )}. Original response: ${JSONbig.stringify(dryRunResult)}`
+                parsedErrorCode,
+            )}. Original response: ${JSONbig.stringify(dryRunResult)}`,
         );
     }
 
@@ -172,19 +172,19 @@ export async function updateStateMachine(
         address: contract.contractAddress,
         receiveName: ReceiveName.create(
             TrackAndTraceContract.contractName,
-            EntrypointName.fromString('updateStateMachine')
+            EntrypointName.fromString('updateStateMachine'),
         ),
         maxContractExecutionEnergy,
     };
 
-    let webWalletParameter =
+    const webWalletParameter =
         TrackAndTraceContract.createUpdateStateMachineParameterWebWallet(updateStateMachineParameter);
 
     return connection.signAndSendTransaction(
         accountAddress.address,
         AccountTransactionType.Update,
         payload,
-        webWalletParameter
+        webWalletParameter,
     );
 }
 

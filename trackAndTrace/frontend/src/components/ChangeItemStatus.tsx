@@ -27,7 +27,7 @@ const NEW_STATUS_OPTIONS = [
     { label: 'Sold', value: 'Sold' },
 ];
 
-async function generateMessage(
+function generateMessage(
     newStatus: 'Produced' | 'InTransit' | 'InStore' | 'Sold' | undefined,
     itemID: bigint,
     expiryTimeSignature: Date,
@@ -70,10 +70,10 @@ async function generateMessage(
 export function ChangeItemStatus(props: Props) {
     const { connection, accountAddress, activeConnectorError } = props;
 
-    type FormType = {
+    interface FormType {
         itemID: bigint | undefined;
         newStatus: 'Produced' | 'InTransit' | 'InStore' | 'Sold' | undefined;
-    };
+    }
     const { control, register, formState, handleSubmit } = useForm<FormType>({ mode: 'all' });
 
     const [newStatus, itemID] = useWatch({
@@ -134,12 +134,7 @@ export function ChangeItemStatus(props: Props) {
 
         if (connection && accountAddress) {
             try {
-                const [payload, serializedMessage] = await generateMessage(
-                    newStatus,
-                    itemID,
-                    expiryTimeSignature,
-                    nextNonce,
-                );
+                const [payload, serializedMessage] = generateMessage(newStatus, itemID, expiryTimeSignature, nextNonce);
 
                 const permitSignature = await connection.signMessage(accountAddress, {
                     type: 'BinaryMessage',
