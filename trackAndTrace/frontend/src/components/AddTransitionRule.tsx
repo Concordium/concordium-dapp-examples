@@ -39,6 +39,7 @@ export function AddTransitionRule(props: Props) {
     const [isUpdateAdd, fromStatus, toStatus, address] = useWatch({
         control: control,
         name: ['isUpdateAdd', 'fromStatus', 'toStatus', 'address'],
+        defaultValue: { isUpdateAdd: true },
     });
 
     const [txHash, setTxHash] = useState<string | undefined>(undefined);
@@ -94,14 +95,14 @@ export function AddTransitionRule(props: Props) {
                         <Controller
                             name="isUpdateAdd"
                             control={control}
-                            defaultValue={false}
-                            render={({ field: { onChange } }) => (
+                            defaultValue={true}
+                            render={({ field: { onChange, value } }) => (
                                 <Switch
                                     onChange={() => {
-                                        onChange(!isUpdateAdd);
+                                        onChange(!value);
                                     }}
                                     onColor="#808080"
-                                    checked={!isUpdateAdd}
+                                    checked={!value}
                                     checkedIcon={false}
                                     uncheckedIcon={false}
                                 />

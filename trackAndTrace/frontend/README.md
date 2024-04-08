@@ -34,6 +34,12 @@ To start a development environment make sure to first generate the smart contrac
 yarn dev
 ```
 
+e.g.
+
+```bash
+TRACK_AND_TRACE_CONTRACT_ADDRESS="<8527,0>" yarn dev
+```
+
 This will launch a development server with hot module replacement enabled.
 
 _Please note that calls to the backend server do not work in the development setup._
