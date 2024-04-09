@@ -239,7 +239,7 @@ pub enum CustomContractError {
     /// Failed signature verification: Signature is expired.
     Expired, // -15
     /// Update of state machine was unsuccessful.
-    UnSuccessful, // -16
+    Unsuccessful, // -16
 }
 
 /// Mapping account signature error to CustomContractError
@@ -319,7 +319,7 @@ impl<S: HasStateApi> State<S> {
         targets.insert(to)
     }
 
-    /// Remove a transition. Return if the transition was removed successfully.
+    /// Remove a transition. Return if the transition was present.
     pub fn remove(
         &mut self,
         builder: &mut StateBuilder<S>,
@@ -327,12 +327,10 @@ impl<S: HasStateApi> State<S> {
         address: AccountAddress,
         to: Status,
     ) -> bool {
-        let mut transition = self
-            .transitions
-            .entry(from)
-            .or_insert_with(|| StatusTransitions {
-                transitions: builder.new_map(),
-            });
+        let Some(mut transition) = self
+        .transitions
+        .get_mut(&from) else { return false; };
+
         let mut targets = transition.targets(builder, address);
         targets.remove(&to)
     }
@@ -708,7 +706,7 @@ fn contract_update_state_machine(
                 params.address,
                 params.to_status,
             );
-            ensure!(success, CustomContractError::UnSuccessful);
+            ensure!(success, CustomContractError::Unsuccessful);
         }
         Update::Remove => {
             let success = state.remove(
@@ -718,7 +716,7 @@ fn contract_update_state_machine(
                 params.to_status,
             );
 
-            ensure!(success, CustomContractError::UnSuccessful);
+            ensure!(success, CustomContractError::Unsuccessful);
         }
     };
 
