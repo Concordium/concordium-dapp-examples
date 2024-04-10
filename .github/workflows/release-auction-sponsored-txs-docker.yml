@@ -30,7 +30,7 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Extract tag from package.json
+      - name: Extract tag from package.json and Cargo.toml files
         id: meta
         run: |
           export FRONTEND_VERSION=$(jq -r .version sponsoredTransactionsAuction/frontend/package.json)
