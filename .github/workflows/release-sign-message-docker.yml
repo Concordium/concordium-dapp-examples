@@ -39,6 +39,9 @@ jobs:
           if docker manifest inspect ${FULL_IMAGE_TAG} > /dev/null; then
              echo "::error ${FULL_IMAGE_TAG} already exists"
              exit 1
+          elif [ ! "${{ github.ref_name }}" = "signmessage/${VERSION}" ]; then
+             echo "::error Expected tag ${EXPECTED_TAG} does not match the version ${VERSION}."
+             exit 1
           else
              # Store the full image tag into a tag variable for the following step.
              echo "tag=${FULL_IMAGE_TAG}" > "$GITHUB_OUTPUT"
