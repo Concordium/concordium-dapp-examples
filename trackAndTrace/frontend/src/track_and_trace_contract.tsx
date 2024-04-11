@@ -8,21 +8,16 @@ import {
     EntrypointName,
     Energy,
     AccountAddress,
-    ContractAddress,
     ConcordiumGRPCWebClient,
     ContractInvokeMetadata,
 } from '@concordium/web-sdk';
-import { CONTRACT_SUB_INDEX, EPSILON_ENERGY, NODE, PORT } from '../constants';
-
 import JSONbig from 'json-bigint';
 import { WalletConnection } from '@concordium/wallet-connectors';
+import * as constants from './constants';
 
-const grpc = new ConcordiumGRPCWebClient(NODE, PORT);
+const grpc = new ConcordiumGRPCWebClient(constants.NODE_HOST, constants.NODE_PORT);
 
-const contract = TrackAndTraceContract.createUnchecked(
-    grpc,
-    ContractAddress.create(Number(process.env.TRACK_AND_TRACE_CONTRACT_INDEX), CONTRACT_SUB_INDEX)
-);
+const contract = TrackAndTraceContract.createUnchecked(grpc, constants.CONTRACT_ADDRESS);
 
 /**
  * This function submits a transaction to create an item in the track and trace contract.
@@ -36,16 +31,16 @@ const contract = TrackAndTraceContract.createUnchecked(
 export async function createItem(
     connection: WalletConnection,
     accountAddress: AccountAddress.Type,
-    createItemParameter: TrackAndTraceContract.CreateItemParameter
+    createItemParameter: TrackAndTraceContract.CreateItemParameter,
 ): Promise<string> {
-    let contractInvokeMetadata: ContractInvokeMetadata = {
+    const contractInvokeMetadata: ContractInvokeMetadata = {
         invoker: accountAddress,
     };
 
     const dryRunResult = await TrackAndTraceContract.dryRunCreateItem(
         contract,
         createItemParameter,
-        contractInvokeMetadata
+        contractInvokeMetadata,
     );
 
     if (!dryRunResult || dryRunResult.tag === 'failure' || !dryRunResult.returnValue) {
@@ -53,14 +48,14 @@ export async function createItem(
 
         throw new Error(
             `RPC call 'invokeContract' on method '${TrackAndTraceContract.contractName.value}.createItem' of contract '${
-                process.env.TRACK_AND_TRACE_CONTRACT_INDEX
+                constants.CONTRACT_ADDRESS.index
             }' failed. Decoded error code: ${JSONbig.stringify(
-                parsedErrorCode
-            )}. Original response: ${JSONbig.stringify(dryRunResult)}`
+                parsedErrorCode,
+            )}. Original response: ${JSONbig.stringify(dryRunResult)}`,
         );
     }
 
-    const maxContractExecutionEnergy = Energy.create(dryRunResult.usedEnergy.value + EPSILON_ENERGY);
+    const maxContractExecutionEnergy = Energy.create(dryRunResult.usedEnergy.value + constants.EPSILON_ENERGY);
 
     const payload: Omit<UpdateContractPayload, 'message'> = {
         amount: CcdAmount.zero(),
@@ -69,13 +64,13 @@ export async function createItem(
         maxContractExecutionEnergy,
     };
 
-    let webWalletParameter = TrackAndTraceContract.createCreateItemParameterWebWallet(createItemParameter);
+    const webWalletParameter = TrackAndTraceContract.createCreateItemParameterWebWallet(createItemParameter);
 
     return connection.signAndSendTransaction(
         accountAddress.address,
         AccountTransactionType.Update,
         payload,
-        webWalletParameter
+        webWalletParameter,
     );
 }
 
@@ -91,16 +86,16 @@ export async function createItem(
 export async function removeRole(
     connection: WalletConnection,
     accountAddress: AccountAddress.Type,
-    revokeRoleParameter: TrackAndTraceContract.RevokeRoleParameter
+    revokeRoleParameter: TrackAndTraceContract.RevokeRoleParameter,
 ): Promise<string> {
-    let contractInvokeMetadata: ContractInvokeMetadata = {
+    const contractInvokeMetadata: ContractInvokeMetadata = {
         invoker: accountAddress,
     };
 
     const dryRunResult = await TrackAndTraceContract.dryRunRevokeRole(
         contract,
         revokeRoleParameter,
-        contractInvokeMetadata
+        contractInvokeMetadata,
     );
 
     if (!dryRunResult || dryRunResult.tag === 'failure' || !dryRunResult.returnValue) {
@@ -108,14 +103,14 @@ export async function removeRole(
 
         throw new Error(
             `RPC call 'invokeContract' on method '${TrackAndTraceContract.contractName.value}.revokeRole' of contract '${
-                process.env.TRACK_AND_TRACE_CONTRACT_INDEX
+                constants.CONTRACT_ADDRESS.index
             }' failed. Decoded error code: ${JSONbig.stringify(
-                parsedErrorCode
-            )}. Original response: ${JSONbig.stringify(dryRunResult)}`
+                parsedErrorCode,
+            )}. Original response: ${JSONbig.stringify(dryRunResult)}`,
         );
     }
 
-    const maxContractExecutionEnergy = Energy.create(dryRunResult.usedEnergy.value + EPSILON_ENERGY);
+    const maxContractExecutionEnergy = Energy.create(dryRunResult.usedEnergy.value + constants.EPSILON_ENERGY);
 
     const payload: Omit<UpdateContractPayload, 'message'> = {
         amount: CcdAmount.zero(),
@@ -124,13 +119,72 @@ export async function removeRole(
         maxContractExecutionEnergy,
     };
 
-    let webWalletParameter = TrackAndTraceContract.createRevokeRoleParameterWebWallet(revokeRoleParameter);
+    const webWalletParameter = TrackAndTraceContract.createRevokeRoleParameterWebWallet(revokeRoleParameter);
 
     return connection.signAndSendTransaction(
         accountAddress.address,
         AccountTransactionType.Update,
         payload,
-        webWalletParameter
+        webWalletParameter,
+    );
+}
+
+/**
+ * This function submits a transaction to update the state machine.
+ *
+ * @param provider - The wallet provider to use for sending the transaction.
+ * @param accountAddress - The account address to send from.
+ * @param updateStateMachineParameter - The parameter for the updateStateMachine function.
+ * @throws If simulating the contract update fails.
+ * @returns A promise resolving with the corresponding {@linkcode string}
+ */
+export async function updateStateMachine(
+    connection: WalletConnection,
+    accountAddress: AccountAddress.Type,
+    updateStateMachineParameter: TrackAndTraceContract.UpdateStateMachineParameter,
+): Promise<string> {
+    const contractInvokeMetadata: ContractInvokeMetadata = {
+        invoker: accountAddress,
+    };
+
+    const dryRunResult = await TrackAndTraceContract.dryRunUpdateStateMachine(
+        contract,
+        updateStateMachineParameter,
+        contractInvokeMetadata,
+    );
+
+    if (!dryRunResult || dryRunResult.tag === 'failure' || !dryRunResult.returnValue) {
+        const parsedErrorCode = TrackAndTraceContract.parseErrorMessageUpdateStateMachine(dryRunResult)?.type;
+
+        throw new Error(
+            `RPC call 'invokeContract' on method '${TrackAndTraceContract.contractName.value}.updateStateMachine' of contract '${
+                constants.CONTRACT_ADDRESS.index
+            }' failed. Decoded error code: ${JSONbig.stringify(
+                parsedErrorCode,
+            )}. Original response: ${JSONbig.stringify(dryRunResult)}`,
+        );
+    }
+
+    const maxContractExecutionEnergy = Energy.create(dryRunResult.usedEnergy.value + constants.EPSILON_ENERGY);
+
+    const payload: Omit<UpdateContractPayload, 'message'> = {
+        amount: CcdAmount.zero(),
+        address: contract.contractAddress,
+        receiveName: ReceiveName.create(
+            TrackAndTraceContract.contractName,
+            EntrypointName.fromString('updateStateMachine'),
+        ),
+        maxContractExecutionEnergy,
+    };
+
+    const webWalletParameter =
+        TrackAndTraceContract.createUpdateStateMachineParameterWebWallet(updateStateMachineParameter);
+
+    return connection.signAndSendTransaction(
+        accountAddress.address,
+        AccountTransactionType.Update,
+        payload,
+        webWalletParameter,
     );
 }
 
@@ -146,16 +200,16 @@ export async function removeRole(
 export async function addRole(
     connection: WalletConnection,
     accountAddress: AccountAddress.Type,
-    grantRoleParameter: TrackAndTraceContract.GrantRoleParameter
+    grantRoleParameter: TrackAndTraceContract.GrantRoleParameter,
 ): Promise<string> {
-    let contractInvokeMetadata: ContractInvokeMetadata = {
+    const contractInvokeMetadata: ContractInvokeMetadata = {
         invoker: accountAddress,
     };
 
     const dryRunResult = await TrackAndTraceContract.dryRunGrantRole(
         contract,
         grantRoleParameter,
-        contractInvokeMetadata
+        contractInvokeMetadata,
     );
 
     if (!dryRunResult || dryRunResult.tag === 'failure' || !dryRunResult.returnValue) {
@@ -163,14 +217,14 @@ export async function addRole(
 
         throw new Error(
             `RPC call 'invokeContract' on method '${TrackAndTraceContract.contractName.value}.grantRole' of contract '${
-                process.env.TRACK_AND_TRACE_CONTRACT_INDEX
+                constants.CONTRACT_ADDRESS.index
             }' failed. Decoded error code: ${JSONbig.stringify(
-                parsedErrorCode
-            )}. Original response: ${JSONbig.stringify(dryRunResult)}`
+                parsedErrorCode,
+            )}. Original response: ${JSONbig.stringify(dryRunResult)}`,
         );
     }
 
-    const maxContractExecutionEnergy = Energy.create(dryRunResult.usedEnergy.value + EPSILON_ENERGY);
+    const maxContractExecutionEnergy = Energy.create(dryRunResult.usedEnergy.value + constants.EPSILON_ENERGY);
 
     const payload: Omit<UpdateContractPayload, 'message'> = {
         amount: CcdAmount.zero(),
@@ -179,13 +233,13 @@ export async function addRole(
         maxContractExecutionEnergy,
     };
 
-    let webWalletParameter = TrackAndTraceContract.createGrantRoleParameterWebWallet(grantRoleParameter);
+    const webWalletParameter = TrackAndTraceContract.createGrantRoleParameterWebWallet(grantRoleParameter);
 
     return connection.signAndSendTransaction(
         accountAddress.address,
         AccountTransactionType.Update,
         payload,
-        webWalletParameter
+        webWalletParameter,
     );
 }
 
@@ -197,7 +251,7 @@ export async function addRole(
  * @returns A promise resolving with the corresponding {@linkcode TrackAndTrace.ReturnValueNonceOf}
  */
 export async function nonceOf(
-    nonceOfParameter: TrackAndTraceContract.NonceOfParameter
+    nonceOfParameter: TrackAndTraceContract.NonceOfParameter,
 ): Promise<TrackAndTraceContract.ReturnValueNonceOf> {
     const dryRunResult = await TrackAndTraceContract.dryRunNonceOf(contract, nonceOfParameter);
 
@@ -206,10 +260,10 @@ export async function nonceOf(
 
         throw new Error(
             `RPC call 'invokeContract' on method '${TrackAndTraceContract.contractName.value}.nonceOf' of contract '${
-                process.env.TRACK_AND_TRACE_CONTRACT_INDEX
+                constants.CONTRACT_ADDRESS.index
             }' failed. Decoded error code: ${JSONbig.stringify(
-                parsedErrorCode
-            )}. Original response: ${JSONbig.stringify(dryRunResult)}`
+                parsedErrorCode,
+            )}. Original response: ${JSONbig.stringify(dryRunResult)}`,
         );
     }
 
@@ -217,7 +271,7 @@ export async function nonceOf(
 
     if (parsedReturnValue === undefined) {
         throw new Error(
-            `Deserializing the returnValue from the '${TrackAndTraceContract.contractName.value}.nonceOf' method of contract '${process.env.TRACK_AND_TRACE_CONTRACT_INDEX}' failed`
+            `Deserializing the returnValue from the '${TrackAndTraceContract.contractName.value}.nonceOf' method of contract '${constants.CONTRACT_ADDRESS.index}' failed`,
         );
     } else {
         return parsedReturnValue;

@@ -37,9 +37,11 @@ To have hot-reload (useful for development), do the following instead:
 This creates a `dist` folder which can be served via the backend. Start the backend server by following the [README.md](../backend/README.md)
 
 ## Using yarn (on unix/macOS systems)
+
 Some of the node modules we use have Windows-type line endings (\r\n), instead of unix line endings (\n), which causes problems when using the yarn package manager.
 
 If you see an error message similar to this when executing `yarn start`, then you've run into the problem:
+
 ```shell
 env: node\r: No such file or directory
 ```
@@ -47,4 +49,3 @@ env: node\r: No such file or directory
 Use `npm install` instead of `yarn install` in the above command. `npm` will correct the line ending.
 
 Additional information can be found [here](https://techtalkbook.com/env-noder-no-such-file-or-directory/).
-

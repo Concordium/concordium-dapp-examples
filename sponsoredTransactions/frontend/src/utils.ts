@@ -15,47 +15,42 @@ export async function submitUpdateOperator(
     signature: string,
     expiryTimeSignature: string,
     operator: string,
-    addOperator: boolean
-) {
+    addOperator: boolean,
+): Promise<TxHashResponse> {
     if (signer === '') {
-        alert('Insert an signer address.');
-        return '';
+        alert('Insert a signer address.');
+        throw new Error('Insert a signer address.');
     }
 
     if (signer.length !== 50) {
         alert('Signer address needs to have 50 digits.');
-        return '';
+        throw new Error('Signer address needs to have 50 digits.');
     }
 
     if (nonce === '') {
         alert('Insert a nonce.');
-        return '';
+        throw new Error('Insert a nonce.');
     }
 
     // eslint-disable-next-line no-restricted-globals
     if (isNaN(Number(nonce))) {
-        alert('Your nonce needs to be a number.');
-        return '';
+        throw new Error('Your nonce needs to be a number.');
     }
 
     if (signature === '') {
-        alert('Insert a signature.');
-        return '';
+        throw new Error('Insert a signature.');
     }
 
     if (signature.length !== 128) {
-        alert('Signature needs to have 128 digits.');
-        return '';
+        throw new Error('Signature needs to have 128 digits.');
     }
 
     if (operator === '') {
-        alert('Insert an operator address.');
-        return '';
+        throw new Error('Insert an operator address.');
     }
 
     if (operator.length !== 50) {
-        alert('Operator address needs to have 50 digits.');
-        return '';
+        throw new Error('Operator address needs to have 50 digits.');
     }
 
     const response = await fetch(`${backend}/submitUpdateOperator`, {
@@ -72,10 +67,10 @@ export async function submitUpdateOperator(
         }),
     });
     if (!response.ok) {
-        const error = await response.json();
+        const error = (await response.json()) as unknown;
         throw new Error(`Unable to submit update operator: ${JSON.stringify(error)}`);
     }
-    const body = await response.json();
+    const body = (await response.json()) as TxHashResponse;
     if (body) {
         return body;
     }
@@ -93,67 +88,55 @@ export async function submitTransfer(
     expiryTimeSignature: string,
     tokenID: string,
     from: string,
-    to: string
-) {
+    to: string,
+): Promise<TxHashResponse> {
     if (signer === '') {
-        alert('Insert an signer address.');
-        return '';
+        throw new Error('Insert an signer address.');
     }
 
     if (signer.length !== 50) {
-        alert('Signer address needs to have 50 digits.');
-        return '';
+        throw new Error('Signer address needs to have 50 digits.');
     }
 
     if (nonce === '') {
-        alert('Insert a nonce.');
-        return '';
+        throw new Error('Insert a nonce.');
     }
 
     // eslint-disable-next-line no-restricted-globals
     if (isNaN(Number(nonce))) {
-        alert('Your nonce needs to be a number.');
-        return '';
+        throw new Error('Your nonce needs to be a number.');
     }
 
     if (signature === '') {
-        alert('Insert a signature.');
-        return '';
+        throw new Error('Insert a signature.');
     }
 
     if (signature.length !== 128) {
-        alert('Signature needs to have 128 digits.');
-        return '';
+        throw new Error('Signature needs to have 128 digits.');
     }
 
     if (tokenID === '') {
-        alert('Insert a tokenID.');
-        return '';
+        throw new Error('Insert a tokenID.');
     }
 
     if (tokenID.length !== 8) {
-        alert('TokenID needs to have 8 digits.');
-        return '';
+        throw new Error('TokenID needs to have 8 digits.');
     }
 
     if (from === '') {
-        alert('Insert an `from` address.');
-        return '';
+        throw new Error('Insert an `from` address.');
     }
 
     if (from.length !== 50) {
-        alert('`From` address needs to have 50 digits.');
-        return '';
+        throw new Error('`From` address needs to have 50 digits.');
     }
 
     if (to === '') {
-        alert('Insert an `to` address.');
-        return '';
+        throw new Error('Insert a `to` address.');
     }
 
     if (to.length !== 50) {
-        alert('`To` address needs to have 50 digits.');
-        return '';
+        throw new Error('`To` address needs to have 50 digits.');
     }
 
     const response = await fetch(`${backend}/submitTransfer`, {
@@ -170,10 +153,10 @@ export async function submitTransfer(
         }),
     });
     if (!response.ok) {
-        const error = await response.json();
+        const error = (await response.json()) as unknown;
         throw new Error(`Unable to submit transfer: ${JSON.stringify(error)}`);
     }
-    const body = await response.json();
+    const body = (await response.json()) as TxHashResponse;
     if (body) {
         return body;
     }
@@ -202,16 +185,20 @@ export async function mint(connection: WalletConnection, account: string) {
                 owner: { Account: [account] },
             },
             schema: typeSchemaFromBase64(MINT_PARAMETER_SCHEMA),
-        }
+        },
     );
 }
 
 /**
  * Global application state.
  */
-export type State = {
+export interface State {
     isConnected: boolean;
     account: string | undefined;
-};
+}
 
 export const state = createContext<State>({ isConnected: false, account: undefined });
+
+export interface TxHashResponse {
+    tx_hash: string;
+}

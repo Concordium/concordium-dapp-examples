@@ -22,6 +22,9 @@ jobs:
           - dapp-template/frontend
           - euroe-demo
           - gallery
+          - low-code-nft-marketplace
+          - signMessage
+          - simpleAgeVerification
           - sponsoredTransactions/frontend
           - sponsoredTransactionsAuction/frontend
           - trackAndTrace/frontend
@@ -59,6 +62,11 @@ jobs:
         packages:
           - dapp-template/frontend
           - euroe-demo
+          - gallery
+          - low-code-nft-marketplace
+          - signMessage
+          - simpleAgeVerification
+          - sponsoredTransactions/frontend
           - sponsoredTransactionsAuction/frontend
           - trackAndTrace/frontend
 
@@ -132,3 +140,4 @@ jobs:
       - name: Build
         working-directory: ${{ matrix.packages }}
         run: yarn build
+

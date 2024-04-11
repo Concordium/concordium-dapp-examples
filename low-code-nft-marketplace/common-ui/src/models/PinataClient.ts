@@ -1,57 +1,72 @@
-import { default as axios } from "axios";
+import { default as axios } from 'axios';
 
 export class PinataClient {
-  constructor(private pinataJwt: string) {}
+    constructor(private pinataJwt: string) {}
 
-  async isJwtValid(): Promise<boolean> {
-    const response = await axios({
-      method: "get",
-      url: "https://api.pinata.cloud/data/testAuthentication",
-      headers: {
-        Authorization: `Bearer ${this.pinataJwt}`,
-      },
-    });
+    async isJwtValid(): Promise<boolean> {
+        const response = await axios({
+            method: 'get',
+            url: 'https://api.pinata.cloud/data/testAuthentication',
+            headers: {
+                Authorization: `Bearer ${this.pinataJwt}`,
+            },
+        });
 
-    return response.status === 200;
-  }
+        return response.status === 200;
+    }
 
-  async uploadFile(file: File, fileName: string): Promise<string> {
-    const data = new FormData();
-    data.append("file", file);
-    data.append("pinataMetadata", JSON.stringify({ name: fileName }));
+    async uploadFile(file: File, fileName: string): Promise<string> {
+        const data = new FormData();
+        data.append('file', file);
+        data.append('pinataMetadata', JSON.stringify({ name: fileName }));
 
-    const response = await axios({
-      method: "post",
-      url: `https://api.pinata.cloud/pinning/pinFileToIPFS`,
-      headers: {
-        Authorization: `Bearer ${this.pinataJwt}`,
-      },
-      data: data,
-    });
+        const response = await axios({
+            method: 'post',
+            url: `https://api.pinata.cloud/pinning/pinFileToIPFS`,
+            headers: {
+                Authorization: `Bearer ${this.pinataJwt}`,
+            },
+            data: data,
+        });
+        if (response.status !== 200) {
+            throw new Error('Failed to upload file');
+        }
 
-    return `ipfs://${response.data.IpfsHash}`;
-  }
+        const responseData = response.data as PinFileToIPFSResponse;
+        return `ipfs://${responseData.IpfsHash}`;
+    }
 
-  async uploadJson(json: any, fileName: string): Promise<string> {
-    const data = JSON.stringify({
-      pinataMetadata: {
-        name: fileName,
-        keyvalues: {
-          imageFilename: fileName,
-        },
-      },
-      pinataContent: json,
-    });
-    const response = await axios({
-      method: "post",
-      url: `https://api.pinata.cloud/pinning/pinJSONToIPFS`,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${this.pinataJwt}`,
-      },
-      data: data,
-    });
+    async uploadJson(json: object, fileName: string): Promise<string> {
+        const data = JSON.stringify({
+            pinataMetadata: {
+                name: fileName,
+                keyvalues: {
+                    imageFilename: fileName,
+                },
+            },
+            pinataContent: json,
+        });
+        const response = await axios({
+            method: 'post',
+            url: `https://api.pinata.cloud/pinning/pinJSONToIPFS`,
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${this.pinataJwt}`,
+            },
+            data: data,
+        });
+        if (response.status !== 200) {
+            throw new Error('Failed to upload JSON');
+        }
 
-    return `ipfs://${response.data.IpfsHash}`;
-  }
+        const responseData = response.data as PinFileToIPFSResponse;
+        return `ipfs://${responseData.IpfsHash}`;
+    }
+}
+
+interface PinFileToIPFSResponse {
+    IpfsHash: string;
+    PinSize: number;
+    Timestamp: string;
+    isDuplicate: boolean;
 }

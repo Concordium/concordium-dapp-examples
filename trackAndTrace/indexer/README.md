@@ -2,6 +2,8 @@
 
 There are two binaries in this project. An `indexer` that indexes data into a database and a `server` that serves data from the database.
 
+The easiest way to run the `indexer` and `server` is to use [docker-compose](https://docs.docker.com/compose/) as described in the Track and Trace project's main [README.md](../README.md) file.
+
 ## Prerequisites
 
 - `PostgreSQL` installed or running it in a docker container: https://www.postgresql.org/download/
@@ -53,7 +55,7 @@ Each event can be uniquely identified by the `transaction_hash` and `event_index
 ## Run the `indexer`
 
 ```console
-cargo run --bin indexer -- --node https://grpc.testnet.concordium.com:20000 --contract "<8219,0>" --log-level debug
+cargo run --bin indexer -- --node https://grpc.testnet.concordium.com:20000 --contract "<8527,0>" --log-level debug
 ```
 
 ## Configure the `indexer`
@@ -62,7 +64,7 @@ There are a few options to configure the indexer:
 
 - `--node` is the endpoint to the Concordium node grpc v2 API. If not specified, the default value `https://grpc.testnet.concordium.com:20000` is used.
 
-- `--contract` is the contract index of the track-and-trace smart contract, e.g. <8219,0>.
+- `--contract` is the contract index of the track-and-trace smart contract, e.g. <8527,0>.
 
 - `--db-connection` should specify your postgreSQL database connection. If not specified, the default value `host=localhost dbname=indexer user=postgres password=password port=5432` is used.
 
@@ -89,3 +91,25 @@ There are a few options to configure the server:
 - `--db-connection` should specify your postgreSQL database connection. If not specified, the default value `host=localhost dbname=indexer user=postgres password=password port=5432` is used.
 
 - `--log-level` specifies the maximum log level. Possible values are: `trace`, `debug`, `info`, `warn`, and `error`. If not specified, the default value `info` is used.
+
+The following option are also available, which are forwarded to the frontend:
+
+- `--node` specifies the gRPC interface of a Concordium node. (Defaults to `https://grpc.testnet.concordium.com:20000`) 
+
+- `--network` specifies the network to use, i.e., `mainnet` or `testnet`. Defaults to `testnet`.
+
+- `--contract-address` specifies the contract address of the track and trace contract (format is `<1234,0>`).
+
+- `--sponsored-transaction-backend` specifies the endpoint to the sponsored transaction backend. (Defaults to `http://localhost:8000`).
+
+An example of running the service with basic settings and testnet node would be:
+
+``` console
+cargo run --bin server  -- --contract-address <YOUR_CONTRACT_ADDRESS>
+```
+
+An example to run the service with some filled in example settings would be:
+
+``` console
+cargo run --bin server  -- --contract-address "<8527,0>"
+```

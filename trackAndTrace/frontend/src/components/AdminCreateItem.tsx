@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Alert, Button, Form } from 'react-bootstrap';
 import { useForm, useWatch } from 'react-hook-form';
 
-import { TESTNET, WalletConnection } from '@concordium/wallet-connectors';
+import { WalletConnection } from '@concordium/wallet-connectors';
 import {
     AccountAddress,
     TransactionHash,
@@ -10,11 +10,12 @@ import {
     TransactionSummaryType,
     UpdatedEvent,
 } from '@concordium/web-sdk';
+import { useGrpcClient } from '@concordium/react-components';
 
+import * as constants from '../constants';
 import { TxHashLink } from './CCDScanLinks';
 import { createItem } from '../track_and_trace_contract';
 import * as TrackAndTraceContract from '../../generated/module_track_and_trace';
-import { useGrpcClient } from '@concordium/react-components';
 
 interface Props {
     connection: WalletConnection | undefined;
@@ -22,16 +23,16 @@ interface Props {
     activeConnectorError: string | undefined;
 }
 
-type PartialItemCreatedEvent = {
+interface PartialItemCreatedEvent {
     item_id: number | bigint;
-};
+}
 
 export function AdminCreateItem(props: Props) {
     const { connection, accountAddress, activeConnectorError } = props;
 
-    type FormType = {
+    interface FormType {
         url: string | undefined;
-    };
+    }
     const { control, register, formState, handleSubmit } = useForm<FormType>({ mode: 'all' });
 
     const [url] = useWatch({
@@ -45,7 +46,7 @@ export function AdminCreateItem(props: Props) {
     const [newItemId, setNewItemId] = useState<number | bigint | undefined>(undefined);
     const [itemIdError, setItemIdError] = useState<string | undefined>(undefined);
 
-    const grpcClient = useGrpcClient(TESTNET);
+    const grpcClient = useGrpcClient(constants.NETWORK);
 
     // Wait until the submitted transaction is finalized.
     // Once the transaction is finalized, extract the
@@ -62,7 +63,7 @@ export function AdminCreateItem(props: Props) {
                         const eventList = report.summary.events[0] as UpdatedEvent;
 
                         const parsedEvent = TrackAndTraceContract.parseEvent(eventList.events[0]);
-                        let itemCreatedEvent = parsedEvent.content as unknown as PartialItemCreatedEvent;
+                        const itemCreatedEvent = parsedEvent.content as unknown as PartialItemCreatedEvent;
 
                         setNewItemId(itemCreatedEvent.item_id);
                     } else {
@@ -94,9 +95,13 @@ export function AdminCreateItem(props: Props) {
 
         // Send transaction
         if (accountAddress && connection) {
-            createItem(connection, AccountAddress.fromBase58(accountAddress), parameter).then((txHash) => {
-                setTxHash(txHash);
-            });
+            createItem(connection, AccountAddress.fromBase58(accountAddress), parameter)
+                .then((txHash) => {
+                    setTxHash(txHash);
+                })
+                .catch((e) => {
+                    setError((e as Error).message);
+                });
         } else {
             setError(`Wallet is not connected. Click 'Connect Wallet' button.`);
         }

@@ -1,4 +1,5 @@
 /* eslint-disable no-alert */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React, { useEffect, useState, useCallback } from 'react';
 
 import { detectConcordiumProvider } from '@concordium/browser-wallet-api-helpers';
@@ -47,9 +48,9 @@ export default function Gallery() {
     const [items, setItems] = useState<ItemData[]>([]);
 
     useEffect(() => {
-        getNames(VERIFIER_URL).then((names) =>
-            setItems(names.map((name) => ({ name, location: `${VERIFIER_URL}/image/` + name })))
-        );
+        getNames(VERIFIER_URL)
+            .then((names) => setItems(names.map((name) => ({ name, location: `${VERIFIER_URL}/image/` + name }))))
+            .catch(console.error);
     }, []);
 
     useEffect(() => {
@@ -57,9 +58,12 @@ export default function Gallery() {
             .then((provider) => {
                 // Listen for relevant events from the wallet.
                 provider.on('accountChanged', setAccount);
-                provider.on('accountDisconnected', () => provider.getMostRecentlySelectedAccount().then(setAccount));
+                provider.on(
+                    'accountDisconnected',
+                    () => void provider.getMostRecentlySelectedAccount().then(setAccount),
+                );
                 // Check if you are already connected
-                provider.getMostRecentlySelectedAccount().then(setAccount);
+                provider.getMostRecentlySelectedAccount().then(setAccount).catch(console.error);
             })
             .catch(() => setAccount(undefined));
     }, []);
@@ -81,7 +85,13 @@ export default function Gallery() {
             />
             <div className="main-window">
                 {items.map(({ location, name }) => (
-                    <Item location={location} name={name} authToken={authToken} onError={handleErrorOnLoad} />
+                    <Item
+                        location={location}
+                        name={name}
+                        authToken={authToken}
+                        onError={handleErrorOnLoad}
+                        key={name}
+                    />
                 ))}
             </div>
             <div>

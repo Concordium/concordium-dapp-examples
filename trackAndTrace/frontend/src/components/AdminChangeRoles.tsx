@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Alert, Button, Form } from 'react-bootstrap';
-import Select from 'react-select';
 import Switch from 'react-switch';
 
 import { WalletConnection } from '@concordium/wallet-connectors';
@@ -18,26 +17,19 @@ interface Props {
     activeConnectorError: string | undefined;
 }
 
-const ROLE_OPTIONS = [
-    { label: 'Admin', value: 'Admin' },
-    { label: 'Producer', value: 'Producer' },
-    { label: 'Transporter', value: 'Transporter' },
-    { label: 'Seller', value: 'Seller' },
-];
-
 export function AdminChangeRoles(props: Props) {
     const { connection, accountAddress, activeConnectorError } = props;
 
-    type FormType = {
+    interface FormType {
         address: string | undefined;
-        role: 'Admin' | 'Producer' | 'Transporter' | 'Seller' | undefined;
-        toggle: boolean;
-    };
+        addAdmin: boolean;
+    }
     const { control, register, formState, handleSubmit } = useForm<FormType>({ mode: 'all' });
 
-    const [toggle, role, address] = useWatch({
+    const [addAdmin, address] = useWatch({
         control: control,
-        name: ['toggle', 'role', 'address'],
+        name: ['addAdmin', 'address'],
+        defaultValue: { addAdmin: true },
     });
 
     const [txHash, setTxHash] = useState<string | undefined>(undefined);
@@ -51,85 +43,60 @@ export function AdminChangeRoles(props: Props) {
             throw Error(`'address' input field is undefined`);
         }
 
-        if (role === undefined) {
-            setError(`'role' input field is undefined`);
-            throw Error(`'role' input field is undefined`);
-        }
+        const parameter: TrackAndTraceContract.RevokeRoleParameter = {
+            address: { type: 'Account', content: AccountAddress.fromBase58(address) },
+            role: { type: 'Admin' },
+        };
 
-        if (toggle) {
-            const parameter: TrackAndTraceContract.GrantRoleParameter = {
-                address: { type: 'Account', content: AccountAddress.fromBase58(address) },
-                role: { type: role },
-            };
-
+        if (accountAddress && connection) {
             // Send transaction
-            if (accountAddress && connection) {
-                addRole(connection, AccountAddress.fromBase58(accountAddress), parameter).then((txHash: string) => {
-                    setTxHash(txHash);
-                });
+            if (addAdmin) {
+                addRole(connection, AccountAddress.fromBase58(accountAddress), parameter)
+                    .then((txHash: string) => {
+                        setTxHash(txHash);
+                    })
+                    .catch((e) => {
+                        setError((e as Error).message);
+                    });
             } else {
-                setError(`Wallet is not connected. Click 'Connect Wallet' button.`);
+                removeRole(connection, AccountAddress.fromBase58(accountAddress), parameter)
+                    .then((txHash: string) => {
+                        setTxHash(txHash);
+                    })
+                    .catch((e) => {
+                        setError((e as Error).message);
+                    });
             }
         } else {
-            const parameter: TrackAndTraceContract.RevokeRoleParameter = {
-                address: { type: 'Account', content: AccountAddress.fromBase58(address) },
-                role: { type: role },
-            };
-
-            // Send transaction
-            if (accountAddress && connection) {
-                removeRole(connection, AccountAddress.fromBase58(accountAddress), parameter).then((txHash: string) => {
-                    setTxHash(txHash);
-                });
-            } else {
-                setError(`Wallet is not connected. Click 'Connect Wallet' button.`);
-            }
+            setError(`Wallet is not connected. Click 'Connect Wallet' button.`);
         }
     }
 
     return (
         <div className="centered">
             <div className="card">
-                <h2 className="centered"> Change The Role Of An Address</h2>
+                <h2 className="centered"> Change Admin Role of an Address</h2>
                 <br />
                 <Form onSubmit={handleSubmit(onSubmit)}>
                     <Form.Group className="containerSwitch">
-                        Add role
+                        Add
                         <Controller
-                            name="toggle"
+                            name="addAdmin"
                             control={control}
-                            defaultValue={false}
-                            render={({ field: { onChange } }) => (
+                            defaultValue={true}
+                            render={({ field: { onChange, value } }) => (
                                 <Switch
                                     onChange={() => {
-                                        onChange(!toggle);
+                                        onChange(!value);
                                     }}
                                     onColor="#808080"
-                                    checked={!toggle}
+                                    checked={!value}
                                     checkedIcon={false}
                                     uncheckedIcon={false}
                                 />
                             )}
                         />
-                        Remove old role
-                    </Form.Group>
-
-                    <Form.Group className="col mb-3">
-                        <Form.Label>Role</Form.Label>
-                        <Controller
-                            name="role"
-                            control={control}
-                            defaultValue={'Admin'}
-                            render={({ field: { onChange } }) => (
-                                <Select
-                                    getOptionValue={(option) => option.value}
-                                    options={ROLE_OPTIONS}
-                                    onChange={(e) => {
-                                        onChange(e?.value);
-                                    }}
-                                />
-                            )}
-                        />
+                        Remove
                     </Form.Group>
 
                     <Form.Group className="col mb-3">
@@ -144,7 +111,7 @@ export function AdminChangeRoles(props: Props) {
                         <Form.Text />
                     </Form.Group>
                     <Button variant="secondary" type="submit">
-                        {toggle ? 'Add New Role' : 'Remove Role'}
+                        {addAdmin ? 'Add Admin Role' : 'Remove Admin Role'}
                     </Button>
                 </Form>
 

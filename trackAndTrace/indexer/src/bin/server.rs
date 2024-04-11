@@ -8,6 +8,8 @@ use axum::{
     Json, Router,
 };
 use clap::Parser;
+use concordium_rust_sdk::types::ContractAddress;
+use handlebars::{no_escape, Handlebars};
 use http::StatusCode;
 use indexer::db::StoredItemCreatedEvent;
 use std::fs;
@@ -89,13 +91,14 @@ impl axum::response::IntoResponse for ServerError {
 #[derive(Debug, clap::Parser)]
 #[command(author, version, about)]
 struct Args {
+    /// The address to listen on.
     #[clap(
         long = "listen-address",
         default_value = "0.0.0.0:8080",
         help = "Address where the server will listen on.",
         env = "CCD_SERVER_LISTEN_ADDRESS"
     )]
-    listen_address:  std::net::SocketAddr,
+    listen_address: std::net::SocketAddr,
     #[clap(
         long = "frontend",
         default_value = "../frontend/dist",
@@ -111,8 +114,8 @@ struct Args {
                 application.",
         env = "CCD_SERVER_DB_CONNECTION"
     )]
-    db_connection:   tokio_postgres::config::Config,
-    /// Maximum log level
+    db_connection: tokio_postgres::config::Config,
+    /// Maximum log level.
     #[clap(
         long = "log-level",
         default_value = "info",
@@ -120,7 +123,56 @@ struct Args {
                 `error`.",
         env = "CCD_SERVER_LOG_LEVEL"
     )]
-    log_level:       tracing_subscriber::filter::LevelFilter,
+    log_level: tracing_subscriber::filter::LevelFilter,
+    /// The node used for querying (passed to frontend).
+    #[arg(
+        long = "node",
+        default_value = "https://grpc.testnet.concordium.com:20000",
+        help = "The endpoint is expected to point to concordium node grpc v2 API's. The endpoint \
+                is built into the frontend served, which means the node must enable grpc-web to \
+                be used successfully.",
+        env = "CCD_SERVER_NODE"
+    )]
+    node_endpoint: concordium_rust_sdk::v2::Endpoint,
+    /// The network to connect users to (passed to frontend).
+    #[clap(
+        long = "network",
+        default_value_t = concordium_rust_sdk::web3id::did::Network::Testnet,
+        help = "The network to connect users to (passed to frontend). Possible values: testnet, mainnet",
+        env = "CCD_SERVER_NETWORK",
+    )]
+    network: concordium_rust_sdk::web3id::did::Network,
+    /// The contract address of the track and trace contract (passed to
+    /// frontend).
+    #[clap(
+        long = "contract-address",
+        help = "The contract address of the track and trace contract. Expected format '<123,0>'.",
+        env = "CCD_SERVER_CONTRACT_ADDRESS"
+    )]
+    contract_address: ContractAddress,
+    /// The sponsored transaction backend (passed to frontend).
+    #[arg(
+        long = "sponsored-transaction-backend",
+        default_value = "http://localhost:8000",
+        help = "The endpoint is expected to point to a sponsored transaction backend.",
+        env = "CCD_SERVER_SPONSORED_TRANSACTION_BACKEND"
+    )]
+    sponsored_transaction_backend: concordium_rust_sdk::v2::Endpoint,
+}
+
+impl Args {
+    /// Creates the JSON object required by the frontend.
+    fn as_frontend_config(&self) -> serde_json::Value {
+        let config = serde_json::json!({
+            "node": self.node_endpoint.uri().to_string(),
+            "network": self.network,
+            "contractAddress": self.contract_address,
+            "sponsoredTransactionBackend": self.sponsored_transaction_backend.uri().to_string(),
+        });
+        let config_string =
+            serde_json::to_string(&config).expect("JSON serialization always succeeds");
+        serde_json::json!({ "config": config_string })
+    }
 }
 
 /// The main function.
@@ -149,9 +201,17 @@ async fn main() -> anyhow::Result<()> {
 
     tracing::info!("Starting server...");
 
-    // Render `index.html` file and `assets` folder.
-    let index_file = fs::read_to_string(app.frontend_assets.join("index.html"))
+    // Insert the frontend config into `index.html` using the handlebars
+    // placeholder. Then render the `index.html` and assets. Render `index.html`
+    // file and `assets` folder.
+    let index_template = fs::read_to_string(app.frontend_assets.join("index.html"))
         .context("Frontend was not built or wrong path to the frontend files.")?;
+    let mut reg = Handlebars::new();
+    // Prevent handlebars from escaping inserted objects.
+    reg.register_escape_fn(no_escape);
+
+    let index_html = reg.render_template(&index_template, &app.as_frontend_config())?;
+
     let serve_dir_service = ServeDir::new(app.frontend_assets.join("assets"));
 
     let router = Router::new()
@@ -159,7 +219,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/getItemCreatedEvent", post(get_item_created_event))
         .route("/health", get(health))
         .nest_service("/assets", serve_dir_service)
-        .fallback(get(|| async { Html(index_file) }))
+        .fallback(get(|| async { Html(index_html) }))
         .with_state(state)
         .layer(
             tower_http::trace::TraceLayer::new_for_http()
