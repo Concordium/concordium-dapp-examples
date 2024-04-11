@@ -1,17 +1,21 @@
-name: 'Build and push the euroe demo'
+# This job builds and publishes a docker image for the sponsored transactions dApp to
+# the dockerhub image repository.
+name: Create and publish a Docker image for the sponsored transactions dApp.
+
 on:
+  workflow_dispatch: # allows manual trigger
+
   push:
     tags:
-      - release/euroe-demo/*.*.*
-
-  workflow_dispatch: # allows manual trigger from main
+      # The versioning is of the format: `frontend_version-backend_version`.
+      - 'sponsored-transactions/*.*.*-*.*.*'
 
 env:
   REGISTRY: docker.io
-  IMAGE_NAME: dapps-euroe-demo
+  IMAGE_NAME: dapp-sponsored-txs
 
 jobs:
-  publish-docker-image:
+  build-and-push-image:
     runs-on: ubuntu-latest
     environment: testnet-deployments
     steps:
@@ -26,17 +30,19 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Extract version tag from package.json
+      - name: Extract tag from package.json and Cargo.toml files
         id: meta
         run: |
-          export VERSION=$(jq -r .version euroe-demo/package.json)
+          export FRONTEND_VERSION=$(jq -r .version sponsoredTransactions/frontend/package.json)
+          export BACKEND_VERSION=$(yq .package.version sponsoredTransactions/backend/Cargo.toml)
+          export VERSION=$FRONTEND_VERSION-$BACKEND_VERSION
           export FULL_IMAGE_TAG="${{ env.REGISTRY }}/concordium/$IMAGE_NAME:$VERSION"
           echo "::notice FULL_IMAGE_TAG=${FULL_IMAGE_TAG}"
           # Make sure the image does not exist. Abort if we can retrieve any metadata.
           if docker manifest inspect ${FULL_IMAGE_TAG} > /dev/null; then
              echo "::error ${FULL_IMAGE_TAG} already exists"
              exit 1
-          elif [ ! "${{ github.ref_name }}" = "release/euroe-demo/${VERSION}" ]; then
+          elif [ ! "${{ github.ref_name }}" = "sponsored-transactions/${VERSION}" ]; then
              echo "::error Expected tag ${EXPECTED_TAG} does not match the version ${VERSION}."
              exit 1
           else
@@ -46,8 +52,8 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
         with:
-          context: euroe-demo
-          file: ./euroe-demo/scripts/Dockerfile
+          context: .
+          file: ./sponsoredTransactions/Dockerfile
           push: true
           platforms: linux/amd64
           tags: ${{ steps.meta.outputs.tag }}
