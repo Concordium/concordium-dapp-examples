@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Link, useNavigate } from 'react-router-dom';
 import Button from "react-bootstrap/Button";
 import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
@@ -15,22 +15,17 @@ import { useState } from 'react';
 import './styles.scss';
 
 export function HomePage() {
+  const nav = useNavigate();
   return (
-    <Container fluid className="d-flex align-items-center justify-content-center">
-      <Col>
-        <Row>
-          <figure>
-              <h1 class="display-1"><small class="text-muted">EUR</small> 100.000</h1>
-              <figcaption class="blockquote-footer">Balance</figcaption>
+    <Container fluid className="d-flex flex-column align-items-center justify-content-center">
+          <figure className='mt-4'>
+              <h1 className="display-1"><small className="text-muted">EUR</small> 100.000</h1>
+              <figcaption className="blockquote-footer">Balance</figcaption>
           </figure>
-        </Row>
-        <Row>
-          <div className="d-grid gap-2">
-              <Button size="lg">Send</Button>
-              <Button size="lg">Receive</Button>
+          <div className="d-grid gap-2 w-100 mt-4">
+              <Button variant="dark" size="lg" onClick={()=> nav("/send")}>Send</Button>
+              <Button variant="dark" size="lg" onClick={()=> nav("/receive")}>Receive</Button>
           </div>
-        </Row>
-      </Col>
     </Container>
   );
 }
