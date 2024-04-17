@@ -34,9 +34,9 @@ export const App = () => {
 
 function SendForm() {
   const [validated, setValidated] = useState(false);
-  const receiverRef = useRef();
+  const receiverRef = useRef<HTMLInputElement>(null);
 
-  const handleSubmit = (event) => {
+  const handleSubmit = (event: any) => {
     event.preventDefault();
     event.stopPropagation();
     const form = event.currentTarget;
@@ -53,6 +53,9 @@ function SendForm() {
   };
 
   const onQRScan = (content: QrContent) => {
+    if (receiverRef.current === null) {
+      return;
+    }
     const receiverHex = Buffer.from(content.publicKey, "base64").toString("hex");
     receiverRef.current.value = receiverHex;
   };
@@ -61,7 +64,6 @@ function SendForm() {
     <Container fluid className="d-flex align-items-center justify-content-center">
       <Col>
         <Row>
-          <QRPublic/>
           <Form noValidate validated={validated} onSubmit={handleSubmit} >
             <div className='mb-3'>
               <Form.Label htmlFor="amount">Send</Form.Label>
@@ -97,18 +99,6 @@ function SendForm() {
       </Col>
     </Container>
   );
-}
-
-function QRPublic(request?: bigint) {
-  const publicKey = Keys.usePublicKey();
-  if (!publicKey) {
-    return "Loading";
-  }
-  const qrContentString = JSON.stringify({
-    publicKey: Buffer(publicKey).toString("base64"),
-    request: amount?.toString()
-  });
-  return (<QRCode value={qrContentString} size={250} />);
 }
 
 type SendToScannerProps = {onScan: (out: QrContent) => void, onError: (out: string) => void};

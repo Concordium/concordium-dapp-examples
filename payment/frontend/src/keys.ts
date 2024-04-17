@@ -20,7 +20,7 @@ export function usePublicKey() {
   const [publicKey, setPublicKey] = useState<Uint8Array>();
   useEffect(()=> {
     getPublicKey().then((key)=>{
-      console.log({publicKey: [...key], hex: Buffer(key).toString("hex")})
+      console.log({publicKey: [...key], hex: Buffer.from(key).toString("hex")})
       setPublicKey(key)
     })
   }, []);
