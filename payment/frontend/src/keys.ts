@@ -4,7 +4,13 @@ import { Buffer } from 'buffer/';
 type Hex = string;
 
 const KEY_LOCATION_LS = '__payment-app_secret-key';
-const SECRET_KEY = localStorage.getItem(KEY_LOCATION_LS) ?? Buffer.from(ed.utils.randomPrivateKey()).toString('hex');
+const SECRET_KEY = localStorage.getItem(KEY_LOCATION_LS) ?? generateKey();
+
+function generateKey() {
+    const k = Buffer.from(ed.utils.randomPrivateKey()).toString('hex');
+    localStorage.setItem(KEY_LOCATION_LS, k);
+    return k;
+}
 
 export const getPublicKey = ed.getPublicKeyAsync;
 export const signMessage = (message: Hex) => ed.signAsync(message, SECRET_KEY);
