@@ -31,30 +31,36 @@ export const App = () => {
 };
 
 function SendForm() {
-  
   const [validated, setValidated] = useState(false);
 
   const handleSubmit = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
     const form = event.currentTarget;
     if (form.checkValidity() === false) {
-      event.preventDefault();
-      event.stopPropagation();
+      // TODO form validation
     }
-
     setValidated(true);
+
+
+    const amount = BigInt(Number(form.amount.value) * 10**6);
+    const receiver = form.to.value;
+    console.log({amount, receiver})
+    Server.transfer(amount, receiver).then(console.log).catch(console.log);
   };
-  
+
   return (
     <Container fluid className="d-flex align-items-center justify-content-center">
       <Col>
         <Row>
           <QRPublic/>
-          <Form validated={validated} onSubmit={handleSubmit} >
+          <Form noValidate validated={validated} onSubmit={handleSubmit} >
             <div className='mb-3'>
               <Form.Label htmlFor="amount">Send</Form.Label>
               <InputGroup>
                 <InputGroup.Text id="amount">EUR</InputGroup.Text>
                 <Form.Control
+                  name="amount"
                   placeholder="3.14"
                   aria-label="EUR amount"
                   aria-describedby="amount-balance"
@@ -68,6 +74,7 @@ function SendForm() {
               <Form.Label htmlFor='send-to'>To</Form.Label>
               <InputGroup>
                 <Form.Control
+                  name="to"
                   id="send-to"
                   placeholder=""
                   aria-label="Receiver of the amount"
