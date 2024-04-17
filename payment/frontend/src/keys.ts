@@ -1,0 +1,10 @@
+import * as ed from '@noble/ed25519';
+import { Buffer } from 'buffer/';
+
+type Hex = string;
+
+const KEY_LOCATION_LS = '__payment-app_secret-key';
+const SECRET_KEY = localStorage.getItem(KEY_LOCATION_LS) ?? Buffer.from(ed.utils.randomPrivateKey()).toString('hex');
+
+export const getPublicKey = ed.getPublicKeyAsync;
+export const signMessage = (message: Hex) => ed.signAsync(message, SECRET_KEY);

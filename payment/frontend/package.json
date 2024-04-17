@@ -16,9 +16,11 @@
     },
     "dependencies": {
         "@concordium/web-sdk": "^7.3.2",
+        "@noble/ed25519": "^2.1.0",
         "@types/json-bigint": "^1.0.4",
         "@types/react-router-dom": "^5.3.3",
         "bootstrap": "^5.3.3",
+        "buffer": "^6.0.3",
         "json-bigint": "^1.0.0",
         "react": "^18.2.0",
         "react-bootstrap": "^2.10.1",
