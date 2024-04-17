@@ -7,10 +7,10 @@ import JSONBig from 'json-bigint';
 const grpc = new ConcordiumGRPCWebClient(NODE_HOST, NODE_PORT);
 const contract = Contract.create(grpc, CONTRACT_ADDRESS);
 
-const TOKEN_ID = '';
-const TOKEN_ADDRESS = ContractAddress.create(0, 0);
+const TOKEN_ID = ''; // EUROe token ID
+const TOKEN_ADDRESS = ContractAddress.create(7260, 0); // EUROe contract address
 
-const EXPIRY_OFFSET_MS = 1000 * 60 * 5;
+const EXPIRY_OFFSET_MS = 1000 * 60 * 5; // 5 minutes
 
 const createTokenAmount = (
     amount: bigint | number,
