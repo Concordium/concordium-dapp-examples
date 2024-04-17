@@ -1,7 +1,7 @@
 import * as ed from '@noble/ed25519';
 import { Buffer } from 'buffer/';
 
-type Hex = string;
+export type Hex = string;
 
 const KEY_LOCATION_LS = '__payment-app_secret-key';
 const SECRET_KEY = localStorage.getItem(KEY_LOCATION_LS) ?? generateKey();
@@ -12,5 +12,5 @@ function generateKey() {
     return k;
 }
 
-export const getPublicKey = ed.getPublicKeyAsync;
+export const getPublicKey = () => ed.getPublicKeyAsync(SECRET_KEY);
 export const signMessage = (message: Hex) => ed.signAsync(message, SECRET_KEY);
