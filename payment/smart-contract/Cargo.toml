@@ -1,0 +1,30 @@
+[package]
+name = "track-and-trace"
+version = "0.1.0"
+authors = ["Concordium <developers@concordium.com>"]
+edition = "2021"
+license = "MPL-2.0"
+description = "A smart contract for tracking and tracing items on a supply chain."
+
+[features]
+default = ["std", "bump_alloc"]
+std = ["concordium-std/std", "concordium-cis2/std"]
+bump_alloc = ["concordium-std/bump_alloc"]
+serde = ["concordium-contracts-common/derive-serde", "dep:serde"]
+
+[dependencies]
+concordium-std = { version = "10.0", default-features = false }
+concordium-cis2 = { version = "6.1", default-features = false }
+serde = { version = "1", optional = true, features = ["derive"] }
+concordium-contracts-common = "*"
+
+[dev-dependencies]
+concordium-smart-contract-testing = { version = "4.2" }
+rand = "0.8"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[profile.release]
+codegen-units = 1
+opt-level = "s"
