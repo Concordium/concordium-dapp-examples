@@ -258,11 +258,6 @@ pub async fn handle_transaction(
 ) -> Result<Json<TransactionHash>, ServerError> {
     let Json(request) = request?;
 
-    if !state.allowed_accounts.allowed(&request.signer) {
-        return Err(ServerError::AccountNotAllowed {
-            account: request.signer,
-        });
-    }
     if !state.allowed_contracts.allowed(&request.contract_address) {
         return Err(ServerError::ContractNotAllowed {
             contract: request.contract_address,
@@ -331,21 +326,7 @@ pub async fn handle_transaction(
     // Reset the rate limits if an hour has passed since the last reset.
     state.reset_rate_limits_if_expired().await;
 
-    // Check the rate limits for the account.
-    //
-    // By checking and updating the rate limit *after* the dry run, we ensure that
-    // it indeed is the specified signer account that sent the request (since the
-    // signature is checked).
-    //
-    // By contrast, if we had checked and updated the rate limit *before* the dry
-    // run, then it would be easy for attackers to block other accounts from using
-    // the service by spamming requests with the victim account specified as the
-    // signer.
-    //
-    // We could also add a general rate limit based on IP addresses or similar to
-    // hinder DDOS attacks.
-    state.check_rate_limit(request.signer).await?;
-
+    // Nice to have in the future: Add rate limit
     let tx_hash = dry_run
         .nonce(*nonce)
         .send(&state.keys)

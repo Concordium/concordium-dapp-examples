@@ -128,8 +128,6 @@ pub struct ErrorResponse {
 #[serde(rename_all = "camelCase")]
 /// The input parameters for the `/api/submitTransaction` endpoint.
 pub struct InputParams {
-    /// The signer of the transaction.
-    pub signer:           AccountAddress,
     /// The account nonce.
     pub nonce:            u64,
     /// The signature for the transaction.
@@ -240,32 +238,6 @@ impl Server {
             self.rate_limits.lock().await.clear();
             *last_rate_limit_reset = now;
         }
-    }
-
-    /// Check the rate limit for the account. It also updates the counter for
-    /// the account.
-    ///
-    /// Since account addresses have aliases, we track the rate-limit by using
-    /// the 0th alias for everyone account. For more info on aliases, see: https://developer.concordium.software/en/mainnet/net/references/transactions.html#account-aliases
-    pub(crate) async fn check_rate_limit(
-        &self,
-        account: AccountAddress,
-    ) -> Result<(), ServerError> {
-        let mut rate_limits = self.rate_limits.lock().await;
-
-        let alias_account_0 = account
-            .get_alias(0)
-            .ok_or_else(|| ServerError::NoAliasAccount)?;
-
-        let rate_limit = rate_limits.entry(alias_account_0).or_insert_with(|| 0u16);
-
-        if *rate_limit >= self.rate_limit_per_account_per_hour {
-            return Err(ServerError::RateLimitError {
-                rate_limit_per_account_per_hour: self.rate_limit_per_account_per_hour,
-            });
-        }
-        *rate_limit += 1;
-        Ok(())
     }
 }
 
