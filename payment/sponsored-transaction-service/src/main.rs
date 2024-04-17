@@ -3,7 +3,8 @@ use crate::types::*;
 use anyhow::Context;
 use axum::{
     extract::{rejection::JsonRejection, State},
-    routing::post,
+    response::Html,
+    routing::get,
     Json, Router,
 };
 use clap::Parser;
@@ -15,9 +16,10 @@ use concordium_rust_sdk::{
     },
     types::{hashes::TransactionHash, smart_contracts::OwnedContractName, WalletAccount},
 };
-use std::{collections::BTreeMap, path::PathBuf};
+use handlebars::{no_escape, Handlebars};
+use std::{collections::BTreeMap, fs, path::PathBuf};
 use tonic::transport::ClientTlsConfig;
-use tower_http::cors::{AllowOrigin, CorsLayer};
+use tower_http::services::ServeDir;
 
 /// Structure used to receive the correct command line arguments.
 #[derive(clap::Parser, Debug)]
@@ -80,6 +82,28 @@ struct ServiceConfig {
         env = "CCD_SPONSORED_TRANSACTION_SERVICE_RATE_LIMIT"
     )]
     rate_limit_per_account_per_hour: u16,
+    #[clap(
+        long = "frontend",
+        default_value = "../frontend/dist",
+        help = "Path to the directory where frontend assets are located.",
+        env = "CCD_SERVER_FRONTEND"
+    )]
+    frontend_assets: std::path::PathBuf,
+}
+
+impl ServiceConfig {
+    /// Creates the JSON object required by the frontend.
+    fn as_frontend_config(&self) -> serde_json::Value {
+        let config = serde_json::json!({
+            // NOT NEEDED PROBABLY
+            // "node": self.endpoint.uri().to_string(),
+            // "network":"testnet",
+            // "contractAddress": self.allowed_contracts,
+        });
+        let config_string =
+            serde_json::to_string(&config).expect("JSON serialization always succeeds");
+        serde_json::json!({ "config": config_string })
+    }
 }
 
 #[tokio::main]
@@ -116,10 +140,11 @@ async fn main() -> anyhow::Result<()> {
         .map_or(false, |x| *x == concordium_rust_sdk::v2::Scheme::HTTPS)
     {
         app.endpoint
+            .clone()
             .tls_config(ClientTlsConfig::new())
             .context("Unable to construct a TLS connection for the Concordium API.")?
     } else {
-        app.endpoint
+        app.endpoint.clone()
     };
 
     // Make it 500ms less than the request timeout to make sure we can fail properly
@@ -181,27 +206,30 @@ With the following configuration:
         keys,
         nonce,
         app.rate_limit_per_account_per_hour,
-        app.allowed_accounts,
-        app.allowed_contracts,
+        app.allowed_accounts.clone(),
+        app.allowed_contracts.clone(),
     );
 
+    let index_template = fs::read_to_string(app.frontend_assets.clone().join("index.html"))
+        .context("Frontend was not built or wrong path to the frontend files.")?;
+    let mut reg = Handlebars::new();
+    // Prevent handlebars from escaping inserted objects.
+    reg.register_escape_fn(no_escape);
+
+    let index_html = reg.render_template(&index_template, &app.as_frontend_config())?;
+
+    let serve_dir_service = ServeDir::new(app.frontend_assets.join("assets"));
+
     let router = Router::new()
-        .route("/api/submitTransaction", post(handle_transaction))
+        .nest_service("/assets", serve_dir_service)
+        .fallback(get(|| async { Html(index_html) }))
         .with_state(state)
-        .layer(CorsLayer::new()
-               .allow_origin(AllowOrigin::mirror_request())
-               .allow_headers([http::header::CONTENT_TYPE])
-               .allow_methods([http::Method::POST]))
         .layer(
             tower_http::trace::TraceLayer::new_for_http()
                 .make_span_with(tower_http::trace::DefaultMakeSpan::new())
                 .on_response(tower_http::trace::DefaultOnResponse::new()),
         )
-        .layer(tower_http::timeout::TimeoutLayer::new(
-            std::time::Duration::from_millis(app.request_timeout),
-        ))
-        // Allow at most 70kB of data. Enough for max parameter u16::MAX and the signatures etc.
-        .layer(tower_http::limit::RequestBodyLimitLayer::new(70_000))
+        .layer(tower_http::limit::RequestBodyLimitLayer::new(1_000_000)) // at most 1000kB of data.
         .layer(tower_http::compression::CompressionLayer::new());
 
     tracing::info!("Listening at {}", app.listen_address);
