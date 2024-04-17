@@ -12,6 +12,18 @@ const TOKEN_ADDRESS = ContractAddress.create(7260, 0); // EUROe contract address
 
 const EXPIRY_OFFSET_MS = 1000 * 60 * 5; // 5 minutes
 
+/**
+ * Matches the `InputParams` type from the server side
+ */
+type TransferRequest = {
+    fromPublicKey: Hex;
+    toPublicKey: Hex;
+    nonce: bigint;
+    signature: Hex;
+    expiryTime: bigint;
+    tokenAmount: bigint;
+};
+
 const createTokenAmount = (
     amount: bigint | number,
 ): Contract.ViewInternalTransferMessageHashTokenAmountParameter['service_fee_amount'] => ({
@@ -39,10 +51,11 @@ async function getNonce(): Promise<[Hex, bigint]> {
  */
 export async function transfer(amount: bigint, to: Hex): Promise<void> {
     const [pubKey, nonce] = await getNonce();
+    const expiryTime = BigInt(new Date().getTime() + EXPIRY_OFFSET_MS);
     const message: Contract.ViewInternalTransferMessageHashTokenAmountParameter = {
         entry_point: 'internalTransferCis2Tokens',
         nonce,
-        expiry_time: Timestamp.fromMillis(new Date().getTime() + EXPIRY_OFFSET_MS),
+        expiry_time: Timestamp.fromMillis(expiryTime),
         service_fee_recipient: pubKey,
         service_fee_amount: createTokenAmount(0),
         simple_transfers: [{ to, transfer_amount: createTokenAmount(amount) }],
@@ -55,13 +68,14 @@ export async function transfer(amount: bigint, to: Hex): Promise<void> {
         throw new Error('Failed to get parameter from contract');
     }
 
-    const transfer: Contract.InternalTransferCis2TokensParameter = [
-        {
-            signer: pubKey,
-            signature: Buffer.from(await signMessage(Buffer.from(messageHash).toString('hex'))).toString('hex'),
-            message,
-        },
-    ];
+    const transfer: TransferRequest = {
+        fromPublicKey: pubKey,
+        toPublicKey: to,
+        signature: Buffer.from(await signMessage(Buffer.from(messageHash).toString('hex'))).toString('hex'),
+        nonce,
+        expiryTime,
+        tokenAmount: amount,
+    };
     const response = fetch(`${SPONSORED_TRANSACTION_BACKEND}/api/submitTransaction`, {
         headers: {
             Accept: 'application/json',
