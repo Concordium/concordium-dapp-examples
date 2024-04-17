@@ -12,15 +12,17 @@ import { QrScanner } from '@yudiel/react-qr-scanner';
 import Modal from 'react-bootstrap/Modal';
 import { useState } from 'react';
 
+import { HomePage } from './Home';
+
 import './styles.scss';
-import { ContractAddress } from '@concordium/web-sdk';
 
 export const App = () => {
     return (
         <Router>
-            <Routes>
-                <Route path="/" element={<SendForm />} />
-            </Routes>
+          <Routes>
+            <Route path="/" element={<HomePage/> } />
+            <Route path="/send" element={<SendForm />} />
+          </Routes>
         </Router>
     );
 };
