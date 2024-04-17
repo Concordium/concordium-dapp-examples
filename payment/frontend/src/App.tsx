@@ -10,7 +10,7 @@ import { faQrcode } from "@fortawesome/free-solid-svg-icons"
 import { QRCode } from 'react-qrcode-logo';
 import { QrScanner } from '@yudiel/react-qr-scanner';
 import Modal from 'react-bootstrap/Modal';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {Buffer} from "buffer";
 
 import { HomePage } from './Home';
@@ -34,8 +34,9 @@ export const App = () => {
 
 function SendForm() {
   const [validated, setValidated] = useState(false);
+  const receiverRef = useRef<HTMLInputElement>(null);
 
-  const handleSubmit = (event) => {
+  const handleSubmit = (event: any) => {
     event.preventDefault();
     event.stopPropagation();
     const form = event.currentTarget;
@@ -51,11 +52,18 @@ function SendForm() {
     Server.transfer(amount, receiver).then(console.log).catch(console.log);
   };
 
+  const onQRScan = (content: QrContent) => {
+    if (receiverRef.current === null) {
+      return;
+    }
+    const receiverHex = Buffer.from(content.publicKey, "base64").toString("hex");
+    receiverRef.current.value = receiverHex;
+  };
+
   return (
     <Container fluid className="d-flex align-items-center justify-content-center">
       <Col>
         <Row>
-          <QRPublic/>
           <Form noValidate validated={validated} onSubmit={handleSubmit} >
             <div className='mb-3'>
               <Form.Label htmlFor="amount">Send</Form.Label>
@@ -80,8 +88,9 @@ function SendForm() {
                   id="send-to"
                   placeholder=""
                   aria-label="Receiver of the amount"
+                  ref={receiverRef}
                 />
-                <SendToScannerModal onScan={(out)=> console.log(out)} onError={(out)=> console.log(out)} />
+                <SendToScannerModal onScan={onQRScan} onError={(out)=> console.log(out)} />
               </InputGroup>
             </div>
             <Button type='submit'>Send</Button>
@@ -90,18 +99,6 @@ function SendForm() {
       </Col>
     </Container>
   );
-}
-
-function QRPublic(request?: bigint) {
-  const publicKey = Keys.usePublicKey();
-  if (!publicKey) {
-    return "Loading";
-  }
-  const qrContentString = JSON.stringify({
-    publicKey: Buffer(publicKey).toString("base64"),
-    request: amount?.toString()
-  });
-  return (<QRCode value={qrContentString} size={250} />);
 }
 
 type SendToScannerProps = {onScan: (out: QrContent) => void, onError: (out: string) => void};
