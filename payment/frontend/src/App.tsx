@@ -11,8 +11,11 @@ import { QRCode } from 'react-qrcode-logo';
 import { QrScanner } from '@yudiel/react-qr-scanner';
 import Modal from 'react-bootstrap/Modal';
 import { useState } from 'react';
+import {Buffer} from "buffer";
 
 import { HomePage } from './Home';
+import * as Keys from "./keys";
+import * as Server from "./server";
 
 import './styles.scss';
 
@@ -28,14 +31,25 @@ export const App = () => {
 };
 
 function SendForm() {
+  
+  const [validated, setValidated] = useState(false);
+
+  const handleSubmit = (event) => {
+    const form = event.currentTarget;
+    if (form.checkValidity() === false) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    setValidated(true);
+  };
+  
   return (
     <Container fluid className="d-flex align-items-center justify-content-center">
       <Col>
-        <Row className="align-items-center justify-content-center">
-          <QRCode value="https://github.com/gcoro/react-qrcode-logo" size={250} />
-        </Row>
         <Row>
-          <Form>
+          <QRPublic/>
+          <Form validated={validated} onSubmit={handleSubmit} >
             <div className='mb-3'>
               <Form.Label htmlFor="amount">Send</Form.Label>
               <InputGroup>
@@ -61,7 +75,7 @@ function SendForm() {
                 <SendToScannerModal onScan={(out)=> console.log(out)} onError={(out)=> console.log(out)} />
               </InputGroup>
             </div>
-            <Button>Send</Button>
+            <Button type='submit'>Send</Button>
           </Form >
         </Row>
       </Col>
@@ -69,10 +83,25 @@ function SendForm() {
   );
 }
 
+function QRPublic(request?: bigint) {
+  const publicKey = Keys.usePublicKey();
+  if (!publicKey) {
+    return "Loading";
+  }
+  const qrContentString = JSON.stringify({
+    publicKey: Buffer(publicKey).toString("base64"),
+    request: amount?.toString()
+  });
+  return (<QRCode value={qrContentString} size={250} />);
+}
+
 type SendToScannerProps = {onScan: (out: QrContent) => void, onError: (out: string) => void};
 
 type QrContent = {
-  publicKey: string
+  /** Public key in Base64 */
+  publicKey: string,
+  /** Optional amount to request, string representation of a bigint. */
+  request?: string
 };
 
 function SendToScannerModal(props: SendToScannerProps) {
