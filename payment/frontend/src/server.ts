@@ -1,14 +1,9 @@
-import { ConcordiumGRPCWebClient, ContractAddress, Timestamp } from '@concordium/web-sdk';
+import { Timestamp } from '@concordium/web-sdk';
 import * as Contract from '../generated/module_smart_contract_wallet';
-import { CONTRACT_ADDRESS, NODE_HOST, NODE_PORT, SPONSORED_TRANSACTION_BACKEND } from './constants';
-import { Hex, getPublicKey, signMessage } from './keys';
+import { SPONSORED_TRANSACTION_BACKEND } from './constants';
+import { Hex, signMessage } from './keys';
 import JSONBig from 'json-bigint';
-
-const grpc = new ConcordiumGRPCWebClient(NODE_HOST, NODE_PORT);
-const contract = Contract.create(grpc, CONTRACT_ADDRESS);
-
-const TOKEN_ID = ''; // EUROe token ID
-const TOKEN_ADDRESS = ContractAddress.create(7260, 0); // EUROe contract address
+import { client, createTokenAmount, getNonce } from './contract';
 
 const EXPIRY_OFFSET_MS = 1000 * 60 * 5; // 5 minutes
 
@@ -23,25 +18,6 @@ type TransferRequest = {
     expiryTime: bigint;
     tokenAmount: bigint;
 };
-
-const createTokenAmount = (
-    amount: bigint | number,
-): Contract.ViewInternalTransferMessageHashTokenAmountParameter['service_fee_amount'] => ({
-    token_amount: amount,
-    token_id: TOKEN_ID,
-    cis2_token_contract_address: TOKEN_ADDRESS,
-});
-
-async function getNonce(): Promise<[Hex, bigint]> {
-    const pubKey = Buffer.from(await getPublicKey()).toString('hex');
-    const nonce = Contract.parseReturnValueNonceOf(await Contract.dryRunNonceOf(await contract, [pubKey]));
-
-    if (nonce?.[0] === undefined) {
-        throw new Error('Failed to get nonce for key');
-    }
-
-    return [pubKey, BigInt(nonce[0])];
-}
 
 /**
  * Send a transfer to the server
@@ -61,7 +37,7 @@ export async function transfer(amount: bigint, to: Hex): Promise<void> {
         simple_transfers: [{ to, transfer_amount: createTokenAmount(amount) }],
     };
 
-    const messageHashResult = await Contract.dryRunViewInternalTransferMessageHashTokenAmount(await contract, message);
+    const messageHashResult = await Contract.dryRunViewInternalTransferMessageHashTokenAmount(await client, message);
     const messageHash = Contract.parseReturnValueViewInternalTransferMessageHashTokenAmount(messageHashResult);
 
     if (messageHash === undefined) {
