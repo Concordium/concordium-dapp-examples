@@ -18,6 +18,7 @@ import * as Keys from "./keys";
 import * as Server from "./server";
 
 import './styles.scss';
+import { ReceivePage } from './Receive';
 
 export const App = () => {
     return (
@@ -25,6 +26,7 @@ export const App = () => {
           <Routes>
             <Route path="/" element={<HomePage/> } />
             <Route path="/send" element={<SendForm />} />
+            <Route path="/receive" element={<ReceivePage/>} />
           </Routes>
         </Router>
     );

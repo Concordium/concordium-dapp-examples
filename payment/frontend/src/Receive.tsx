@@ -14,7 +14,7 @@ import { useState } from 'react';
 
 import './styles.scss';
 
-export function HomePage() {
+export function ReceivePage() {
   const nav = useNavigate();
   return (
     <Container fluid className="d-flex flex-column align-items-center justify-content-center">
@@ -23,8 +23,7 @@ export function HomePage() {
               <figcaption className="blockquote-footer">Balance</figcaption>
           </figure>
           <div className="d-grid gap-2 w-100 mt-4">
-              <Button variant="dark" size="lg" onClick={()=> nav("/send")}>Send</Button>
-              <Button variant="dark" size="lg" onClick={()=> nav("/receive")}>Receive</Button>
+              <Button variant="dark" size="lg" onClick={()=> nav("/")}>Back</Button>
           </div>
     </Container>
   );
