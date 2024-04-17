@@ -129,26 +129,17 @@ pub struct ErrorResponse {
 /// The input parameters for the `/api/submitTransaction` endpoint.
 pub struct InputParams {
     /// The account nonce.
-    pub nonce:            u64,
+    pub nonce:           u64,
     /// The signature for the transaction.
-    pub signature:        String,
+    pub signature:       String,
     /// The expiry time.
-    pub expiry_time:      Timestamp,
-    /// The contract to call.
-    pub contract_address: ContractAddress,
-    /// The name of the contract to call.
-    /// Should be without the "init_" prefix.
-    pub contract_name:    String,
-    /// The entrypoint to call.
-    pub entrypoint_name:  String,
+    pub expiry_time:     Timestamp,
     ///
-    pub from_public_key:  [u8; 32],
+    pub from_public_key: [u8; 32],
     ///
-    pub to_public_key:    [u8; 32],
+    pub to_public_key:   [u8; 32],
     ///
-    pub token_amount:     U256,
-    ///
-    pub token_id:         Vec<u8>,
+    pub token_amount:    U256,
 }
 
 #[derive(Debug, Serial)]
@@ -196,7 +187,7 @@ pub struct Server {
     /// The allowed accounts.
     pub allowed_accounts: AllowedAccounts,
     /// The allowed contracts.
-    pub allowed_contracts: AllowedContracts,
+    pub contract_address: ContractAddress,
 }
 
 impl Server {
@@ -207,7 +198,7 @@ impl Server {
         nonce: Nonce,
         rate_limit_per_account_per_hour: u16,
         allowed_accounts: AllowedAccounts,
-        allowed_contracts: AllowedContracts,
+        contract_address: ContractAddress,
     ) -> Self {
         Self {
             node_client,
@@ -217,7 +208,7 @@ impl Server {
             rate_limit_per_account_per_hour,
             last_rate_limit_reset: Arc::new(Mutex::new(Utc::now())),
             allowed_accounts,
-            allowed_contracts,
+            contract_address,
         }
     }
 
@@ -243,8 +234,6 @@ impl Server {
 
 /// The accounts allowed to use the service.
 pub type AllowedAccounts = AllowedEntities<AccountAddress>;
-/// The contracts allowed to be used by the service.
-pub type AllowedContracts = AllowedEntities<ContractAddress>;
 
 /// Allowed entities to be used in the service.
 /// Either accounts or contracts.
