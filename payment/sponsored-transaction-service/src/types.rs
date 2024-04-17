@@ -2,16 +2,15 @@ use axum::{extract::rejection::JsonRejection, http::StatusCode, Json};
 use chrono::{prelude::*, TimeDelta};
 use concordium_rust_sdk::{
     endpoints::QueryError,
-    smart_contracts::{
-        common as concordium_std,
-        common::{
-            AccountAddress, AccountSignatures, ContractAddress, NewContractNameError,
-            NewReceiveNameError, OwnedEntrypointName, OwnedParameter, Serial, Timestamp,
-        },
+    smart_contracts::common::{
+        self as concordium_std, AccountAddress, AccountSignatures, ContractAddress,
+        NewContractNameError, NewReceiveNameError, OwnedEntrypointName, OwnedParameter, Serial,
+        Timestamp,
     },
     types::{smart_contracts::ExceedsParameterSize, Nonce, RejectReason, WalletAccount},
 };
 use hex::FromHexError;
+use primitive_types::U256;
 use std::{
     collections::{BTreeSet, HashMap},
     fmt,
@@ -144,8 +143,14 @@ pub struct InputParams {
     pub contract_name:    String,
     /// The entrypoint to call.
     pub entrypoint_name:  String,
-    /// The actual parameter forwarded to the entrypoint `entrypoint_name`.
-    pub parameter:        OwnedParameter,
+    ///
+    pub from_public_key:  [u8; 32],
+    ///
+    pub to_public_key:    [u8; 32],
+    ///
+    pub token_amount:     U256,
+    ///
+    pub token_id:         Vec<u8>,
 }
 
 #[derive(Debug, Serial)]

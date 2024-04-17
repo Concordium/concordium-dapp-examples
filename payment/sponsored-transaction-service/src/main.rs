@@ -4,20 +4,25 @@ use anyhow::Context;
 use axum::{
     extract::{rejection::JsonRejection, State},
     response::Html,
-    routing::get,
+    routing::{get, post},
     Json, Router,
 };
+use concordium_cis2::{TokenAmountU256, TokenIdVec};
+use std::str;
+
 use clap::Parser;
 use concordium_rust_sdk::{
+    base::contracts_common::PublicKeyEd25519,
     contract_client::ContractClient,
-    smart_contracts::common::{
-        AccountSignatures, Amount, CredentialSignatures, OwnedEntrypointName, Signature,
-        SignatureEd25519,
-    },
+    smart_contracts::common::{Amount, OwnedEntrypointName, SignatureEd25519},
     types::{hashes::TransactionHash, smart_contracts::OwnedContractName, WalletAccount},
 };
 use handlebars::{no_escape, Handlebars};
-use std::{collections::BTreeMap, fs, path::PathBuf};
+use smart_contract_wallet::{
+    InternalTransfer, InternalTransferBatch, InternalTransferMessage, InternalTransferParameter,
+    TokenAmount,
+};
+use std::{fs, path::PathBuf, str::FromStr};
 use tonic::transport::ClientTlsConfig;
 use tower_http::services::ServeDir;
 
@@ -222,6 +227,7 @@ With the following configuration:
 
     let router = Router::new()
         .nest_service("/assets", serve_dir_service)
+        .route("/api/submitTransaction", post(handle_transaction))
         .fallback(get(|| async { Html(index_html) }))
         .with_state(state)
         .layer(
@@ -263,30 +269,42 @@ pub async fn handle_transaction(
         });
     }
 
-    let message: PermitMessage = PermitMessage {
-        contract_address: request.contract_address,
-        nonce:            request.nonce,
-        timestamp:        request.expiry_time,
-        entry_point:      OwnedEntrypointName::new_unchecked(request.entrypoint_name),
-        parameter:        request.parameter,
-    };
-
-    // Create signature map.
     let mut signature = [0; 64];
     hex::decode_to_slice(request.signature.clone(), &mut signature)?;
-    let mut inner_signature_map = BTreeMap::new();
-    inner_signature_map.insert(0, Signature::Ed25519(SignatureEd25519(signature)));
-    let mut signature_map = BTreeMap::new();
-    signature_map.insert(0, CredentialSignatures {
-        sigs: inner_signature_map,
-    });
 
-    let param: PermitParam = PermitParam {
-        message,
-        signature: AccountSignatures {
-            sigs: signature_map,
-        },
-        signer: request.signer,
+    let param = InternalTransferParameter::<TokenAmount> {
+        transfers: vec![InternalTransferBatch {
+            signer:    PublicKeyEd25519::from_str(
+                str::from_utf8(&request.from_public_key).unwrap(),
+            )
+            .unwrap(),
+            signature: SignatureEd25519(signature),
+            message:   InternalTransferMessage {
+                entry_point:           OwnedEntrypointName::new_unchecked(
+                    "internalTransferCis2Tokens".to_string(),
+                ),
+                expiry_time:           request.expiry_time,
+                nonce:                 request.nonce,
+                service_fee_recipient: PublicKeyEd25519([0u8; 32]),
+                service_fee_amount:    TokenAmount {
+                    token_amount:                TokenAmountU256(0.into()),
+                    token_id:                    TokenIdVec(request.token_id.clone()),
+                    cis2_token_contract_address: request.contract_address,
+                },
+                simple_transfers:      vec![InternalTransfer {
+                    to:              PublicKeyEd25519::from_str(
+                        str::from_utf8(&request.to_public_key).unwrap(),
+                    )
+                    .unwrap(),
+                    transfer_amount: TokenAmount {
+                        token_amount: TokenAmountU256(request.token_amount),
+
+                        token_id:                    TokenIdVec(request.token_id),
+                        cis2_token_contract_address: request.contract_address,
+                    },
+                }],
+            },
+        }],
     };
 
     let mut contract_client = ContractClient::<()>::new(
@@ -296,7 +314,12 @@ pub async fn handle_transaction(
     );
 
     let dry_run = contract_client
-        .dry_run_update::<_, ServerError>("permit", Amount::zero(), state.keys.address, &param)
+        .dry_run_update::<_, ServerError>(
+            "internalTransferCis2Tokens",
+            Amount::zero(),
+            state.keys.address,
+            &param,
+        )
         .await?;
 
     // Get the current nonce for the backend wallet and lock it. This is necessary
