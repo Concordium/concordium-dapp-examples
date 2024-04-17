@@ -10,7 +10,7 @@ import { faQrcode } from "@fortawesome/free-solid-svg-icons"
 import { QRCode } from 'react-qrcode-logo';
 import { QrScanner } from '@yudiel/react-qr-scanner';
 import Modal from 'react-bootstrap/Modal';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {Buffer} from "buffer";
 
 import { HomePage } from './Home';
@@ -34,6 +34,7 @@ export const App = () => {
 
 function SendForm() {
   const [validated, setValidated] = useState(false);
+  const receiverRef = useRef();
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -49,6 +50,11 @@ function SendForm() {
     const receiver = form.to.value;
     console.log({amount, receiver})
     Server.transfer(amount, receiver).then(console.log).catch(console.log);
+  };
+
+  const onQRScan = (content: QrContent) => {
+    const receiverHex = Buffer.from(content.publicKey, "base64").toString("hex");
+    receiverRef.current.value = receiverHex;
   };
 
   return (
@@ -80,8 +86,9 @@ function SendForm() {
                   id="send-to"
                   placeholder=""
                   aria-label="Receiver of the amount"
+                  ref={receiverRef}
                 />
-                <SendToScannerModal onScan={(out)=> console.log(out)} onError={(out)=> console.log(out)} />
+                <SendToScannerModal onScan={onQRScan} onError={(out)=> console.log(out)} />
               </InputGroup>
             </div>
             <Button type='submit'>Send</Button>
