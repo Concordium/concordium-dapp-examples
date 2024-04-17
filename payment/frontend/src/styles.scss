@@ -1,23 +1,5 @@
 @import 'bootstrap/scss/bootstrap';
 
-// Bootstrap functions must be defined first, as they are used in project config.
-@import 'bootstrap/scss/functions';
-
-// Bootstrap config
-@import 'bootstrap/scss/variables';
-@import 'bootstrap/scss/variables-dark';
-@import 'bootstrap/scss/maps';
-@import 'bootstrap/scss/mixins';
-@import 'bootstrap/scss/utilities';
-@import 'bootstrap/scss/type';
-@import 'bootstrap/scss/forms';
-@import 'bootstrap/scss/buttons';
-@import 'bootstrap/scss/alert';
-
-// Bootstrap helpers
-@import 'bootstrap/scss/helpers';
-@import 'bootstrap/scss/utilities/api';
-
 .card {
     color: rgb(0, 0, 0);
     width: 825px;
