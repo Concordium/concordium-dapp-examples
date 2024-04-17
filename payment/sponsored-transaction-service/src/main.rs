@@ -4,20 +4,27 @@ use anyhow::Context;
 use axum::{
     extract::{rejection::JsonRejection, State},
     response::Html,
-    routing::get,
+    routing::{get, post},
     Json, Router,
 };
+use concordium_cis2::{TokenAmountU256, TokenIdVec};
+use std::str;
+
 use clap::Parser;
 use concordium_rust_sdk::{
+    base::contracts_common::PublicKeyEd25519,
     contract_client::ContractClient,
-    smart_contracts::common::{
-        AccountSignatures, Amount, CredentialSignatures, OwnedEntrypointName, Signature,
-        SignatureEd25519,
+    smart_contracts::common::{Amount, OwnedEntrypointName, SignatureEd25519},
+    types::{
+        hashes::TransactionHash, smart_contracts::OwnedContractName, ContractAddress, WalletAccount,
     },
-    types::{hashes::TransactionHash, smart_contracts::OwnedContractName, WalletAccount},
 };
 use handlebars::{no_escape, Handlebars};
-use std::{collections::BTreeMap, fs, path::PathBuf};
+use smart_contract_wallet::{
+    InternalTransfer, InternalTransferBatch, InternalTransferMessage, InternalTransferParameter,
+    TokenAmount,
+};
+use std::{fs, path::PathBuf, str::FromStr};
 use tonic::transport::ClientTlsConfig;
 use tower_http::services::ServeDir;
 
@@ -69,12 +76,12 @@ struct ServiceConfig {
     )]
     allowed_accounts: AllowedAccounts,
     #[clap(
-        long = "allowed-contracts",
-        help = "The contracts allowed to be used by the service. Either 'any' OR a \
-                space-separated list of contract addresses in the format `<123,0>`.",
+        long = "contract_address",
+        help = "The contract_address to be used by the service. Either 'any' OR a space-separated \
+                list of contract addresses in the format `<123,0>`.",
         env = "CCD_SPONSORED_TRANSACTION_SERVICE_ALLOWED_CONTRACTS"
     )]
-    allowed_contracts: AllowedContracts,
+    contract_address: ContractAddress,
     #[clap(
         long = "rate-limit",
         default_value = "30",
@@ -198,7 +205,7 @@ With the following configuration:
         keys.address,
         nonce,
         app.allowed_accounts,
-        app.allowed_contracts,
+        app.contract_address,
     );
 
     let state = Server::new(
@@ -207,7 +214,7 @@ With the following configuration:
         nonce,
         app.rate_limit_per_account_per_hour,
         app.allowed_accounts.clone(),
-        app.allowed_contracts.clone(),
+        app.contract_address,
     );
 
     let index_template = fs::read_to_string(app.frontend_assets.clone().join("index.html"))
@@ -222,6 +229,7 @@ With the following configuration:
 
     let router = Router::new()
         .nest_service("/assets", serve_dir_service)
+        .route("/api/submitTransaction", post(handle_transaction))
         .fallback(get(|| async { Html(index_html) }))
         .with_state(state)
         .layer(
@@ -252,51 +260,57 @@ pub async fn handle_transaction(
 ) -> Result<Json<TransactionHash>, ServerError> {
     let Json(request) = request?;
 
-    if !state.allowed_accounts.allowed(&request.signer) {
-        return Err(ServerError::AccountNotAllowed {
-            account: request.signer,
-        });
-    }
-    if !state.allowed_contracts.allowed(&request.contract_address) {
-        return Err(ServerError::ContractNotAllowed {
-            contract: request.contract_address,
-        });
-    }
-
-    let message: PermitMessage = PermitMessage {
-        contract_address: request.contract_address,
-        nonce:            request.nonce,
-        timestamp:        request.expiry_time,
-        entry_point:      OwnedEntrypointName::new_unchecked(request.entrypoint_name),
-        parameter:        request.parameter,
-    };
-
-    // Create signature map.
     let mut signature = [0; 64];
     hex::decode_to_slice(request.signature.clone(), &mut signature)?;
-    let mut inner_signature_map = BTreeMap::new();
-    inner_signature_map.insert(0, Signature::Ed25519(SignatureEd25519(signature)));
-    let mut signature_map = BTreeMap::new();
-    signature_map.insert(0, CredentialSignatures {
-        sigs: inner_signature_map,
-    });
 
-    let param: PermitParam = PermitParam {
-        message,
-        signature: AccountSignatures {
-            sigs: signature_map,
-        },
-        signer: request.signer,
+    let param = InternalTransferParameter::<TokenAmount> {
+        transfers: vec![InternalTransferBatch {
+            signer:    PublicKeyEd25519::from_str(
+                str::from_utf8(&request.from_public_key).unwrap(),
+            )
+            .unwrap(),
+            signature: SignatureEd25519(signature),
+            message:   InternalTransferMessage {
+                entry_point:           OwnedEntrypointName::new_unchecked(
+                    "internalTransferCis2Tokens".to_string(),
+                ),
+                expiry_time:           request.expiry_time,
+                nonce:                 request.nonce,
+                service_fee_recipient: PublicKeyEd25519([0u8; 32]),
+                service_fee_amount:    TokenAmount {
+                    token_amount:                TokenAmountU256(0.into()),
+                    token_id:                    TokenIdVec(vec![]),
+                    cis2_token_contract_address: state.contract_address,
+                },
+                simple_transfers:      vec![InternalTransfer {
+                    to:              PublicKeyEd25519::from_str(
+                        str::from_utf8(&request.to_public_key).unwrap(),
+                    )
+                    .unwrap(),
+                    transfer_amount: TokenAmount {
+                        token_amount: TokenAmountU256(request.token_amount),
+
+                        token_id:                    TokenIdVec(vec![]),
+                        cis2_token_contract_address: state.contract_address,
+                    },
+                }],
+            },
+        }],
     };
 
     let mut contract_client = ContractClient::<()>::new(
         state.node_client.clone(),
-        request.contract_address,
-        OwnedContractName::new(format!("init_{}", request.contract_name))?,
+        state.contract_address,
+        OwnedContractName::new(format!("init_{}", "smart_contract_wallet"))?,
     );
 
     let dry_run = contract_client
-        .dry_run_update::<_, ServerError>("permit", Amount::zero(), state.keys.address, &param)
+        .dry_run_update::<_, ServerError>(
+            "internalTransferCis2Tokens",
+            Amount::zero(),
+            state.keys.address,
+            &param,
+        )
         .await?;
 
     // Get the current nonce for the backend wallet and lock it. This is necessary
@@ -308,21 +322,7 @@ pub async fn handle_transaction(
     // Reset the rate limits if an hour has passed since the last reset.
     state.reset_rate_limits_if_expired().await;
 
-    // Check the rate limits for the account.
-    //
-    // By checking and updating the rate limit *after* the dry run, we ensure that
-    // it indeed is the specified signer account that sent the request (since the
-    // signature is checked).
-    //
-    // By contrast, if we had checked and updated the rate limit *before* the dry
-    // run, then it would be easy for attackers to block other accounts from using
-    // the service by spamming requests with the victim account specified as the
-    // signer.
-    //
-    // We could also add a general rate limit based on IP addresses or similar to
-    // hinder DDOS attacks.
-    state.check_rate_limit(request.signer).await?;
-
+    // Nice to have in the future: Add rate limit
     let tx_hash = dry_run
         .nonce(*nonce)
         .send(&state.keys)

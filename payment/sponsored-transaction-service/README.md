@@ -25,14 +25,7 @@ The following parameters are supported
 
 An example to run the service with basic settings and testnet node would be:
 
-```shell
-cargo run --release -- \
-  --node https://grpc.testnet.concordium.com:20000 \
-  --private-key-file <YourAccountPathToYourKeys> \
-  --allowed-accounts "ACC_0 ACC_1 ACC_2" \
-  --allowed-contracts "any"
 
-```
 
 An example to run the service with some filled in example settings would be:
 
@@ -41,7 +34,7 @@ cargo run --release -- \
   --node https://grpc.testnet.concordium.com:20000 \
   --private-key-file 4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export \
   --allowed-accounts "any" \
-  --allowed-contracts "<8662,0>"
+  --contract_address "<8662,0>"
 ```
 
 cargo run --release -- --node https://grpc.testnet.concordium.com:20000 --private-key-file 4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export --allowed-accounts "any" --allowed-contracts "<8662,0>"
