@@ -19,7 +19,10 @@ export const signMessage = (message: Hex) => ed.signAsync(message, SECRET_KEY);
 export function usePublicKey() {
   const [publicKey, setPublicKey] = useState<Uint8Array>();
   useEffect(()=> {
-    getPublicKey().then(setPublicKey)
+    getPublicKey().then((key)=>{
+      console.log({publicKey: Buffer(key).toString("hex")})
+      setPublicKey(key)
+    })
   }, []);
   return publicKey;
 }

@@ -48,6 +48,7 @@ function SendForm() {
     <Container fluid className="d-flex align-items-center justify-content-center">
       <Col>
         <Row>
+          <QRPublic/>
           <Form validated={validated} onSubmit={handleSubmit} >
             <div className='mb-3'>
               <Form.Label htmlFor="amount">Send</Form.Label>
