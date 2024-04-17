@@ -1,5 +1,6 @@
 import * as ed from '@noble/ed25519';
 import { Buffer } from 'buffer/';
+import { useEffect, useState } from 'react';
 
 export type Hex = string;
 
@@ -14,3 +15,11 @@ function generateKey() {
 
 export const getPublicKey = () => ed.getPublicKeyAsync(SECRET_KEY);
 export const signMessage = (message: Hex) => ed.signAsync(message, SECRET_KEY);
+
+export function usePublicKey() {
+  const [publicKey, setPublicKey] = useState<Uint8Array>();
+  useEffect(()=> {
+    getPublicKey().then(setPublicKey)
+  }, []);
+  return publicKey;
+}
