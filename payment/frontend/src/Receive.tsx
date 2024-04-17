@@ -21,24 +21,26 @@ export function ReceivePage() {
   const [amount, setAmount] = useState<bigint>();
   return (
     <Container fluid className="d-flex flex-column align-items-center justify-content-center">
-          <QRPublic amount={amount}/>
-          <div className='mb-3'>
-            <Form.Label htmlFor="amount">Amount</Form.Label>
-            <InputGroup>
-              <InputGroup.Text id="amount">EUR</InputGroup.Text>
-              <Form.Control
-                name="amount"
-                type='number'
-                placeholder="3.14"
-                aria-label="EUR amount"
-                aria-describedby="amount-balance"
-                onChange={(e) => setAmount(BigInt(Number(e.target.value)*1000000))}
-              />
-            </InputGroup>
-          </div>   
-          <div className="d-grid gap-2 w-100 mt-4">
-              <Button variant="dark" size="lg" onClick={()=> nav("/")}>Back</Button>
-          </div>
+      <div className='m-4'>
+      <QRPublic amount={amount} />
+      </div>
+      <InputGroup size="lg">
+        <InputGroup.Text id="amount">EUR</InputGroup.Text>
+        <Form.Control
+          name="amount"
+          type='number'
+          step={0.01}
+          placeholder="0.00"
+          aria-label="EUR amount"
+          aria-describedby="amount-balance"
+          onChange={(e) => setAmount(BigInt(Number(e.target.value)*1000000))}
+          className='font-monospace'
+        />
+      </InputGroup>
+      <div className="blockquote-footer">Balance</div> 
+      <div className="d-grid gap-2 w-100">
+        <Button variant="secondary" size="lg" onClick={()=> nav("/")}>Back</Button>
+      </div>
     </Container>
   );
 }
@@ -56,5 +58,5 @@ function QRPublic(props: QrProps) {
     publicKey: Buffer.from(publicKey).toString("base64"),
     request: props.amount?.toString()
   });
-  return (<QRCode value={qrContentString} size={250} />);
+  return (<QRCode value={qrContentString} size={250}/>);
 }

@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-router-dom';
 import Button from "react-bootstrap/Button";
 import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
@@ -33,6 +33,7 @@ export const App = () => {
 };
 
 function SendForm() {
+  const nav = useNavigate();
   const [validated, setValidated] = useState(false);
   const receiverRef = useRef<HTMLInputElement>(null);
 
@@ -61,42 +62,38 @@ function SendForm() {
   };
 
   return (
-    <Container fluid className="d-flex align-items-center justify-content-center">
-      <Col>
-        <Row>
-          <Form noValidate validated={validated} onSubmit={handleSubmit} >
-            <div className='mb-3'>
-              <Form.Label htmlFor="amount">Send</Form.Label>
-              <InputGroup>
-                <InputGroup.Text id="amount">EUR</InputGroup.Text>
-                <Form.Control
-                  name="amount"
-                  placeholder="3.14"
-                  aria-label="EUR amount"
-                  aria-describedby="amount-balance"
-                />
-              </InputGroup>
-              <Form.Text id="amount-balance" muted>
-                Current balance is EUR 100,000.00
-              </Form.Text>
-            </div>
-            <div className='mb-3'>
-              <Form.Label htmlFor='send-to'>To</Form.Label>
-              <InputGroup>
-                <Form.Control
-                  name="to"
-                  id="send-to"
-                  placeholder=""
-                  aria-label="Receiver of the amount"
-                  ref={receiverRef}
-                />
-                <SendToScannerModal onScan={onQRScan} onError={(out)=> console.log(out)} />
-              </InputGroup>
-            </div>
-            <Button type='submit'>Send</Button>
-          </Form >
-        </Row>
-      </Col>
+    <Container fluid className="d-flex flex-column align-items-center justify-content-center">
+        <Form.Label htmlFor="amount" className='text-muted pull-left w-90'>Send</Form.Label>
+        <InputGroup size="lg">
+          <InputGroup.Text id="amount">EUR</InputGroup.Text>
+          <Form.Control
+            name="amount"
+            type='number'
+            step={0.01}
+            placeholder="0.00"
+            aria-label="EUR amount"
+            aria-describedby="amount-balance"
+            className='font-monospace'
+          />
+        </InputGroup>
+        <Form.Label htmlFor='send-to' className='text-muted pull-left w-90'>to</Form.Label>
+        <InputGroup>
+          <Form.Control
+            name="to"
+            id="send-to"
+            placeholder=""
+            aria-label="Receiver of the amount"
+            ref={receiverRef}
+          />
+          <SendToScannerModal onScan={onQRScan} onError={(out)=> console.log(out)} />
+        </InputGroup>
+        <Form.Text id="amount-balance" muted>
+          Current balance is EUR 100,000.00
+        </Form.Text>
+        <div className="d-grid gap-2 w-100 mt-4">
+          <Button variant="success" size="lg" onClick={()=> {}}>Send</Button>
+          <Button variant="secondary" size="lg" onClick={()=> {nav("/")}}>Back</Button>
+        </div>
     </Container>
   );
 }
