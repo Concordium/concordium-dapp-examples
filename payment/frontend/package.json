@@ -11,8 +11,8 @@
         "fmt-check": "prettier --check .",
         "fmt": "prettier --write .",
         "preview": "vite preview",
-        "build:contracts": "cargo concordium build  -e -o ../smart-contract/concordium-out/module.wasm.v1 -- --manifest-path ../smart-contract/Cargo.toml",
-        "generate": "ccd-js-gen --module ../smart-contract/concordium-out/module.wasm.v1 --out-dir ./generated --output-type TypeScript --ts-nocheck"
+        "build:contracts": "cargo concordium build  -e -o ../cis5-smart-contract-wallet/concordium-out/module.wasm.v1 -- --manifest-path ../cis5-smart-contract-wallet/Cargo.toml",
+        "generate": "ccd-js-gen --module ../cis5-smart-contract-wallet/concordium-out/module.wasm.v1 --out-dir ./generated --output-type TypeScript --ts-nocheck"
     },
     "dependencies": {
         "@concordium/web-sdk": "^7.3.2",

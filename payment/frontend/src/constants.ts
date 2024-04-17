@@ -1,8 +1,9 @@
-import { ContractAddress } from '@concordium/web-sdk';
+import { ConcordiumGRPCWebClient, ContractAddress } from '@concordium/web-sdk';
 
 const { protocol, hostname, port } = new URL(CONFIG.node);
 export const NODE_HOST = `${protocol}//${hostname}`;
 export const NODE_PORT = Number(port);
+export const grpc = new ConcordiumGRPCWebClient(NODE_HOST, NODE_PORT);
 
 export const SPONSORED_TRANSACTION_BACKEND = CONFIG.sponsoredTransactionBackend;
 
@@ -17,4 +18,4 @@ export const CONTRACT_ADDRESS = ContractAddress.fromSerializable(CONFIG.contract
 export const EPSILON_ENERGY = 200n;
 
 export const SERIALIZATION_HELPER_SCHEMA_PERMIT_MESSAGE =
-    'FAAFAAAAEAAAAGNvbnRyYWN0X2FkZHJlc3MMBQAAAG5vbmNlBQkAAAB0aW1lc3RhbXANCwAAAGVudHJ5X3BvaW50FgEHAAAAcGF5bG9hZBABAg==';
+  'FAAFAAAAEAAAAGNvbnRyYWN0X2FkZHJlc3MMBQAAAG5vbmNlBQkAAAB0aW1lc3RhbXANCwAAAGVudHJ5X3BvaW50FgEHAAAAcGF5bG9hZBABAg==';
