@@ -114,7 +114,7 @@ body,
     font-size: 0.875em;
     font-weight: 300;
     background-color: inherit;
-    border:0;
+    border: 0;
 }
 
 
@@ -123,7 +123,7 @@ body,
     font-weight: inherit;
     line-height: inherit;
     background-color: inherit;
-    border:0;  
+    border: 0;
 }
 
 .saF {
@@ -145,17 +145,17 @@ body,
 }
 
 .QRicon {
-    background: var(--bs-tertiary-bg);;
+    background: var(--bs-tertiary-bg);
     font-size: calc(1.625rem + 4.5vw);
     font-weight: inherit;
     line-height: inherit;
     border-radius: var(--bs-border-radius-lg);
 }
 .QRicon:hover {
-    background:  gray;
+    background: gray;
 }
 .QRicon:active {
-    background:  var(--bs-btn-active-bg);
+    background: var(--bs-btn-active-bg);
 }
 
 .receiverIcon {
@@ -164,7 +164,7 @@ body,
     border-radius: var(--bs-border-radius-lg);
 }
 
-.receiverButton{
+.receiverButton {
     color: var(--bs-body-color);
     min-width: 72px;
     min-height: 72px;
@@ -173,22 +173,22 @@ body,
     padding: 0;
 }
 
-.receiverButton:hover{
+.receiverButton:hover {
     background: inherit;
 }
 
-.receiverButton:active{
+.receiverButton:active {
     background: inherit;
 }
 
 /* Chrome, Safari, Edge, Opera */
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
+    -webkit-appearance: none;
+    margin: 0;
 }
 
 /* Firefox */
-input[type=number] {
-  -moz-appearance: textfield;
+input[type='number'] {
+    -moz-appearance: textfield;
 }

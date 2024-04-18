@@ -9,12 +9,12 @@ export type Hex = string;
 
 const KEY_LOCATION_LS = '__payment-app_secret-key';
 const SECRET_KEY = localStorage.getItem(KEY_LOCATION_LS) ?? generateKey();
+export const PUBLIC_KEY = ed.getPublicKey(SECRET_KEY);
 
 function generateKey() {
-  const k = Buffer.from(ed.utils.randomPrivateKey()).toString('hex');
-  localStorage.setItem(KEY_LOCATION_LS, k);
-  return k;
+    const k = Buffer.from(ed.utils.randomPrivateKey()).toString('hex');
+    localStorage.setItem(KEY_LOCATION_LS, k);
+    return k;
 }
 
-export const getPublicKey = () => ed.getPublicKey(SECRET_KEY);
 export const signMessage = (message: Hex) => ed.sign(message, SECRET_KEY);

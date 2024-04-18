@@ -59,7 +59,7 @@ type QrProps = {
 };
 
 function QRPublic(props: QrProps) {
-    const publicKey = Keys.getPublicKey();
+    const publicKey = Keys.PUBLIC_KEY;
     if (!publicKey) {
         return 'Loading';
     }
