@@ -54,7 +54,7 @@ export async function transfer(amount: bigint, to: Hex): Promise<void> {
         expiryTime,
         tokenAmount: amount,
     };
-    const response = fetch(`/api/submitTransaction`, {
+    const response = await fetch(`/api/submitTransaction`, {
         headers: {
             Accept: 'application/json',
             'Content-Type': 'application/json',

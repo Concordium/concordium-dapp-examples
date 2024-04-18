@@ -9,7 +9,7 @@ import 'dotenv/config';
 
 const DEFAULT_NETWORK = 'testnet';
 const DEFAULT_NODE = 'https://grpc.testnet.concordium.com:20000';
-const DEFAULT_SPONSORED_API = 'http://localhost:8000/';
+const DEFAULT_SPONSORED_API = 'http://localhost:8080/';
 
 /**
  * Validates environment variable present at `envField` as a URL.
@@ -109,7 +109,7 @@ export default defineConfig(({ command }) => {
     viteConfig.server = {
       proxy: {
         '/api': {
-          target: process.env.TRACK_AND_TRACE_SPONSORED_BACKEND_API,
+          target: getConfig().sponsoredTransactionBackend,
           changeOrigin: true,
         },
       },
