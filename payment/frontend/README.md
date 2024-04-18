@@ -37,7 +37,7 @@ yarn dev
 e.g.
 
 ```bash
-TRACK_AND_TRACE_CONTRACT_ADDRESS="<8527,0>" yarn dev
+TRACK_AND_TRACE_CONTRACT_ADDRESS="<8662,0>" yarn dev
 ```
 
 This will launch a development server with hot module replacement enabled.

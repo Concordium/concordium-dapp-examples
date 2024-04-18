@@ -1,7 +1,7 @@
 // @ts-nocheck
 import * as SDK from "@concordium/web-sdk";
 /** The reference of the smart contract module supported by the provided client. */
-export const moduleReference: SDK.ModuleReference.Type = /*#__PURE__*/ SDK.ModuleReference.fromHexString('781f1db0930341ec54ffe4caf293d90b3a87100add566da4ee1f2829c25e634d');
+export const moduleReference: SDK.ModuleReference.Type = /*#__PURE__*/ SDK.ModuleReference.fromHexString('83f693c80843f4b1f888923a88e54fedaa7d95c8562763bb45ce8b749685ac48');
 /** Name of the smart contract supported by this client. */
 export const contractName: SDK.ContractName.Type = /*#__PURE__*/ SDK.ContractName.fromStringUnchecked('smart_contract_wallet');
 
