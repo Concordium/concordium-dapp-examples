@@ -99,3 +99,16 @@ body,
     align-items: center;
     justify-content: center;
 }
+
+.amountField {
+    font-size: calc(1.625rem + 4.5vw);
+    font-weight: 300;
+    line-height: 1.2;
+}
+
+.amountField .input-group-text {
+    --bs-text-opacity: 1;
+    color: var(--bs-secondary-color) !important;
+    font-size: 0.875em;
+    font-weight: 300;
+}
