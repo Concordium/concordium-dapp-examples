@@ -2,6 +2,7 @@ import { ConcordiumGRPCWebClient } from '@concordium/web-sdk/grpc';
 import { CONTRACT_ADDRESS, NODE_HOST, NODE_PORT } from './constants';
 import * as Contract from '../generated/module_smart_contract_wallet';
 import { Hex, getPublicKey } from './keys';
+import { Buffer } from 'buffer/';
 import { ContractAddress } from '@concordium/web-sdk/types';
 
 const EUROE_ID = ''; // EUROe token ID
