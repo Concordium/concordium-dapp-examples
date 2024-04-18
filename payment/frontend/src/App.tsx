@@ -10,9 +10,9 @@ import { faQrcode } from '@fortawesome/free-solid-svg-icons';
 import { QRCode } from 'react-qrcode-logo';
 import { QrScanner } from '@yudiel/react-qr-scanner';
 import Modal from 'react-bootstrap/Modal';
-import { useRef, useState } from 'react';
+import { ReactNode, useRef, useState } from 'react';
 import { Buffer } from 'buffer';
-import Jdenticon from "react-jdenticon";
+import Jdenticon from 'react-jdenticon';
 
 import { HomePage } from './Home';
 import * as Keys from './keys';
@@ -23,160 +23,168 @@ import { ReceivePage } from './Receive';
 import { Hex } from './keys';
 
 export const App = () => {
-  return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/send" element={<SendForm />} />
-        <Route path="/receive" element={<ReceivePage />} />
-      </Routes>
-    </Router>
-  );
+    return (
+        <Router>
+            <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/send" element={<SendForm />} />
+                <Route path="/receive" element={<ReceivePage />} />
+            </Routes>
+        </Router>
+    );
 };
 
 function SendForm() {
-  const nav = useNavigate();
-  const [validated, setValidated] = useState(false);
-  const amountRef = useRef<HTMLInputElement>(null);
-  const [txHash, setTxHash] = useState<Hex>();
-  const [receiver, setReceiver] = useState("");
-  const navigate = useNavigate();
+    const nav = useNavigate();
+    const [validated, setValidated] = useState(false);
+    const amountRef = useRef<HTMLInputElement>(null);
+    const [txHash, setTxHash] = useState<Hex>();
+    const [receiver, setReceiver] = useState('');
+    const navigate = useNavigate();
 
-  const handleSubmit = async (event: any) => {
-    event.preventDefault();
-    event.stopPropagation();
-    const form = event.currentTarget;
-    if (form.checkValidity() === false) {
-      // TODO form validation
-    }
-    setValidated(true);
+    const handleSubmit = async (event: any) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const form = event.currentTarget;
+        if (form.checkValidity() === false) {
+            // TODO form validation
+        }
+        setValidated(true);
 
-    const amount = BigInt(Number(form.amount.value) * 10 ** 6);
-    console.log({ amount, receiver });
-    const hash = await Server.transfer(amount, Buffer.from(receiver, 'base64').toString('hex'));
-    setTxHash(hash);
-    navigate("/");
-  };
+        const amount = BigInt(Number(form.amount.value) * 10 ** 6);
+        console.log({ amount, receiver });
+        const hash = await Server.transfer(amount, Buffer.from(receiver, 'base64').toString('hex'));
+        setTxHash(hash);
+        navigate('/');
+    };
 
-  const onQRScan = (content: QrContent) => {
-    if (amountRef.current === null) {
-      return;
-    }
-    setReceiver(content.publicKey);
-    const amount = content.request
-    if (amount && amount !== "0") {
-      amountRef.current.value = (Number(amount)/1000000).toString();
-    }
-  };
-  const hasReceiver = receiver !== "";
-  return (
-    <Container fluid className="d-flex flex-column align-items-center justify-content-center">
-      <Form onSubmit={handleSubmit} className="d-flex flex-column w-100" noValidate validated={validated}>
-        <Form.Label htmlFor="amount" className="text-muted pull-left w-90">
-          Send
-        </Form.Label>
-        <InputGroup size="lg" className="amountField">
-          <InputGroup.Text id="amount">EUR</InputGroup.Text>
-          <Form.Control
-            name="amount"
-            type="number"
-            step={0.01}
-            placeholder="0.00"
-            aria-label="EUR amount"
-            aria-describedby="amount-balance"
-            className="font-monospace"
-            ref={amountRef}
-          />
-        </InputGroup>
-        <Form.Label htmlFor="send-to" className="text-muted pull-left w-90">
-          to
-        </Form.Label>
-        <Row>
-          <Col className='d-flex justify-content-center align-items-center'>
-            <SendToScannerModal onScan={onQRScan} onError={(out) => console.log(out)} >
-              {hasReceiver ? <div className='receiverIcon'><Jdenticon size="72" value={receiver} /></div> : <div className='QRicon'><FontAwesomeIcon  icon={faQrcode} /></div>}
-            </SendToScannerModal>
-          </Col>
-        </Row>
-        <div className="d-grid gap-2 w-100 mt-4">
-          <Button variant="success" size="lg" type="submit" disabled={!hasReceiver}>
-            Send
-          </Button>
-          <Button
-            variant="secondary"
-            size="lg"
-            onClick={() => {
-              nav('/');
-            }}
-          >
-            Back
-          </Button>
-        </div>
-      </Form>
+    const onQRScan = (content: QrContent) => {
+        if (amountRef.current === null) {
+            return;
+        }
+        setReceiver(content.publicKey);
+        const amount = content.request;
+        if (amount && amount !== '0') {
+            amountRef.current.value = (Number(amount) / 1000000).toString();
+        }
+    };
+    const hasReceiver = receiver !== '';
+    return (
+        <Container fluid className="d-flex flex-column align-items-center justify-content-center">
+            <Form onSubmit={handleSubmit} className="d-flex flex-column w-100" noValidate validated={validated}>
+                <Form.Label htmlFor="amount" className="text-muted pull-left w-90">
+                    Send
+                </Form.Label>
+                <InputGroup size="lg" className="amountField">
+                    <InputGroup.Text id="amount">EUR</InputGroup.Text>
+                    <Form.Control
+                        name="amount"
+                        type="number"
+                        step={0.01}
+                        placeholder="0.00"
+                        aria-label="EUR amount"
+                        aria-describedby="amount-balance"
+                        className="font-monospace"
+                        ref={amountRef}
+                    />
+                </InputGroup>
+                <Form.Label htmlFor="send-to" className="text-muted pull-left w-90">
+                    to
+                </Form.Label>
+                <Row>
+                    <Col className="d-flex justify-content-center align-items-center">
+                        <SendToScannerModal onScan={onQRScan} onError={(out) => console.log(out)}>
+                            {hasReceiver ? (
+                                <div className="receiverIcon">
+                                    <Jdenticon size="72" value={receiver} />
+                                </div>
+                            ) : (
+                                <div className="QRicon">
+                                    <FontAwesomeIcon icon={faQrcode} />
+                                </div>
+                            )}
+                        </SendToScannerModal>
+                    </Col>
+                </Row>
+                <div className="d-grid gap-2 w-100 mt-4">
+                    <Button variant="success" size="lg" type="submit">
+                        Send
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        size="lg"
+                        onClick={() => {
+                            nav('/');
+                        }}
+                    >
+                        Back
+                    </Button>
+                </div>
+            </Form>
 
-      {txHash !== undefined && <div>Transaction submitted: {txHash}</div>}
-    </Container>
-  );
+            {txHash !== undefined && <div>Transaction submitted: {txHash}</div>}
+        </Container>
+    );
 }
 
 type SendToScannerProps = {
-  onScan: (out: QrContent) => void;
-  onError: (out: string) => void;
-  children: ReactNode
+    onScan: (out: QrContent) => void;
+    onError: (out: string) => void;
+    children: ReactNode;
 };
 
 type QrContent = {
-  /** Public key in Base64 */
-  publicKey: string;
-  /** Optional amount to request, string representation of a bigint. */
-  request?: string;
+    /** Public key in Base64 */
+    publicKey: string;
+    /** Optional amount to request, string representation of a bigint. */
+    request?: string;
 };
 
 function SendToScannerModal(props: SendToScannerProps) {
-  const [show, setShow] = useState(false);
-  const [error, setError] = useState<string>();
+    const [show, setShow] = useState(false);
+    const [error, setError] = useState<string>();
 
-  const handleClose = () => setShow(false);
-  const handleShow = () => setShow(true);
+    const handleClose = () => setShow(false);
+    const handleShow = () => setShow(true);
 
-  const onDecode = (qrString: string) => {
-    const content = JSON.parse(qrString) as unknown;
+    const onDecode = (qrString: string) => {
+        const content = JSON.parse(qrString) as unknown;
 
-    if (!content || typeof content !== 'object') {
-      setError(`Expected JSON object, instead got: ${qrString}`);
-      return;
-    }
-    if (!('publicKey' in content)) {
-      setError("Expected JSON object with field 'publicKey'");
-      return;
-    }
-    if (typeof content.publicKey !== 'string') {
-      setError('Unexpected');
-      return;
-    }
-    handleClose();
-    props.onScan(content as QrContent);
-  };
+        if (!content || typeof content !== 'object') {
+            setError(`Expected JSON object, instead got: ${qrString}`);
+            return;
+        }
+        if (!('publicKey' in content)) {
+            setError("Expected JSON object with field 'publicKey'");
+            return;
+        }
+        if (typeof content.publicKey !== 'string') {
+            setError('Unexpected');
+            return;
+        }
+        handleClose();
+        props.onScan(content as QrContent);
+    };
 
-  const onError = (err: Error) => {
-    handleClose();
-    props.onError(err.message);
-  };
+    const onError = (err: Error) => {
+        handleClose();
+        props.onError(err.message);
+    };
 
-  return (
-    <>
-      <Button onClick={handleShow} className="receiverButton">
-        {props.children}
-      </Button>
-      <Modal show={show} onHide={handleClose} backdrop="static" centered keyboard={false}>
-        <Modal.Header closeButton>
-          <Modal.Title>Scan QR for the receiver</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <QrScanner onDecode={onDecode} onError={onError} />
-        </Modal.Body>
-        <Modal.Footer>{error}</Modal.Footer>
-      </Modal>
-    </>
-  );
+    return (
+        <>
+            <Button onClick={handleShow} className="receiverButton">
+                {props.children}
+            </Button>
+            <Modal show={show} onHide={handleClose} backdrop="static" centered keyboard={false}>
+                <Modal.Header closeButton>
+                    <Modal.Title>Scan QR for the receiver</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <QrScanner onDecode={onDecode} onError={onError} />
+                </Modal.Body>
+                <Modal.Footer>{error}</Modal.Footer>
+            </Modal>
+        </>
+    );
 }

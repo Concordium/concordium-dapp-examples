@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as ed from '@noble/ed25519';
 import { Buffer } from 'buffer/';
-import { useEffect, useState } from 'react';
 import { sha512 } from '@noble/hashes/sha512';
 
 ed.etc.sha512Sync = (...m: any[]) => sha512(ed.etc.concatBytes(...m));
@@ -17,16 +16,5 @@ function generateKey() {
   return k;
 }
 
-export const getPublicKey = async () => ed.getPublicKey(SECRET_KEY);
-export const signMessage = async (message: Hex) => ed.sign(message, SECRET_KEY);
-
-export function usePublicKey() {
-  const [publicKey, setPublicKey] = useState<Uint8Array>();
-  useEffect(() => {
-    getPublicKey().then((key) => {
-      console.log({ publicKey: [...key], hex: Buffer.from(key).toString('hex') });
-      setPublicKey(key);
-    });
-  }, []);
-  return publicKey;
-}
+export const getPublicKey = () => ed.getPublicKey(SECRET_KEY);
+export const signMessage = (message: Hex) => ed.sign(message, SECRET_KEY);
