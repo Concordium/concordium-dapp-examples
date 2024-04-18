@@ -11,9 +11,9 @@ import { QRCode } from 'react-qrcode-logo';
 import { QrScanner } from '@yudiel/react-qr-scanner';
 import Modal from 'react-bootstrap/Modal';
 import { useState } from 'react';
-import * as Keys from './keys';
-import { Buffer } from 'buffer';
-import Jdenticon from 'react-jdenticon';
+import * as Keys from "./keys";
+import {Buffer} from "buffer";
+import * as Jdenticon from "jdenticon";
 
 import './styles.scss';
 
@@ -23,8 +23,7 @@ export function ReceivePage() {
   return (
     <Container fluid className="d-flex flex-column align-items-center justify-content-center">
       <div className="m-4">
-        <QRPublic amount={amount} />
-        <Jdenticon size="48" value="Hello World" />
+      <QRPublic amount={amount} />
       </div>
       <InputGroup size="lg" className="amountField saF">
         <InputGroup.Text id="amount">EUR</InputGroup.Text>
@@ -62,5 +61,9 @@ function QRPublic(props: QrProps) {
     publicKey: Buffer.from(publicKey).toString('base64'),
     request: props.amount?.toString(),
   });
-  return <QRCode value={qrContentString} size={250} />;
+  const logoSize = 100;
+  const svgString = Jdenticon.toSvg(publicKey, logoSize, {backColor: "#FFFFFF"});
+  const image = "data:image/svg+xml;base64," + window.btoa(svgString);
+  return (<QRCode value={qrContentString} size={250} logoImage={image} ecLevel='H' logoWidth={logoSize} logoHeight={logoSize}/>);
 }
+
