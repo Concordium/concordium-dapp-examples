@@ -1,6 +1,5 @@
 import { Timestamp } from '@concordium/web-sdk';
 import * as Contract from '../generated/module_smart_contract_wallet';
-import { SPONSORED_TRANSACTION_BACKEND } from './constants';
 import { Hex, signMessage } from './keys';
 import JSONBig from 'json-bigint';
 import { client, createTokenAmount, getNonce } from './contract';
@@ -52,7 +51,7 @@ export async function transfer(amount: bigint, to: Hex): Promise<void> {
         expiryTime,
         tokenAmount: amount,
     };
-    const response = fetch(`${SPONSORED_TRANSACTION_BACKEND}/api/submitTransaction`, {
+    const response = fetch(`/api/submitTransaction`, {
         headers: {
             Accept: 'application/json',
             'Content-Type': 'application/json',
