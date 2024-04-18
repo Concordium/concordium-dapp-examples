@@ -4,12 +4,13 @@ import * as Contract from '../generated/module_smart_contract_wallet';
 import { Hex, getPublicKey } from './keys';
 import { Buffer } from 'buffer/';
 import { ContractAddress } from '@concordium/web-sdk/types';
+import { useEffect, useState } from 'react';
 
 const EUROE_ID = ''; // EUROe token ID
 const EUROE_CONTRACT_ADDRESS = ContractAddress.create(7260, 0); // EUROe contract address
 
 const grpc = new ConcordiumGRPCWebClient(NODE_HOST, NODE_PORT);
-export const client = Contract.create(grpc, CONTRACT_ADDRESS);
+export const client = Contract.createUnchecked(grpc, CONTRACT_ADDRESS);
 
 export const createTokenAmount = (
   amount: bigint | number,
@@ -28,4 +29,35 @@ export async function getNonce(): Promise<[Hex, bigint]> {
   }
 
   return [pubKey, BigInt(nonce[0])];
+}
+
+export async function getBalance() {
+  const public_key = Buffer.from(await getPublicKey()).toString('hex');
+
+  const result = await Contract.dryRunBalanceOfCis2Tokens(await client, [{
+    token_id: EUROE_ID,
+    cis2_token_contract_address: EUROE_CONTRACT_ADDRESS,
+    public_key
+  }]);
+  const balances = Contract.parseReturnValueBalanceOfCis2Tokens(result);
+  if (balances === undefined) {
+    console.warn("Unexpected balance return value:", balances)
+  }
+  return BigInt(balances?.[0] ?? 0);
+}
+
+export function useBalance(interval: number) {
+  const [state, setState] = useState(0n);
+  useEffect(()=> {
+    getBalance().then(setState);
+  }, [])
+  useEffect(()=> {
+    const id = setInterval(() => {
+      getBalance().then(setState);
+    }, interval);
+    return () => {
+      clearInterval(id);
+    };
+  }, [interval]);
+  return state;
 }
