@@ -29,3 +29,5 @@ interface Config {
 
 /** The configuration built into the application when served from the backend API */
 declare const CONFIG: Config;
+
+declare module 'react-jdenticon' { }
