@@ -23,7 +23,7 @@ export function ReceivePage() {
   return (
     <Container fluid className="d-flex flex-column align-items-center justify-content-center">
       <Form onSubmit={() => {}} className="d-flex flex-column w-100">
-      <div className="m-4">
+      <div className="m-4 d-flex flex-column align-items-center justify-content-center">
       <QRPublic amount={amount} />
       </div>
       <Form.Label htmlFor="amount" className="text-muted pull-left w-90">
@@ -34,6 +34,7 @@ export function ReceivePage() {
         <Form.Control
           name="amount"
           type="number"
+          min="0"
           step={0.01}
           placeholder="0.00"
           aria-label="EUR amount"
