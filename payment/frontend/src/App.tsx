@@ -62,8 +62,8 @@ function SendForm() {
   };
 
   return (
-    <Container fluid className="d-flex flex-column align-items-center justify-content-center">
-    <Form onSubmit={handleSubmit} className="d-flex flex-column ">
+    <Container fluid className="d-flex align-items-center justify-content-center">
+    <Form>
         <Form.Label htmlFor="amount" className='text-muted pull-left w-90'>Send</Form.Label>
         <InputGroup size="lg">
           <InputGroup.Text id="amount">EUR</InputGroup.Text>
