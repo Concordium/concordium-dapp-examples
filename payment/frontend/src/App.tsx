@@ -39,7 +39,8 @@ function SendForm() {
   const [validated, setValidated] = useState(false);
   const amountRef = useRef<HTMLInputElement>(null);
   const [txHash, setTxHash] = useState<Hex>();
-  const [receiver, setReceiver] = useState("")
+  const [receiver, setReceiver] = useState("");
+  const navigate = useNavigate();
 
   const handleSubmit = async (event: any) => {
     event.preventDefault();
@@ -54,6 +55,7 @@ function SendForm() {
     console.log({ amount, receiver });
     const hash = await Server.transfer(amount, Buffer.from(receiver, 'base64').toString('hex'));
     setTxHash(hash);
+    navigate("/");
   };
 
   const onQRScan = (content: QrContent) => {
