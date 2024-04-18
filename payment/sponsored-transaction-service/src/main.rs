@@ -103,9 +103,9 @@ impl ServiceConfig {
     fn as_frontend_config(&self) -> serde_json::Value {
         let config = serde_json::json!({
             // NOT NEEDED PROBABLY
-            // "node": self.endpoint.uri().to_string(),
-            // "network":"testnet",
-            // "contractAddress": self.allowed_contracts,
+            "node": self.endpoint.uri().to_string(),
+            "network":"testnet",
+            "contractAddress": self.contract_address,
         });
         let config_string =
             serde_json::to_string(&config).expect("JSON serialization always succeeds");
@@ -265,32 +265,28 @@ pub async fn handle_transaction(
 
     let param = InternalTransferParameter::<TokenAmount> {
         transfers: vec![InternalTransferBatch {
-            signer:    PublicKeyEd25519::from_str(
-                str::from_utf8(&request.from_public_key).unwrap(),
-            )
-            .unwrap(),
+            signer: PublicKeyEd25519::from_str(str::from_utf8(&request.from_public_key).unwrap())
+                .unwrap(),
             signature: SignatureEd25519(signature),
-            message:   InternalTransferMessage {
-                entry_point:           OwnedEntrypointName::new_unchecked(
+            message: InternalTransferMessage {
+                entry_point: OwnedEntrypointName::new_unchecked(
                     "internalTransferCis2Tokens".to_string(),
                 ),
-                expiry_time:           request.expiry_time,
-                nonce:                 request.nonce,
+                expiry_time: request.expiry_time,
+                nonce: request.nonce,
                 service_fee_recipient: PublicKeyEd25519([0u8; 32]),
-                service_fee_amount:    TokenAmount {
-                    token_amount:                TokenAmountU256(0.into()),
-                    token_id:                    TokenIdVec(vec![]),
+                service_fee_amount: TokenAmount {
+                    token_amount: TokenAmountU256(0.into()),
+                    token_id: TokenIdVec(vec![]),
                     cis2_token_contract_address: state.contract_address,
                 },
-                simple_transfers:      vec![InternalTransfer {
-                    to:              PublicKeyEd25519::from_str(
-                        str::from_utf8(&request.to_public_key).unwrap(),
-                    )
-                    .unwrap(),
+                simple_transfers: vec![InternalTransfer {
+                    to: PublicKeyEd25519::from_str(str::from_utf8(&request.to_public_key).unwrap())
+                        .unwrap(),
                     transfer_amount: TokenAmount {
                         token_amount: TokenAmountU256(request.token_amount),
 
-                        token_id:                    TokenIdVec(vec![]),
+                        token_id: TokenIdVec(vec![]),
                         cis2_token_contract_address: state.contract_address,
                     },
                 }],
