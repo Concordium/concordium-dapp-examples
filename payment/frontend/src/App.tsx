@@ -63,6 +63,7 @@ function SendForm() {
 
   return (
     <Container fluid className="d-flex flex-column align-items-center justify-content-center">
+    <Form className="d-flex flex-column ">
         <Form.Label htmlFor="amount" className='text-muted pull-left w-90'>Send</Form.Label>
         <InputGroup size="lg">
           <InputGroup.Text id="amount">EUR</InputGroup.Text>
@@ -91,9 +92,10 @@ function SendForm() {
           Current balance is EUR 100,000.00
         </Form.Text>
         <div className="d-grid gap-2 w-100 mt-4">
-          <Button variant="success" size="lg" onClick={()=> {}}>Send</Button>
+          <Button variant="success" size="lg" type="submit">Send</Button>
           <Button variant="secondary" size="lg" onClick={()=> {nav("/")}}>Back</Button>
         </div>
+      </Form>
     </Container>
   );
 }
