@@ -13,6 +13,7 @@ import Modal from 'react-bootstrap/Modal';
 import { useState } from 'react';
 import * as Keys from "./keys";
 import {Buffer} from "buffer";
+import Jdenticon from 'react-jdenticon';
 
 import './styles.scss';
 
@@ -23,6 +24,7 @@ export function ReceivePage() {
     <Container fluid className="d-flex flex-column align-items-center justify-content-center">
       <div className='m-4'>
       <QRPublic amount={amount} />
+      <Jdenticon size="48" value="Hello World" />
       </div>
       <InputGroup size="lg" className='amountField saF'>
         <InputGroup.Text id="amount">EUR</InputGroup.Text>
