@@ -523,7 +523,7 @@ impl SigningAmount for Amount {}
 impl SigningAmount for TokenAmount {}
 
 /// The token amount signed in the message.
-#[derive(Serialize, Clone, SchemaType)]
+#[derive(Serialize, Debug, Clone, SchemaType)]
 pub struct TokenAmount {
     /// The token amount signed in the message.
     pub token_amount:                ContractTokenAmount,
@@ -961,7 +961,7 @@ fn withdraw_cis2_tokens(
 }
 
 /// A single transfer of native currency or some amount of tokens.
-#[derive(Serialize, Clone, SchemaType)]
+#[derive(Serialize, Debug, Clone, SchemaType)]
 pub struct InternalTransfer<T: SigningAmount> {
     /// The public key receiving the tokens being transferred.
     pub to:              PublicKeyEd25519,
@@ -970,7 +970,7 @@ pub struct InternalTransfer<T: SigningAmount> {
 }
 
 /// The transfer message that is signed by the signer.
-#[derive(Serialize, Clone, SchemaType)]
+#[derive(Serialize, Debug, Clone, SchemaType)]
 pub struct InternalTransferMessage<T: SigningAmount> {
     /// The entry_point that the signature is intended for.
     pub entry_point:           OwnedEntrypointName,
@@ -994,7 +994,7 @@ impl<T: SigningAmount> IsMessage for InternalTransferMessage<T> {
 }
 
 /// A batch of transfers signed by a signer.
-#[derive(Serialize, SchemaType)]
+#[derive(Serialize, Debug, SchemaType)]
 pub struct InternalTransferBatch<T: SigningAmount> {
     /// The signer public key.
     pub signer:    PublicKeyEd25519,
@@ -1006,7 +1006,7 @@ pub struct InternalTransferBatch<T: SigningAmount> {
 
 /// The parameter type for the contract functions
 /// `internalTransferNativeCurrency/internalTransferCis2Tokens`.
-#[derive(Serialize, SchemaType)]
+#[derive(Serialize, Debug, SchemaType)]
 #[concordium(transparent)]
 #[repr(transparent)]
 pub struct InternalTransferParameter<T: SigningAmount> {
