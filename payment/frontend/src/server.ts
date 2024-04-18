@@ -38,7 +38,9 @@ export async function transfer(amount: bigint, to: Hex): Promise<void> {
     };
 
     const messageHashResult = await Contract.dryRunViewInternalTransferMessageHashTokenAmount(await client, message);
-    const messageHash = Contract.parseReturnValueViewInternalTransferMessageHashTokenAmount(messageHashResult);
+    const messageHash = Contract.parseReturnValueViewInternalTransferMessageHashTokenAmount(messageHashResult)?.map(
+        (n) => Number(n),
+    );
 
     if (messageHash === undefined) {
         throw new Error('Failed to get parameter from contract');
