@@ -5,8 +5,6 @@ export const NODE_HOST = `${protocol}//${hostname}`;
 export const NODE_PORT = Number(port);
 export const grpc = new ConcordiumGRPCWebClient(NODE_HOST, NODE_PORT);
 
-export const SPONSORED_TRANSACTION_BACKEND = CONFIG.sponsoredTransactionBackend;
-
 /** The contract address of the track and trace contract.  */
 export const CONTRACT_ADDRESS = ContractAddress.fromSerializable(CONFIG.contractAddress);
 

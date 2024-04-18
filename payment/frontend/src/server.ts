@@ -2,6 +2,7 @@ import { Timestamp } from '@concordium/web-sdk';
 import * as Contract from '../generated/module_smart_contract_wallet';
 import { Hex, signMessage } from './keys';
 import JSONBig from 'json-bigint';
+import { Buffer } from 'buffer/';
 import { client, createTokenAmount, getNonce } from './contract';
 
 const EXPIRY_OFFSET_MS = 1000 * 60 * 5; // 5 minutes
