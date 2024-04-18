@@ -139,7 +139,7 @@ pub struct InputParams {
     ///
     pub to_public_key:   [u8; 32],
     ///
-    pub token_amount:    U256,
+    pub token_amount:    u64,
 }
 
 #[derive(Debug, Serial)]
