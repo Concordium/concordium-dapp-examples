@@ -57,12 +57,13 @@ function QRPublic(props: QrProps) {
   if (!publicKey) {
     return 'Loading';
   }
+  const base64Key = Buffer.from(publicKey).toString('base64');
   const qrContentString = JSON.stringify({
-    publicKey: Buffer.from(publicKey).toString('base64'),
+    publicKey: base64Key,
     request: props.amount?.toString(),
   });
   const logoSize = 100;
-  const svgString = Jdenticon.toSvg(publicKey, logoSize, {backColor: "#FFFFFF"});
+  const svgString = Jdenticon.toSvg(base64Key, logoSize, {backColor: "#FFFFFF"});
   const image = "data:image/svg+xml;base64," + window.btoa(svgString);
   return (<QRCode value={qrContentString} size={250} logoImage={image} ecLevel='H' logoWidth={logoSize} logoHeight={logoSize}/>);
 }
