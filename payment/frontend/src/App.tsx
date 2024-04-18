@@ -92,7 +92,7 @@ function SendForm() {
         <Row>
           <Col className='d-flex justify-content-center align-items-center'>
             <SendToScannerModal onScan={onQRScan} onError={(out) => console.log(out)} >
-              {hasReceiver ? <Jdenticon size="50" value={receiver} /> : <><FontAwesomeIcon icon={faQrcode} /> Scan receiver</>}
+              {hasReceiver ? <div className='receiverIcon'><Jdenticon size="72" value={receiver} /></div> : <div className='QRicon'><FontAwesomeIcon  icon={faQrcode} /></div>}
             </SendToScannerModal>
           </Col>
         </Row>
@@ -163,7 +163,7 @@ function SendToScannerModal(props: SendToScannerProps) {
 
   return (
     <>
-      <Button onClick={handleShow} variant="light" size="lg">
+      <Button onClick={handleShow} className="receiverButton">
         {props.children}
       </Button>
       <Modal show={show} onHide={handleClose} backdrop="static" centered keyboard={false}>
