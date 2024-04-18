@@ -37,9 +37,9 @@ export const App = () => {
 function SendForm() {
   const nav = useNavigate();
   const [validated, setValidated] = useState(false);
-  const receiverRef = useRef<HTMLInputElement>(null);
+  const amountRef = useRef<HTMLInputElement>(null);
   const [txHash, setTxHash] = useState<Hex>();
-  const [receiver, setReceiver ] = useState("")
+  const [receiver, setReceiver] = useState("")
 
   const handleSubmit = async (event: any) => {
     event.preventDefault();
@@ -57,7 +57,14 @@ function SendForm() {
   };
 
   const onQRScan = (content: QrContent) => {
+    if (amountRef.current === null) {
+      return;
+    }
     setReceiver(content.publicKey);
+    const amount = content.request
+    if (amount && amount !== "0") {
+      amountRef.current.value = (Number(amount)/1000000).toString();
+    }
   };
   const hasReceiver = receiver !== "";
   return (
@@ -71,11 +78,12 @@ function SendForm() {
           <Form.Control
             name="amount"
             type="number"
-            step={0.000001}
+            step={0.01}
             placeholder="0.00"
             aria-label="EUR amount"
             aria-describedby="amount-balance"
             className="font-monospace"
+            ref={amountRef}
           />
         </InputGroup>
         <Form.Label htmlFor="send-to" className="text-muted pull-left w-90">
