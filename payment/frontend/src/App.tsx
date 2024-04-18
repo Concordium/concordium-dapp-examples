@@ -99,7 +99,7 @@ function SendForm() {
           </Col>
         </Row>
         <div className="d-grid gap-2 w-100 mt-4">
-          <Button variant="success" size="lg" type="submit">
+          <Button variant="success" size="lg" type="submit" disabled={!hasReceiver}>
             Send
           </Button>
           <Button
