@@ -10,8 +10,9 @@ import { faQrcode } from '@fortawesome/free-solid-svg-icons';
 import { QRCode } from 'react-qrcode-logo';
 import { QrScanner } from '@yudiel/react-qr-scanner';
 import Modal from 'react-bootstrap/Modal';
-import { useRef, useState } from 'react';
+import { ReactNode, useRef, useState } from 'react';
 import { Buffer } from 'buffer';
+import Jdenticon from 'react-jdenticon';
 
 import { HomePage } from './Home';
 import * as Keys from './keys';
@@ -36,9 +37,9 @@ export const App = () => {
 function SendForm() {
     const nav = useNavigate();
     const [validated, setValidated] = useState(false);
-    const receiverRef = useRef<HTMLInputElement>(null);
     const amountRef = useRef<HTMLInputElement>(null);
     const [txHash, setTxHash] = useState<Hex>();
+    const [receiver, setReceiver] = useState('');
 
     const handleSubmit = async (event: any) => {
         event.preventDefault();
@@ -50,31 +51,25 @@ function SendForm() {
         setValidated(true);
 
         const amount = BigInt(Number(form.amount.value) * 10 ** 6);
-        const receiver = form.to.value;
         console.log({ amount, receiver });
-        const hash = await Server.transfer(amount, receiver);
+        const hash = await Server.transfer(amount, Buffer.from(receiver, 'base64').toString('hex'));
         setTxHash(hash);
     };
 
     const onQRScan = (content: QrContent) => {
-        if (receiverRef.current === null) {
-            return;
-        }
         if (amountRef.current === null) {
             return;
         }
-        const receiverHex = Buffer.from(content.publicKey, 'base64').toString('hex');
-        receiverRef.current.value = receiverHex;
-
+        setReceiver(content.publicKey);
         const amount = content.request;
         if (amount && amount !== '0') {
             amountRef.current.value = (Number(amount) / 1000000).toString();
         }
     };
-
+    const hasReceiver = receiver !== '';
     return (
         <Container fluid className="d-flex flex-column align-items-center justify-content-center">
-            <Form onSubmit={handleSubmit} className="d-flex flex-column w-100" noValidate>
+            <Form onSubmit={handleSubmit} className="d-flex flex-column w-100" noValidate validated={validated}>
                 <Form.Label htmlFor="amount" className="text-muted pull-left w-90">
                     Send
                 </Form.Label>
@@ -94,16 +89,19 @@ function SendForm() {
                 <Form.Label htmlFor="send-to" className="text-muted pull-left w-90">
                     to
                 </Form.Label>
-                <InputGroup className="amountField saF">
-                    <Form.Control
-                        name="to"
-                        id="send-to"
-                        placeholder=""
-                        aria-label="Receiver of the amount"
-                        ref={receiverRef}
-                    />
-                    <SendToScannerModal onScan={onQRScan} onError={(out) => console.log(out)} />
-                </InputGroup>
+                <Row>
+                    <Col className="d-flex justify-content-center align-items-center">
+                        <SendToScannerModal onScan={onQRScan} onError={(out) => console.log(out)}>
+                            {hasReceiver ? (
+                                <Jdenticon size="50" value={receiver} />
+                            ) : (
+                                <>
+                                    <FontAwesomeIcon icon={faQrcode} /> Scan receiver
+                                </>
+                            )}
+                        </SendToScannerModal>
+                    </Col>
+                </Row>
                 <div className="d-grid gap-2 w-100 mt-4">
                     <Button variant="success" size="lg" type="submit">
                         Send
@@ -125,7 +123,11 @@ function SendForm() {
     );
 }
 
-type SendToScannerProps = { onScan: (out: QrContent) => void; onError: (out: string) => void };
+type SendToScannerProps = {
+    onScan: (out: QrContent) => void;
+    onError: (out: string) => void;
+    children: ReactNode;
+};
 
 type QrContent = {
     /** Public key in Base64 */
@@ -167,8 +169,8 @@ function SendToScannerModal(props: SendToScannerProps) {
 
     return (
         <>
-            <Button id="button-send-to-scan" onClick={handleShow} variant="secondary">
-                <FontAwesomeIcon icon={faQrcode} />
+            <Button onClick={handleShow} variant="light" size="lg">
+                {props.children}
             </Button>
             <Modal show={show} onHide={handleClose} backdrop="static" centered keyboard={false}>
                 <Modal.Header closeButton>
