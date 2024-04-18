@@ -40,7 +40,7 @@ export function ReceivePage() {
                         aria-label="EUR amount"
                         aria-describedby="amount-balance"
                         onChange={(e) => setAmount(BigInt(Number(e.target.value) * 1000000))}
-                        className="font-monospace"
+                        className="font-monospace prevent-validation"
                     />
                 </InputGroup>
                 <div className="blockquote-footer">Balance</div>

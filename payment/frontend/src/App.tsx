@@ -83,7 +83,7 @@ function SendForm() {
                         placeholder="0.00"
                         aria-label="EUR amount"
                         aria-describedby="amount-balance"
-                        className="font-monospace"
+                        className="font-monospace prevent-validation"
                         ref={amountRef}
                     />
                 </InputGroup>

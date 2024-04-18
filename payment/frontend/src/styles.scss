@@ -117,6 +117,7 @@ body,
     border:0;
 }
 
+
 .amountField .form-control {
     font-size: calc(1.625rem + 4.5vw);
     font-weight: inherit;
@@ -135,6 +136,13 @@ body,
 
 .saF .btn {
     font-size: 0.875em;
+}
+
+.was-validated .prevent-validation.form-control:valid,
+.prevent-validation.form-control.is-valid {
+  padding: 0.375rem 0.75rem;
+  border-color: #ced4da;
+  background-image: none;
 }
 
 .QRicon {
