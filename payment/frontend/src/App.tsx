@@ -65,7 +65,7 @@ function SendForm() {
 
   return (
     <Container fluid className="d-flex flex-column align-items-center justify-content-center">
-      <Form onSubmit={handleSubmit} className="d-flex flex-column w-100">
+      <Form onSubmit={handleSubmit} className="d-flex flex-column w-100" noValidate>
         <Form.Label htmlFor="amount" className="text-muted pull-left w-90">
           Send
         </Form.Label>
@@ -74,7 +74,7 @@ function SendForm() {
           <Form.Control
             name="amount"
             type="number"
-            step={0.000001}
+            step={0.01}
             placeholder="0.00"
             aria-label="EUR amount"
             aria-describedby="amount-balance"
