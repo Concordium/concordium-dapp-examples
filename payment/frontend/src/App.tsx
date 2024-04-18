@@ -78,7 +78,7 @@ function SendForm() {
           />
         </InputGroup>
         <Form.Label htmlFor='send-to' className='text-muted pull-left w-90'>to</Form.Label>
-        <InputGroup>
+        <InputGroup className='amountField saF'>
           <Form.Control
             name="to"
             id="send-to"
@@ -88,9 +88,6 @@ function SendForm() {
           />
           <SendToScannerModal onScan={onQRScan} onError={(out)=> console.log(out)} />
         </InputGroup>
-        <Form.Text id="amount-balance" muted>
-          Current balance is EUR 100,000.00
-        </Form.Text>
         <div className="d-grid gap-2 w-100 mt-4">
           <Button variant="success" size="lg" type="submit">Send</Button>
           <Button variant="secondary" size="lg" onClick={()=> {nav("/")}}>Back</Button>
@@ -142,7 +139,7 @@ function SendToScannerModal(props: SendToScannerProps) {
 
   return (
     <>
-      <Button id="button-send-to-scan" onClick={handleShow}>
+      <Button id="button-send-to-scan" onClick={handleShow} variant="secondary">
         <FontAwesomeIcon icon={faQrcode}/>
       </Button>
       <Modal

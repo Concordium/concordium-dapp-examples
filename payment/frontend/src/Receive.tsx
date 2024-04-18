@@ -24,7 +24,7 @@ export function ReceivePage() {
       <div className='m-4'>
       <QRPublic amount={amount} />
       </div>
-      <InputGroup size="lg">
+      <InputGroup size="lg" className='amountField saF'>
         <InputGroup.Text id="amount">EUR</InputGroup.Text>
         <Form.Control
           name="amount"

@@ -104,6 +104,8 @@ body,
     font-size: calc(1.625rem + 4.5vw);
     font-weight: 300;
     line-height: 1.2;
+    background-color: var(--bs-tertiary-bg);
+    border-radius: var(--bs-border-radius-lg);
 }
 
 .amountField .input-group-text {
@@ -111,4 +113,26 @@ body,
     color: var(--bs-secondary-color) !important;
     font-size: 0.875em;
     font-weight: 300;
+    background-color: inherit;
+    border:0;
+}
+
+.amountField .form-control {
+    font-size: calc(1.625rem + 4.5vw);
+    font-weight: inherit;
+    line-height: inherit;
+    background-color: inherit;
+    border:0;  
+}
+
+.saF {
+    font-size: calc(1.425rem + 2.1vw);
+}
+
+.saF .form-control {
+    font-size: calc(1.425rem + 2.1vw);
+}
+
+.saF .btn {
+    font-size: 0.875em;
 }
