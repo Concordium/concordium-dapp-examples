@@ -6,6 +6,7 @@ import topLevelAwait from 'vite-plugin-top-level-await';
 import handlebars from 'vite-plugin-handlebars';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import 'dotenv/config';
+import mkcert from 'vite-plugin-mkcert';
 
 const DEFAULT_NETWORK = 'testnet';
 const DEFAULT_NODE = 'https://grpc.testnet.concordium.com:20000';
@@ -101,6 +102,7 @@ export default defineConfig(({ command }) => {
     // Mimic the configuration injection from the backend
     const config = getConfig();
     viteConfig.plugins!.push(
+      mkcert(),
       handlebars({
         context: { config: JSON.stringify(config) },
         compileOptions: { noEscape: true },
@@ -118,3 +120,4 @@ export default defineConfig(({ command }) => {
 
   return viteConfig;
 });
+

@@ -35,6 +35,7 @@
         "react-qrcode-logo": "^2.10.0",
         "react-router-dom": "^6.22.1",
         "rollup-plugin-node-polyfills": "^0.2.1",
+        "vite-plugin-mkcert": "^1.17.5",
         "vite-plugin-node-polyfills": "^0.21.0"
     },
     "devDependencies": {
