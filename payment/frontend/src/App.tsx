@@ -19,6 +19,7 @@ import * as Server from './server';
 
 import './styles.scss';
 import { ReceivePage } from './Receive';
+import { Hex } from './keys';
 
 export const App = () => {
   return (
@@ -36,8 +37,9 @@ function SendForm() {
   const nav = useNavigate();
   const [validated, setValidated] = useState(false);
   const receiverRef = useRef<HTMLInputElement>(null);
+  const [txHash, setTxHash] = useState<Hex>();
 
-  const handleSubmit = (event: any) => {
+  const handleSubmit = async (event: any) => {
     event.preventDefault();
     event.stopPropagation();
     const form = event.currentTarget;
@@ -49,7 +51,8 @@ function SendForm() {
     const amount = BigInt(Number(form.amount.value) * 10 ** 6);
     const receiver = form.to.value;
     console.log({ amount, receiver });
-    Server.transfer(amount, receiver).then(console.log).catch(console.log);
+    const hash = await Server.transfer(amount, receiver);
+    setTxHash(hash);
   };
 
   const onQRScan = (content: QrContent) => {
@@ -106,6 +109,8 @@ function SendForm() {
           </Button>
         </div>
       </Form>
+
+      {txHash !== undefined && <div>Transaction submitted: {txHash}</div>}
     </Container>
   );
 }

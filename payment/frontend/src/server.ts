@@ -25,7 +25,7 @@ type TransferRequest = {
  * @param amount - the amount to transfer
  * @param to - the receiver smart contract wallet
  */
-export async function transfer(amount: bigint, to: Hex): Promise<void> {
+export async function transfer(amount: bigint, to: Hex): Promise<Hex> {
     const [pubKey, nonce] = await getNonce();
     const expiryTime = Timestamp.fromMillis(new Date().getTime() + EXPIRY_OFFSET_MS);
     const message: Contract.ViewInternalTransferMessageHashTokenAmountParameter = {
@@ -63,5 +63,12 @@ export async function transfer(amount: bigint, to: Hex): Promise<void> {
         body: JSONBig.stringify(transfer),
     });
 
-    console.log(response);
+    if (!response.ok) {
+        throw new Error(`Request failed with respone ${response.status}: ${response.statusText}`);
+    }
+
+    const hash = (await response.json()) as Hex;
+    console.log(hash);
+
+    return hash;
 }
