@@ -37,6 +37,7 @@ function SendForm() {
   const nav = useNavigate();
   const [validated, setValidated] = useState(false);
   const receiverRef = useRef<HTMLInputElement>(null);
+  const amountRef = useRef<HTMLInputElement>(null);
   const [txHash, setTxHash] = useState<Hex>();
 
   const handleSubmit = async (event: any) => {
@@ -59,13 +60,21 @@ function SendForm() {
     if (receiverRef.current === null) {
       return;
     }
+    if (amountRef.current === null) {
+      return;
+    }
     const receiverHex = Buffer.from(content.publicKey, 'base64').toString('hex');
     receiverRef.current.value = receiverHex;
+
+    const amount = content.request
+    if (amount && amount !== "0") {
+      amountRef.current.value = (Number(amount)/1000000).toString();
+    }
   };
 
   return (
     <Container fluid className="d-flex flex-column align-items-center justify-content-center">
-      <Form onSubmit={handleSubmit} className="d-flex flex-column w-100">
+      <Form onSubmit={handleSubmit} className="d-flex flex-column w-100" noValidate>
         <Form.Label htmlFor="amount" className="text-muted pull-left w-90">
           Send
         </Form.Label>
@@ -74,11 +83,12 @@ function SendForm() {
           <Form.Control
             name="amount"
             type="number"
-            step={0.000001}
+            step={0.01}
             placeholder="0.00"
             aria-label="EUR amount"
             aria-describedby="amount-balance"
             className="font-monospace"
+            ref={amountRef}
           />
         </InputGroup>
         <Form.Label htmlFor="send-to" className="text-muted pull-left w-90">
