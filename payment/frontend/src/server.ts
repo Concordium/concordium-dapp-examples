@@ -11,8 +11,8 @@ const EXPIRY_OFFSET_MS = 1000 * 60 * 5; // 5 minutes
  * Matches the `InputParams` type from the server side
  */
 type TransferRequest = {
-    fromPublicKey: Hex;
-    toPublicKey: Hex;
+    fromPublicKey: number[];
+    toPublicKey: number[];
     nonce: bigint;
     signature: Hex;
     expiryTime: string;
@@ -47,8 +47,8 @@ export async function transfer(amount: bigint, to: Hex): Promise<void> {
     }
 
     const transfer: TransferRequest = {
-        fromPublicKey: pubKey,
-        toPublicKey: to,
+        fromPublicKey: Array.from(Buffer.from(pubKey, 'hex')),
+        toPublicKey: Array.from(Buffer.from(to, 'hex')),
         signature: Buffer.from(await signMessage(Buffer.from(messageHash).toString('hex'))).toString('hex'),
         nonce,
         expiryTime: Timestamp.toDate(expiryTime).toISOString(),
