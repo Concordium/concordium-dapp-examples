@@ -15,7 +15,7 @@ type TransferRequest = {
     toPublicKey: Hex;
     nonce: bigint;
     signature: Hex;
-    expiryTime: bigint;
+    expiryTime: string;
     tokenAmount: bigint;
 };
 
@@ -27,11 +27,11 @@ type TransferRequest = {
  */
 export async function transfer(amount: bigint, to: Hex): Promise<void> {
     const [pubKey, nonce] = await getNonce();
-    const expiryTime = BigInt(new Date().getTime() + EXPIRY_OFFSET_MS);
+    const expiryTime = Timestamp.fromMillis(new Date().getTime() + EXPIRY_OFFSET_MS);
     const message: Contract.ViewInternalTransferMessageHashTokenAmountParameter = {
         entry_point: 'internalTransferCis2Tokens',
         nonce,
-        expiry_time: Timestamp.fromMillis(expiryTime),
+        expiry_time: expiryTime,
         service_fee_recipient: pubKey,
         service_fee_amount: createTokenAmount(0),
         simple_transfers: [{ to, transfer_amount: createTokenAmount(amount) }],
@@ -51,7 +51,7 @@ export async function transfer(amount: bigint, to: Hex): Promise<void> {
         toPublicKey: to,
         signature: Buffer.from(await signMessage(Buffer.from(messageHash).toString('hex'))).toString('hex'),
         nonce,
-        expiryTime,
+        expiryTime: Timestamp.toDate(expiryTime).toISOString(),
         tokenAmount: amount,
     };
     const response = await fetch(`/api/submitTransaction`, {
