@@ -138,7 +138,7 @@ body,
 }
 
 .QRicon {
-    background: grey;
+    background: var(--bs-tertiary-bg);;
     font-size: calc(1.625rem + 4.5vw);
     font-weight: inherit;
     line-height: inherit;
@@ -166,7 +166,11 @@ body,
     padding: 0;
 }
 
-.receiverButton:hover, .receiverButton:active{
+.receiverButton:hover{
+    background: inherit;
+}
+
+.receiverButton:active{
     background: inherit;
 }
 
