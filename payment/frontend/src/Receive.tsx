@@ -22,9 +22,13 @@ export function ReceivePage() {
   const [amount, setAmount] = useState<bigint>();
   return (
     <Container fluid className="d-flex flex-column align-items-center justify-content-center">
+      <Form onSubmit={() => {}} className="d-flex flex-column w-100">
       <div className="m-4">
       <QRPublic amount={amount} />
       </div>
+      <Form.Label htmlFor="amount" className="text-muted pull-left w-90">
+          Desired Amount
+      </Form.Label>
       <InputGroup size="lg" className="amountField saF">
         <InputGroup.Text id="amount">EUR</InputGroup.Text>
         <Form.Control
@@ -44,6 +48,7 @@ export function ReceivePage() {
           Back
         </Button>
       </div>
+      </Form>
     </Container>
   );
 }
