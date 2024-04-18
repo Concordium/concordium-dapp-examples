@@ -4,8 +4,7 @@ import { Buffer } from 'buffer/';
 import { useEffect, useState } from 'react';
 import { sha512 } from '@noble/hashes/sha512';
 
-const utils = ed.utils as any;
-utils.sha512Sync = (...m: any[]) => sha512(utils.concatBytes(...m));
+ed.etc.sha512Sync = (...m: any[]) => sha512(ed.etc.concatBytes(...m));
 
 export type Hex = string;
 
