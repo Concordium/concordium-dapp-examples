@@ -102,7 +102,6 @@ export default defineConfig(({ command }) => {
         // Mimic the configuration injection from the backend
         const config = getConfig();
         viteConfig.plugins!.push(
-            mkcert(),
             handlebars({
                 context: { config: JSON.stringify(config) },
                 compileOptions: { noEscape: true },
