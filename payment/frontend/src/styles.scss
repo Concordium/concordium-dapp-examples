@@ -136,3 +136,37 @@ body,
 .saF .btn {
     font-size: 0.875em;
 }
+
+.QRicon {
+    background: grey;
+    font-size: calc(1.625rem + 4.5vw);
+    font-weight: inherit;
+    line-height: inherit;
+    border-radius: var(--bs-border-radius-lg);
+}
+.QRicon:hover {
+    background:  gray;
+}
+.QRicon:active {
+    background:  var(--bs-btn-active-bg);
+}
+
+.receiverIcon {
+    background-color: white;
+    padding: 0.25em;
+    border-radius: var(--bs-border-radius-lg);
+}
+
+.receiverButton{
+    color: var(--bs-body-color);
+    min-width: 72px;
+    min-height: 72px;
+    background: inherit;
+    border: 0;
+    padding: 0;
+}
+
+.receiverButton:hover, .receiverButton:active{
+    background: inherit;
+}
+

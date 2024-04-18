@@ -40,6 +40,7 @@ function SendForm() {
     const amountRef = useRef<HTMLInputElement>(null);
     const [txHash, setTxHash] = useState<Hex>();
     const [receiver, setReceiver] = useState('');
+    const navigate = useNavigate();
 
     const handleSubmit = async (event: any) => {
         event.preventDefault();
@@ -54,6 +55,7 @@ function SendForm() {
         console.log({ amount, receiver });
         const hash = await Server.transfer(amount, Buffer.from(receiver, 'base64').toString('hex'));
         setTxHash(hash);
+        navigate('/');
     };
 
     const onQRScan = (content: QrContent) => {
@@ -93,11 +95,13 @@ function SendForm() {
                     <Col className="d-flex justify-content-center align-items-center">
                         <SendToScannerModal onScan={onQRScan} onError={(out) => console.log(out)}>
                             {hasReceiver ? (
-                                <Jdenticon size="50" value={receiver} />
+                                <div className="receiverIcon">
+                                    <Jdenticon size="72" value={receiver} />
+                                </div>
                             ) : (
-                                <>
-                                    <FontAwesomeIcon icon={faQrcode} /> Scan receiver
-                                </>
+                                <div className="QRicon">
+                                    <FontAwesomeIcon icon={faQrcode} />
+                                </div>
                             )}
                         </SendToScannerModal>
                     </Col>
@@ -169,7 +173,7 @@ function SendToScannerModal(props: SendToScannerProps) {
 
     return (
         <>
-            <Button onClick={handleShow} variant="light" size="lg">
+            <Button onClick={handleShow} className="receiverButton">
                 {props.children}
             </Button>
             <Modal show={show} onHide={handleClose} backdrop="static" centered keyboard={false}>
