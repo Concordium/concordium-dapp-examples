@@ -89,7 +89,9 @@ function signCIS3Message(
     const entrypointName = EntrypointName.fromString('transfer');
     const _nonce = Number(nonce);
     const payloadMessage = { data: payload, schema: TRANSFER_SCHEMA };
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-return
+
+    // Temporary expected ts-error, will be fixed with WalletConnection update
+    // @ts-expect-error
     return connection.client.signCIS3Message(
         contractAddress,
         contractName,
