@@ -12,11 +12,7 @@ import {
 } from '@concordium/web-sdk';
 import { WalletConnection } from '@concordium/react-components';
 
-import {
-    SERIALIZATION_HELPER_SCHEMA_ADDITIONAL_DATA,
-    SPONSORED_TX_CONTRACT_NAME,
-    TRANSFER_SCHEMA,
-} from '../constants';
+import { SERIALIZATION_HELPER_SCHEMA_ADDITIONAL_DATA, SPONSORED_TX_CONTRACT_NAME, TRANSFER_SCHEMA } from '../constants';
 import { submitBid, validateAccountAddress } from '../utils';
 
 import { viewItemState } from '../auction_contract';
@@ -166,7 +162,13 @@ export default function Bid(props: ConnectionProps) {
                     data.itemIndex,
                 );
 
-                const permitSignature = await signCIS3Message(connection, data.nonce, expiryTimeSignature, account, serializedMessage);
+                const permitSignature = await signCIS3Message(
+                    connection,
+                    data.nonce,
+                    expiryTimeSignature,
+                    account,
+                    serializedMessage,
+                );
 
                 setSignature(permitSignature[0][0]);
             } catch (err) {
