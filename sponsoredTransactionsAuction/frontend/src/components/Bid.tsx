@@ -90,8 +90,8 @@ function signCIS3Message(
     const _nonce = Number(nonce);
     const payloadMessage = { data: payload, schema: TRANSFER_SCHEMA };
 
-    // Temporary expected ts-error, will be fixed with WalletConnection update
-    // @ts-expect-error
+    // @ts-expect-error Temporary expected ts-error, will be fixed with WalletConnection update
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return,@typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
     return connection.client.signCIS3Message(
         contractAddress,
         contractName,
