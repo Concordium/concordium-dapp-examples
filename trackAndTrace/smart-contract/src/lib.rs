@@ -43,24 +43,29 @@
 //!     ];
 //! ```
 #![cfg_attr(not(feature = "std"), no_std)]
-use concordium_cis2::{SupportResult, SupportsQueryResponse};
+use concordium_cis2::{
+    StandardIdentifier, SupportResult, SupportsQueryParams, SupportsQueryResponse,
+    CIS0_STANDARD_IDENTIFIER,
+};
 use concordium_std::*;
 // Re-export type.
 pub use concordium_std::MetadataUrl;
 
-/// List of supported entrypoints by the `permit` function (CIS3 standard).
+/// The standard identifier for the CIS-6 standard.
+pub const CIS6_STANDARD_IDENTIFIER: StandardIdentifier<'static> =
+    StandardIdentifier::new_unchecked("CIS-6");
+
+/// List of supported standards by this contract address.
+const SUPPORTS_STANDARDS: [StandardIdentifier<'static>; 2] =
+    [CIS0_STANDARD_IDENTIFIER, CIS6_STANDARD_IDENTIFIER];
+
+/// List of supported entrypoints by the `permit` function.
 const SUPPORTS_PERMIT_ENTRYPOINTS: [EntrypointName; 1] =
     [EntrypointName::new_unchecked("changeItemStatus")];
 
-/// Event tags.
-pub const ITEM_CREATED_EVENT_TAG: u8 = 0;
-pub const ITEM_STATUS_CHANGED_EVENT_TAG: u8 = 1;
-pub const GRANT_ROLE_EVENT_TAG: u8 = 2;
-pub const REVOKE_ROLE_EVENT_TAG: u8 = 3;
-pub const NONCE_EVENT_TAG: u8 = 250;
-
-/// Custom type for the item id.
-pub type ItemID = u64;
+/// Custom type for the item id consisting of variable-length ASCII string up to
+/// 255 characters.
+pub type ItemID = String;
 
 /// Tagged events to be serialized for the event log.
 #[derive(Debug, Serial, Deserial, PartialEq, Eq, SchemaType, Clone)]
@@ -88,9 +93,11 @@ pub enum Event<A: Serial> {
 #[derive(Serialize, SchemaType, Debug, PartialEq, Eq, Clone)]
 pub struct ItemCreatedEvent {
     /// The item's id.
-    pub item_id:      ItemID,
+    pub item_id:        ItemID,
     /// The item's metadata_url.
-    pub metadata_url: Option<MetadataUrl>,
+    pub metadata_url:   Option<MetadataUrl>,
+    /// The item's initial status.
+    pub initial_status: Status,
 }
 
 /// The [`ItemStatusChangedEvent`] is logged when the status of an item is
@@ -181,7 +188,7 @@ pub struct ItemState {
 struct State<S = StateApi> {
     /// The next item id that will be assigned to an item when the admin creates
     /// it. This value is sequentially increased by 1.
-    next_item_id:    ItemID,
+    next_item_id:    u64,
     /// A map containing all roles granted to addresses.
     roles:           StateMap<Address, AddressRoleState<S>, S>,
     /// A map containing all items with their states.
@@ -454,7 +461,7 @@ fn init(
     return_value = "ItemID"
 )]
 fn contract_get_next_item_id(_ctx: &ReceiveContext, host: &Host<State>) -> ReceiveResult<ItemID> {
-    Ok(host.state().next_item_id)
+    Ok(host.state().next_item_id.to_string())
 }
 
 /// View the roles that an address has.
@@ -539,17 +546,21 @@ fn create_item(
     host.state_mut().next_item_id += 1;
 
     // Create the item in state.
-    let previous_item = host.state_mut().items.insert(next_item_id, ItemState {
-        metadata_url: metadata_url.clone(),
-        status:       Status::Produced,
-    });
+    let previous_item = host
+        .state_mut()
+        .items
+        .insert(next_item_id.to_string(), ItemState {
+            metadata_url: metadata_url.clone(),
+            status:       Status::Produced,
+        });
 
     ensure_eq!(previous_item, None, CustomContractError::ItemAlreadyExists);
 
     // Log an ItemCreatedEvent.
     logger.log(&Event::<AdditionalData>::ItemCreated(ItemCreatedEvent {
-        item_id: next_item_id,
+        item_id: next_item_id.to_string(),
         metadata_url,
+        initial_status: Status::Produced,
     }))?;
 
     Ok(())
@@ -848,7 +859,7 @@ pub struct PermitMessage {
 /// Takes a signature, the signer, and the message that was signed.
 #[derive(Serialize, SchemaType)]
 pub struct PermitParam {
-    /// Signature/s. The CIS3 standard supports multi-sig accounts.
+    /// Signature/s. The function supports multi-sig accounts.
     pub signature: AccountSignatures,
     /// Account that created the above signature.
     pub signer:    AccountAddress,
@@ -859,7 +870,7 @@ pub struct PermitParam {
 /// Partial version of the `PermitParam` type without the `message` field.
 #[derive(Serialize)]
 pub struct PermitParamPartial {
-    /// Signature/s. The CIS3 standard supports multi-sig accounts.
+    /// Signature/s. The function supports multi-sig accounts.
     signature: AccountSignatures,
     /// Account that created the above signature.
     signer:    AccountAddress,
@@ -1000,6 +1011,38 @@ fn contract_view_message_hash(
         .0;
 
     Ok(message_hash)
+}
+
+/// Query if standards are supported given a list of
+/// standard identifiers.
+///
+/// It rejects if:
+/// - It fails to parse the parameter.
+#[receive(
+    contract = "track_and_trace",
+    name = "supports",
+    parameter = "SupportsQueryParams",
+    return_value = "SupportsQueryResponse",
+    error = "CustomContractError"
+)]
+fn contract_supports(
+    ctx: &ReceiveContext,
+    _host: &Host<State>,
+) -> ContractResult<SupportsQueryResponse> {
+    // Parse the parameter.
+    let params: SupportsQueryParams = ctx.parameter_cursor().get()?;
+
+    // Build the response.
+    let mut response = Vec::with_capacity(params.queries.len());
+    for std_id in params.queries {
+        if SUPPORTS_STANDARDS.contains(&std_id.as_standard_identifier()) {
+            response.push(SupportResult::Support);
+        } else {
+            response.push(SupportResult::NoSupport);
+        }
+    }
+    let result = SupportsQueryResponse::from(response);
+    Ok(result)
 }
 
 /// The parameter type for the contract function `supportsPermit`.
