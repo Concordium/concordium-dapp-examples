@@ -1,5 +1,9 @@
 ## Unreleased changes
 
+## 1.0.4
+
+-   Change the dApp to use new signCIS3Message from BrowserWallet
+
 ## 1.0.3
 
 -   Fix `Writable` error via polyfill in `walletConnect` dependency.

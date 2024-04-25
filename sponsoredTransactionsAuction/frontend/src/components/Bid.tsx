@@ -21,7 +21,7 @@ import * as AuctionContract from '../../generated/sponsored_tx_enabled_auction_s
 /**
  * This function generates the transfer message to be signed in the browser wallet.
  */
-async function generateTransferMessage(
+async function generateTransferPayload(
     setTokenID: (arg0: string) => void,
     account: string,
     amount: string | undefined,
@@ -157,7 +157,7 @@ export default function Bid(props: ConnectionProps) {
 
         if (account) {
             try {
-                const serializedMessage = await generateTransferMessage(
+                const serializedMessage = await generateTransferPayload(
                     setTokenID,
                     account,
                     data.tokenAmount,

@@ -83,7 +83,7 @@ const InputFieldStyle = {
     padding: '10px 20px',
 };
 
-function generateTransferMessage(nonce: string, tokenID: string, from: string, to: string) {
+function generateTransferPayload(nonce: string, tokenID: string, from: string, to: string) {
     if (nonce === '') {
         alert('Insert a nonce.');
         return '';
@@ -145,7 +145,7 @@ function generateTransferMessage(nonce: string, tokenID: string, from: string, t
     return payload;
 }
 
-function generateUpdateOperatorMessage(nonce: string, operator: string, addOperator: boolean) {
+function generateUpdateOperatorPayload(nonce: string, operator: string, addOperator: boolean) {
     if (nonce === '') {
         alert('Insert a nonce.');
         return '';
@@ -629,8 +629,8 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                             setExpiryTime(expiryTimeSignature);
 
                             const payload = isUpdateOperatorTab
-                                ? generateUpdateOperatorMessage(nonce, operator, addOperator)
-                                : generateTransferMessage(nonce, tokenID, from, to);
+                                ? generateUpdateOperatorPayload(nonce, operator, addOperator)
+                                : generateTransferPayload(nonce, tokenID, from, to);
 
                             if (payload !== '') {
                                 const promise = signCIS3Message(
