@@ -31,7 +31,7 @@ async function getItemStatusChangedEvents(itemID: number, setItemChanged: Dispat
         method: 'POST',
         headers: new Headers({ 'content-type': 'application/json' }),
         body: JSON.stringify({
-            item_id: itemID.toString(),
+            item_id: Number(itemID),
             limit: 30,
             offset: 0,
         }),
@@ -60,7 +60,7 @@ async function getItemCreatedEvent(itemID: number, setItemCreated: Dispatch<Crea
     const response = await fetch(`api/getItemCreatedEvent`, {
         method: 'POST',
         headers: new Headers({ 'content-type': 'application/json' }),
-        body: JSON.stringify(itemID),
+        body: JSON.stringify(Number(itemID)),
     });
 
     if (!response.ok) {

@@ -43,7 +43,7 @@ export function AdminCreateItem(props: Props) {
     const [txHash, setTxHash] = useState<string | undefined>(undefined);
     const [error, setError] = useState<string | undefined>(undefined);
 
-    const [newItemId, setNewItemId] = useState<string | undefined>(undefined);
+    const [newItemId, setNewItemId] = useState<bigint | undefined>(undefined);
     const [itemIdError, setItemIdError] = useState<string | undefined>(undefined);
 
     const grpcClient = useGrpcClient(constants.NETWORK);
@@ -64,8 +64,12 @@ export function AdminCreateItem(props: Props) {
 
                         const parsedEvent = TrackAndTraceContract.parseEvent(eventList.events[0]);
                         const itemCreatedEvent = parsedEvent.content as unknown as PartialItemCreatedEvent;
-
-                        setNewItemId(itemCreatedEvent.item_id);
+                        const reversedHexString = itemCreatedEvent.item_id
+                            .match(/.{1,2}/g)
+                            ?.reverse()
+                            .join('');
+                        const itemId = BigInt(`0x${reversedHexString}`);
+                        setNewItemId(itemId);
                     } else {
                         setItemIdError('Tansaction failed and event decoding failed.');
                     }
@@ -138,7 +142,7 @@ export function AdminCreateItem(props: Props) {
                         <Alert variant="info">You will see the item id below after the transaction is finalized.</Alert>
                     </>
                 )}
-                {newItemId !== undefined && <Alert variant="info">Item ID: {newItemId}</Alert>}
+                {newItemId !== undefined && <Alert variant="info">Item ID: {newItemId.toString()}</Alert>}
                 {itemIdError && <Alert variant="danger">Error: {itemIdError}</Alert>}
             </div>
         </div>

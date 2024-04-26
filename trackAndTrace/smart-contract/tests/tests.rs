@@ -240,7 +240,7 @@ fn test_create_item_and_update_item_status() {
         .collect::<Vec<Event<AdditionalData>>>();
 
     assert_eq!(events, [Event::ItemCreated(ItemCreatedEvent {
-        item_id:        0u64.to_string(),
+        item_id:        ItemID { 0: 0u64 },
         metadata_url:   metadata_url.clone(),
         initial_status: Status::Produced,
     })]);
@@ -254,7 +254,7 @@ fn test_create_item_and_update_item_status() {
     );
 
     let parameter = ChangeItemStatusParams {
-        item_id:         0u64.to_string(),
+        item_id:         ItemID { 0: 0u64 },
         additional_data: AdditionalData { bytes: vec![] },
         new_status:      Status::InTransit,
     };
@@ -298,7 +298,7 @@ fn test_create_item_and_update_item_status() {
     );
 
     let parameter = ChangeItemStatusParams {
-        item_id:         0u64.to_string(),
+        item_id:         ItemID { 0: 0u64 },
         additional_data: AdditionalData { bytes: vec![] },
         new_status:      Status::Sold,
     };
@@ -329,7 +329,7 @@ fn test_create_item_and_update_item_status() {
     assert_eq!(error, CustomContractError::Unauthorized);
 
     let parameter = ChangeItemStatusParams {
-        item_id:         0u64.to_string(),
+        item_id:         ItemID { 0: 0u64 },
         new_status:      Status::Sold,
         additional_data: AdditionalData { bytes: vec![] },
     };
@@ -413,7 +413,7 @@ fn check_state(
                     "track_and_trace.getItemState".to_string(),
                 ),
                 address:      track_and_trace_contract_address,
-                message:      OwnedParameter::from_serial(&0u64.to_string())
+                message:      OwnedParameter::from_serial(&ItemID { 0: 0u64 })
                     .expect("Serialize parameter"),
             },
         )
@@ -442,9 +442,9 @@ fn check_state(
         )
         .expect("Invoke view");
 
-    let return_value: ItemID = invoke.parse_return_value().expect("ViewState return value");
+    let return_value: u64 = invoke.parse_return_value().expect("ViewState return value");
 
-    assert_eq!(return_value, 1.to_string());
+    assert_eq!(return_value, 1u64 );
 }
 
 /// Setup chain and contract. Returns the chain, keys of the ADMIN and PRODUCER,
@@ -578,7 +578,7 @@ fn test_permit_change_item_status() {
     // Check that the status can be updated to `InStore` with a sponsored
     // transaction.
     let payload = ChangeItemStatusParams {
-        item_id:         0u64.to_string(),
+        item_id:         ItemID { 0: 0u64 },
         additional_data: AdditionalData { bytes: vec![] },
         new_status:      Status::InStore,
     };
@@ -647,7 +647,7 @@ fn test_permit_change_item_status() {
     // Check that the PRODUCER can not update the status to `Sold` with a
     // sponsored transaction.
     let payload = ChangeItemStatusParams {
-        item_id:         0u64.to_string(),
+        item_id:         ItemID { 0: 0u64 },
         additional_data: AdditionalData { bytes: vec![] },
         new_status:      Status::Sold,
     };
