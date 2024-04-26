@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS item_status_changed_events (
   -- The index from the array of logged events in a transaction.
   event_index INT8 NOT NULL,
   -- The item's id as logged in the event.
-  item_id BYTEA NOT NULL,
+  item_id INT8 NOT NULL,
   -- The item's new status as logged in the event.
   new_status JSONB NOT NULL,
   -- Any additional data encoded as generic bytes as logged in the event. Usecase-specific data can be included here such as temperature, longitude, latitude, ... .
@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS item_created_events (
   -- The index from the array of logged events in a transaction.
   event_index INT8 NOT NULL,
   -- The item's id as logged in the event.
-  item_id BYTEA NOT NULL,
+  item_id INT8 NOT NULL,
   -- The item's metadata_url as logged in the event.
   metadata_url BYTEA NOT NULL,
   -- The item's initial status as logged in the event.

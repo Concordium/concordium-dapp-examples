@@ -308,7 +308,7 @@ struct StoredItemStatusChangedEventsReturnValue {
 /// request body.
 #[derive(serde::Deserialize)]
 struct GetItemstatusChangedEventsParam {
-    item_id: String,
+    item_id: u64,
     limit:   u32,
     offset:  u32,
 }
@@ -347,7 +347,7 @@ struct StoredItemCreatedEventReturnValue {
 /// from the database if present.
 async fn get_item_created_event(
     State(state): State<Server>,
-    request: Result<Json<String>, JsonRejection>,
+    request: Result<Json<u64>, JsonRejection>,
 ) -> Result<Json<StoredItemCreatedEventReturnValue>, ServerError> {
     let db = state.db_pool.get().await?;
 

@@ -42,9 +42,14 @@
 //!         },
 //!     ];
 //! ```
+//!
+//! Note: The contract has an item id counter of type `u64`. Every item created
+//! is assigned the next available item id. Up to `u64::MAX`
+//! (18_446_744_073_709_551_615u64) items can be created in the contract until
+//! the contract runs out of item ids.
 #![cfg_attr(not(feature = "std"), no_std)]
 use concordium_cis2::{
-    StandardIdentifier, SupportResult, SupportsQueryParams, SupportsQueryResponse,
+    StandardIdentifier, SupportResult, SupportsQueryParams, SupportsQueryResponse, TokenIdU64,
     CIS0_STANDARD_IDENTIFIER,
 };
 use concordium_std::*;
@@ -63,9 +68,14 @@ const SUPPORTS_STANDARDS: [StandardIdentifier<'static>; 2] =
 const SUPPORTS_PERMIT_ENTRYPOINTS: [EntrypointName; 1] =
     [EntrypointName::new_unchecked("changeItemStatus")];
 
-/// Custom type for the item id consisting of variable-length ASCII string up to
-/// 255 characters.
-pub type ItemID = String;
+/// The CIS-6 standard defines the representation of item id as a 255 bytes
+/// (variable-length ASCII string), but unless the bytes have some significant
+/// meaning, it is better to use a smaller fixed size item id array. This
+/// contract can have up to `u64::MAX` items so we use an 8-byte array to
+/// represent the `ItemID`. Some item ids cannot be represented with this
+/// `ItemID`. For a more general item id type see `TokenIdVec` in the
+/// CIS-2-library.
+pub type ItemID = TokenIdU64;
 
 /// Tagged events to be serialized for the event log.
 #[derive(Debug, Serial, Deserial, PartialEq, Eq, SchemaType, Clone)]
@@ -458,10 +468,10 @@ fn init(
 #[receive(
     contract = "track_and_trace",
     name = "getNextItemId",
-    return_value = "ItemID"
+    return_value = "u64"
 )]
-fn contract_get_next_item_id(_ctx: &ReceiveContext, host: &Host<State>) -> ReceiveResult<ItemID> {
-    Ok(host.state().next_item_id.to_string())
+fn contract_get_next_item_id(_ctx: &ReceiveContext, host: &Host<State>) -> ReceiveResult<u64> {
+    Ok(host.state().next_item_id)
 }
 
 /// View the roles that an address has.
@@ -549,7 +559,7 @@ fn create_item(
     let previous_item = host
         .state_mut()
         .items
-        .insert(next_item_id.to_string(), ItemState {
+        .insert(ItemID { 0: next_item_id }, ItemState {
             metadata_url: metadata_url.clone(),
             status:       Status::Produced,
         });
@@ -558,7 +568,7 @@ fn create_item(
 
     // Log an ItemCreatedEvent.
     logger.log(&Event::<AdditionalData>::ItemCreated(ItemCreatedEvent {
-        item_id: next_item_id.to_string(),
+        item_id: ItemID { 0: next_item_id },
         metadata_url,
         initial_status: Status::Produced,
     }))?;

@@ -37,7 +37,7 @@ yarn dev
 e.g.
 
 ```bash
-TRACK_AND_TRACE_CONTRACT_ADDRESS="<8860,0>" yarn dev
+TRACK_AND_TRACE_CONTRACT_ADDRESS="<8871,0>" yarn dev
 ```
 
 This will launch a development server with hot module replacement enabled.
@@ -54,7 +54,7 @@ You must always set `TRACK_AND_TRACE_CONTRACT_ADDRESS`. The rest have default va
 When hosting the frontend via the [backend server](../indexer), the values environment variables are passed in via the server.
 
 ```bash
-TRACK_AND_TRACE_CONTRACT_ADDRESS=<8860,0> # Contract address of the track and trace contract. *Must be set.*
+TRACK_AND_TRACE_CONTRACT_ADDRESS=<8871,0> # Contract address of the track and trace contract. *Must be set.*
 TRACK_AND_TRACE_NETWORK=testnet # The network to use mainnet/testnet (defaults to 'testnet')
 TRACK_AND_TRACE_NODE=https://grpc.testnet.concordium.com:20000 # The gRPC endpoint of a node in the chosen network (defaults to 'https://grpc.testnet.concordium.com:20000')
 TRACK_AND_TRACE_SPONSORED_BACKEND_API=http://localhost:8000 # Endpoint to the sponsored transaction service (defaults to 'http://localhost:8000')

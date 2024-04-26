@@ -29,7 +29,7 @@ const NEW_STATUS_OPTIONS = [
 
 function generateMessage(
     newStatus: 'Produced' | 'InTransit' | 'InStore' | 'Sold' | undefined,
-    itemID: string,
+    itemID: number,
     expiryTimeSignature: Date,
     nonce: number | bigint,
 ) {
@@ -38,12 +38,14 @@ function generateMessage(
             throw Error(`'newStatus' input field is undefined`);
         }
 
+        const itemIdString = BigInt(itemID).toString(16).padStart(16, '0').match(/.{2}/g)!.reverse().join('');
+
         // Create ChangeItemStatus parameter
         const changeItemStatusParameter: TrackAndTraceContract.ChangeItemStatusParameter = {
             additional_data: {
                 bytes: [],
             },
-            item_id: itemID,
+            item_id: itemIdString,
             new_status: {
                 type: newStatus,
             },
@@ -71,7 +73,7 @@ export function ChangeItemStatus(props: Props) {
     const { connection, accountAddress, activeConnectorError } = props;
 
     interface FormType {
-        itemID: string | undefined;
+        itemID: number | undefined;
         newStatus: 'Produced' | 'InTransit' | 'InStore' | 'Sold' | undefined;
     }
     const { control, register, formState, handleSubmit } = useForm<FormType>({ mode: 'all' });

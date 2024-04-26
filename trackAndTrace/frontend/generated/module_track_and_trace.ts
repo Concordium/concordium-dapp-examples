@@ -1,7 +1,7 @@
 // @ts-nocheck
 import * as SDK from "@concordium/web-sdk";
 /** The reference of the smart contract module supported by the provided client. */
-export const moduleReference: SDK.ModuleReference.Type = /*#__PURE__*/ SDK.ModuleReference.fromHexString('8998d8116f60d8a69a00d3663788fb44386125cf7278af5e8768df35dc182fb4');
+export const moduleReference: SDK.ModuleReference.Type = /*#__PURE__*/ SDK.ModuleReference.fromHexString('deb674cbaf7ae78fafac2d07414a3da6e437ee075a9a4be9937eb5f729602eb7');
 /** Name of the smart contract supported by this client. */
 export const contractName: SDK.ContractName.Type = /*#__PURE__*/ SDK.ContractName.fromStringUnchecked('track_and_trace');
 
@@ -73,14 +73,14 @@ export function checkOnChain(contractClient: TrackAndTraceContract, blockHash?: 
 
 /** Contract event type for the 'track_and_trace' contract. */
 export type Event = { type: 'ItemCreated', content: {
-    item_id: string,
+    item_id: SDK.HexString,
     metadata_url: { type: 'None'} | { type: 'Some', content: {
     url: string,
     hash: { type: 'None'} | { type: 'Some', content: SDK.HexString },
     } },
     initial_status: { type: 'Produced'} | { type: 'InTransit'} | { type: 'InStore'} | { type: 'Sold'},
     } } | { type: 'ItemStatusChanged', content: {
-    item_id: string,
+    item_id: SDK.HexString,
     new_status: { type: 'Produced'} | { type: 'InTransit'} | { type: 'InStore'} | { type: 'Sold'},
     additional_data: {
     bytes: Array<number>,
@@ -124,16 +124,16 @@ export function parseEvent(event: SDK.ContractEvent.Type): Event {
     }] } | {'Nonce' : [{
     account: SDK.AccountAddress.SchemaValue,
     nonce: bigint,
-    }] }>SDK.ContractEvent.parseWithSchemaTypeBase64(event, 'HwUAAAAACwAAAEl0ZW1DcmVhdGVkAQEAAAAUAAMAAAAHAAAAaXRlbV9pZBYCDAAAAG1ldGFkYXRhX3VybBUCAAAABAAAAE5vbmUCBAAAAFNvbWUBAQAAABQAAgAAAAMAAAB1cmwWAQQAAABoYXNoFQIAAAAEAAAATm9uZQIEAAAAU29tZQEBAAAAHiAAAAAOAAAAaW5pdGlhbF9zdGF0dXMVBAAAAAgAAABQcm9kdWNlZAIJAAAASW5UcmFuc2l0AgcAAABJblN0b3JlAgQAAABTb2xkAgERAAAASXRlbVN0YXR1c0NoYW5nZWQBAQAAABQAAwAAAAcAAABpdGVtX2lkFgIKAAAAbmV3X3N0YXR1cxUEAAAACAAAAFByb2R1Y2VkAgkAAABJblRyYW5zaXQCBwAAAEluU3RvcmUCBAAAAFNvbGQCDwAAAGFkZGl0aW9uYWxfZGF0YRQAAQAAAAUAAABieXRlcxACAgIJAAAAR3JhbnRSb2xlAQEAAAAUAAIAAAAHAAAAYWRkcmVzcxUCAAAABwAAAEFjY291bnQBAQAAAAsIAAAAQ29udHJhY3QBAQAAAAwEAAAAcm9sZRUBAAAABQAAAEFkbWluAgMKAAAAUmV2b2tlUm9sZQEBAAAAFAACAAAABwAAAGFkZHJlc3MVAgAAAAcAAABBY2NvdW50AQEAAAALCAAAAENvbnRyYWN0AQEAAAAMBAAAAHJvbGUVAQAAAAUAAABBZG1pbgL6BQAAAE5vbmNlAQEAAAAUAAIAAAAHAAAAYWNjb3VudAsFAAAAbm9uY2UF');
+    }] }>SDK.ContractEvent.parseWithSchemaTypeBase64(event, 'HwUAAAAACwAAAEl0ZW1DcmVhdGVkAQEAAAAUAAMAAAAHAAAAaXRlbV9pZB0ADAAAAG1ldGFkYXRhX3VybBUCAAAABAAAAE5vbmUCBAAAAFNvbWUBAQAAABQAAgAAAAMAAAB1cmwWAQQAAABoYXNoFQIAAAAEAAAATm9uZQIEAAAAU29tZQEBAAAAHiAAAAAOAAAAaW5pdGlhbF9zdGF0dXMVBAAAAAgAAABQcm9kdWNlZAIJAAAASW5UcmFuc2l0AgcAAABJblN0b3JlAgQAAABTb2xkAgERAAAASXRlbVN0YXR1c0NoYW5nZWQBAQAAABQAAwAAAAcAAABpdGVtX2lkHQAKAAAAbmV3X3N0YXR1cxUEAAAACAAAAFByb2R1Y2VkAgkAAABJblRyYW5zaXQCBwAAAEluU3RvcmUCBAAAAFNvbGQCDwAAAGFkZGl0aW9uYWxfZGF0YRQAAQAAAAUAAABieXRlcxACAgIJAAAAR3JhbnRSb2xlAQEAAAAUAAIAAAAHAAAAYWRkcmVzcxUCAAAABwAAAEFjY291bnQBAQAAAAsIAAAAQ29udHJhY3QBAQAAAAwEAAAAcm9sZRUBAAAABQAAAEFkbWluAgMKAAAAUmV2b2tlUm9sZQEBAAAAFAACAAAABwAAAGFkZHJlc3MVAgAAAAcAAABBY2NvdW50AQEAAAALCAAAAENvbnRyYWN0AQEAAAAMBAAAAHJvbGUVAQAAAAUAAABBZG1pbgL6BQAAAE5vbmNlAQEAAAAUAAIAAAAHAAAAYWNjb3VudAsFAAAAbm9uY2UF');
     let match11: { type: 'ItemCreated', content: {
-    item_id: string,
+    item_id: SDK.HexString,
     metadata_url: { type: 'None'} | { type: 'Some', content: {
     url: string,
     hash: { type: 'None'} | { type: 'Some', content: SDK.HexString },
     } },
     initial_status: { type: 'Produced'} | { type: 'InTransit'} | { type: 'InStore'} | { type: 'Sold'},
     } } | { type: 'ItemStatusChanged', content: {
-    item_id: string,
+    item_id: SDK.HexString,
     new_status: { type: 'Produced'} | { type: 'InTransit'} | { type: 'InStore'} | { type: 'Sold'},
     additional_data: {
     bytes: Array<number>,
@@ -402,7 +402,7 @@ export function dryRunGetNextItemId(contractClient: TrackAndTraceContract, param
 }
 
 /** Return value for dry-running update transaction for 'getNextItemId' entrypoint of the 'track_and_trace' contract. */
-export type ReturnValueGetNextItemId = string;
+export type ReturnValueGetNextItemId = SDK.HexString;
 
 /**
  * Get and parse the return value from dry-running update transaction for 'getNextItemId' entrypoint of the 'track_and_trace' contract.
@@ -419,7 +419,7 @@ export function parseReturnValueGetNextItemId(invokeResult: SDK.InvokeContractRe
         throw new Error('Unexpected missing \'returnValue\' in result of invocation. Client expected a V1 smart contract.');
     }
 
-    const schemaJson = <string>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'FgI=');
+    const schemaJson = <string>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'HQA=');
     return schemaJson;
 }
 /** Base64 encoding of the parameter schema type for update transactions to 'getRoles' entrypoint of the 'track_and_trace' contract. */
@@ -548,11 +548,11 @@ export function parseReturnValueGetRoles(invokeResult: SDK.InvokeContractResult)
     return list75;
 }
 /** Base64 encoding of the parameter schema type for update transactions to 'getItemState' entrypoint of the 'track_and_trace' contract. */
-const base64GetItemStateParameterSchema = 'FgI=';
+const base64GetItemStateParameterSchema = 'HQA=';
 /** Parameter JSON type needed by the schema for update transaction for 'getItemState' entrypoint of the 'track_and_trace' contract. */
 type GetItemStateParameterSchemaJson = string;
 /** Parameter type for update transaction for 'getItemState' entrypoint of the 'track_and_trace' contract. */
-export type GetItemStateParameter = string;
+export type GetItemStateParameter = SDK.HexString;
 
 /**
  * Construct schema JSON representation used in update transaction for 'getItemState' entrypoint of the 'track_and_trace' contract.
@@ -934,7 +934,7 @@ export function parseErrorMessageCreateItem(invokeResult: SDK.InvokeContractResu
     return match101
 }
 /** Base64 encoding of the parameter schema type for update transactions to 'changeItemStatus' entrypoint of the 'track_and_trace' contract. */
-const base64ChangeItemStatusParameterSchema = 'FAADAAAABwAAAGl0ZW1faWQWAgoAAABuZXdfc3RhdHVzFQQAAAAIAAAAUHJvZHVjZWQCCQAAAEluVHJhbnNpdAIHAAAASW5TdG9yZQIEAAAAU29sZAIPAAAAYWRkaXRpb25hbF9kYXRhFAABAAAABQAAAGJ5dGVzEAIC';
+const base64ChangeItemStatusParameterSchema = 'FAADAAAABwAAAGl0ZW1faWQdAAoAAABuZXdfc3RhdHVzFQQAAAAIAAAAUHJvZHVjZWQCCQAAAEluVHJhbnNpdAIHAAAASW5TdG9yZQIEAAAAU29sZAIPAAAAYWRkaXRpb25hbF9kYXRhFAABAAAABQAAAGJ5dGVzEAIC';
 /** Parameter JSON type needed by the schema for update transaction for 'changeItemStatus' entrypoint of the 'track_and_trace' contract. */
 type ChangeItemStatusParameterSchemaJson = {
     item_id: string,
@@ -945,7 +945,7 @@ type ChangeItemStatusParameterSchemaJson = {
     };
 /** Parameter type for update transaction for 'changeItemStatus' entrypoint of the 'track_and_trace' contract. */
 export type ChangeItemStatusParameter = {
-    item_id: string,
+    item_id: SDK.HexString,
     new_status: { type: 'Produced'} | { type: 'InTransit'} | { type: 'InStore'} | { type: 'Sold'},
     additional_data: {
     bytes: Array<number>,

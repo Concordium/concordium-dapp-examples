@@ -123,7 +123,7 @@ impl indexer::ProcessEvent for StoreEvents {
                             &(block_info.block_slot_time),
                             &single_contract_update_info.0.transaction_hash.as_ref(),
                             &(event_index as i64),
-                            &(item_status_change_event.item_id.as_bytes()),
+                            &(item_status_change_event.item_id.0 as i64),
                             &Json(&item_status_change_event.new_status),
                             &item_status_change_event.additional_data.bytes,
                         ];
@@ -158,7 +158,7 @@ impl indexer::ProcessEvent for StoreEvents {
                             &(block_info.block_slot_time),
                             &single_contract_update_info.0.transaction_hash.as_ref(),
                             &(event_index as i64),
-                            &item_created_event.item_id.as_bytes(),
+                            &(item_created_event.item_id.0 as i64),
                             &to_bytes(&item_created_event.metadata_url),
                             &Json(&item_created_event.initial_status),
                         ];
