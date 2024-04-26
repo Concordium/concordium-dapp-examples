@@ -98,10 +98,14 @@ impl TryFrom<tokio_postgres::Row> for StoredItemStatusChangedEvent {
     // Conversion from the postgres row to the `StoredItemStatusChangedEvent` type.
     fn try_from(value: tokio_postgres::Row) -> DatabaseResult<Self> {
         let raw_transaction_hash: &[u8] = value.try_get("transaction_hash")?;
-        let item_id: String = value.try_get("item_id")?;
         let raw_event_index: i64 = value.try_get("event_index")?;
         let raw_additional_data: &[u8] = value.try_get("additional_data")?;
         let Json(new_status): Json<Status> = value.try_get("new_status")?;
+        let raw_item_id: Vec<u8> = value.try_get("item_id")?;
+
+        // Convert the byte array to a UTF-8 encoded string
+        let item_id =
+            String::from_utf8(raw_item_id).expect("Failed to convert BYTEA data to String");
 
         let events = Self {
             block_time: value.try_get("block_time")?,
@@ -140,9 +144,13 @@ impl TryFrom<tokio_postgres::Row> for StoredItemCreatedEvent {
     // Conversion from the postgres row to the `StoredItemCreatedEvent` type.
     fn try_from(value: tokio_postgres::Row) -> DatabaseResult<Self> {
         let raw_transaction_hash: &[u8] = value.try_get("transaction_hash")?;
-        let item_id: String = value.try_get("item_id")?;
         let raw_event_index: i64 = value.try_get("event_index")?;
         let Json(initial_status): Json<Status> = value.try_get("initial_status")?;
+        let raw_item_id: Vec<u8> = value.try_get("item_id")?;
+
+        // Convert the byte array to a UTF-8 encoded string
+        let item_id =
+            String::from_utf8(raw_item_id).expect("Failed to convert BYTEA data to String");
 
         let events = Self {
             block_time: value.try_get("block_time")?,
@@ -217,7 +225,7 @@ impl Database {
     #[allow(dead_code)]
     pub async fn get_item_status_changed_events_submissions(
         &self,
-        item_id: u64,
+        item_id: String,
         limit: u32,
         offset: u32,
     ) -> DatabaseResult<Vec<StoredItemStatusChangedEvent>> {
@@ -230,7 +238,7 @@ impl Database {
             )
             .await?;
         let params: [&(dyn ToSql + Sync); 3] =
-            [&(item_id as i64), &(limit as i64), &(offset as i64)];
+            [&(item_id.as_bytes()), &(limit as i64), &(offset as i64)];
 
         let rows = self
             .client
@@ -253,7 +261,7 @@ impl Database {
     #[allow(dead_code)]
     pub async fn get_item_created_event_submission(
         &self,
-        item_id: u64,
+        item_id: String,
     ) -> DatabaseResult<Option<StoredItemCreatedEvent>> {
         let get_item_created_event_submissions = self
             .client
@@ -262,7 +270,7 @@ impl Database {
                  initial_status from item_created_events WHERE item_id = $1",
             )
             .await?;
-        let params: [&(dyn ToSql + Sync); 1] = [&(item_id as i64)];
+        let params: [&(dyn ToSql + Sync); 1] = [&(item_id.as_bytes())];
 
         let opt_row = self
             .client

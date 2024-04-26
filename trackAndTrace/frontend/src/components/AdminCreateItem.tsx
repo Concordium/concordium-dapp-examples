@@ -24,7 +24,7 @@ interface Props {
 }
 
 interface PartialItemCreatedEvent {
-    item_id: number | bigint;
+    item_id: string;
 }
 
 export function AdminCreateItem(props: Props) {
@@ -43,7 +43,7 @@ export function AdminCreateItem(props: Props) {
     const [txHash, setTxHash] = useState<string | undefined>(undefined);
     const [error, setError] = useState<string | undefined>(undefined);
 
-    const [newItemId, setNewItemId] = useState<number | bigint | undefined>(undefined);
+    const [newItemId, setNewItemId] = useState<string | undefined>(undefined);
     const [itemIdError, setItemIdError] = useState<string | undefined>(undefined);
 
     const grpcClient = useGrpcClient(constants.NETWORK);
@@ -138,7 +138,7 @@ export function AdminCreateItem(props: Props) {
                         <Alert variant="info">You will see the item id below after the transaction is finalized.</Alert>
                     </>
                 )}
-                {newItemId !== undefined && <Alert variant="info">Item ID: {newItemId.toString()}</Alert>}
+                {newItemId !== undefined && <Alert variant="info">Item ID: {newItemId}</Alert>}
                 {itemIdError && <Alert variant="danger">Error: {itemIdError}</Alert>}
             </div>
         </div>

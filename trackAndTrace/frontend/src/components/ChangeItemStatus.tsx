@@ -29,7 +29,7 @@ const NEW_STATUS_OPTIONS = [
 
 function generateMessage(
     newStatus: 'Produced' | 'InTransit' | 'InStore' | 'Sold' | undefined,
-    itemID: bigint,
+    itemID: string,
     expiryTimeSignature: Date,
     nonce: number | bigint,
 ) {
@@ -43,7 +43,7 @@ function generateMessage(
             additional_data: {
                 bytes: [],
             },
-            item_id: Number(itemID),
+            item_id: itemID,
             new_status: {
                 type: newStatus,
             },
@@ -71,7 +71,7 @@ export function ChangeItemStatus(props: Props) {
     const { connection, accountAddress, activeConnectorError } = props;
 
     interface FormType {
-        itemID: bigint | undefined;
+        itemID: string | undefined;
         newStatus: 'Produced' | 'InTransit' | 'InStore' | 'Sold' | undefined;
     }
     const { control, register, formState, handleSubmit } = useForm<FormType>({ mode: 'all' });
