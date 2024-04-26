@@ -16,6 +16,7 @@ interface CreateItem {
     block_time: string;
     transaction_hash: string;
     event_index: number;
+    initial_status: string;
 }
 
 /**
@@ -30,7 +31,7 @@ async function getItemStatusChangedEvents(itemID: number, setItemChanged: Dispat
         method: 'POST',
         headers: new Headers({ 'content-type': 'application/json' }),
         body: JSON.stringify({
-            item_id: Number(itemID),
+            item_id: itemID.toString(),
             limit: 30,
             offset: 0,
         }),
@@ -59,7 +60,7 @@ async function getItemCreatedEvent(itemID: number, setItemCreated: Dispatch<Crea
     const response = await fetch(`api/getItemCreatedEvent`, {
         method: 'POST',
         headers: new Headers({ 'content-type': 'application/json' }),
-        body: JSON.stringify(Number(itemID)),
+        body: JSON.stringify(itemID),
     });
 
     if (!response.ok) {
@@ -134,7 +135,7 @@ export function Explorer() {
                 </Form>
 
                 {error && <Alert variant="danger">{error}</Alert>}
-                {itemChanged !== undefined && itemCreated !== undefined && (
+                {itemCreated !== undefined && (
                     <>
                         <br />
                         <table>
@@ -159,27 +160,31 @@ export function Explorer() {
                                             {itemCreated.transaction_hash.slice(-5)}
                                         </a>
                                     </td>
-                                    <td>Created</td>
+                                    <td>{itemCreated.initial_status}</td>
                                 </tr>
-                                {itemChanged.map((event: ChangeItem, parentIndex) => {
-                                    return (
-                                        <tr key={parentIndex}>
-                                            <td>{new Date(event.block_time).toLocaleString()}</td>
-                                            <td>
-                                                <a
-                                                    className="link"
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                    href={`${constants.CCD_SCAN_URL}/?dcount=1&dentity=transaction&dhash=${event.transaction_hash}`}
-                                                >
-                                                    {event.transaction_hash.slice(0, 5)}...
-                                                    {event.transaction_hash.slice(-5)}
-                                                </a>
-                                            </td>
-                                            <td>{event.new_status}</td>
-                                        </tr>
-                                    );
-                                })}
+                                {itemChanged !== undefined && (
+                                    <>
+                                        {itemChanged.map((event: ChangeItem, parentIndex) => {
+                                            return (
+                                                <tr key={parentIndex}>
+                                                    <td>{new Date(event.block_time).toLocaleString()}</td>
+                                                    <td>
+                                                        <a
+                                                            className="link"
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            href={`${constants.CCD_SCAN_URL}/?dcount=1&dentity=transaction&dhash=${event.transaction_hash}`}
+                                                        >
+                                                            {event.transaction_hash.slice(0, 5)}...
+                                                            {event.transaction_hash.slice(-5)}
+                                                        </a>
+                                                    </td>
+                                                    <td>{event.new_status}</td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </>
+                                )}
                             </tbody>
                         </table>
                     </>
