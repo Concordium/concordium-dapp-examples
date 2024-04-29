@@ -3,7 +3,7 @@
 ## 0.2.0
 
 - Add `initial_status` field in the create event.
-- Change to use a `String` type for the `item_id` field in the create event and update event.
+- Change to match the `TokenIdU64` type for the `item_id` field in the create event and update event.
 
 ## 0.1.1
 

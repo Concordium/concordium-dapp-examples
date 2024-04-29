@@ -3,7 +3,7 @@
 ## 1.2.0
 
 -   Display the `initial_status` field from the create event.
--   Change to match the `string` type for the `item_id` field in the create event and update event.
+-   Change to match the `TokenIdU64` type for the `item_id` field in the create event and update event.
 
 ## 1.1.0
 

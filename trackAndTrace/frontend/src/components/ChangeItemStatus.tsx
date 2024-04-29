@@ -29,7 +29,7 @@ const NEW_STATUS_OPTIONS = [
 
 function generateMessage(
     newStatus: 'Produced' | 'InTransit' | 'InStore' | 'Sold' | undefined,
-    itemID: number,
+    itemID: number | bigint,
     expiryTimeSignature: Date,
     nonce: number | bigint,
 ) {
@@ -38,6 +38,10 @@ function generateMessage(
             throw Error(`'newStatus' input field is undefined`);
         }
 
+        // The `item_id` is of type `TokenIdU64` which is represented as a little-endian hex string. 
+        // E.g.the  `token_id` 1 should be represented by the hex string "0100000000000000".
+        // First, we convert the `itemID` into a hex string and padd it with enough zeros 
+        // before converting it into little-endian by reversing it.                
         const itemIdString = BigInt(itemID).toString(16).padStart(16, '0').match(/.{2}/g)!.reverse().join('');
 
         // Create ChangeItemStatus parameter
@@ -73,7 +77,7 @@ export function ChangeItemStatus(props: Props) {
     const { connection, accountAddress, activeConnectorError } = props;
 
     interface FormType {
-        itemID: number | undefined;
+        itemID: number | bigint | undefined;
         newStatus: 'Produced' | 'InTransit' | 'InStore' | 'Sold' | undefined;
     }
     const { control, register, formState, handleSubmit } = useForm<FormType>({ mode: 'all' });
