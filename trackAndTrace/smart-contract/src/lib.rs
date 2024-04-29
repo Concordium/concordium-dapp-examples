@@ -68,13 +68,13 @@ const SUPPORTS_STANDARDS: [StandardIdentifier<'static>; 2] =
 const SUPPORTS_PERMIT_ENTRYPOINTS: [EntrypointName; 1] =
     [EntrypointName::new_unchecked("changeItemStatus")];
 
-/// The CIS-6 standard defines the representation of item id as a 255 bytes
-/// (variable-length ASCII string), but unless the bytes have some significant
-/// meaning, it is better to use a smaller fixed size item id array. This
-/// contract can have up to `u64::MAX` items so we use an 8-byte array to
-/// represent the `ItemID`. Some item ids cannot be represented with this
-/// `ItemID`. For a more general item id type see `TokenIdVec` in the
-/// CIS-2-library.
+/// The CIS-6 standard defines the item id to be a variable-length ASCII string
+/// up to 255 characters. To encode all possible item ids, 255 bytes would be
+/// needed in the smart contract. Nonetheless, we care to represent only a small
+/// subset of these possible item ids in this contract and as a result it is
+/// better to use a smaller fixed-size item id array. This contract can have up
+/// to `u64::MAX` items so we use an 8-byte array to represent the `ItemID`. For
+/// a more general item id type see `TokenIdVec` in the CIS-2-library.
 pub type ItemID = TokenIdU64;
 
 /// Tagged events to be serialized for the event log.

@@ -43,7 +43,7 @@ export function AdminCreateItem(props: Props) {
     const [txHash, setTxHash] = useState<string | undefined>(undefined);
     const [error, setError] = useState<string | undefined>(undefined);
 
-    const [newItemId, setNewItemId] = useState<bigint | undefined>(undefined);
+    const [newItemId, setNewItemId] = useState<number | bigint | undefined>(undefined);
     const [itemIdError, setItemIdError] = useState<string | undefined>(undefined);
 
     const grpcClient = useGrpcClient(constants.NETWORK);
@@ -64,6 +64,10 @@ export function AdminCreateItem(props: Props) {
 
                         const parsedEvent = TrackAndTraceContract.parseEvent(eventList.events[0]);
                         const itemCreatedEvent = parsedEvent.content as unknown as PartialItemCreatedEvent;
+
+                        // The `item_id` is of type `TokenIdU64` in the smart contract and logged in the event as
+                        // a little-endian hex string. E.g. `token_id` 1 is logges as a hex string "0100000000000000".
+                        // First, we reverse the hex string and then convert the `item_id` into a bigint type.
                         const reversedHexString = itemCreatedEvent.item_id
                             .match(/.{1,2}/g)
                             ?.reverse()

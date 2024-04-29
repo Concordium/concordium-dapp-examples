@@ -444,7 +444,7 @@ fn check_state(
 
     let return_value: u64 = invoke.parse_return_value().expect("ViewState return value");
 
-    assert_eq!(return_value, 1u64 );
+    assert_eq!(return_value, 1u64);
 }
 
 /// Setup chain and contract. Returns the chain, keys of the ADMIN and PRODUCER,
