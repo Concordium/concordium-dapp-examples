@@ -38,10 +38,10 @@ function generateMessage(
             throw Error(`'newStatus' input field is undefined`);
         }
 
-        // The `item_id` is of type `TokenIdU64` which is represented as a little-endian hex string. 
+        // The `item_id` is of type `TokenIdU64` which is represented as a little-endian hex string.
         // E.g.the  `token_id` 1 should be represented by the hex string "0100000000000000".
-        // First, we convert the `itemID` into a hex string and padd it with enough zeros 
-        // before converting it into little-endian by reversing it.                
+        // First, we convert the `itemID` into a hex string and padd it with enough zeros
+        // before converting it into little-endian by reversing it.
         const itemIdString = BigInt(itemID).toString(16).padStart(16, '0').match(/.{2}/g)!.reverse().join('');
 
         // Create ChangeItemStatus parameter

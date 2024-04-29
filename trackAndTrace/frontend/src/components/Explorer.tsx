@@ -31,7 +31,7 @@ async function getItemStatusChangedEvents(itemID: number, setItemChanged: Dispat
         method: 'POST',
         headers: new Headers({ 'content-type': 'application/json' }),
         body: JSON.stringify({
-            item_id: Number(itemID),
+            item_id: itemID,
             limit: 30,
             offset: 0,
         }),
@@ -60,7 +60,7 @@ async function getItemCreatedEvent(itemID: number, setItemCreated: Dispatch<Crea
     const response = await fetch(`api/getItemCreatedEvent`, {
         method: 'POST',
         headers: new Headers({ 'content-type': 'application/json' }),
-        body: JSON.stringify(Number(itemID)),
+        body: JSON.stringify(itemID),
     });
 
     if (!response.ok) {
@@ -83,7 +83,7 @@ export function Explorer() {
     interface FormType {
         itemID: number | undefined;
     }
-    const { control, register, formState, handleSubmit } = useForm<FormType>({ mode: 'all' });
+    const { control, register, formState, handleSubmit, setValue } = useForm<FormType>({ mode: 'all' });
 
     const [itemID] = useWatch({
         control: control,
@@ -123,7 +123,10 @@ export function Explorer() {
                         <Form.Control
                             {...register('itemID', { required: true })}
                             type="number"
-                            placeholder="Enter the tracking number ID"
+                            placeholder="123"
+                            onChange={(e) => {
+                                setValue('itemID', parseInt(e.target.value));
+                            }}
                         />
                         {formState.errors.itemID && <Alert variant="info"> Item ID is required </Alert>}
                         <Form.Text />
