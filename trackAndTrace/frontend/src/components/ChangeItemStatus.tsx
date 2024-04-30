@@ -13,6 +13,7 @@ import { TxHashLink } from './CCDScanLinks';
 import * as constants from '.././constants';
 import { nonceOf } from '../track_and_trace_contract';
 import * as TrackAndTraceContract from '../../generated/module_track_and_trace'; // Code generated from a smart contract module. The naming convention of the generated file is `moduleName_smartContractName`.
+import { ToTokenIdU64 } from '../utils';
 
 interface Props {
     connection: WalletConnection | undefined;
@@ -38,18 +39,16 @@ function generateMessage(
             throw Error(`'newStatus' input field is undefined`);
         }
 
-        // The `item_id` is of type `TokenIdU64` which is represented as a little-endian hex string.
-        // E.g.the  `token_id` 1 should be represented by the hex string "0100000000000000".
-        // First, we convert the `itemID` into a hex string and padd it with enough zeros
-        // before converting it into little-endian by reversing it.
-        const itemIdString = BigInt(itemID).toString(16).padStart(16, '0').match(/.{2}/g)!.reverse().join('');
+        // The `item_id` is of type `TokenIdU64` in the smart contract which is represented as a little-endian hex string.
+        // E.g. the `TokenIdU64` representation of `1` is the hex string `0100000000000000`.
+        const tokenIdU64 = ToTokenIdU64(itemID);
 
         // Create ChangeItemStatus parameter
         const changeItemStatusParameter: TrackAndTraceContract.ChangeItemStatusParameter = {
             additional_data: {
                 bytes: [],
             },
-            item_id: itemIdString,
+            item_id: tokenIdU64,
             new_status: {
                 type: newStatus,
             },

@@ -1,7 +1,7 @@
 // @ts-nocheck
 import * as SDK from "@concordium/web-sdk";
 /** The reference of the smart contract module supported by the provided client. */
-export const moduleReference: SDK.ModuleReference.Type = /*#__PURE__*/ SDK.ModuleReference.fromHexString('deb674cbaf7ae78fafac2d07414a3da6e437ee075a9a4be9937eb5f729602eb7');
+export const moduleReference: SDK.ModuleReference.Type = /*#__PURE__*/ SDK.ModuleReference.fromHexString('7f24e586bb7dcac318ca0c2876d3e4b5c07f36d48d0c7b20f8d82dad0552f1e3');
 /** Name of the smart contract supported by this client. */
 export const contractName: SDK.ContractName.Type = /*#__PURE__*/ SDK.ContractName.fromStringUnchecked('track_and_trace');
 
@@ -72,25 +72,25 @@ export function checkOnChain(contractClient: TrackAndTraceContract, blockHash?: 
 }
 
 /** Contract event type for the 'track_and_trace' contract. */
-export type Event = { type: 'ItemCreated', content: {
-    item_id: SDK.HexString,
-    metadata_url: { type: 'None'} | { type: 'Some', content: {
-    url: string,
-    hash: { type: 'None'} | { type: 'Some', content: SDK.HexString },
-    } },
-    initial_status: { type: 'Produced'} | { type: 'InTransit'} | { type: 'InStore'} | { type: 'Sold'},
+export type Event = { type: 'GrantRole', content: {
+    address: { type: 'Account', content: SDK.AccountAddress.Type } | { type: 'Contract', content: SDK.ContractAddress.Type },
+    role: { type: 'Admin'},
+    } } | { type: 'RevokeRole', content: {
+    address: { type: 'Account', content: SDK.AccountAddress.Type } | { type: 'Contract', content: SDK.ContractAddress.Type },
+    role: { type: 'Admin'},
     } } | { type: 'ItemStatusChanged', content: {
     item_id: SDK.HexString,
     new_status: { type: 'Produced'} | { type: 'InTransit'} | { type: 'InStore'} | { type: 'Sold'},
     additional_data: {
     bytes: Array<number>,
     },
-    } } | { type: 'GrantRole', content: {
-    address: { type: 'Account', content: SDK.AccountAddress.Type } | { type: 'Contract', content: SDK.ContractAddress.Type },
-    role: { type: 'Admin'},
-    } } | { type: 'RevokeRole', content: {
-    address: { type: 'Account', content: SDK.AccountAddress.Type } | { type: 'Contract', content: SDK.ContractAddress.Type },
-    role: { type: 'Admin'},
+    } } | { type: 'ItemCreated', content: {
+    item_id: SDK.HexString,
+    metadata_url: { type: 'None'} | { type: 'Some', content: {
+    url: string,
+    hash: { type: 'None'} | { type: 'Some', content: SDK.HexString },
+    } },
+    initial_status: { type: 'Produced'} | { type: 'InTransit'} | { type: 'InStore'} | { type: 'Sold'},
     } } | { type: 'Nonce', content: {
     account: SDK.AccountAddress.Type,
     nonce: number | bigint,
@@ -102,243 +102,243 @@ export type Event = { type: 'ItemCreated', content: {
  * @returns {Event} The structured contract event.
  */
 export function parseEvent(event: SDK.ContractEvent.Type): Event {
-    const schemaJson = <{'ItemCreated' : [{
-    item_id: string,
-    metadata_url: {'None' : [] } | {'Some' : [{
-    url: string,
-    hash: {'None' : [] } | {'Some' : [string] },
-    }] },
-    initial_status: {'Produced' : [] } | {'InTransit' : [] } | {'InStore' : [] } | {'Sold' : [] },
+    const schemaJson = <{'GrantRole' : [{
+    address: {'Account' : [SDK.AccountAddress.SchemaValue] } | {'Contract' : [SDK.ContractAddress.SchemaValue] },
+    role: {'Admin' : [] },
+    }] } | {'RevokeRole' : [{
+    address: {'Account' : [SDK.AccountAddress.SchemaValue] } | {'Contract' : [SDK.ContractAddress.SchemaValue] },
+    role: {'Admin' : [] },
     }] } | {'ItemStatusChanged' : [{
     item_id: string,
     new_status: {'Produced' : [] } | {'InTransit' : [] } | {'InStore' : [] } | {'Sold' : [] },
     additional_data: {
     bytes: Array<number>,
     },
-    }] } | {'GrantRole' : [{
-    address: {'Account' : [SDK.AccountAddress.SchemaValue] } | {'Contract' : [SDK.ContractAddress.SchemaValue] },
-    role: {'Admin' : [] },
-    }] } | {'RevokeRole' : [{
-    address: {'Account' : [SDK.AccountAddress.SchemaValue] } | {'Contract' : [SDK.ContractAddress.SchemaValue] },
-    role: {'Admin' : [] },
+    }] } | {'ItemCreated' : [{
+    item_id: string,
+    metadata_url: {'None' : [] } | {'Some' : [{
+    url: string,
+    hash: {'None' : [] } | {'Some' : [string] },
+    }] },
+    initial_status: {'Produced' : [] } | {'InTransit' : [] } | {'InStore' : [] } | {'Sold' : [] },
     }] } | {'Nonce' : [{
     account: SDK.AccountAddress.SchemaValue,
     nonce: bigint,
-    }] }>SDK.ContractEvent.parseWithSchemaTypeBase64(event, 'HwUAAAAACwAAAEl0ZW1DcmVhdGVkAQEAAAAUAAMAAAAHAAAAaXRlbV9pZB0ADAAAAG1ldGFkYXRhX3VybBUCAAAABAAAAE5vbmUCBAAAAFNvbWUBAQAAABQAAgAAAAMAAAB1cmwWAQQAAABoYXNoFQIAAAAEAAAATm9uZQIEAAAAU29tZQEBAAAAHiAAAAAOAAAAaW5pdGlhbF9zdGF0dXMVBAAAAAgAAABQcm9kdWNlZAIJAAAASW5UcmFuc2l0AgcAAABJblN0b3JlAgQAAABTb2xkAgERAAAASXRlbVN0YXR1c0NoYW5nZWQBAQAAABQAAwAAAAcAAABpdGVtX2lkHQAKAAAAbmV3X3N0YXR1cxUEAAAACAAAAFByb2R1Y2VkAgkAAABJblRyYW5zaXQCBwAAAEluU3RvcmUCBAAAAFNvbGQCDwAAAGFkZGl0aW9uYWxfZGF0YRQAAQAAAAUAAABieXRlcxACAgIJAAAAR3JhbnRSb2xlAQEAAAAUAAIAAAAHAAAAYWRkcmVzcxUCAAAABwAAAEFjY291bnQBAQAAAAsIAAAAQ29udHJhY3QBAQAAAAwEAAAAcm9sZRUBAAAABQAAAEFkbWluAgMKAAAAUmV2b2tlUm9sZQEBAAAAFAACAAAABwAAAGFkZHJlc3MVAgAAAAcAAABBY2NvdW50AQEAAAALCAAAAENvbnRyYWN0AQEAAAAMBAAAAHJvbGUVAQAAAAUAAABBZG1pbgL6BQAAAE5vbmNlAQEAAAAUAAIAAAAHAAAAYWNjb3VudAsFAAAAbm9uY2UF');
-    let match11: { type: 'ItemCreated', content: {
-    item_id: SDK.HexString,
-    metadata_url: { type: 'None'} | { type: 'Some', content: {
-    url: string,
-    hash: { type: 'None'} | { type: 'Some', content: SDK.HexString },
-    } },
-    initial_status: { type: 'Produced'} | { type: 'InTransit'} | { type: 'InStore'} | { type: 'Sold'},
+    }] }>SDK.ContractEvent.parseWithSchemaTypeBase64(event, 'HwUAAAACCQAAAEdyYW50Um9sZQEBAAAAFAACAAAABwAAAGFkZHJlc3MVAgAAAAcAAABBY2NvdW50AQEAAAALCAAAAENvbnRyYWN0AQEAAAAMBAAAAHJvbGUVAQAAAAUAAABBZG1pbgIDCgAAAFJldm9rZVJvbGUBAQAAABQAAgAAAAcAAABhZGRyZXNzFQIAAAAHAAAAQWNjb3VudAEBAAAACwgAAABDb250cmFjdAEBAAAADAQAAAByb2xlFQEAAAAFAAAAQWRtaW4C7BEAAABJdGVtU3RhdHVzQ2hhbmdlZAEBAAAAFAADAAAABwAAAGl0ZW1faWQdAAoAAABuZXdfc3RhdHVzFQQAAAAIAAAAUHJvZHVjZWQCCQAAAEluVHJhbnNpdAIHAAAASW5TdG9yZQIEAAAAU29sZAIPAAAAYWRkaXRpb25hbF9kYXRhFAABAAAABQAAAGJ5dGVzEAIC7QsAAABJdGVtQ3JlYXRlZAEBAAAAFAADAAAABwAAAGl0ZW1faWQdAAwAAABtZXRhZGF0YV91cmwVAgAAAAQAAABOb25lAgQAAABTb21lAQEAAAAUAAIAAAADAAAAdXJsFgEEAAAAaGFzaBUCAAAABAAAAE5vbmUCBAAAAFNvbWUBAQAAAB4gAAAADgAAAGluaXRpYWxfc3RhdHVzFQQAAAAIAAAAUHJvZHVjZWQCCQAAAEluVHJhbnNpdAIHAAAASW5TdG9yZQIEAAAAU29sZAL6BQAAAE5vbmNlAQEAAAAUAAIAAAAHAAAAYWNjb3VudAsFAAAAbm9uY2UF');
+    let match11: { type: 'GrantRole', content: {
+    address: { type: 'Account', content: SDK.AccountAddress.Type } | { type: 'Contract', content: SDK.ContractAddress.Type },
+    role: { type: 'Admin'},
+    } } | { type: 'RevokeRole', content: {
+    address: { type: 'Account', content: SDK.AccountAddress.Type } | { type: 'Contract', content: SDK.ContractAddress.Type },
+    role: { type: 'Admin'},
     } } | { type: 'ItemStatusChanged', content: {
     item_id: SDK.HexString,
     new_status: { type: 'Produced'} | { type: 'InTransit'} | { type: 'InStore'} | { type: 'Sold'},
     additional_data: {
     bytes: Array<number>,
     },
-    } } | { type: 'GrantRole', content: {
-    address: { type: 'Account', content: SDK.AccountAddress.Type } | { type: 'Contract', content: SDK.ContractAddress.Type },
-    role: { type: 'Admin'},
-    } } | { type: 'RevokeRole', content: {
-    address: { type: 'Account', content: SDK.AccountAddress.Type } | { type: 'Contract', content: SDK.ContractAddress.Type },
-    role: { type: 'Admin'},
+    } } | { type: 'ItemCreated', content: {
+    item_id: SDK.HexString,
+    metadata_url: { type: 'None'} | { type: 'Some', content: {
+    url: string,
+    hash: { type: 'None'} | { type: 'Some', content: SDK.HexString },
+    } },
+    initial_status: { type: 'Produced'} | { type: 'InTransit'} | { type: 'InStore'} | { type: 'Sold'},
     } } | { type: 'Nonce', content: {
     account: SDK.AccountAddress.Type,
     nonce: number | bigint,
     } };
-    if ('ItemCreated' in schemaJson) {
-       const variant12 = schemaJson.ItemCreated;
-    const field13 = variant12[0].item_id;
-    const field14 = variant12[0].metadata_url;
-    let match15: { type: 'None'} | { type: 'Some', content: {
-    url: string,
-    hash: { type: 'None'} | { type: 'Some', content: SDK.HexString },
-    } };
-    if ('None' in field14) {
-       match15 = {
-           type: 'None',
-       };
-    } else if ('Some' in field14) {
-       const variant17 = field14.Some;
-    const field18 = variant17[0].url;
-    const field19 = variant17[0].hash;
-    let match20: { type: 'None'} | { type: 'Some', content: SDK.HexString };
-    if ('None' in field19) {
-       match20 = {
-           type: 'None',
-       };
-    } else if ('Some' in field19) {
-       const variant22 = field19.Some;
-       match20 = {
-           type: 'Some',
-           content: variant22[0],
-       };
-    }
-     else {
-       throw new Error("Unexpected enum variant");
-    }
-    const named23 = {
-    url: field18,
-    hash: match20,
-    };
-       match15 = {
-           type: 'Some',
-           content: named23,
-       };
-    }
-     else {
-       throw new Error("Unexpected enum variant");
-    }
-    const field24 = variant12[0].initial_status;
-    let match25: { type: 'Produced'} | { type: 'InTransit'} | { type: 'InStore'} | { type: 'Sold'};
-    if ('Produced' in field24) {
-       match25 = {
-           type: 'Produced',
-       };
-    } else if ('InTransit' in field24) {
-       match25 = {
-           type: 'InTransit',
-       };
-    } else if ('InStore' in field24) {
-       match25 = {
-           type: 'InStore',
-       };
-    } else if ('Sold' in field24) {
-       match25 = {
-           type: 'Sold',
-       };
-    }
-     else {
-       throw new Error("Unexpected enum variant");
-    }
-    const named30 = {
-    item_id: field13,
-    metadata_url: match15,
-    initial_status: match25,
-    };
-       match11 = {
-           type: 'ItemCreated',
-           content: named30,
-       };
-    } else if ('ItemStatusChanged' in schemaJson) {
-       const variant31 = schemaJson.ItemStatusChanged;
-    const field32 = variant31[0].item_id;
-    const field33 = variant31[0].new_status;
-    let match34: { type: 'Produced'} | { type: 'InTransit'} | { type: 'InStore'} | { type: 'Sold'};
-    if ('Produced' in field33) {
-       match34 = {
-           type: 'Produced',
-       };
-    } else if ('InTransit' in field33) {
-       match34 = {
-           type: 'InTransit',
-       };
-    } else if ('InStore' in field33) {
-       match34 = {
-           type: 'InStore',
-       };
-    } else if ('Sold' in field33) {
-       match34 = {
-           type: 'Sold',
-       };
-    }
-     else {
-       throw new Error("Unexpected enum variant");
-    }
-    const field39 = variant31[0].additional_data;
-    const field40 = field39.bytes;
-    const named43 = {
-    bytes: field40,
-    };
-    const named44 = {
-    item_id: field32,
-    new_status: match34,
-    additional_data: named43,
-    };
-       match11 = {
-           type: 'ItemStatusChanged',
-           content: named44,
-       };
-    } else if ('GrantRole' in schemaJson) {
-       const variant45 = schemaJson.GrantRole;
-    const field46 = variant45[0].address;
-    let match47: { type: 'Account', content: SDK.AccountAddress.Type } | { type: 'Contract', content: SDK.ContractAddress.Type };
-    if ('Account' in field46) {
-       const variant48 = field46.Account;
-    const accountAddress49 = SDK.AccountAddress.fromSchemaValue(variant48[0]);
-       match47 = {
+    if ('GrantRole' in schemaJson) {
+       const variant12 = schemaJson.GrantRole;
+    const field13 = variant12[0].address;
+    let match14: { type: 'Account', content: SDK.AccountAddress.Type } | { type: 'Contract', content: SDK.ContractAddress.Type };
+    if ('Account' in field13) {
+       const variant15 = field13.Account;
+    const accountAddress16 = SDK.AccountAddress.fromSchemaValue(variant15[0]);
+       match14 = {
            type: 'Account',
-           content: accountAddress49,
+           content: accountAddress16,
        };
-    } else if ('Contract' in field46) {
-       const variant50 = field46.Contract;
-    const contractAddress51 = SDK.ContractAddress.fromSchemaValue(variant50[0]);
-       match47 = {
+    } else if ('Contract' in field13) {
+       const variant17 = field13.Contract;
+    const contractAddress18 = SDK.ContractAddress.fromSchemaValue(variant17[0]);
+       match14 = {
            type: 'Contract',
-           content: contractAddress51,
+           content: contractAddress18,
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-    const field52 = variant45[0].role;
-    let match53: { type: 'Admin'};
-    if ('Admin' in field52) {
-       match53 = {
+    const field19 = variant12[0].role;
+    let match20: { type: 'Admin'};
+    if ('Admin' in field19) {
+       match20 = {
            type: 'Admin',
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-    const named55 = {
-    address: match47,
-    role: match53,
+    const named22 = {
+    address: match14,
+    role: match20,
     };
        match11 = {
            type: 'GrantRole',
-           content: named55,
+           content: named22,
        };
     } else if ('RevokeRole' in schemaJson) {
-       const variant56 = schemaJson.RevokeRole;
-    const field57 = variant56[0].address;
-    let match58: { type: 'Account', content: SDK.AccountAddress.Type } | { type: 'Contract', content: SDK.ContractAddress.Type };
-    if ('Account' in field57) {
-       const variant59 = field57.Account;
-    const accountAddress60 = SDK.AccountAddress.fromSchemaValue(variant59[0]);
-       match58 = {
+       const variant23 = schemaJson.RevokeRole;
+    const field24 = variant23[0].address;
+    let match25: { type: 'Account', content: SDK.AccountAddress.Type } | { type: 'Contract', content: SDK.ContractAddress.Type };
+    if ('Account' in field24) {
+       const variant26 = field24.Account;
+    const accountAddress27 = SDK.AccountAddress.fromSchemaValue(variant26[0]);
+       match25 = {
            type: 'Account',
-           content: accountAddress60,
+           content: accountAddress27,
        };
-    } else if ('Contract' in field57) {
-       const variant61 = field57.Contract;
-    const contractAddress62 = SDK.ContractAddress.fromSchemaValue(variant61[0]);
-       match58 = {
+    } else if ('Contract' in field24) {
+       const variant28 = field24.Contract;
+    const contractAddress29 = SDK.ContractAddress.fromSchemaValue(variant28[0]);
+       match25 = {
            type: 'Contract',
-           content: contractAddress62,
+           content: contractAddress29,
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-    const field63 = variant56[0].role;
-    let match64: { type: 'Admin'};
-    if ('Admin' in field63) {
-       match64 = {
+    const field30 = variant23[0].role;
+    let match31: { type: 'Admin'};
+    if ('Admin' in field30) {
+       match31 = {
            type: 'Admin',
+       };
+    }
+     else {
+       throw new Error("Unexpected enum variant");
+    }
+    const named33 = {
+    address: match25,
+    role: match31,
+    };
+       match11 = {
+           type: 'RevokeRole',
+           content: named33,
+       };
+    } else if ('ItemStatusChanged' in schemaJson) {
+       const variant34 = schemaJson.ItemStatusChanged;
+    const field35 = variant34[0].item_id;
+    const field36 = variant34[0].new_status;
+    let match37: { type: 'Produced'} | { type: 'InTransit'} | { type: 'InStore'} | { type: 'Sold'};
+    if ('Produced' in field36) {
+       match37 = {
+           type: 'Produced',
+       };
+    } else if ('InTransit' in field36) {
+       match37 = {
+           type: 'InTransit',
+       };
+    } else if ('InStore' in field36) {
+       match37 = {
+           type: 'InStore',
+       };
+    } else if ('Sold' in field36) {
+       match37 = {
+           type: 'Sold',
+       };
+    }
+     else {
+       throw new Error("Unexpected enum variant");
+    }
+    const field42 = variant34[0].additional_data;
+    const field43 = field42.bytes;
+    const named46 = {
+    bytes: field43,
+    };
+    const named47 = {
+    item_id: field35,
+    new_status: match37,
+    additional_data: named46,
+    };
+       match11 = {
+           type: 'ItemStatusChanged',
+           content: named47,
+       };
+    } else if ('ItemCreated' in schemaJson) {
+       const variant48 = schemaJson.ItemCreated;
+    const field49 = variant48[0].item_id;
+    const field50 = variant48[0].metadata_url;
+    let match51: { type: 'None'} | { type: 'Some', content: {
+    url: string,
+    hash: { type: 'None'} | { type: 'Some', content: SDK.HexString },
+    } };
+    if ('None' in field50) {
+       match51 = {
+           type: 'None',
+       };
+    } else if ('Some' in field50) {
+       const variant53 = field50.Some;
+    const field54 = variant53[0].url;
+    const field55 = variant53[0].hash;
+    let match56: { type: 'None'} | { type: 'Some', content: SDK.HexString };
+    if ('None' in field55) {
+       match56 = {
+           type: 'None',
+       };
+    } else if ('Some' in field55) {
+       const variant58 = field55.Some;
+       match56 = {
+           type: 'Some',
+           content: variant58[0],
+       };
+    }
+     else {
+       throw new Error("Unexpected enum variant");
+    }
+    const named59 = {
+    url: field54,
+    hash: match56,
+    };
+       match51 = {
+           type: 'Some',
+           content: named59,
+       };
+    }
+     else {
+       throw new Error("Unexpected enum variant");
+    }
+    const field60 = variant48[0].initial_status;
+    let match61: { type: 'Produced'} | { type: 'InTransit'} | { type: 'InStore'} | { type: 'Sold'};
+    if ('Produced' in field60) {
+       match61 = {
+           type: 'Produced',
+       };
+    } else if ('InTransit' in field60) {
+       match61 = {
+           type: 'InTransit',
+       };
+    } else if ('InStore' in field60) {
+       match61 = {
+           type: 'InStore',
+       };
+    } else if ('Sold' in field60) {
+       match61 = {
+           type: 'Sold',
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
     const named66 = {
-    address: match58,
-    role: match64,
+    item_id: field49,
+    metadata_url: match51,
+    initial_status: match61,
     };
        match11 = {
-           type: 'RevokeRole',
+           type: 'ItemCreated',
            content: named66,
        };
     } else if ('Nonce' in schemaJson) {
@@ -402,7 +402,7 @@ export function dryRunGetNextItemId(contractClient: TrackAndTraceContract, param
 }
 
 /** Return value for dry-running update transaction for 'getNextItemId' entrypoint of the 'track_and_trace' contract. */
-export type ReturnValueGetNextItemId = SDK.HexString;
+export type ReturnValueGetNextItemId = number | bigint;
 
 /**
  * Get and parse the return value from dry-running update transaction for 'getNextItemId' entrypoint of the 'track_and_trace' contract.
@@ -419,7 +419,7 @@ export function parseReturnValueGetNextItemId(invokeResult: SDK.InvokeContractRe
         throw new Error('Unexpected missing \'returnValue\' in result of invocation. Client expected a V1 smart contract.');
     }
 
-    const schemaJson = <string>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'HQA=');
+    const schemaJson = <bigint>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'BQ==');
     return schemaJson;
 }
 /** Base64 encoding of the parameter schema type for update transactions to 'getRoles' entrypoint of the 'track_and_trace' contract. */

@@ -123,7 +123,7 @@ export function Explorer() {
                         <Form.Control
                             {...register('itemID', { required: true })}
                             type="number"
-                            placeholder="123"
+                            placeholder="Enter the tracking number ID"
                             onChange={(e) => {
                                 setValue('itemID', parseInt(e.target.value));
                             }}
