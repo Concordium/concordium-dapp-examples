@@ -43,7 +43,7 @@ which can be run.
 To run the script use for example the following command in this folder:
 
 ```
-cargo run --release -- --node https://grpc.testnet.concordium.com:20000 --admin-key-file ./4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export --module ../smart-contract/concordium-out/module.wasm.v1 --num-items 2 --input-parameter-file ./inputParameter.json
+cargo run --release -- --node https://grpc.testnet.concordium.com:20000 --admin-key-file ./4bbdAUCDK2D6cUvUeprGr4FaSaHXKuYmYVjyCa4bXSCu3NUXzA.export --module ../smart-contract/concordium-out/module.wasm.v1 --num-items 2 --input-parameter-file ./inputParameter.json
 ```
 
 assuming the wallet export file `/4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export` is in this directory.

@@ -82,10 +82,10 @@ pub type ItemID = TokenIdU64;
 #[concordium(repr(u8))]
 pub enum Event<A: Serial> {
     /// The event tracks when an item is created.
-    #[concordium(tag = 0)]
+    #[concordium(tag = 237)]
     ItemCreated(ItemCreatedEvent),
     /// The event tracks when the item's status is updated.
-    #[concordium(tag = 1)]
+    #[concordium(tag = 236)]
     ItemStatusChanged(ItemStatusChangedEvent<A>),
     /// The event tracks when a new role is granted to an address.
     #[concordium(tag = 2)]
@@ -555,20 +555,19 @@ fn create_item(
     // Increase the item id tracker in the state.
     host.state_mut().next_item_id += 1;
 
+    let item_id = ItemID::from(next_item_id);
+
     // Create the item in state.
-    let previous_item = host
-        .state_mut()
-        .items
-        .insert(ItemID { 0: next_item_id }, ItemState {
-            metadata_url: metadata_url.clone(),
-            status:       Status::Produced,
-        });
+    let previous_item = host.state_mut().items.insert(item_id, ItemState {
+        metadata_url: metadata_url.clone(),
+        status:       Status::Produced,
+    });
 
     ensure_eq!(previous_item, None, CustomContractError::ItemAlreadyExists);
 
     // Log an ItemCreatedEvent.
     logger.log(&Event::<AdditionalData>::ItemCreated(ItemCreatedEvent {
-        item_id: ItemID { 0: next_item_id },
+        item_id,
         metadata_url,
         initial_status: Status::Produced,
     }))?;

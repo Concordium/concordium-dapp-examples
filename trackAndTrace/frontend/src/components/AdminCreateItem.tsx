@@ -16,6 +16,7 @@ import * as constants from '../constants';
 import { TxHashLink } from './CCDScanLinks';
 import { createItem } from '../track_and_trace_contract';
 import * as TrackAndTraceContract from '../../generated/module_track_and_trace';
+import { FromTokenIdU64 } from '../utils';
 
 interface Props {
     connection: WalletConnection | undefined;
@@ -66,13 +67,10 @@ export function AdminCreateItem(props: Props) {
                         const itemCreatedEvent = parsedEvent.content as unknown as PartialItemCreatedEvent;
 
                         // The `item_id` is of type `TokenIdU64` in the smart contract and logged in the event as
-                        // a little-endian hex string. E.g. `token_id` 1 is logges as a hex string "0100000000000000".
-                        // First, we reverse the hex string and then convert the `item_id` into a bigint type.
-                        const reversedHexString = itemCreatedEvent.item_id
-                            .match(/.{1,2}/g)
-                            ?.reverse()
-                            .join('');
-                        const itemId = BigInt(`0x${reversedHexString}`);
+                        // a little-endian hex string.
+                        // E.g. the `TokenIdU64` representation of `1` is the hex string `0100000000000000`.
+                        // This function converts the `TokenIdU64` representation into a bigint type here.
+                        const itemId: bigint = FromTokenIdU64(itemCreatedEvent.item_id);
                         setNewItemId(itemId);
                     } else {
                         setItemIdError('Tansaction failed and event decoding failed.');
