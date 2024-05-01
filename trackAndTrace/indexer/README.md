@@ -55,7 +55,7 @@ Each event can be uniquely identified by the `transaction_hash` and `event_index
 ## Run the `indexer`
 
 ```console
-cargo run --bin indexer -- --node https://grpc.testnet.concordium.com:20000 --contract "<8886,0>" --log-level debug
+cargo run --bin indexer -- --node https://grpc.testnet.concordium.com:20000 --contract "<8901,0>" --log-level debug
 ```
 
 ## Configure the `indexer`
@@ -64,7 +64,7 @@ There are a few options to configure the indexer:
 
 - `--node` is the endpoint to the Concordium node grpc v2 API. If not specified, the default value `https://grpc.testnet.concordium.com:20000` is used.
 
-- `--contract` is the contract index of the track-and-trace smart contract, e.g. <8886,0>.
+- `--contract` is the contract index of the track-and-trace smart contract, e.g. <8901,0>.
 
 - `--db-connection` should specify your postgreSQL database connection. If not specified, the default value `host=localhost dbname=indexer user=postgres password=password port=5432` is used.
 
@@ -111,5 +111,5 @@ cargo run --bin server  -- --contract-address <YOUR_CONTRACT_ADDRESS>
 An example to run the service with some filled in example settings would be:
 
 ``` console
-cargo run --bin server  -- --contract-address "<8886,0>"
+cargo run --bin server  -- --contract-address "<8901,0>"
 ```

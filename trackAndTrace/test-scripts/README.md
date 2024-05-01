@@ -46,10 +46,10 @@ To run the script use for example the following command in this folder:
 cargo run --release -- --node https://grpc.testnet.concordium.com:20000 --admin-key-file ./4bbdAUCDK2D6cUvUeprGr4FaSaHXKuYmYVjyCa4bXSCu3NUXzA.export --module ../smart-contract/concordium-out/module.wasm.v1 --num-items 2 --input-parameter-file ./inputParameter.json
 ```
 
-assuming the wallet export file `/4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export` is in this directory.
+assuming the wallet export file `/4bbdAUCDK2D6cUvUeprGr4FaSaHXKuYmYVjyCa4bXSCu3NUXzA.export` is in this directory.
 
  
-To get your account file (the `4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export` file in the above example), export it from the [Concordium Browser wallet for web](http://developer.concordium.software/en/mainnet/net/guides/export-key.html).
+To get your account file (the `4bbdAUCDK2D6cUvUeprGr4FaSaHXKuYmYVjyCa4bXSCu3NUXzA.export` file in the above example), export it from the [Concordium Browser wallet for web](http://developer.concordium.software/en/mainnet/net/guides/export-key.html).
 
 
 ###
@@ -57,7 +57,7 @@ To get your account file (the `4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6q
 The script will run a series of transactions. The output will be similar to:
 
 ```
-Starting script with admin account 4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.
+Starting script with admin account 4bbdAUCDK2D6cUvUeprGr4FaSaHXKuYmYVjyCa4bXSCu3NUXzA.
 Source module with reference f94a1503030142b4dfdd6667875403783e6f457eafb020f0a957270cfe7499e9 already exists.
 The maximum amount of NRG allowed for the transaction is 4075.
 Transaction a2cc66c2e674af64e5a7b85ec1b97e87f9433a21f5ffdc795c038c0f7195a712 submitted. Waiting for finalization.
