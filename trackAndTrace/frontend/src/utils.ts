@@ -12,7 +12,7 @@ export function validateAccountAddress(accountAddress: string | undefined) {
         try {
             AccountAddress.fromBase58(accountAddress);
         } catch (e) {
-            return `Please enter a valid account address. It is a base58 string with a fixed length of 50 characters.Original error: ${
+            return `Please enter a valid account address. It is a base58 string with a fixed length of 50 characters. Original error: ${
                 (e as Error).message
             }.`;
         }
