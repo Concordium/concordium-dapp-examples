@@ -2073,10 +2073,12 @@ name = "smart-contract-wallet"
 version = "0.1.0"
 dependencies = [
  "concordium-cis2",
+ "concordium-contracts-common",
  "concordium-smart-contract-testing",
  "concordium-std",
  "ed25519-dalek",
  "rand",
+ "serde",
 ]
 
 [[package]]

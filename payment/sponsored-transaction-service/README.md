@@ -18,7 +18,7 @@ The following parameters are supported
   - Equivalent environment variable: `CCD_SPONSORED_TRANSACTION_SERVICE_PRIVATE_KEY_FILE`.
 - `allowed-accounts` The accounts allowed to submit transactions. Either 'any', if you have a custom authentication scheme in front of the service OR a space-separated list of account addresses.
   - Equivalent environment variable: `CCD_SPONSORED_TRANSACTION_SERVICE_ALLOWED_ACCOUNTS`.
-- `allowed-contracts` The contracts allowed to be used by the service. Either 'any' OR a space-separated list of contract addresses in the format `<123,0>`.
+- `contract-address` The contracts allowed to be used by the service. Either 'any' OR a space-separated list of contract addresses in the format `<123,0>`.
   - Equivalent environment variable: `CCD_SPONSORED_TRANSACTION_SERVICE_ALLOWED_CONTRACTS`.
 - `rate-limit` The limit of requests per account per hour. Defaults to `30`.
   - Equivalent environment variable: `CCD_SPONSORED_TRANSACTION_SERVICE_RATE_LIMIT`.
@@ -37,7 +37,7 @@ cargo run --release -- \
   --contract_address "<8662,0>"
 ```
 
-cargo run --release -- --node https://grpc.testnet.concordium.com:20000 --private-key-file 4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export --allowed-accounts "any" --allowed-contracts "<8662,0>"
+cargo run --release -- --node https://grpc.testnet.concordium.com:20000 --private-key-file 4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export --allowed-accounts "any" --contract-address "<8662,0>"
 
 To get your account file (the `3PXwJYYPf6fyVb4GJquxSZU8puxrHfzc4XogdMVot8MUQK53tW.export` file in the above example), [export it from the Concordium Browser wallet for web](https://developer.concordium.software/en/mainnet/net/guides/export-key.html).
 This account should be only used for this service. No transactions should be sent from the account by any other means to ensure the account nonce is tracked 

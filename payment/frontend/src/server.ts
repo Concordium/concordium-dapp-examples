@@ -37,7 +37,7 @@ export async function transfer(amount: bigint, to: Hex): Promise<Hex> {
         simple_transfers: [{ to, transfer_amount: createTokenAmount(amount) }],
     };
 
-    const messageHashResult = await Contract.dryRunViewInternalTransferMessageHashTokenAmount(await client, message);
+    const messageHashResult = await Contract.dryRunViewInternalTransferMessageHashTokenAmount(client, message);
     const messageHash = Contract.parseReturnValueViewInternalTransferMessageHashTokenAmount(messageHashResult)?.map(
         (n) => Number(n),
     );
@@ -49,7 +49,7 @@ export async function transfer(amount: bigint, to: Hex): Promise<Hex> {
     const transfer: TransferRequest = {
         fromPublicKey: Array.from(Buffer.from(pubKey, 'hex')),
         toPublicKey: Array.from(Buffer.from(to, 'hex')),
-        signature: Buffer.from(await signMessage(Buffer.from(messageHash).toString('hex'))).toString('hex'),
+        signature: Buffer.from(signMessage(Buffer.from(messageHash).toString('hex'))).toString('hex'),
         nonce,
         expiryTime: Timestamp.toDate(expiryTime).toISOString(),
         tokenAmount: amount,
@@ -68,7 +68,7 @@ export async function transfer(amount: bigint, to: Hex): Promise<Hex> {
     }
 
     const hash = (await response.json()) as Hex;
-    console.log(hash);
+    console.log('transaction', hash);
 
     return hash;
 }

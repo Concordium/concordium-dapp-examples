@@ -10,6 +10,7 @@ export type Hex = string;
 const KEY_LOCATION_LS = '__payment-app_secret-key';
 const SECRET_KEY = localStorage.getItem(KEY_LOCATION_LS) ?? generateKey();
 export const PUBLIC_KEY = ed.getPublicKey(SECRET_KEY);
+console.log('public key', Buffer.from(PUBLIC_KEY).toString('hex'));
 
 function generateKey() {
     const k = Buffer.from(ed.utils.randomPrivateKey()).toString('hex');

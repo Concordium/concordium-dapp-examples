@@ -10,7 +10,7 @@ import mkcert from 'vite-plugin-mkcert';
 
 const DEFAULT_NETWORK = 'testnet';
 const DEFAULT_NODE = 'https://grpc.testnet.concordium.com:20000';
-const DEFAULT_SPONSORED_API = 'http://localhost:8080/';
+const DEFAULT_SPONSORED_API = 'http://localhost:8080';
 
 /**
  * Validates environment variable present at `envField` as a URL.
@@ -101,6 +101,7 @@ export default defineConfig(({ command }) => {
     if (command === 'serve') {
         // Mimic the configuration injection from the backend
         const config = getConfig();
+        viteConfig.plugins!.push(mkcert()); // To allow camera on external device (i.e. non-localhost sites disallow camera permissions)
         viteConfig.plugins!.push(
             handlebars({
                 context: { config: JSON.stringify(config) },

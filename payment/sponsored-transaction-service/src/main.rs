@@ -76,7 +76,7 @@ struct ServiceConfig {
     )]
     allowed_accounts: AllowedAccounts,
     #[clap(
-        long = "contract_address",
+        long = "contract-address",
         help = "The contract_address to be used by the service. Either 'any' OR a space-separated \
                 list of contract addresses in the format `<123,0>`.",
         env = "CCD_SPONSORED_TRANSACTION_SERVICE_ALLOWED_CONTRACTS"
