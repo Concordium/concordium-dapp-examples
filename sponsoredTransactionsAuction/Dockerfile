@@ -12,6 +12,7 @@ COPY ./sponsoredTransactionsAuction/frontend/src ./src
 COPY ./sponsoredTransactionsAuction/frontend/index.html ./index.html
 COPY ./sponsoredTransactionsAuction/frontend/generated ./generated
 
+RUN corepack enable
 RUN yarn
 RUN yarn build
 
