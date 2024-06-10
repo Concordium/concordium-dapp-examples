@@ -49,7 +49,9 @@ CREATE TABLE IF NOT EXISTS item_created_events (
   -- The item's id as logged in the event.
   item_id INT8 NOT NULL,
   -- The item's metadata_url as logged in the event.
-  metadata_url BYTEA NOT NULL
+  metadata_url BYTEA NOT NULL,
+  -- The item's initial status as logged in the event.
+  initial_status JSONB NOT NULL
 );
 
 -- Improve performance on queries for events with given item_id.

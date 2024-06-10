@@ -16,6 +16,7 @@ interface CreateItem {
     block_time: string;
     transaction_hash: string;
     event_index: number;
+    initial_status: string;
 }
 
 /**
@@ -30,7 +31,7 @@ async function getItemStatusChangedEvents(itemID: number, setItemChanged: Dispat
         method: 'POST',
         headers: new Headers({ 'content-type': 'application/json' }),
         body: JSON.stringify({
-            item_id: Number(itemID),
+            item_id: itemID,
             limit: 30,
             offset: 0,
         }),
@@ -59,7 +60,7 @@ async function getItemCreatedEvent(itemID: number, setItemCreated: Dispatch<Crea
     const response = await fetch(`api/getItemCreatedEvent`, {
         method: 'POST',
         headers: new Headers({ 'content-type': 'application/json' }),
-        body: JSON.stringify(Number(itemID)),
+        body: JSON.stringify(itemID),
     });
 
     if (!response.ok) {
@@ -82,7 +83,7 @@ export function Explorer() {
     interface FormType {
         itemID: number | undefined;
     }
-    const { control, register, formState, handleSubmit } = useForm<FormType>({ mode: 'all' });
+    const { control, register, formState, handleSubmit, setValue } = useForm<FormType>({ mode: 'all' });
 
     const [itemID] = useWatch({
         control: control,
@@ -123,6 +124,9 @@ export function Explorer() {
                             {...register('itemID', { required: true })}
                             type="number"
                             placeholder="Enter the tracking number ID"
+                            onChange={(e) => {
+                                setValue('itemID', parseInt(e.target.value));
+                            }}
                         />
                         {formState.errors.itemID && <Alert variant="info"> Item ID is required </Alert>}
                         <Form.Text />
@@ -159,8 +163,9 @@ export function Explorer() {
                                             {itemCreated.transaction_hash.slice(-5)}
                                         </a>
                                     </td>
-                                    <td>Created</td>
+                                    <td>{itemCreated.initial_status}</td>
                                 </tr>
+
                                 {itemChanged.map((event: ChangeItem, parentIndex) => {
                                     return (
                                         <tr key={parentIndex}>

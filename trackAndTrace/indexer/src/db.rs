@@ -57,16 +57,10 @@ impl TryFrom<tokio_postgres::Row> for StoredConfiguration {
         let contract_address =
             ContractAddress::new(raw_contract_index as u64, raw_contract_subindex as u64);
 
-        let latest_processed_block_height = match raw_latest_processed_block_height {
-            Some(raw_latest_processed_block_height) => {
+        let latest_processed_block_height =
+            raw_latest_processed_block_height.map(|raw_latest_processed_block_height| {
                 AbsoluteBlockHeight::from(raw_latest_processed_block_height as u64)
-                    .try_into()
-                    .map_err(|_| {
-                        DatabaseError::TypeConversion("latest_processed_block_height".to_string())
-                    })?
-            }
-            None => None,
-        };
+            });
 
         let settings = Self {
             latest_processed_block_height,
@@ -136,6 +130,8 @@ pub struct StoredItemCreatedEvent {
     pub item_id:          u64,
     /// The item's metadata_url as logged in the event.
     pub metadata_url:     Option<MetadataUrl>,
+    /// The item's initial status as logged in the event.
+    pub initial_status:   Status,
 }
 
 impl TryFrom<tokio_postgres::Row> for StoredItemCreatedEvent {
@@ -146,16 +142,18 @@ impl TryFrom<tokio_postgres::Row> for StoredItemCreatedEvent {
         let raw_transaction_hash: &[u8] = value.try_get("transaction_hash")?;
         let raw_item_id: i64 = value.try_get("item_id")?;
         let raw_event_index: i64 = value.try_get("event_index")?;
+        let Json(initial_status): Json<Status> = value.try_get("initial_status")?;
 
         let events = Self {
-            block_time:       value.try_get("block_time")?,
+            block_time: value.try_get("block_time")?,
             transaction_hash: raw_transaction_hash
                 .try_into()
                 .map_err(|_| DatabaseError::TypeConversion("transaction_hash".to_string()))?,
-            event_index:      raw_event_index as u64,
-            item_id:          raw_item_id as u64,
-            metadata_url:     from_bytes(value.try_get("metadata_url")?)
+            event_index: raw_event_index as u64,
+            item_id: raw_item_id as u64,
+            metadata_url: from_bytes(value.try_get("metadata_url")?)
                 .map_err(|_| DatabaseError::TypeConversion("metadata_url".to_string()))?,
+            initial_status,
         };
         Ok(events)
     }
@@ -260,8 +258,8 @@ impl Database {
         let get_item_created_event_submissions = self
             .client
             .prepare_cached(
-                "SELECT block_time, transaction_hash, event_index, item_id, metadata_url from \
-                 item_created_events WHERE item_id = $1",
+                "SELECT block_time, transaction_hash, event_index, item_id, metadata_url, \
+                 initial_status from item_created_events WHERE item_id = $1",
             )
             .await?;
         let params: [&(dyn ToSql + Sync); 1] = [&(item_id as i64)];

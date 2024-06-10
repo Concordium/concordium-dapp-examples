@@ -37,7 +37,7 @@ For this to work, you should do the following:
 e.g.
 
 ```bash
-TRACK_AND_TRACE_CONTRACT_ADDRESS="<8527,0>" TRACK_AND_TRACE_PRIVATE_KEY_FILE="./private-keys/4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export" docker-compose up
+TRACK_AND_TRACE_CONTRACT_ADDRESS="<8901,0>" TRACK_AND_TRACE_PRIVATE_KEY_FILE="./private-keys/4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export" docker-compose up
 ```
 
 5. Access the frontend at `http://localhost:8080`

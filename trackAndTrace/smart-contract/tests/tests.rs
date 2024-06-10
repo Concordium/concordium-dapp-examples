@@ -214,6 +214,8 @@ fn test_create_item_and_update_item_status() {
         hash: None,
     });
 
+    let item_id = ItemID::from(0u64);
+
     // Check the ADMIN can create a new item.
     let update = chain
         .contract_update(
@@ -240,8 +242,9 @@ fn test_create_item_and_update_item_status() {
         .collect::<Vec<Event<AdditionalData>>>();
 
     assert_eq!(events, [Event::ItemCreated(ItemCreatedEvent {
-        item_id:      0u64,
+        item_id,
         metadata_url: metadata_url.clone(),
+        initial_status: Status::Produced,
     })]);
 
     // Check contract state.
@@ -253,9 +256,9 @@ fn test_create_item_and_update_item_status() {
     );
 
     let parameter = ChangeItemStatusParams {
-        item_id:         0u64,
+        item_id,
         additional_data: AdditionalData { bytes: vec![] },
-        new_status:      Status::InTransit,
+        new_status: Status::InTransit,
     };
 
     // Check the PRODUCER can update the item based on the state machine rules.
@@ -297,9 +300,9 @@ fn test_create_item_and_update_item_status() {
     );
 
     let parameter = ChangeItemStatusParams {
-        item_id:         0u64,
+        item_id,
         additional_data: AdditionalData { bytes: vec![] },
-        new_status:      Status::Sold,
+        new_status: Status::Sold,
     };
 
     // Check the SELLER can NOT update the item because of the rules of the state
@@ -328,8 +331,8 @@ fn test_create_item_and_update_item_status() {
     assert_eq!(error, CustomContractError::Unauthorized);
 
     let parameter = ChangeItemStatusParams {
-        item_id:         0u64,
-        new_status:      Status::Sold,
+        item_id,
+        new_status: Status::Sold,
         additional_data: AdditionalData { bytes: vec![] },
     };
 
@@ -401,6 +404,8 @@ fn check_state(
 
     assert_eq!(return_value, vec![Roles::Admin]);
 
+    let item_id = ItemID::from(0u64);
+
     let invoke = chain
         .contract_invoke(
             ADMIN,
@@ -412,7 +417,7 @@ fn check_state(
                     "track_and_trace.getItemState".to_string(),
                 ),
                 address:      track_and_trace_contract_address,
-                message:      OwnedParameter::from_serial(&0u64).expect("Serialize parameter"),
+                message:      OwnedParameter::from_serial(&item_id).expect("Serialize parameter"),
             },
         )
         .expect("Invoke view");
@@ -440,9 +445,9 @@ fn check_state(
         )
         .expect("Invoke view");
 
-    let return_value: ItemID = invoke.parse_return_value().expect("ViewState return value");
+    let return_value: u64 = invoke.parse_return_value().expect("ViewState return value");
 
-    assert_eq!(return_value, 1);
+    assert_eq!(return_value, 1u64);
 }
 
 /// Setup chain and contract. Returns the chain, keys of the ADMIN and PRODUCER,
@@ -573,12 +578,14 @@ fn test_permit_change_item_status() {
         )
         .expect("Should be able to create item");
 
+    let item_id = ItemID::from(0u64);
+
     // Check that the status can be updated to `InStore` with a sponsored
     // transaction.
     let payload = ChangeItemStatusParams {
-        item_id:         0u64,
+        item_id,
         additional_data: AdditionalData { bytes: vec![] },
-        new_status:      Status::InStore,
+        new_status: Status::InStore,
     };
 
     let update = permit(
@@ -602,7 +609,7 @@ fn test_permit_change_item_status() {
         .iter()
         .find(|e| matches!(e, Event::Nonce(_)))
         .expect("Should have a nonce event");
-    assert_eq!(to_bytes(nonce_event)[0], NONCE_EVENT_TAG);
+    assert_eq!(to_bytes(nonce_event)[0], 250);
 
     // Check that the status updated correctly.
     check_state(
@@ -645,9 +652,9 @@ fn test_permit_change_item_status() {
     // Check that the PRODUCER can not update the status to `Sold` with a
     // sponsored transaction.
     let payload = ChangeItemStatusParams {
-        item_id:         0u64,
+        item_id,
         additional_data: AdditionalData { bytes: vec![] },
-        new_status:      Status::Sold,
+        new_status: Status::Sold,
     };
 
     let _update = permit(
