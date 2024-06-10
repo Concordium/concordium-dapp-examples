@@ -9,14 +9,15 @@ import {
     deserializeTypeValue,
     AccountAddress,
     ConcordiumGRPCClient,
+    AccountTransactionSignature,
 } from '@concordium/web-sdk';
 import {
     useGrpcClient,
     WalletConnectionProps,
     useConnection,
     useConnect,
-    typeSchemaFromBase64,
     TESTNET,
+    WalletConnection,
 } from '@concordium/react-components';
 import { version } from '../package.json';
 
@@ -25,7 +26,6 @@ import {
     SPONSORED_TX_CONTRACT_NAME,
     NONCE_OF_PARAMETER_SCHEMA,
     NONCE_OF_RETURN_VALUE_SCHEMA,
-    SERIALIZATION_HELPER_SCHEMA,
     CONTRACT_SUB_INDEX,
     BROWSER_WALLET,
     WALLET_CONNECT,
@@ -83,13 +83,7 @@ const InputFieldStyle = {
     padding: '10px 20px',
 };
 
-function generateTransferMessage(
-    expiryTimeSignature: string,
-    nonce: string,
-    tokenID: string,
-    from: string,
-    to: string,
-) {
+function generateTransferPayload(nonce: string, tokenID: string, from: string, to: string) {
     if (nonce === '') {
         alert('Insert a nonce.');
         return '';
@@ -145,30 +139,13 @@ function generateTransferMessage(
         },
     ];
 
-    const payload = serializeTypeValue(transfer, toBuffer(TRANSFER_SCHEMA, 'base64'));
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string
+    const payload = serializeTypeValue(transfer, toBuffer(TRANSFER_SCHEMA, 'base64')).toString('hex');
 
-    const message = {
-        contract_address: {
-            index: Number(process.env.SMART_CONTRACT_INDEX),
-            subindex: 0,
-        },
-        nonce: Number(nonce),
-        timestamp: expiryTimeSignature,
-        entry_point: 'transfer',
-        payload: Array.from(payload),
-    };
-
-    const serializedMessage = serializeTypeValue(message, toBuffer(SERIALIZATION_HELPER_SCHEMA, 'base64'));
-
-    return serializedMessage;
+    return payload;
 }
 
-function generateUpdateOperatorMessage(
-    expiryTimeSignature: string,
-    nonce: string,
-    operator: string,
-    addOperator: boolean,
-) {
+function generateUpdateOperatorPayload(nonce: string, operator: string, addOperator: boolean) {
     if (nonce === '') {
         alert('Insert a nonce.');
         return '';
@@ -207,22 +184,35 @@ function generateUpdateOperatorMessage(
         },
     ];
 
-    const payload = serializeTypeValue(updateOperator, toBuffer(UPDATE_OPERATOR_SCHEMA, 'base64'));
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string
+    const payload = serializeTypeValue(updateOperator, toBuffer(UPDATE_OPERATOR_SCHEMA, 'base64')).toString('hex');
 
-    const message = {
-        contract_address: {
-            index: Number(process.env.SMART_CONTRACT_INDEX),
-            subindex: 0,
-        },
-        nonce: Number(nonce),
-        timestamp: expiryTimeSignature,
-        entry_point: 'updateOperator',
-        payload: Array.from(payload),
-    };
+    return payload;
+}
 
-    const serializedMessage = serializeTypeValue(message, toBuffer(SERIALIZATION_HELPER_SCHEMA, 'base64'));
-
-    return serializedMessage;
+function signCIS3Message(
+    connection: WalletConnection,
+    isUpdateOperatorTab: boolean,
+    nonce: string,
+    expiryTimeSignature: string,
+    account: string,
+    payload: string,
+): Promise<AccountTransactionSignature> {
+    const contractAddress = { index: Number(process.env.SMART_CONTRACT_INDEX), subindex: 0 };
+    const contractName = { value: SPONSORED_TX_CONTRACT_NAME };
+    const entrypointName = { value: isUpdateOperatorTab ? 'updateOperator' : 'transfer' };
+    const _nonce = Number(nonce);
+    const payloadMessage = { data: payload, schema: isUpdateOperatorTab ? UPDATE_OPERATOR_SCHEMA : TRANSFER_SCHEMA };
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-return
+    return connection.client.signCIS3Message(
+        contractAddress,
+        contractName,
+        entrypointName,
+        _nonce,
+        expiryTimeSignature,
+        account,
+        payloadMessage,
+    );
 }
 
 async function getPublicKey(rpcClient: ConcordiumGRPCClient, account: string) {
@@ -638,16 +628,19 @@ export default function SponsoredTransactions(props: WalletConnectionProps) {
                             const expiryTimeSignature = date.toISOString();
                             setExpiryTime(expiryTimeSignature);
 
-                            const serializedMessage = isUpdateOperatorTab
-                                ? generateUpdateOperatorMessage(expiryTimeSignature, nonce, operator, addOperator)
-                                : generateTransferMessage(expiryTimeSignature, nonce, tokenID, from, to);
+                            const payload = isUpdateOperatorTab
+                                ? generateUpdateOperatorPayload(nonce, operator, addOperator)
+                                : generateTransferPayload(nonce, tokenID, from, to);
 
-                            if (serializedMessage !== '') {
-                                const promise = connection.signMessage(account, {
-                                    type: 'BinaryMessage',
-                                    value: serializedMessage,
-                                    schema: typeSchemaFromBase64(SERIALIZATION_HELPER_SCHEMA),
-                                });
+                            if (payload !== '') {
+                                const promise = signCIS3Message(
+                                    connection,
+                                    isUpdateOperatorTab,
+                                    nonce,
+                                    expiryTimeSignature,
+                                    account,
+                                    payload,
+                                );
 
                                 promise
                                     .then((permitSignature) => {

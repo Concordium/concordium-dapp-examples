@@ -1,5 +1,7 @@
 ## Unreleased changes
 
+-   Change the dApp to use new `signCIS3Message` function from the BrowserWallet.
+
 ## 2.0.2
 
 -   Change the dApp to use the testnet smart contract index.

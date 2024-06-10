@@ -2,16 +2,17 @@ import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { Alert, Button, Form } from 'react-bootstrap';
 
-import { TransactionHash, serializeTypeValue, toBuffer } from '@concordium/web-sdk';
-import { WalletConnection, typeSchemaFromBase64 } from '@concordium/react-components';
-
-import { Buffer } from 'buffer/';
-
 import {
-    SERIALIZATION_HELPER_SCHEMA_ADDITIONAL_DATA,
-    SERIALIZATION_HELPER_SCHEMA_PERMIT_MESSAGE,
-    TRANSFER_SCHEMA,
-} from '../constants';
+    AccountTransactionSignature,
+    EntrypointName,
+    Parameter,
+    serializeTypeValue,
+    toBuffer,
+    TransactionHash,
+} from '@concordium/web-sdk';
+import { WalletConnection } from '@concordium/react-components';
+
+import { SERIALIZATION_HELPER_SCHEMA_ADDITIONAL_DATA, SPONSORED_TX_CONTRACT_NAME, TRANSFER_SCHEMA } from '../constants';
 import { submitBid, validateAccountAddress } from '../utils';
 
 import { viewItemState } from '../auction_contract';
@@ -20,11 +21,9 @@ import * as AuctionContract from '../../generated/sponsored_tx_enabled_auction_s
 /**
  * This function generates the transfer message to be signed in the browser wallet.
  */
-async function generateTransferMessage(
+async function generateTransferPayload(
     setTokenID: (arg0: string) => void,
-    expiryTimeSignature: string,
     account: string,
-    nonce: string,
     amount: string | undefined,
     itemIndexAuction: string,
 ) {
@@ -70,28 +69,38 @@ async function generateTransferMessage(
             },
         ];
 
-        const payload = serializeTypeValue(transfer, toBuffer(TRANSFER_SCHEMA, 'base64'));
+        const payload = Parameter.toHexString(serializeTypeValue(transfer, toBuffer(TRANSFER_SCHEMA, 'base64')));
 
-        const message = {
-            contract_address: {
-                index: Number(process.env.CIS2_TOKEN_CONTRACT_INDEX),
-                subindex: 0,
-            },
-            nonce: Number(nonce),
-            timestamp: expiryTimeSignature,
-            entry_point: 'transfer',
-            payload: Array.from(payload.buffer),
-        };
-
-        const serializedMessage = serializeTypeValue(
-            message,
-            toBuffer(SERIALIZATION_HELPER_SCHEMA_PERMIT_MESSAGE, 'base64'),
-        );
-
-        return serializedMessage;
+        return payload;
     } catch (error) {
         throw new Error(`Generating transfer message failed. Orginal error: ${(error as Error).message}`);
     }
+}
+
+function signCIS3Message(
+    connection: WalletConnection,
+    nonce: string,
+    expiryTimeSignature: string,
+    account: string,
+    payload: string,
+): Promise<AccountTransactionSignature> {
+    const contractAddress = { index: Number(process.env.CIS2_TOKEN_CONTRACT_INDEX), subindex: 0 };
+    const contractName = SPONSORED_TX_CONTRACT_NAME;
+    const entrypointName = EntrypointName.fromString('transfer');
+    const _nonce = Number(nonce);
+    const payloadMessage = { data: payload, schema: TRANSFER_SCHEMA };
+
+    // @ts-expect-error Temporary expected ts-error, will be fixed with WalletConnection update
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return,@typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
+    return connection.client.signCIS3Message(
+        contractAddress,
+        contractName,
+        entrypointName,
+        _nonce,
+        expiryTimeSignature,
+        account,
+        payloadMessage,
+    );
 }
 
 interface ConnectionProps {
@@ -148,20 +157,20 @@ export default function Bid(props: ConnectionProps) {
 
         if (account) {
             try {
-                const serializedMessage = await generateTransferMessage(
+                const serializedMessage = await generateTransferPayload(
                     setTokenID,
-                    expiryTimeSignature,
                     account,
-                    data.nonce,
                     data.tokenAmount,
                     data.itemIndex,
                 );
 
-                const permitSignature = await connection.signMessage(account, {
-                    type: 'BinaryMessage',
-                    value: Buffer.from(serializedMessage.buffer),
-                    schema: typeSchemaFromBase64(SERIALIZATION_HELPER_SCHEMA_PERMIT_MESSAGE),
-                });
+                const permitSignature = await signCIS3Message(
+                    connection,
+                    data.nonce,
+                    expiryTimeSignature,
+                    account,
+                    serializedMessage,
+                );
 
                 setSignature(permitSignature[0][0]);
             } catch (err) {
