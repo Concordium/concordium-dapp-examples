@@ -6,6 +6,7 @@ FROM ${node_base_image} AS frontend
 WORKDIR /app
 COPY ./sponsoredTransactions/frontend ./
 
+RUN corepack enable
 RUN yarn
 RUN yarn build
 
