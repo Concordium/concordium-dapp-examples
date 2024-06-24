@@ -12,6 +12,7 @@ on:
 env:
   REGISTRY: docker.io
   IMAGE_NAME: dapp-signmessage
+  EXPECTED_TAG: ${{ github.ref_name }}
 
 jobs:
   build-and-push-image:
@@ -39,7 +40,7 @@ jobs:
           if docker manifest inspect ${FULL_IMAGE_TAG} > /dev/null; then
              echo "::error ${FULL_IMAGE_TAG} already exists"
              exit 1
-          elif [ ! "${{ github.ref_name }}" = "signmessage/${VERSION}" ]; then
+          elif [ ! "${EXPECTED_TAG}" = "signmessage/${VERSION}" ]; then
              echo "::error Expected tag ${EXPECTED_TAG} does not match the version ${VERSION}."
              exit 1
           else

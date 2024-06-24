@@ -13,6 +13,7 @@ on:
 env:
   REGISTRY: docker.io
   IMAGE_NAME: dapp-sponsored-txs
+  EXPECTED_TAG: ${{ github.ref_name }}
 
 jobs:
   build-and-push-image:
@@ -42,7 +43,7 @@ jobs:
           if docker manifest inspect ${FULL_IMAGE_TAG} > /dev/null; then
              echo "::error ${FULL_IMAGE_TAG} already exists"
              exit 1
-          elif [ ! "${{ github.ref_name }}" = "sponsored-transactions/${VERSION}" ]; then
+          elif [ ! "${EXPECTED_TAG}" = "sponsored-transactions/${VERSION}" ]; then
              echo "::error Expected tag ${EXPECTED_TAG} does not match the version ${VERSION}."
              exit 1
           else
