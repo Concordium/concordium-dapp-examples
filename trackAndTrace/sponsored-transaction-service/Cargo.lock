@@ -751,7 +751,7 @@ dependencies = [
  "aes-gcm",
  "anyhow",
  "chrono",
- "concordium-smart-contract-engine",
+ "concordium-smart-contract-engine 4.0.0",
  "concordium_base",
  "derive_more",
  "ed25519-dalek",
@@ -788,6 +788,30 @@ dependencies = [
  "derive_more",
  "ed25519-zebra",
  "futures",
+ "libc",
+ "num_enum",
+ "rand",
+ "secp256k1",
+ "serde",
+ "sha2",
+ "sha3",
+ "slab",
+ "thiserror",
+ "tinyvec",
+]
+
+[[package]]
+name = "concordium-smart-contract-engine"
+version = "5.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ec03be6a4a56c0501cf9225d135aaa6c155228039efde27d6551814bc6776db1"
+dependencies = [
+ "anyhow",
+ "byteorder",
+ "concordium-contracts-common",
+ "concordium-wasm",
+ "derive_more",
+ "ed25519-zebra",
  "libc",
  "num_enum",
  "rand",
@@ -2621,6 +2645,7 @@ dependencies = [
  "chrono",
  "clap",
  "concordium-rust-sdk",
+ "concordium-smart-contract-engine 5.0.0",
  "futures",
  "hex",
  "http 1.1.0",
