@@ -8,16 +8,30 @@ use axum::{
 };
 use clap::Parser;
 use concordium_rust_sdk::{
+    base::{
+        contracts_common::{schema::Type, Cursor},
+        hashes::ModuleReference,
+    },
     contract_client::ContractClient,
     smart_contracts::common::{
         AccountSignatures, Amount, CredentialSignatures, OwnedEntrypointName, Signature,
         SignatureEd25519,
     },
-    types::{hashes::TransactionHash, smart_contracts::OwnedContractName, WalletAccount},
+    types::{
+        hashes::TransactionHash, smart_contracts::OwnedContractName, RejectReason, WalletAccount,
+    },
+    v2::BlockIdentifier,
 };
+use concordium_smart_contract_engine::utils;
 use std::{collections::BTreeMap, path::PathBuf};
 use tonic::transport::ClientTlsConfig;
 use tower_http::cors::{AllowOrigin, CorsLayer};
+
+// TODO: get module reference and name from contract instance info.
+const TRACK_AND_TRACE_MODULE_REF: &str =
+    "7f24e586bb7dcac318ca0c2876d3e4b5c07f36d48d0c7b20f8d82dad0552f1e3";
+
+const TRACK_AND_TRACE_CONTRACT_NAME: &str = "track_and_trace";
 
 /// Structure used to receive the correct command line arguments.
 #[derive(clap::Parser, Debug)]
@@ -80,6 +94,115 @@ struct ServiceConfig {
         env = "CCD_SPONSORED_TRANSACTION_SERVICE_RATE_LIMIT"
     )]
     rate_limit_per_account_per_hour: u16,
+}
+
+/// Decodes the reject_reason into a human-readable error based on the error
+/// code definition in the `concordium-std` crate.
+fn decode_concordium_std_error(reject_reason: i32) -> Option<String> {
+    match reject_reason {
+        -2147483647 => Some("[Error ()]".to_string()),
+        -2147483646 => Some("[ParseError]".to_string()),
+        -2147483645 => Some("[LogError::Full]".to_string()),
+        -2147483644 => Some("[LogError::Malformed]".to_string()),
+        -2147483643 => Some("[NewContractNameError::MissingInitPrefix]".to_string()),
+        -2147483642 => Some("[NewContractNameError::TooLong]".to_string()),
+        -2147483641 => Some("[NewReceiveNameError::MissingDotSeparator]".to_string()),
+        -2147483640 => Some("[NewReceiveNameError::TooLong]".to_string()),
+        -2147483639 => Some("[NewContractNameError::ContainsDot]".to_string()),
+        -2147483638 => Some("[NewContractNameError::InvalidCharacters]".to_string()),
+        -2147483637 => Some("[NewReceiveNameError::InvalidCharacters]".to_string()),
+        -2147483636 => Some("[NotPayableError]".to_string()),
+        -2147483635 => Some("[TransferError::AmountTooLarge]".to_string()),
+        -2147483634 => Some("[TransferError::MissingAccount]".to_string()),
+        -2147483633 => Some("[CallContractError::AmountTooLarge]".to_string()),
+        -2147483632 => Some("[CallContractError::MissingAccount]".to_string()),
+        -2147483631 => Some("[CallContractError::MissingContract]".to_string()),
+        -2147483630 => Some("[CallContractError::MissingEntrypoint]".to_string()),
+        -2147483629 => Some("[CallContractError::MessageFailed]".to_string()),
+        -2147483628 => Some("[CallContractError::LogicReject]".to_string()),
+        -2147483627 => Some("[CallContractError::Trap]".to_string()),
+        -2147483626 => Some("[UpgradeError::MissingModule]".to_string()),
+        -2147483625 => Some("[UpgradeError::MissingContract]".to_string()),
+        -2147483624 => Some("[UpgradeError::UnsupportedModuleVersion]".to_string()),
+        -2147483623 => Some("[QueryAccountBalanceError]".to_string()),
+        -2147483622 => Some("[QueryContractBalanceError]".to_string()),
+        _ => None,
+    }
+}
+
+/// Decodes the reason for the transaction failure and returns a human-readable
+/// error string.
+///
+/// If the error is NOT caused by a smart contract logical revert, the
+/// `reject_reason` is already a human-readable error. No further decoding of
+/// the error is needed. An example of such a transaction is the error variant
+/// "OutOfEnergy". This function returns `None` in this case.
+///
+/// If the error is caused by a smart contract logical revert coming from the
+/// `concordium-std` crate, this function decodes the error based on the error
+/// code definition in the `concordium-std` crate.
+///
+/// If the error is caused by a smart contract logical revert coming from the
+/// smart contract itself, this function uses the embedded `error_schema` to
+/// decode the `reject_reason` into a human-readable error string.
+fn decode_reject_reason(
+    reject_reason: RejectReason,
+    permit_error_schema: Type,
+) -> anyhow::Result<Option<String>> {
+    match reject_reason {
+        RejectReason::RejectedReceive {
+            reject_reason: reject_reason_code,
+            contract_address: _,
+            receive_name: _,
+            parameter: _,
+        } => {
+            // Step 1: Try to decode the `reject_reason` using the `concordium-std` error
+            // codes. Step 2: Try to decode the `reject_reason` using the
+            // `error_schema` embedded into the smart contract.
+            match decode_concordium_std_error(reject_reason_code) {
+                Some(decoded_error) => Ok(Some(decoded_error)),
+                // If the error does not originate from the `concordium-std` crate,
+                // try to decode the error using the `error_schema`.
+                None => {
+                    // This conversion from `reject_reason_code` to `error_enum_tag` won't work in
+                    // the most general case, but it works for smart contracts that derive the
+                    // `Reject` trait on the error enum.
+                    let error_enum_tag = [(reject_reason_code.abs() - 1) as u8];
+
+                    let mut cursor = Cursor::new(error_enum_tag);
+
+                    match permit_error_schema.to_json(&mut cursor) {
+                        Ok(human_readable_error) => {
+                            if let serde_json::Value::Object(obj) = human_readable_error {
+                                Ok(Some(
+                                    obj.keys()
+                                        .next()
+                                        // This error can not happen if a valid error_schema is embedded into the smart contract.
+                                        .context(
+                                            "No matching error variant in the error schema found for the \
+                                         given reject reason.",
+                                        )?
+                                        .to_string(),
+                                ))
+                            } else {
+                                // This error can not happen if a valid error_schema is embedded
+                                // into the smart contract.
+                                Err(ServerError::NoMatchingErrorVariant.into())
+                            }
+                        }
+
+                        // This error can not happen if a valid error_schema is embedded into the
+                        // smart contract.
+                        Err(e) => Err(e.into()),
+                    }
+                }
+            }
+        }
+        // If the error is NOT caused by a smart contract logical revert, the `reject_reason` is
+        // already a human-readable error. No further decoding of the error is needed.
+        // An example of such a transaction is the error variant "OutOfEnergy".
+        _ => Ok(None),
+    }
 }
 
 #[tokio::main]
@@ -159,7 +282,7 @@ With the following configuration:
     Request timeout: {}
     Rate limit per account per hour: {}
     Path to sponsor keys: {:#?}
-    Sponsor account: {} 
+    Sponsor account: {}
         With initial nonce: {}
     Allowed accounts: {}
     Allowed contracts: {}
@@ -176,6 +299,18 @@ With the following configuration:
         app.allowed_contracts,
     );
 
+    let wasm_module = node_client
+        .get_module_source(
+            &ModuleReference::try_from(TRACK_AND_TRACE_MODULE_REF)?,
+            BlockIdentifier::LastFinal,
+        )
+        .await?;
+
+    let schema = utils::get_embedded_schema_v1(wasm_module.response.source.as_ref())?;
+
+    let permit_error_schema =
+        schema.get_receive_error_schema(TRACK_AND_TRACE_CONTRACT_NAME, "permit")?;
+
     let state = Server::new(
         node_client,
         keys,
@@ -183,6 +318,7 @@ With the following configuration:
         app.rate_limit_per_account_per_hour,
         app.allowed_accounts,
         app.allowed_contracts,
+        permit_error_schema,
     );
 
     let router = Router::new()
@@ -267,9 +403,64 @@ pub async fn handle_transaction(
         OwnedContractName::new(format!("init_{}", request.contract_name))?,
     );
 
-    let dry_run = contract_client
-        .dry_run_update::<_, ServerError>("permit", Amount::zero(), state.keys.address, &param)
-        .await?;
+    let dry_run = match contract_client
+        .dry_run_update("permit", Amount::zero(), state.keys.address, &param)
+        .await
+    {
+        Ok(dry_run) => dry_run,
+        Err(e) => match e {
+            ServerError::TransactionSimulationError(reject_reason) => {
+                match decode_reject_reason(reject_reason.clone(), state.permit_error_schema) {
+                    Ok(decoded_error) => {
+                        tracing::debug!(
+                            "Decoded reject reason during dry run of transaction: {:?}",
+                            decoded_error
+                        );
+
+                        match decoded_error {
+                            Some(decoded_error) => {
+                                return Err(ServerError::TransactionSimulationErrorDecoded(
+                                    decoded_error,
+                                    reject_reason,
+                                ));
+                            }
+                            None => {
+                                return Err(ServerError::TransactionSimulationError(reject_reason));
+                            }
+                        }
+                    }
+                    // This arm should not happen since we covered all possible `reject_reasons`
+                    // in the above `decode_reject_reason` function that could occure
+                    // when invoking the `permit` entrypoint of the `track_and_trace` contract.
+                    Err(e) => {
+                        return Err(ServerError::TransactionSimulationErrorNotDecoded(
+                            reject_reason,
+                            e,
+                        ));
+                    }
+                }
+            }
+            _ => {
+                return Err(e);
+            }
+        },
+    };
+
+    //    pub enum InvokeContractResult {
+    //     #[serde(rename = "success", rename_all = "camelCase")]
+    //     Success {
+    //         return_value: Option<ReturnValue>,
+    //         #[serde(deserialize_with = "contract_trace_via_events::deserialize")]
+    //         events:       Vec<ContractTraceElement>,
+    //         used_energy:  Energy,
+    //     },
+    //     #[serde(rename = "failure", rename_all = "camelCase")]
+    //     Failure {
+    //         return_value: Option<ReturnValue>,
+    //         reason:       RejectReason,
+    //         used_energy:  Energy,
+    //     },
+    // }
 
     // Get the current nonce for the backend wallet and lock it. This is necessary
     // since it is possible that API requests come in parallel. The nonce is

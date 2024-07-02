@@ -42,9 +42,9 @@ This will produce two binaries (`indexer` and `server`) in the `target/release` 
 
 # The `indexer` binary
 
-It is a tool for indexing event data from the track and trace contract into a postgres database. The database is configured with the tables from the file `../resources/schema.sql`. The monitored events `ItemStatusChangedEvent` and `ItemCreatedEvent` are indexed in their respective tables. A third table `settings` exists to store global configurations (e.g.: the contract address, latest block processed, and the genesis block hash). 
+It is a tool for indexing event data from the track and trace contract into a postgres database. The database is configured with the tables from the file `../resources/schema.sql`. The monitored events `ItemStatusChangedEvent` and `ItemCreatedEvent` are indexed in their respective tables. A third table `settings` exists to store global configurations (e.g.: the contract address, latest block processed, and the genesis block hash).
 
-The global configurations are set when the indexer is started for the first time. Re-starting the indexer will check if its current settings are compatible will the stored indexer settings to prevent corrupting the database. In addition, the settings can be queried by the front end to check compatibility. 
+The global configurations are set when the indexer is started for the first time. Re-starting the indexer will check if its current settings are compatible will the stored indexer settings to prevent corrupting the database. In addition, the settings can be queried by the front end to check compatibility.
 
 When the indexer is started for the first time, it will look up when the smart contract instance was created and use that block as the starting block. When the indexer is re-started with the same database settings, it resumes indexing from the `latest_processed_block_height+1` as stored in the database.
 
@@ -94,7 +94,7 @@ There are a few options to configure the server:
 
 The following option are also available, which are forwarded to the frontend:
 
-- `--node` specifies the gRPC interface of a Concordium node. (Defaults to `https://grpc.testnet.concordium.com:20000`) 
+- `--node` specifies the gRPC interface of a Concordium node. (Defaults to `https://grpc.testnet.concordium.com:20000`)
 
 - `--network` specifies the network to use, i.e., `mainnet` or `testnet`. Defaults to `testnet`.
 
