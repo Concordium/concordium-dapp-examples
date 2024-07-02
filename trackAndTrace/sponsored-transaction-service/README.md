@@ -45,7 +45,7 @@ cargo run --release -- \
 ```
 
 To get your account file (the `3PXwJYYPf6fyVb4GJquxSZU8puxrHfzc4XogdMVot8MUQK53tW.export` file in the above example), [export it from the Concordium Browser wallet for web](https://developer.concordium.software/en/mainnet/net/guides/export-key.html).
-This account should be only used for this service. No transactions should be sent from the account by any other means to ensure the account nonce is tracked 
+This account should be only used for this service. No transactions should be sent from the account by any other means to ensure the account nonce is tracked
 correctly in the service (e.g. don't use the `3PXwJYYPf6fyVb4GJquxSZU8puxrHfzc4XogdMVot8MUQK53tW` account in the browser wallet to send transactions via the front end).
 
 ## Using the service
@@ -55,7 +55,7 @@ The service is a simple server that exposes one endpoint
  - `POST /api/submitTransaction`
 
 The overall flow is that the user signs a sponsored message in the browser wallet (or mobile wallet via walletConnect) and sends the signature together with some input parameters to this service via the above endpoint.
-The service creates a sponsored transaction and submits it to the `permit` function in the provided smart contract. 
+The service creates a sponsored transaction and submits it to the `permit` function in the provided smart contract.
 The service returns the transaction hash to the frontend.
 This service has to have access to a blockchain node and an account (with its associated private key) that is funded with some CCD to submit the sponsored transaction to the chain.
 The sponsor account wallet will pay for the transaction fees.

@@ -1,13 +1,12 @@
 use axum::{extract::rejection::JsonRejection, http::StatusCode, Json};
 use chrono::{prelude::*, TimeDelta};
 use concordium_rust_sdk::{
+    base::contracts_common::schema::Type,
     endpoints::QueryError,
-    smart_contracts::{
-        common as concordium_std,
-        common::{
-            AccountAddress, AccountSignatures, ContractAddress, NewContractNameError,
-            NewReceiveNameError, OwnedEntrypointName, OwnedParameter, Serial, Timestamp,
-        },
+    smart_contracts::common::{
+        self as concordium_std, AccountAddress, AccountSignatures, ContractAddress,
+        NewContractNameError, NewReceiveNameError, OwnedEntrypointName, OwnedParameter, Serial,
+        Timestamp,
     },
     types::{smart_contracts::ExceedsParameterSize, Nonce, RejectReason, WalletAccount},
 };
@@ -39,8 +38,21 @@ pub enum ServerError {
     #[error("Unable to invoke the node to simulate the transaction: {0}.")]
     SimulationInvokeError(#[from] QueryError),
     /// The transaction simulation returned with a contract rejection.
-    #[error("Simulation of transaction rejected in smart contract with reason: {0:?}.")]
+    #[error("Simulation of transaction rejected in smart contract with reject reason: {0:?}.")]
     TransactionSimulationError(RejectReason),
+    /// The transaction simulation returned with a contract rejection. The error
+    /// was decoded into a human readable string.
+    #[error(
+        "Simulation of transaction rejected in smart contract with reject reason: {0:?}. {1:?}."
+    )]
+    TransactionSimulationErrorDecoded(String, RejectReason),
+    /// The transaction simulation returned with a contract rejection. The error
+    /// couldn't be decoded into a human readable string.
+    #[error(
+        "Simulation of transaction rejected in smart contract with reject reason: {0:?}. Decoding \
+         of error failed: {1:?}."
+    )]
+    TransactionSimulationErrorNotDecoded(RejectReason, anyhow::Error),
     /// The signer account has reached its rate limit.
     #[error(
         "The signer account reached its hourly rate limit of {rate_limit_per_account_per_hour} \
@@ -52,6 +64,13 @@ pub enum ServerError {
     /// Sending the transaction failed.
     #[error("Unable to submit transaction on chain successfully: {0}.")]
     SubmitSponsoredTransactionError(QueryError),
+    /// Decoding an error failed because no reject reason available.
+    #[error("No reject reason to decode the error.")]
+    NoRejectReason,
+    /// Decoding of reject reason failed because no matching error variant in
+    /// schema found.
+    #[error("No matching error variant in error schema found to decode reject reason.")]
+    NoMatchingErrorVariant,
     /// Deriving the alias account failed.
     #[error("Unable to derive alias account of signer.")]
     NoAliasAccount,
@@ -194,6 +213,8 @@ pub struct Server {
     pub allowed_accounts: AllowedAccounts,
     /// The allowed contracts.
     pub allowed_contracts: AllowedContracts,
+    /// Error schema of the permit entrypoint.
+    pub permit_error_schema: Type,
 }
 
 impl Server {
@@ -205,6 +226,7 @@ impl Server {
         rate_limit_per_account_per_hour: u16,
         allowed_accounts: AllowedAccounts,
         allowed_contracts: AllowedContracts,
+        permit_error_schema: Type,
     ) -> Self {
         Self {
             node_client,
@@ -215,6 +237,7 @@ impl Server {
             last_rate_limit_reset: Arc::new(Mutex::new(Utc::now())),
             allowed_accounts,
             allowed_contracts,
+            permit_error_schema,
         }
     }
 
