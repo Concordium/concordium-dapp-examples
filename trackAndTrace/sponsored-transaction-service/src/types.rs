@@ -1,7 +1,6 @@
 use axum::{extract::rejection::JsonRejection, http::StatusCode, Json};
 use chrono::{prelude::*, TimeDelta};
 use concordium_rust_sdk::{
-    base::contracts_common::schema::Type,
     endpoints::QueryError,
     smart_contracts::common::{
         self as concordium_std, AccountAddress, AccountSignatures, ContractAddress,
@@ -28,6 +27,15 @@ pub enum ServerError {
     /// The signature could not be parsed.
     #[error("Unable to parse signature into a hex string: {0}.")]
     SignatureError(#[from] FromHexError),
+    /// Unable to get the contract instance info from the chain.
+    #[error("Unable to get contract instane info: {0}.")]
+    GetContractInstanceInfo(QueryError),
+    /// No embedded schema found in the smart contract instance on chain.
+    #[error("No schema is embedded into the smart contract instance: {0}.")]
+    GetEmbeddedSchema(anyhow::Error),
+    /// No embedded error schema found for the `permit` entrypoint.
+    #[error("Can not get the permit error schema: {0}.")]
+    GetPermitErrorSchema(anyhow::Error),
     /// The signature does not have the right length.
     #[error("Unable to parse signature because it wasn't 64 bytes long.")]
     SignatureLengthError,
@@ -213,8 +221,6 @@ pub struct Server {
     pub allowed_accounts: AllowedAccounts,
     /// The allowed contracts.
     pub allowed_contracts: AllowedContracts,
-    /// Error schema of the permit entrypoint.
-    pub permit_error_schema: Type,
 }
 
 impl Server {
@@ -226,7 +232,6 @@ impl Server {
         rate_limit_per_account_per_hour: u16,
         allowed_accounts: AllowedAccounts,
         allowed_contracts: AllowedContracts,
-        permit_error_schema: Type,
     ) -> Self {
         Self {
             node_client,
@@ -237,7 +242,6 @@ impl Server {
             last_rate_limit_reset: Arc::new(Mutex::new(Utc::now())),
             allowed_accounts,
             allowed_contracts,
-            permit_error_schema,
         }
     }
 
