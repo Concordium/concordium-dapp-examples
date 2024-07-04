@@ -8,30 +8,22 @@ use axum::{
 };
 use clap::Parser;
 use concordium_rust_sdk::{
-    base::{
-        contracts_common::{schema::Type, Cursor},
-        hashes::ModuleReference,
-    },
+    base::contracts_common::Cursor,
     contract_client::ContractClient,
     smart_contracts::common::{
         AccountSignatures, Amount, CredentialSignatures, OwnedEntrypointName, Signature,
         SignatureEd25519,
     },
     types::{
-        hashes::TransactionHash, smart_contracts::OwnedContractName, RejectReason, WalletAccount,
+        hashes::TransactionHash, smart_contracts::OwnedContractName, ContractAddress, RejectReason,
+        WalletAccount,
     },
-    v2::BlockIdentifier,
+    v2::{BlockIdentifier, Client},
 };
 use concordium_smart_contract_engine::utils;
 use std::{collections::BTreeMap, path::PathBuf};
 use tonic::transport::ClientTlsConfig;
 use tower_http::cors::{AllowOrigin, CorsLayer};
-
-// TODO: get module reference and name from contract instance info.
-const TRACK_AND_TRACE_MODULE_REF: &str =
-    "7f24e586bb7dcac318ca0c2876d3e4b5c07f36d48d0c7b20f8d82dad0552f1e3";
-
-const TRACK_AND_TRACE_CONTRACT_NAME: &str = "track_and_trace";
 
 /// Structure used to receive the correct command line arguments.
 #[derive(clap::Parser, Debug)]
@@ -135,8 +127,10 @@ fn decode_concordium_std_error(reject_reason: i32) -> Option<String> {
 ///
 /// If the error is NOT caused by a smart contract logical revert, the
 /// `reject_reason` is already a human-readable error. No further decoding of
-/// the error is needed. An example of such a transaction is the error variant
-/// "OutOfEnergy". This function returns `None` in this case.
+/// the error is needed and as such this function returns `None`.
+/// An example of such a failure (rejected transaction) is the case when the
+/// transaction runs out of energy which is represented by the human-readable
+/// error variant "OutOfEnergy".
 ///
 /// If the error is caused by a smart contract logical revert coming from the
 /// `concordium-std` crate, this function decodes the error based on the error
@@ -145,9 +139,10 @@ fn decode_concordium_std_error(reject_reason: i32) -> Option<String> {
 /// If the error is caused by a smart contract logical revert coming from the
 /// smart contract itself, this function uses the embedded `error_schema` to
 /// decode the `reject_reason` into a human-readable error string.
-fn decode_reject_reason(
+async fn decode_reject_reason(
     reject_reason: RejectReason,
-    permit_error_schema: Type,
+    mut node_client: Client,
+    contract_address: ContractAddress,
 ) -> anyhow::Result<Option<String>> {
     match reject_reason {
         RejectReason::RejectedReceive {
@@ -164,6 +159,35 @@ fn decode_reject_reason(
                 // If the error does not originate from the `concordium-std` crate,
                 // try to decode the error using the `error_schema`.
                 None => {
+                    // We need to get the `permit_error_schema` from the smart contract instance
+                    // first.
+                    let contract_instance_info = node_client
+                        .get_instance_info(contract_address, BlockIdentifier::LastFinal)
+                        .await
+                        .map_err(ServerError::GetContractInstanceInfo)?;
+
+                    let contract_name = contract_instance_info.response.name();
+                    let module_reference = contract_instance_info.response.source_module();
+
+                    let wasm_module = node_client
+                        .get_module_source(&module_reference, BlockIdentifier::LastFinal)
+                        .await?;
+
+                    // TODO: needs to be more general.
+                    let schema =
+                        utils::get_embedded_schema_v1(wasm_module.response.source.as_ref())
+                            .map_err(ServerError::GetEmbeddedSchema)?;
+
+                    // We remove the 'init_' prefix from the contract name.
+                    let contract_name = &contract_name.to_string()[5..];
+
+                    let permit_error_schema = schema
+                        .get_receive_error_schema(contract_name, "permit")
+                        .map_err(|e| ServerError::GetPermitErrorSchema(e.into()))?;
+
+                    // TODO: Adjust the `contract_client` to expose the `return_value`. Use it
+                    // to cover the most general case without `Reject` trait.
+
                     // This conversion from `reject_reason_code` to `error_enum_tag` won't work in
                     // the most general case, but it works for smart contracts that derive the
                     // `Reject` trait on the error enum.
@@ -299,18 +323,6 @@ With the following configuration:
         app.allowed_contracts,
     );
 
-    let wasm_module = node_client
-        .get_module_source(
-            &ModuleReference::try_from(TRACK_AND_TRACE_MODULE_REF)?,
-            BlockIdentifier::LastFinal,
-        )
-        .await?;
-
-    let schema = utils::get_embedded_schema_v1(wasm_module.response.source.as_ref())?;
-
-    let permit_error_schema =
-        schema.get_receive_error_schema(TRACK_AND_TRACE_CONTRACT_NAME, "permit")?;
-
     let state = Server::new(
         node_client,
         keys,
@@ -318,7 +330,6 @@ With the following configuration:
         app.rate_limit_per_account_per_hour,
         app.allowed_accounts,
         app.allowed_contracts,
-        permit_error_schema,
     );
 
     let router = Router::new()
@@ -410,7 +421,15 @@ pub async fn handle_transaction(
         Ok(dry_run) => dry_run,
         Err(e) => match e {
             ServerError::TransactionSimulationError(reject_reason) => {
-                match decode_reject_reason(reject_reason.clone(), state.permit_error_schema) {
+                let node_client = state.node_client.clone();
+
+                match decode_reject_reason(
+                    reject_reason.clone(),
+                    node_client,
+                    request.contract_address,
+                )
+                .await
+                {
                     Ok(decoded_error) => {
                         tracing::debug!(
                             "Decoded reject reason during dry run of transaction: {:?}",
