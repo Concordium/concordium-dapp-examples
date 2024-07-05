@@ -51,7 +51,7 @@ struct App {
         default_value = "http://localhost:20000",
         env = "NODE"
     )]
-    endpoint: v2::Endpoint,
+    endpoint: tonic::transport::Endpoint,
     #[clap(
         long = "log-level",
         default_value = "info",
