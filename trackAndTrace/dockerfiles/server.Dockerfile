@@ -6,15 +6,15 @@ ARG NODE_IMAGE=node:18-slim
 # Build frontend
 FROM ${NODE_IMAGE} AS frontend
 WORKDIR /frontend
-COPY ./frontend ./
+COPY ./trackAndTrace/frontend ./
 RUN yarn
 RUN yarn build
 
 # Build server
 FROM ${RUST_IMAGE} AS server
-COPY ./smart-contract ./smart-contract
+COPY ./trackAndTrace/smart-contract ./smart-contract
 WORKDIR /server
-COPY ./indexer ./
+COPY ./trackAndTrace/indexer ./
 RUN cargo build --release
 
 FROM debian:bookworm

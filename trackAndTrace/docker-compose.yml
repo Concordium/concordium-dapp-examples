@@ -11,8 +11,8 @@ version: '3.8'
 services:
   sponsored-transaction-service:
     build:
-      context: .
-      dockerfile: ./dockerfiles/sponsored-transaction-service.Dockerfile
+      context: ../
+      dockerfile: ./trackAndTrace/dockerfiles/sponsored-transaction-service.Dockerfile
     restart: always
     ports:
       - 8000:8000
@@ -27,8 +27,8 @@ services:
 
   server:
     build:
-      context: .
-      dockerfile: ./dockerfiles/server.Dockerfile
+      context: ../
+      dockerfile: ./trackAndTrace/dockerfiles/server.Dockerfile
     restart: always
     environment:
       CCD_SERVER_DB_CONNECTION: "host=postgres dbname=indexer user=postgres password=password port=5432"
@@ -44,8 +44,8 @@ services:
 
   indexer:
     build:
-      context: .
-      dockerfile: ./dockerfiles/indexer.Dockerfile
+      context: ../
+      dockerfile: ./trackAndTrace/dockerfiles/indexer.Dockerfile
     restart: always
     environment:
       CCD_INDEXER_CONTRACT: ${TRACK_AND_TRACE_CONTRACT_ADDRESS:?Please specify the Track and Trace contract instance address (format <1234,0>)}
