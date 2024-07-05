@@ -4,14 +4,16 @@ use crate::handlers::*;
 use crate::types::*;
 use anyhow::Context;
 use clap::Parser;
-use concordium_rust_sdk::common::{self as crypto_common};
-use concordium_rust_sdk::types::WalletAccount;
+use concordium_rust_sdk::{
+    common::{self as crypto_common},
+    types::WalletAccount,
+    v2::Scheme,
+};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tonic::transport::ClientTlsConfig;
-use warp::http;
 use warp::Filter;
 
 /// Structure used to receive the correct command line arguments.
@@ -24,7 +26,7 @@ struct IdVerifierConfig {
         help = "GRPC V2 interface of the node.",
         default_value = "http://localhost:20000"
     )]
-    endpoint: concordium_rust_sdk::v2::Endpoint,
+    endpoint: tonic::transport::Endpoint,
     #[clap(
         long = "port",
         default_value = "8100",
@@ -65,7 +67,7 @@ async fn main() -> anyhow::Result<()> {
         .endpoint
         .uri()
         .scheme()
-        .map_or(false, |x| x == &http::uri::Scheme::HTTPS)
+        .map_or(false, |x| x == &Scheme::HTTPS)
     {
         app.endpoint.tls_config(ClientTlsConfig::new())?
     } else {

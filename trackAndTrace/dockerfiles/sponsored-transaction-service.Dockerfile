@@ -5,6 +5,7 @@ ARG RUST_IMAGE=rust:1.74-bookworm
 # Build service
 FROM ${RUST_IMAGE} as build
 COPY ./sponsored-transaction-service ./
+COPY ./deps/concordium-rust-sdk /deps/concordium-rust-sdk
 RUN cargo build --release
 
 FROM debian:bookworm

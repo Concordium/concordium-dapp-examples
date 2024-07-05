@@ -1,10 +1,10 @@
 use crate::crypto_common::base16_encode_string;
 use crate::types::*;
 use concordium_rust_sdk::{
-    common::{self as crypto_common},
+    common as crypto_common,
     id::{
         constants::{ArCurve, AttributeKind},
-        id_proof_types::Statement,
+        id_proof_types::{ProofVersion, Statement},
         types::{AccountAddress, AccountCredentialWithoutProofs},
     },
     v2::BlockIdentifier,
@@ -218,11 +218,12 @@ async fn check_proof_worker(
         .map_err(|_| InjectStatementError::LockingError)?;
 
     if statement.verify(
+        ProofVersion::Version2,
         &request.challenge.0,
         &state.global_context,
         cred_id.as_ref(),
         commitments,
-        &request.proof.proof.value, // TODO: Check version.
+        &request.proof.proof.value,
     ) {
         challenges.remove(&base16_encode_string(&request.challenge.0));
         let token = Uuid::new_v4();

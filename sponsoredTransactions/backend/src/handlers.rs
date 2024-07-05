@@ -165,7 +165,7 @@ pub async fn submit_transaction(
         amount: Amount::zero(),
         method: receive_name.clone(),
         parameter: parameter.clone(),
-        energy: Energy { energy: ENERGY },
+        energy: Some(Energy { energy: ENERGY }),
     };
 
     let info = client
