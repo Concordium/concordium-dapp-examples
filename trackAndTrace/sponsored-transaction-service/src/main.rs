@@ -20,7 +20,7 @@ use concordium_rust_sdk::{
     },
     v2::{BlockIdentifier, Client},
 };
-use concordium_smart_contract_engine::utils;
+use concordium_smart_contract_engine::utils::{self, WasmVersion};
 use std::{collections::BTreeMap, path::PathBuf};
 use tonic::transport::ClientTlsConfig;
 use tower_http::cors::{AllowOrigin, CorsLayer};
@@ -171,12 +171,19 @@ async fn decode_reject_reason(
 
                     let wasm_module = node_client
                         .get_module_source(&module_reference, BlockIdentifier::LastFinal)
-                        .await?;
+                        .await?
+                        .response;
 
-                    // TODO: needs to be more general.
-                    let schema =
-                        utils::get_embedded_schema_v1(wasm_module.response.source.as_ref())
-                            .map_err(ServerError::GetEmbeddedSchema)?;
+                    let schema = match wasm_module.version {
+                        WasmVersion::V0 => {
+                            utils::get_embedded_schema_v0(wasm_module.source.as_ref())
+                                .map_err(ServerError::GetEmbeddedSchema)?
+                        }
+                        WasmVersion::V1 => {
+                            utils::get_embedded_schema_v1(wasm_module.source.as_ref())
+                                .map_err(ServerError::GetEmbeddedSchema)?
+                        }
+                    };
 
                     // We remove the 'init_' prefix from the contract name.
                     let contract_name = &contract_name.to_string()[5..];
