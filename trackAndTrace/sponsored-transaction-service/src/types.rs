@@ -1,6 +1,7 @@
 use axum::{extract::rejection::JsonRejection, http::StatusCode, Json};
 use chrono::{prelude::*, TimeDelta};
 use concordium_rust_sdk::{
+    contract_client::RejectReasonDecodeError,
     endpoints::QueryError,
     smart_contracts::common::{
         self as concordium_std, AccountAddress, AccountSignatures, ContractAddress,
@@ -27,40 +28,34 @@ pub enum ServerError {
     /// The signature could not be parsed.
     #[error("Unable to parse signature into a hex string: {0}.")]
     SignatureError(#[from] FromHexError),
-    /// Unable to get the contract instance info from the chain.
-    #[error("Unable to get contract instane info: {0}.")]
-    GetContractInstanceInfo(QueryError),
-    /// No embedded schema found in the smart contract instance on chain.
-    #[error("No schema is embedded into the smart contract instance: {0}.")]
-    GetEmbeddedSchema(anyhow::Error),
-    /// No embedded error schema found for the `permit` entrypoint.
-    #[error("Can not get the permit error schema: {0}.")]
-    GetPermitErrorSchema(anyhow::Error),
+    ///
+    #[error("Network error: {0}")]
+    NetworkError(#[from] QueryError),
     /// The signature does not have the right length.
     #[error("Unable to parse signature because it wasn't 64 bytes long.")]
     SignatureLengthError,
     /// The parameter exceeds the length limit.
     #[error("The parameter exceeds the size limit: {0}")]
     ParameterError(#[from] ExceedsParameterSize),
-    /// The transaction simulation failed because the node couldn't be reached.
-    #[error("Unable to invoke the node to simulate the transaction: {0}.")]
-    SimulationInvokeError(#[from] QueryError),
+    /// The parameter exceeds the length limit.
+    #[error("The parameter exceeds the size limit: {0}")]
+    RejectReasonDecodeError(#[from] RejectReasonDecodeError),
+
     /// The transaction simulation returned with a contract rejection.
     #[error("Simulation of transaction rejected in smart contract with reject reason: {0:?}.")]
     TransactionSimulationError(RejectReason),
-    /// The transaction simulation returned with a contract rejection. The error
-    /// was decoded into a human readable string.
+    /// The transaction simulation returned with a contract rejection.
+    #[error("Simulation of transaction rejected in smart contract with reject reason: {0:?}.")]
+    TransactionSimulationAnyhowError(anyhow::Error),
+    /// The transaction simulation returned with a contract rejection.
     #[error(
-        "Simulation of transaction rejected in smart contract with reject reason: {0:?}. {1:?}."
+        "Simulation of transaction rejected in smart contract with decoded reject reason: {0:?} \
+         derived from: {1:?}."
     )]
-    TransactionSimulationErrorDecoded(String, RejectReason),
-    /// The transaction simulation returned with a contract rejection. The error
-    /// couldn't be decoded into a human readable string.
-    #[error(
-        "Simulation of transaction rejected in smart contract with reject reason: {0:?}. Decoding \
-         of error failed: {1:?}."
-    )]
-    TransactionSimulationErrorNotDecoded(RejectReason, anyhow::Error),
+    TransactionSimulationRejectedTransaction(String, RejectReason),
+    /// Thasdfdsafs.
+    #[error("Siasdfdsafdsafason: {0:?}")]
+    FailedToCreateContractClient(anyhow::Error),
     /// The signer account has reached its rate limit.
     #[error(
         "The signer account reached its hourly rate limit of {rate_limit_per_account_per_hour} \
@@ -72,13 +67,6 @@ pub enum ServerError {
     /// Sending the transaction failed.
     #[error("Unable to submit transaction on chain successfully: {0}.")]
     SubmitSponsoredTransactionError(QueryError),
-    /// Decoding an error failed because no reject reason available.
-    #[error("No reject reason to decode the error.")]
-    NoRejectReason,
-    /// Decoding of reject reason failed because no matching error variant in
-    /// schema found.
-    #[error("No matching error variant in error schema found to decode reject reason.")]
-    NoMatchingErrorVariant,
     /// Deriving the alias account failed.
     #[error("Unable to derive alias account of signer.")]
     NoAliasAccount,
@@ -105,16 +93,6 @@ impl axum::response::IntoResponse for ServerError {
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     Json(format!("Unable to create parameter because: {error}")),
-                )
-            }
-            ServerError::SimulationInvokeError(error) => {
-                tracing::error!("Internal error: {error}.");
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(
-                        "An internal error occured while simulating the contract update."
-                            .to_string(),
-                    ),
                 )
             }
             ServerError::SubmitSponsoredTransactionError(error) => {
