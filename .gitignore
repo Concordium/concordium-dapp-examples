@@ -20,6 +20,7 @@ node_modules
 .env.production.local
 .yarn
 .vite
+/**/.vscode
 
 npm-debug.log*
 yarn-debug.log*
@@ -31,5 +32,5 @@ dist
 gallery/public
 .eslintcache
 
-# Key files exported from the Concordium browser wallet 
+# Key files exported from the Concordium browser wallet
 */**/*.export

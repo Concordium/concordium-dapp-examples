@@ -2598,7 +2598,6 @@ dependencies = [
  "chrono",
  "clap",
  "concordium-rust-sdk",
- "concordium-smart-contract-engine",
  "futures",
  "hex",
  "http 1.1.0",
