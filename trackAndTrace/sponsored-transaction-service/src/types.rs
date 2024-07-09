@@ -28,34 +28,32 @@ pub enum ServerError {
     /// The signature could not be parsed.
     #[error("Unable to parse signature into a hex string: {0}.")]
     SignatureError(#[from] FromHexError),
-    ///
-    #[error("Network error: {0}")]
-    NetworkError(#[from] QueryError),
     /// The signature does not have the right length.
     #[error("Unable to parse signature because it wasn't 64 bytes long.")]
     SignatureLengthError,
     /// The parameter exceeds the length limit.
-    #[error("The parameter exceeds the size limit: {0}")]
+    #[error("The parameter exceeds the length limit: {0}")]
     ParameterError(#[from] ExceedsParameterSize),
-    /// The parameter exceeds the length limit.
-    #[error("The parameter exceeds the size limit: {0}")]
+    /// The transaction reverted during the simulation but the reject reason
+    /// could not be decoded.
+    #[error("The reject reason of the reverted transaction could not be decoded: {0}")]
     RejectReasonDecodeError(#[from] RejectReasonDecodeError),
-
     /// The transaction simulation returned with a contract rejection.
     #[error("Simulation of transaction rejected in smart contract with reject reason: {0:?}.")]
     TransactionSimulationError(RejectReason),
-    /// The transaction simulation returned with a contract rejection.
-    #[error("Simulation of transaction rejected in smart contract with reject reason: {0:?}.")]
-    TransactionSimulationAnyhowError(anyhow::Error),
-    /// The transaction simulation returned with a contract rejection.
+    /// The transaction simulation returned with a contract rejection and a
+    /// decoded reject reason.
     #[error(
         "Simulation of transaction rejected in smart contract with decoded reject reason: {0:?} \
          derived from: {1:?}."
     )]
     TransactionSimulationRejectedTransaction(String, RejectReason),
-    /// Thasdfdsafs.
-    #[error("Siasdfdsafdsafason: {0:?}")]
-    FailedToCreateContractClient(anyhow::Error),
+    /// The contract client could not be created because of a network error.
+    #[error("Failed to create contract client: {0:?}")]
+    FailedToCreateContractClient(QueryError),
+    /// Querring the node failed due to a network error.
+    #[error("Failed querrying the node due to a network error: {0}")]
+    NetworkError(#[from] QueryError),
     /// The signer account has reached its rate limit.
     #[error(
         "The signer account reached its hourly rate limit of {rate_limit_per_account_per_hour} \
@@ -95,12 +93,38 @@ impl axum::response::IntoResponse for ServerError {
                     Json(format!("Unable to create parameter because: {error}")),
                 )
             }
+            ServerError::RejectReasonDecodeError(error) => {
+                tracing::error!("Internal error: {error}");
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(
+                        "An internal error occurred while decoding the reject reason.".to_string(),
+                    ),
+                )
+            }
+            ServerError::NetworkError(error) => {
+                tracing::error!("Internal error: {error}");
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json("An internal error occurred while querying the node.".to_string()),
+                )
+            }
+            ServerError::FailedToCreateContractClient(error) => {
+                tracing::error!("Internal error: {error}");
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(
+                        "An internal error occurred while creating the contract client."
+                            .to_string(),
+                    ),
+                )
+            }
             ServerError::SubmitSponsoredTransactionError(error) => {
                 tracing::error!("Internal error: {error}.");
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     Json(
-                        "An internal error occured while submitting the contract update."
+                        "An internal error occurred while submitting the contract update."
                             .to_string(),
                     ),
                 )
