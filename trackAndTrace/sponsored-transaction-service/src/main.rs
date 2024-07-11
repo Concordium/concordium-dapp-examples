@@ -281,7 +281,7 @@ pub async fn handle_transaction(
                 match rejected_transaction.decoded_reason {
                     Some(decoded_reason) => {
                         Err(ServerError::TransactionSimulationRejectedTransaction(
-                            decoded_reason,
+                            ErrorSchema(decoded_reason),
                             rejected_transaction.reason,
                         ))
                     }
