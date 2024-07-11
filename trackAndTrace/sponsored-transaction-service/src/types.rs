@@ -1,7 +1,6 @@
 use axum::{extract::rejection::JsonRejection, http::StatusCode, Json};
 use chrono::{prelude::*, TimeDelta};
 use concordium_rust_sdk::{
-    contract_client::RejectReasonDecodeError,
     endpoints::QueryError,
     smart_contracts::common::{
         self as concordium_std, AccountAddress, AccountSignatures, ContractAddress,
@@ -11,6 +10,7 @@ use concordium_rust_sdk::{
     types::{smart_contracts::ExceedsParameterSize, Nonce, RejectReason, WalletAccount},
 };
 use hex::FromHexError;
+use serde_json::Value;
 use std::{
     collections::{BTreeSet, HashMap},
     fmt,
@@ -18,6 +18,36 @@ use std::{
     sync::Arc,
 };
 use tokio::sync::Mutex;
+
+/// Define a newtype wrapper around the error schema type.
+#[derive(Debug)]
+pub struct ErrorSchema(pub Value);
+
+/// Write a custom display implementation for the error schema type.
+/// This displays nested errors meaningfully.
+impl std::fmt::Display for ErrorSchema {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match &self.0 {
+            Value::Object(map) => {
+                if let Some(key) = map.keys().next() {
+                    write!(f, "{}", key)?;
+                    if let Some(value) = map.values().next() {
+                        if value.is_array() {
+                            write!(f, "{}", ErrorSchema(value.clone()))?;
+                        }
+                    }
+                }
+            }
+            Value::Array(arr) => {
+                if let Some(value) = arr.iter().next() {
+                    write!(f, "::{}", ErrorSchema(value.clone()))?;
+                }
+            }
+            _ => write!(f, "{}", self.0)?,
+        }
+        Ok(())
+    }
+}
 
 #[derive(Debug, thiserror::Error)]
 /// Errors that can occur in the server.
@@ -34,20 +64,16 @@ pub enum ServerError {
     /// The parameter exceeds the length limit.
     #[error("The parameter exceeds the length limit: {0}")]
     ParameterError(#[from] ExceedsParameterSize),
-    /// The transaction reverted during the simulation but the reject reason
-    /// could not be decoded.
-    #[error("The reject reason of the reverted transaction could not be decoded: {0}")]
-    RejectReasonDecodeError(#[from] RejectReasonDecodeError),
     /// The transaction simulation returned with a contract rejection.
     #[error("Simulation of transaction rejected in smart contract with reject reason: {0:?}.")]
     TransactionSimulationError(RejectReason),
     /// The transaction simulation returned with a contract rejection and a
     /// decoded reject reason.
     #[error(
-        "Simulation of transaction rejected in smart contract with decoded reject reason: {0:?} \
+        "Simulation of transaction rejected in smart contract with decoded reject reason: `{0}` \
          derived from: {1:?}."
     )]
-    TransactionSimulationRejectedTransaction(String, RejectReason),
+    TransactionSimulationRejectedTransaction(ErrorSchema, RejectReason),
     /// The contract client could not be created because of a network error.
     #[error("Failed to create contract client: {0:?}")]
     FailedToCreateContractClient(QueryError),
@@ -91,15 +117,6 @@ impl axum::response::IntoResponse for ServerError {
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     Json(format!("Unable to create parameter because: {error}")),
-                )
-            }
-            ServerError::RejectReasonDecodeError(error) => {
-                tracing::error!("Internal error: {error}");
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(
-                        "An internal error occurred while decoding the reject reason.".to_string(),
-                    ),
                 )
             }
             ServerError::NetworkError(error) => {
