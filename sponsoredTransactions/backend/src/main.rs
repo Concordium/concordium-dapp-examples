@@ -7,6 +7,7 @@ use clap::Parser;
 use concordium_rust_sdk::{
     common::{self as crypto_common},
     types::WalletAccount,
+    v2::Endpoint,
     v2::Scheme,
 };
 use std::collections::HashMap;
@@ -26,7 +27,7 @@ struct IdVerifierConfig {
         help = "GRPC V2 interface of the node.",
         default_value = "http://localhost:20000"
     )]
-    endpoint: tonic::transport::Endpoint,
+    endpoint: Endpoint,
     #[clap(
         long = "port",
         default_value = "8100",

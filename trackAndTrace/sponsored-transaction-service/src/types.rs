@@ -1,6 +1,7 @@
 use axum::{extract::rejection::JsonRejection, http::StatusCode, Json};
 use chrono::{prelude::*, TimeDelta};
 use concordium_rust_sdk::{
+    contract_client::DecodedReason,
     endpoints::QueryError,
     smart_contracts::common::{
         self as concordium_std, AccountAddress, AccountSignatures, ContractAddress,
@@ -10,7 +11,6 @@ use concordium_rust_sdk::{
     types::{smart_contracts::ExceedsParameterSize, Nonce, RejectReason, WalletAccount},
 };
 use hex::FromHexError;
-use serde_json::Value;
 use std::{
     collections::{BTreeSet, HashMap},
     fmt,
@@ -18,36 +18,6 @@ use std::{
     sync::Arc,
 };
 use tokio::sync::Mutex;
-
-/// Define a newtype wrapper around the error schema type.
-#[derive(Debug)]
-pub struct ErrorSchema(pub Value);
-
-/// Write a custom display implementation for the error schema type.
-/// This displays nested errors meaningfully.
-impl std::fmt::Display for ErrorSchema {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match &self.0 {
-            Value::Object(map) => {
-                if let Some(key) = map.keys().next() {
-                    write!(f, "{}", key)?;
-                    if let Some(value) = map.values().next() {
-                        if value.is_array() {
-                            write!(f, "{}", ErrorSchema(value.clone()))?;
-                        }
-                    }
-                }
-            }
-            Value::Array(arr) => {
-                if let Some(value) = arr.iter().next() {
-                    write!(f, "::{}", ErrorSchema(value.clone()))?;
-                }
-            }
-            _ => write!(f, "{}", self.0)?,
-        }
-        Ok(())
-    }
-}
 
 #[derive(Debug, thiserror::Error)]
 /// Errors that can occur in the server.
@@ -73,7 +43,7 @@ pub enum ServerError {
         "Simulation of transaction rejected in smart contract with decoded reject reason: `{0}` \
          derived from: {1:?}."
     )]
-    TransactionSimulationRejectedTransaction(ErrorSchema, RejectReason),
+    TransactionSimulationRejectedTransaction(DecodedReason, RejectReason),
     /// The contract client could not be created because of a network error.
     #[error("Failed to create contract client: {0:?}")]
     FailedToCreateContractClient(QueryError),
