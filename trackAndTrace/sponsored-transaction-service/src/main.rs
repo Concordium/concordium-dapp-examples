@@ -273,25 +273,20 @@ pub async fn handle_transaction(
             state.keys.address,
             &param,
         )
-        .await
+        .await?
     {
-        Ok(invoke_contract_result) => match invoke_contract_result {
-            InvokeContractOutcome::Success(dry_run) => Ok(dry_run),
-            InvokeContractOutcome::Failure(rejected_transaction) => {
-                match rejected_transaction.decoded_reason {
-                    Some(decoded_reason) => {
-                        Err(ServerError::TransactionSimulationRejectedTransaction(
-                            ErrorSchema(decoded_reason),
-                            rejected_transaction.reason,
-                        ))
-                    }
-                    None => Err(ServerError::TransactionSimulationError(
-                        rejected_transaction.reason,
-                    )),
-                }
-            }?,
-        },
-        Err(e) => Err(e),
+        InvokeContractOutcome::Success(dry_run) => Ok(dry_run),
+        InvokeContractOutcome::Failure(rejected_transaction) => {
+            match rejected_transaction.decoded_reason {
+                Some(decoded_reason) => Err(ServerError::TransactionSimulationRejectedTransaction(
+                    decoded_reason,
+                    rejected_transaction.reason,
+                )),
+                None => Err(ServerError::TransactionSimulationError(
+                    rejected_transaction.reason,
+                )),
+            }
+        }
     }?;
 
     // Get the current nonce for the backend wallet and lock it. This is necessary

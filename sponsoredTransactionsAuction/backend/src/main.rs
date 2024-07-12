@@ -21,7 +21,7 @@ use concordium_rust_sdk::{
         smart_contracts::{ContractContext, InvokeContractResult, OwnedReceiveName},
         transactions, Energy, WalletAccount,
     },
-    v2::{self, BlockIdentifier},
+    v2::{self, BlockIdentifier, Endpoint},
 };
 use std::{
     collections::{BTreeMap, HashMap},
@@ -51,7 +51,7 @@ struct App {
         default_value = "http://localhost:20000",
         env = "NODE"
     )]
-    endpoint: tonic::transport::Endpoint,
+    endpoint: Endpoint,
     #[clap(
         long = "log-level",
         default_value = "info",
