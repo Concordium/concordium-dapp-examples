@@ -11,17 +11,13 @@ use clap::Parser;
 use concordium_rust_sdk::{
     cis2::{AdditionalData, Receiver, Transfer},
     common::types::TransactionTime,
+    contract_client::{ContractClient, InvokeContractOutcome},
     smart_contracts::common::{
         to_bytes, AccountSignatures, Address, Amount, ContractAddress, CredentialSignatures,
         OwnedEntrypointName, Signature, SignatureEd25519,
     },
-    types::{
-        hashes::TransactionHash,
-        smart_contracts,
-        smart_contracts::{ContractContext, InvokeContractResult, OwnedReceiveName},
-        transactions, Energy, WalletAccount,
-    },
-    v2::{self, BlockIdentifier, Endpoint},
+    types::{hashes::TransactionHash, smart_contracts::OwnedReceiveName, Energy, WalletAccount},
+    v2::{self, Endpoint},
 };
 use std::{
     collections::{BTreeMap, HashMap},
@@ -37,9 +33,7 @@ use tower_http::services::ServeDir;
 // allow an additional small amount of energy `EPSILON_ENERGY` to be consumed by
 // the transaction to cover small variations (e.g. changes to the smart contract
 // state) caused by transactions that have been executed meanwhile.
-const EPSILON_ENERGY: u64 = 1000;
-const CONTRACT_NAME: &str = "cis2_multi";
-const ENERGY: u64 = 60000;
+const EPSILON_ENERGY: Energy = Energy { energy: 1000 };
 const RATE_LIMIT_PER_ACCOUNT: u8 = 30;
 
 #[derive(clap::Parser, Debug)]
@@ -216,7 +210,7 @@ async fn main() -> anyhow::Result<()> {
 
 #[tracing::instrument(level = "info", skip_all)]
 async fn handle_signature_bid(
-    State(mut state): State<Server>,
+    State(state): State<Server>,
     request: Result<Json<BidParams>, JsonRejection>,
 ) -> Result<Json<TransactionHash>, ServerError> {
     let Json(request) = request?;
@@ -272,63 +266,33 @@ async fn handle_signature_bid(
         signer: request.signer,
     };
 
-    let parameter = smart_contracts::OwnedParameter::from_serial(&param)
-        .map_err(|_| ServerError::ParameterError)?;
+    let mut contract_client =
+        ContractClient::<()>::create(state.node_client.clone(), state.cis2_token_smart_contract)
+            .await
+            .map_err(ServerError::FailedToCreateContractClient)?;
 
-    tracing::debug!("Created {:?}", parameter);
-
-    let payload = transactions::UpdateContractPayload {
-        amount:       Amount::zero(),
-        address:      state.cis2_token_smart_contract,
-        receive_name: smart_contracts::OwnedReceiveName::new_unchecked(format!(
-            "{}.permit",
-            CONTRACT_NAME
-        )),
-        message:      parameter,
-    };
-
-    let context = ContractContext::new_from_payload(
-        state.key.address,
-        Energy { energy: ENERGY },
-        payload.clone(),
-    );
-
-    let info = state
-        .node_client
-        .invoke_instance(&BlockIdentifier::Best, &context)
-        .await;
-
-    let info = match info {
-        Ok(info) => info,
-        Err(e) => {
-            tracing::warn!("SimulationInvokeError {e}.");
-            return Err(ServerError::SimulationInvokeError(e));
+    let dry_run = match contract_client
+        .dry_run_update_with_reject_reason_info::<types::PermitParam, ServerError>(
+            "permit",
+            Amount::zero(),
+            state.key.address,
+            &param,
+        )
+        .await?
+    {
+        InvokeContractOutcome::Success(dry_run) => Ok(dry_run),
+        InvokeContractOutcome::Failure(rejected_transaction) => {
+            match rejected_transaction.decoded_reason {
+                Some(decoded_reason) => Err(ServerError::TransactionSimulationRejectedTransaction(
+                    decoded_reason,
+                    rejected_transaction.reason,
+                )),
+                None => Err(ServerError::TransactionSimulationError(
+                    rejected_transaction.reason,
+                )),
+            }
         }
-    };
-
-    let used_energy = match info.response {
-        InvokeContractResult::Success {
-            return_value: _,
-            events: _,
-            used_energy,
-        } => {
-            tracing::debug!(
-                "TransactionSimulationSuccess with used energy: {:#?}.",
-                used_energy
-            );
-            used_energy
-        }
-        InvokeContractResult::Failure {
-            return_value: _,
-            reason,
-            used_energy: _,
-        } => {
-            tracing::warn!("TransactionSimulationError with reason: {:#?}.", reason);
-            return Err(ServerError::TransactionSimulationError(RevertReason {
-                reason,
-            }));
-        }
-    };
+    }?;
 
     // Transaction should expiry after one hour.
     let transaction_expiry = TransactionTime::hours_after(1);
@@ -373,35 +337,19 @@ async fn handle_signature_bid(
 
     *limit += 1;
 
-    let tx = transactions::send::make_and_sign_transaction(
-        &state.key.keys,
-        state.key.address,
-        *nonce,
-        transaction_expiry,
-        // We add a small amount of energy `EPSILON_ENERGY` to the previously simulated
-        // `used_energy` to cover variations (e.g. smart contract state changes) caused by
-        // transactions that have been executed meanwhile.
-        concordium_rust_sdk::types::transactions::send::GivenEnergy::Add(
-            used_energy + Energy::from(EPSILON_ENERGY),
-        ),
-        concordium_rust_sdk::types::transactions::Payload::Update { payload },
-    );
+    let tx_hash = dry_run
+        .nonce(*nonce)
+        .extra_energy(EPSILON_ENERGY)
+        .expiry(transaction_expiry)
+        .send(&state.key.keys)
+        .await
+        .map_err(ServerError::SubmitSponsoredTransactionError)?
+        .hash();
 
-    let bi = transactions::BlockItem::AccountTransaction(tx);
+    tracing::debug!("Submitted transaction {} ...", tx_hash);
 
-    match state.node_client.send_block_item(&bi).await {
-        Ok(hash) => {
-            tracing::debug!("Submit transaction {} ...", hash);
-
-            *nonce = nonce.next();
-
-            Ok(hash.into())
-        }
-        Err(e) => {
-            tracing::warn!("SubmitSponsoredTransactionError {e}.");
-            Err(ServerError::SubmitSponsoredTransactionError(e))
-        }
-    }
+    *nonce = nonce.next();
+    Ok(tx_hash.into())
 }
 
 #[derive(serde::Serialize)]

@@ -1,15 +1,14 @@
 use axum::{extract::rejection::JsonRejection, Json};
 use concordium_rust_sdk::{
+    base::{contracts_common::NewReceiveNameError, smart_contracts::ExceedsParameterSize},
     cis2::{TokenAmount, TokenId, Transfer},
-    smart_contracts::{
-        common as concordium_std,
-        common::{
-            AccountAddress, AccountSignatures, ContractAddress, OwnedEntrypointName, Serial,
-            Timestamp,
-        },
+    contract_client::DecodedReason,
+    smart_contracts::common::{
+        self as concordium_std, AccountAddress, AccountSignatures, ContractAddress,
+        OwnedEntrypointName, Serial, Timestamp,
     },
     types::{Nonce, RejectReason, WalletAccount},
-    v2::{self, QueryError, RPCError},
+    v2::{self, QueryError},
 };
 use hex::FromHexError;
 use http::StatusCode;
@@ -24,42 +23,51 @@ pub enum ServerError {
     SignatureError(#[from] FromHexError),
     #[error("Unable to parse signature because it wasn't 64 bytes long.")]
     SignatureLengthError,
-    #[error("Unable to create parameter.")]
-    ParameterError,
     #[error("Unable to invoke the node to simulate the transaction: {0}.")]
     SimulationInvokeError(#[from] QueryError),
     #[error("Simulation of transaction reverted in smart contract with reason: {0:?}.")]
-    TransactionSimulationError(RevertReason),
+    TransactionSimulationError(RejectReason),
     #[error("The signer account reached its rate limit.")]
     RateLimitError,
     #[error("Unable to submit transaction on chain successfully: {0}.")]
-    SubmitSponsoredTransactionError(#[from] RPCError),
+    SubmitSponsoredTransactionError(QueryError),
     #[error("Unable to derive alias account of signer.")]
     NoAliasAccount,
+    #[error(
+        "Simulation of transaction rejected in smart contract with decoded reject reason: `{0}` \
+         derived from: {1:?}."
+    )]
+    TransactionSimulationRejectedTransaction(DecodedReason, RejectReason),
+    #[error("Failed to create contract client: {0:?}")]
+    FailedToCreateContractClient(QueryError),
+    #[error("Invalid receive name: {0}")]
+    ReceiveNameError(#[from] NewReceiveNameError),
+    #[error("The parameter exceeds the length limit: {0}")]
+    ParameterSizeError(#[from] ExceedsParameterSize),
 }
 
 impl axum::response::IntoResponse for ServerError {
     fn into_response(self) -> axum::response::Response {
         let r = match self {
-            ServerError::ParameterError => {
-                tracing::error!("Internal error: Unable to create parameter.");
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json("Unable to create parameter.".to_string()),
-                )
-            }
             ServerError::SimulationInvokeError(error) => {
                 tracing::error!("Internal error: {error}.");
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(format!("{}", error)),
+                    Json("Internal error `SimulationInvokeError`".to_string()),
                 )
             }
             ServerError::SubmitSponsoredTransactionError(error) => {
                 tracing::error!("Internal error: {error}.");
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(format!("{}", error)),
+                    Json("Internal error `SubmitSponsoredTransactionError`".to_string()),
+                )
+            }
+            ServerError::FailedToCreateContractClient(error) => {
+                tracing::error!("Internal error: {error}.");
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json("Internal error `FailedToCreateContractClient`".to_string()),
                 )
             }
             error => {
