@@ -163,6 +163,13 @@ async fn main() -> anyhow::Result<()> {
         nonce_response.nonce
     );
 
+    let contract_client = ContractClient::<()>::create(node_client.clone(), ContractAddress {
+        index:    app.cis2_token_smart_contract_index,
+        subindex: 0,
+    })
+    .await
+    .map_err(ServerError::FailedToCreateContractClient)?;
+
     let state = Server {
         node_client,
         nonce: Arc::new(Mutex::new(nonce_response.nonce)),
@@ -170,6 +177,7 @@ async fn main() -> anyhow::Result<()> {
         auction_smart_contract: ContractAddress::new(app.auction_smart_contract_index, 0),
         cis2_token_smart_contract: ContractAddress::new(app.cis2_token_smart_contract_index, 0),
         key: sponsorer_key,
+        contract_client,
     };
 
     // Render index.html
@@ -210,7 +218,7 @@ async fn main() -> anyhow::Result<()> {
 
 #[tracing::instrument(level = "info", skip_all)]
 async fn handle_signature_bid(
-    State(state): State<Server>,
+    State(mut state): State<Server>,
     request: Result<Json<BidParams>, JsonRejection>,
 ) -> Result<Json<TransactionHash>, ServerError> {
     let Json(request) = request?;
@@ -266,12 +274,8 @@ async fn handle_signature_bid(
         signer: request.signer,
     };
 
-    let mut contract_client =
-        ContractClient::<()>::create(state.node_client.clone(), state.cis2_token_smart_contract)
-            .await
-            .map_err(ServerError::FailedToCreateContractClient)?;
-
-    let dry_run = match contract_client
+    let dry_run = match state
+        .contract_client
         .dry_run_update_with_reject_reason_info::<types::PermitParam, ServerError>(
             "permit",
             Amount::zero(),

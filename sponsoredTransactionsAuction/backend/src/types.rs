@@ -2,7 +2,7 @@ use axum::{extract::rejection::JsonRejection, Json};
 use concordium_rust_sdk::{
     base::{contracts_common::NewReceiveNameError, smart_contracts::ExceedsParameterSize},
     cis2::{TokenAmount, TokenId, Transfer},
-    contract_client::DecodedReason,
+    contract_client::{ContractClient, DecodedReason},
     smart_contracts::common::{
         self as concordium_std, AccountAddress, AccountSignatures, ContractAddress,
         OwnedEntrypointName, Serial, Timestamp,
@@ -156,6 +156,8 @@ pub struct PermitMessage {
 pub struct Server {
     /// Client to interact with the node.
     pub node_client: v2::Client,
+    /// Client to interact with the smart contract instance.
+    pub contract_client: ContractClient<()>,
     /// Key and address of the sponsorer account.
     pub key: Arc<WalletAccount>,
     /// Contract address of the auction contract.
