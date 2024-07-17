@@ -135,15 +135,16 @@ pub async fn submit_transaction(
 
     log::debug!("Simulate transaction to check its validity.");
 
-    let dry_run = match contract_client
+    let dry_run_result = contract_client
         .dry_run_update_with_reject_reason_info::<PermitParam, LogError>(
             "permit",
             Amount::zero(),
             key.address,
             &param,
         )
-        .await?
-    {
+        .await?;
+
+    let dry_run = match dry_run_result {
         InvokeContractOutcome::Success(dry_run) => Ok(dry_run),
         InvokeContractOutcome::Failure(rejected_transaction) => {
             match rejected_transaction.decoded_reason {
@@ -223,10 +224,7 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl warp::Reply, Infall
         Ok(mk_reply(message.into(), code))
     } else if let Some(LogError::TransactionSimulationError(e)) = err.find() {
         let code = StatusCode::INTERNAL_SERVER_ERROR;
-        let message = format!(
-            "Simulation of transaction rejected with reject reason: {:?}",
-            e
-        );
+        let message = format!("Simulation of transaction rejected with reject reason: {e:?}");
         Ok(mk_reply(message, code))
     } else if let Some(LogError::TransactionSimulationDecodedError(decoded_reason, reject_reason)) =
         err.find()
@@ -234,8 +232,7 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl warp::Reply, Infall
         let code = StatusCode::BAD_REQUEST;
         let message = format!(
             "Simulation of transaction rejected in smart contract with decoded reject reason: \
-             `{}` derived from: {:?}.",
-            decoded_reason, reject_reason
+             `{decoded_reason}` derived from: {reject_reason:?}."
         );
         Ok(mk_reply(message, code))
     } else if let Some(LogError::SubmitSponsoredTransactionError(_e)) = err.find() {
