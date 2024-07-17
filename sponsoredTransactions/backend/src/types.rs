@@ -1,62 +1,54 @@
-use concordium_rust_sdk::cis2::{TokenId, Transfer, UpdateOperator};
-use concordium_rust_sdk::smart_contracts::common as concordium_std;
-use concordium_rust_sdk::types::RejectReason;
 use concordium_rust_sdk::{
-    endpoints::{QueryError, RPCError},
-    smart_contracts::common::{
-        AccountAddress, AccountSignatures, ContractAddress, OwnedEntrypointName, Serial, Timestamp,
+    base::{contracts_common::NewReceiveNameError, smart_contracts::ExceedsParameterSize},
+    cis2::{TokenId, Transfer, UpdateOperator},
+    contract_client::{ContractClient, DecodedReason},
+    endpoints::QueryError,
+    smart_contracts::{
+        common as concordium_std,
+        common::{
+            AccountAddress, AccountSignatures, ContractAddress, OwnedEntrypointName, Serial,
+            Timestamp,
+        },
     },
     types::{
         hashes::{HashBytes, TransactionMarker},
-        Nonce,
+        Nonce, RejectReason,
     },
 };
-use std::collections::HashMap;
-use std::fmt;
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 use tokio::sync::Mutex;
 
 #[derive(Debug, thiserror::Error)]
 pub enum LogError {
     #[error("Nonce query error.")]
     NonceQueryError,
-    #[error("Submit sponsored transaction error.")]
-    SubmitSponsoredTransactionError,
-    #[error("Simulation invoke error.")]
-    SimulationInvokeError,
-    #[error("Transaction simulation error.")]
-    TransactionSimulationError(RevertReason),
-    #[error("Owned received name error.")]
-    OwnedReceiveNameError,
+    #[error("Submit sponsored transaction error: {0}")]
+    SubmitSponsoredTransactionError(QueryError),
     #[error("TokenAmount error.")]
     TokenAmountError,
     #[error("Rate limit error.")]
     RateLimitError,
-    #[error("Parameter error.")]
-    ParameterError,
     #[error("Signature error.")]
     SignatureError,
+    #[error("Public folder does not exist. Build the front end first.")]
+    PublicFolderDoesNotExist,
     #[error("AdditionalData error.")]
     AdditionalDataError,
     #[error("Node access error: {0}")]
     NodeAccess(#[from] QueryError),
-}
-
-impl From<RPCError> for LogError {
-    fn from(err: RPCError) -> Self {
-        Self::NodeAccess(err.into())
-    }
-}
-
-#[derive(serde::Serialize, Debug)]
-pub struct RevertReason {
-    pub reason: RejectReason,
-}
-
-impl fmt::Display for RevertReason {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "reason: {:?}", self.reason)
-    }
+    #[error("Simulation of transaction rejected with reject reason: {0:?}")]
+    TransactionSimulationError(RejectReason),
+    #[error(
+        "Simulation of transaction rejected in smart contract with decoded reject reason: `{0}` \
+         derived from: {1:?}."
+    )]
+    TransactionSimulationDecodedError(DecodedReason, RejectReason),
+    #[error("Failed to create contract client: {0:?}")]
+    FailedToCreateContractClient(QueryError),
+    #[error("Invalid receive name: {0}")]
+    ReceiveNameError(#[from] NewReceiveNameError),
+    #[error("The input parameter exceeds the length limit: {0}")]
+    ParameterSizeError(#[from] ExceedsParameterSize),
 }
 
 impl warp::reject::Reject for LogError {}
@@ -120,6 +112,9 @@ pub struct PermitMessage {
 
 #[derive(Clone)]
 pub struct Server {
+    /// The contract client used to submit transactions to the smart contract instance.
+    pub contract_client: Arc<Mutex<ContractClient<()>>>,
+    /// The nonce of the sponsorer account at the backend.
     pub nonce: Arc<Mutex<Nonce>>,
     // The rate_limits are transient and are reset on server restart.
     pub rate_limits: Arc<Mutex<HashMap<AccountAddress, u8>>>,
