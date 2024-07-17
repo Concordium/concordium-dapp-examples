@@ -1,27 +1,20 @@
-use crate::crypto_common::types::TransactionTime;
 use crate::types::*;
-use concordium_rust_sdk::cis2::{
-    AdditionalData, OperatorUpdate, Receiver, TokenAmount, Transfer, UpdateOperator,
+use concordium_rust_sdk::{
+    cis2::{AdditionalData, OperatorUpdate, Receiver, TokenAmount, Transfer, UpdateOperator},
+    common::types::TransactionTime,
+    contract_client::InvokeContractOutcome,
+    smart_contracts::common::{
+        AccountAddress, AccountSignatures, Address, Amount, ContractAddress, CredentialSignatures,
+        OwnedEntrypointName, Signature, SignatureEd25519,
+    },
+    types::WalletAccount,
 };
-use concordium_rust_sdk::smart_contracts::common::{
-    AccountAddress, AccountSignatures, Address, Amount, ContractAddress, CredentialSignatures,
-    OwnedEntrypointName, Signature, SignatureEd25519,
-};
-use concordium_rust_sdk::types::smart_contracts::{ContractContext, InvokeContractResult};
-use concordium_rust_sdk::types::{smart_contracts, transactions, Energy, WalletAccount};
-use concordium_rust_sdk::v2::BlockIdentifier;
-use std::collections::BTreeMap;
-use std::convert::Infallible;
-use std::str::FromStr;
-use std::sync::Arc;
+use std::{collections::BTreeMap, convert::Infallible, str::FromStr, sync::Arc};
 use warp::{http::StatusCode, Rejection};
 
-const CONTRACT_NAME: &str = "cis3_nft";
-const ENERGY: u64 = 6000;
 const RATE_LIMIT_PER_ACCOUNT: u8 = 30;
 
 pub async fn handle_signature_update_operator(
-    client: concordium_rust_sdk::v2::Client,
     key_update_operator: Arc<WalletAccount>,
     request: UpdateOperatorInputParams,
     smart_contract_index: u64,
@@ -54,19 +47,16 @@ pub async fn handle_signature_update_operator(
     };
 
     submit_transaction(
-        client,
         key_update_operator,
         state,
         message,
         request.signature,
         request.signer,
-        smart_contract_index,
     )
     .await
 }
 
 pub async fn handle_signature_transfer(
-    client: concordium_rust_sdk::v2::Client,
     key_update_operator: Arc<WalletAccount>,
     request: TransferInputParams,
     smart_contract_index: u64,
@@ -98,25 +88,21 @@ pub async fn handle_signature_transfer(
     };
 
     submit_transaction(
-        client,
         key_update_operator,
         state,
         message,
         request.signature,
         request.signer,
-        smart_contract_index,
     )
     .await
 }
 
 pub async fn submit_transaction(
-    mut client: concordium_rust_sdk::v2::Client,
     key: Arc<WalletAccount>,
     state: Server,
     message: PermitMessage,
     request_signature: String,
     signer: AccountAddress,
-    smart_contract_index: u64,
 ) -> Result<impl warp::Reply, Rejection> {
     log::debug!("Create signature map.");
 
@@ -145,91 +131,56 @@ pub async fn submit_transaction(
         signer,
     };
 
-    let bytes = concordium_rust_sdk::smart_contracts::common::to_bytes(&param);
-
-    let parameter =
-        smart_contracts::OwnedParameter::try_from(bytes).map_err(|_| LogError::ParameterError)?;
-
-    let receive_name =
-        smart_contracts::OwnedReceiveName::try_from(format!("{}.permit", CONTRACT_NAME))
-            .map_err(|_| LogError::OwnedReceiveNameError)?;
+    let mut contract_client = state.contract_client.lock().await;
 
     log::debug!("Simulate transaction to check its validity.");
 
-    let context = ContractContext {
-        invoker: Some(concordium_rust_sdk::types::Address::Account(key.address)),
-        contract: ContractAddress {
-            index: smart_contract_index,
-            subindex: 0,
-        },
-        amount: Amount::zero(),
-        method: receive_name.clone(),
-        parameter: parameter.clone(),
-        energy: Some(Energy { energy: ENERGY }),
-    };
-
-    let info = client
-        .invoke_instance(&BlockIdentifier::Best, &context)
-        .await;
-
-    if info.is_err() {
-        log::error!("SimulationInvokeError {:#?}.", info);
-
-        return Err(warp::reject::custom(LogError::SimulationInvokeError));
-    }
-
-    match &info.as_ref().unwrap().response {
-        InvokeContractResult::Success {
-            return_value: _,
-            events: _,
-            used_energy: _,
-        } => log::debug!("TransactionSimulationSuccess"),
-        InvokeContractResult::Failure {
-            return_value: _,
-            reason,
-            used_energy: _,
-        } => {
-            log::error!("TransactionSimulationError {:#?}.", info);
-
-            return Err(warp::reject::custom(LogError::TransactionSimulationError(
-                RevertReason {
-                    reason: reason.clone(),
-                },
-            )));
+    let dry_run = match contract_client
+        .dry_run_update_with_reject_reason_info::<PermitParam, LogError>(
+            "permit",
+            Amount::zero(),
+            key.address,
+            &param,
+        )
+        .await?
+    {
+        InvokeContractOutcome::Success(dry_run) => Ok(dry_run),
+        InvokeContractOutcome::Failure(rejected_transaction) => {
+            match rejected_transaction.decoded_reason {
+                Some(decoded_reason) => Err(LogError::TransactionSimulationDecodedError(
+                    decoded_reason,
+                    rejected_transaction.reason,
+                )),
+                None => Err(LogError::TransactionSimulationError(
+                    rejected_transaction.reason,
+                )),
+            }
         }
-    }
-
-    log::debug!("Create transaction.");
-
-    let payload = transactions::Payload::Update {
-        payload: transactions::UpdateContractPayload {
-            amount: Amount::from_micro_ccd(0),
-            address: ContractAddress {
-                index: smart_contract_index,
-                subindex: 0,
-            },
-            receive_name,
-            message: parameter,
-        },
-    };
+    }?;
 
     // Transaction should expiry after one hour.
-    let transaction_expiry_seconds = chrono::Utc::now().timestamp() as u64 + 3600;
+    let transaction_expiry =
+        TransactionTime::from_seconds(chrono::Utc::now().timestamp() as u64 + 3600);
 
-    // Get the current nonce for the backend wallet and lock it. This is necessary since it is possible that API requests come in parallel.
-    // The nonce is increased by 1 and its lock is released after the transaction is submitted to the blockchain.
+    // Get the current nonce for the backend wallet and lock it. This is necessary
+    // since it is possible that API requests come in parallel. The nonce is
+    // increased by 1 and its lock is released after the transaction is submitted to
+    // the blockchain.
     let mut nonce = state.nonce.lock().await;
 
-    // There should be rate limiting in place to prevent the sponsor wallet from being drained.
-    // We only allow up to RATE_LIMIT_PER_ACCOUNT API calls to this backend.
-    // The rate_limits are transient and are reset on server restart.
+    // There should be rate limiting in place to prevent the sponsor wallet from
+    // being drained. We only allow up to RATE_LIMIT_PER_ACCOUNT API calls to
+    // this backend. The rate_limits are transient and are reset on server
+    // restart.
 
-    // We only check the rate_limits after acquiring the nonce lock. If we do it before we don't
-    // have guarantees due to possible parallel API requests.
+    // We only check the rate_limits after acquiring the nonce lock. If we do it
+    // before we don't have guarantees due to possible parallel API requests.
 
     // On mainnet, a user can only create around 25 accounts per identity.
-    // In production, a user registration/authentication at the frontend can be added or a database that permanently
-    // keeps track of the rate_limits so that the server can be restarted and reload the rate_limit values from the database.
+    // In production, a user registration/authentication at the frontend can be
+    // added or a database that permanently keeps track of the rate_limits so
+    // that the server can be restarted and reload the rate_limit values from the
+    // database.
     log::debug!("Check rate limit.");
 
     let mut rate_limits = state.rate_limits.lock().await;
@@ -244,37 +195,21 @@ pub async fn submit_transaction(
 
     *limit += 1;
 
-    let tx = transactions::send::make_and_sign_transaction(
-        &key.keys,
-        key.address,
-        *nonce,
-        TransactionTime {
-            seconds: transaction_expiry_seconds,
-        },
-        concordium_rust_sdk::types::transactions::send::GivenEnergy::Absolute(Energy {
-            energy: ENERGY,
-        }),
-        payload,
-    );
-
-    let bi = transactions::BlockItem::AccountTransaction(tx);
-
     log::debug!("Submit transaction.");
 
-    match client.send_block_item(&bi).await {
-        Ok(hash) => {
-            *nonce = nonce.next();
+    let tx_hash = dry_run
+        .nonce(*nonce)
+        .expiry(transaction_expiry)
+        .send(&key.keys)
+        .await
+        .map_err(LogError::SubmitSponsoredTransactionError)?
+        .hash();
 
-            Ok(warp::reply::json(&TxHash { tx_hash: hash }))
-        }
-        Err(e) => {
-            log::error!("SubmitSponsoredTransactionError {:#?}.", e);
+    log::debug!("Submitted transaction {} ...", tx_hash);
 
-            Err(warp::reject::custom(
-                LogError::SubmitSponsoredTransactionError,
-            ))
-        }
-    }
+    *nonce = nonce.next();
+
+    Ok(warp::reply::json(&TxHash { tx_hash }))
 }
 
 pub async fn handle_rejection(err: Rejection) -> Result<impl warp::Reply, Infallible> {
@@ -282,25 +217,34 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl warp::Reply, Infall
         let code = StatusCode::NOT_FOUND;
         let message = "Not found.";
         Ok(mk_reply(message.into(), code))
-    } else if let Some(LogError::NodeAccess(e)) = err.find() {
+    } else if let Some(LogError::NodeAccess(_e)) = err.find() {
         let code = StatusCode::INTERNAL_SERVER_ERROR;
-        let message = format!("Cannot access the node: {}", e);
-        Ok(mk_reply(message, code))
-    } else if let Some(LogError::SimulationInvokeError) = err.find() {
-        let code = StatusCode::INTERNAL_SERVER_ERROR;
-        let message = "Simulation invoke error.";
+        let message = "Cannot access the node.";
         Ok(mk_reply(message.into(), code))
     } else if let Some(LogError::TransactionSimulationError(e)) = err.find() {
         let code = StatusCode::INTERNAL_SERVER_ERROR;
-        let message = format!("Transaction simulation error. Your transaction would revert with the given input parameters: {}", e);
+        let message = format!(
+            "Simulation of transaction rejected with reject reason: {:?}",
+            e
+        );
         Ok(mk_reply(message, code))
-    } else if let Some(LogError::SubmitSponsoredTransactionError) = err.find() {
+    } else if let Some(LogError::TransactionSimulationDecodedError(decoded_reason, reject_reason)) =
+        err.find()
+    {
+        let code = StatusCode::BAD_REQUEST;
+        let message = format!(
+            "Simulation of transaction rejected in smart contract with decoded reject reason: \
+             `{}` derived from: {:?}.",
+            decoded_reason, reject_reason
+        );
+        Ok(mk_reply(message, code))
+    } else if let Some(LogError::SubmitSponsoredTransactionError(_e)) = err.find() {
         let code = StatusCode::INTERNAL_SERVER_ERROR;
         let message = "Submit sponsored transaction error.";
         Ok(mk_reply(message.into(), code))
-    } else if let Some(LogError::OwnedReceiveNameError) = err.find() {
-        let code = StatusCode::BAD_REQUEST;
-        let message = "Owned received name error.";
+    } else if let Some(LogError::FailedToCreateContractClient(_e)) = err.find() {
+        let code = StatusCode::INTERNAL_SERVER_ERROR;
+        let message = "Failed to create contract client.";
         Ok(mk_reply(message.into(), code))
     } else if let Some(LogError::TokenAmountError) = err.find() {
         let code = StatusCode::BAD_REQUEST;
@@ -314,10 +258,6 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl warp::Reply, Infall
         let code = StatusCode::BAD_REQUEST;
         let message = "Rate limit reached for the account. Use a different account.";
         Ok(mk_reply(message.into(), code))
-    } else if let Some(LogError::ParameterError) = err.find() {
-        let code = StatusCode::BAD_REQUEST;
-        let message = "Parameter error.";
-        Ok(mk_reply(message.into(), code))
     } else if let Some(LogError::AdditionalDataError) = err.find() {
         let code = StatusCode::BAD_REQUEST;
         let message = "AdditionalData error.";
@@ -325,6 +265,18 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl warp::Reply, Infall
     } else if let Some(LogError::NonceQueryError) = err.find() {
         let code = StatusCode::BAD_REQUEST;
         let message = "Account info query error.";
+        Ok(mk_reply(message.into(), code))
+    } else if let Some(LogError::ReceiveNameError(_e)) = err.find() {
+        let code = StatusCode::INTERNAL_SERVER_ERROR;
+        let message = "Receive name error.";
+        Ok(mk_reply(message.into(), code))
+    } else if let Some(LogError::ParameterSizeError(size)) = err.find() {
+        let code = StatusCode::BAD_REQUEST;
+        let message = format!("The input parameter exceeds the length limit: {size}");
+        Ok(mk_reply(message, code))
+    } else if let Some(LogError::PublicFolderDoesNotExist) = err.find() {
+        let code = StatusCode::INTERNAL_SERVER_ERROR;
+        let message = "Public folder does not exist. Build the front end first.";
         Ok(mk_reply(message.into(), code))
     } else if err
         .find::<warp::filters::body::BodyDeserializeError>()

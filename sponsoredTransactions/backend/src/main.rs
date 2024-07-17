@@ -1,18 +1,18 @@
 mod handlers;
 mod types;
-use crate::handlers::*;
-use crate::types::*;
-use anyhow::Context;
+use crate::{handlers::*, types::*};
+use anyhow::{anyhow, Context};
 use clap::Parser;
 use concordium_rust_sdk::{
-    common::{self as crypto_common},
-    types::WalletAccount,
-    v2::Endpoint,
-    v2::Scheme,
+    contract_client::ContractClient,
+    types::{ContractAddress, WalletAccount},
+    v2::{Endpoint, Scheme},
 };
-use std::collections::HashMap;
-use std::path::PathBuf;
-use std::sync::Arc;
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 use tokio::sync::Mutex;
 use tonic::transport::ClientTlsConfig;
 use warp::Filter;
@@ -75,9 +75,7 @@ async fn main() -> anyhow::Result<()> {
         app.endpoint
     };
 
-    let mut client_update_operator = concordium_rust_sdk::v2::Client::new(endpoint).await?;
-
-    let client_transfer = client_update_operator.clone();
+    let mut node_client = concordium_rust_sdk::v2::Client::new(endpoint).await?;
 
     let cors = warp::cors()
         .allow_any_origin()
@@ -98,7 +96,7 @@ async fn main() -> anyhow::Result<()> {
 
     log::debug!("Acquire nonce of wallet account.");
 
-    let nonce_response = client_update_operator
+    let nonce_response = node_client
         .get_next_account_sequence_number(&key_update_operator.address)
         .await
         .map_err(|e| {
@@ -106,9 +104,20 @@ async fn main() -> anyhow::Result<()> {
             LogError::NonceQueryError
         })?;
 
+    let contract_client = ContractClient::<()>::create(
+        node_client,
+        ContractAddress {
+            index: app.smart_contract_index,
+            subindex: 0,
+        },
+    )
+    .await
+    .map_err(LogError::FailedToCreateContractClient)?;
+
     let state_update_operator = Server {
         nonce: Arc::new(Mutex::new(nonce_response.nonce)),
         rate_limits: Arc::new(Mutex::new(HashMap::new())),
+        contract_client: Arc::new(Mutex::new(contract_client)),
     };
 
     let state_transfer = state_update_operator.clone();
@@ -122,7 +131,6 @@ async fn main() -> anyhow::Result<()> {
             log::debug!("Process update operator transaction.");
 
             handle_signature_update_operator(
-                client_update_operator.clone(),
                 key_update_operator.clone(),
                 request,
                 app.smart_contract_index,
@@ -139,7 +147,6 @@ async fn main() -> anyhow::Result<()> {
             log::debug!("Process transfer transaction.");
 
             handle_signature_transfer(
-                client_transfer.clone(),
                 key_transfer.clone(),
                 request,
                 app.smart_contract_index,
@@ -148,6 +155,11 @@ async fn main() -> anyhow::Result<()> {
         });
 
     log::debug!("Get public files to serve.");
+
+    // Check if the front end has been built and the public folder exists.
+    if !Path::new(&app.public_folder).exists() {
+        return Err(anyhow!(LogError::PublicFolderDoesNotExist));
+    }
 
     let serve_public_files = warp::get().and(warp::fs::dir(app.public_folder));
 
@@ -160,5 +172,6 @@ async fn main() -> anyhow::Result<()> {
         .with(cors)
         .with(warp::trace::request());
     warp::serve(server).run(([0, 0, 0, 0], app.port)).await;
+
     Ok(())
 }
