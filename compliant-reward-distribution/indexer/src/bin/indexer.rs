@@ -2,19 +2,18 @@
 //! postgres database. The database is configured with the tables from the file
 //! `../resources/schema.sql`. A table
 //! `settings` exists to store global configurations.
-use ::indexer::db::{DatabaseError, DatabasePool};
+use ::indexer::db::DatabasePool;
 use anyhow::Context;
 use clap::Parser;
 use concordium_rust_sdk::{
-    indexer::{self, ContractUpdateInfo, ProcessorConfig, TransactionIndexer},
-    smart_contracts::common::to_bytes,
+    indexer::{self, ProcessorConfig, TransactionIndexer},
     types::{
-        queries::BlockInfo, smart_contracts::OwnedReceiveName, AbsoluteBlockHeight,
-        BlockItemSummary, ContractAddress,
+        queries::BlockInfo, AbsoluteBlockHeight, BlockItemSummary,
+        BlockItemSummaryDetails::AccountCreation,
     },
     v2::{self as sdk, Client},
 };
-use tokio_postgres::types::{Json, ToSql};
+use tokio_postgres::types::ToSql;
 
 /// Command line configuration of the application.
 #[derive(Debug, clap::Parser)]
@@ -91,94 +90,42 @@ impl indexer::ProcessEvent for StoreEvents {
             .await
             .context("Failed to execute latest_processed_block_height transaction")?;
 
-        // for single_contract_update_info in contract_update_info {
-        //     for (_contract_invoked, _entry_point_name, events) in
-        //         single_contract_update_info.0.execution_tree.events()
-        //     {
-        //         for (event_index, event) in events.iter().enumerate() {
-        //             // let parsed_event: contract::Event<AdditionalData> =
-        // event.parse()?;
+        for tx in block_items {
+            match &tx.details {
+                AccountCreation(account_creation_details) => {
+                    let params: [&(dyn ToSql + Sync); 4] = [
+                        &account_creation_details.address.0.as_ref(),
+                        &block_info.block_slot_time,
+                        &tx.hash.as_ref(),
+                        &false,
+                    ];
+                    let statement = db_transaction
+                        .prepare_cached(
+                            "INSERT INTO accounts (id,account_address, \
+                             block_time,transaction_hash, claimed) SELECT COALESCE(MAX(id) + 1, \
+                             0), $1,$2, $3, $4 FROM accounts;",
+                        )
+                        .await
+                        .context(
+                            "Failed to prepare transaction to add a new account to the database",
+                        )?;
 
-        //             // if let contract::Event::<AdditionalData>::ItemStatusChanged(
-        //             //     item_status_change_event,
-        //             // ) = parsed_event
-        //             // {
-        //             //     let params: [&(dyn ToSql + Sync); 6] = [
-        //             //         &(block_info.block_slot_time),
-        //             //
-        // &single_contract_update_info.0.transaction_hash.as_ref(),
-        // //         &(event_index as i64),             //
-        // &(item_status_change_event.item_id.0 as i64),             //
-        // &Json(&item_status_change_event.new_status),             //
-        // &item_status_change_event.additional_data.bytes,             //
-        // ];
+                    db_transaction.execute(&statement, &params).await.context(
+                        "Failed to execute transaction to add a new account to the database",
+                    )?;
 
-        //             //     let statement = db_transaction
-        //             //         .prepare_cached(
-        //             //             "INSERT INTO item_status_changed_events (id,
-        // block_time, \             //              transaction_hash,
-        // event_index, item_id, new_status, \             //
-        // additional_data) SELECT COALESCE(MAX(id) + 1, 0), $1, $2, $3, \
-        //             //              $4, $5, $6 FROM item_status_changed_events;",
-        //             //         )
-        //             //         .await
-        //             //         .context("Failed to prepare item_status_change_event
-        // transaction")?;
+                    tracing::debug!(
+                        "Preparing database transaction for account {} from transaction hash {} \
+                         in block {}.",
+                        account_creation_details.address,
+                        tx.hash,
+                        block_info.block_height,
+                    );
+                }
+                _ => continue,
+            }
+        }
 
-        //             //     db_transaction
-        //             //         .execute(&statement, &params)
-        //             //         .await
-        //             //         .context("Failed to execute item_status_change_event
-        // transaction")?;
-
-        //             //     tracing::debug!(
-        //             //         "Preparing item_status_change_event from block {},
-        // transaction hash \             //          {}, and event index {}.",
-        //             //         block_info.block_height,
-        //             //         single_contract_update_info.0.transaction_hash,
-        //             //         event_index
-        //             //     );
-        //             // } else if let contract::Event::<AdditionalData>::ItemCreated(
-        //             //     item_created_event,
-        //             // ) = parsed_event
-        //             // {
-        //             //     let params: [&(dyn ToSql + Sync); 6] = [
-        //             //         &(block_info.block_slot_time),
-        //             //
-        // &single_contract_update_info.0.transaction_hash.as_ref(),
-        // //         &(event_index as i64),             //
-        // &(item_created_event.item_id.0 as i64),             //
-        // &to_bytes(&item_created_event.metadata_url),             //
-        // &Json(&item_created_event.initial_status),             //     ];
-
-        //             //     let statement = db_transaction
-        //             //         .prepare_cached(
-        //             //             "INSERT INTO item_created_events (id, block_time,
-        // \             //              transaction_hash, event_index, item_id,
-        // metadata_url, \             //              initial_status) SELECT
-        // COALESCE(MAX(id) + 1, 0), $1, $2, $3, $4, \             //
-        // $5, $6 FROM item_created_events;",             //         )
-        //             //         .await
-        //             //         .context("Failed to prepare item_created_event
-        // transaction")?;
-
-        //             //     db_transaction
-        //             //         .execute(&statement, &params)
-        //             //         .await
-        //             //         .context("Failed to execute item_created_event
-        // transaction")?;
-
-        //             //     tracing::debug!(
-        //             //         "Preparing event from block {}, transaction hash {},
-        // and event index \             //          {}.",
-        //             //         block_info.block_height,
-        //             //         single_contract_update_info.0.transaction_hash,
-        //             //         event_index
-        //             //     );
-        //             // }
-        //         }
-        //     }
-        // }
         // Commit the transaction
         db_transaction
             .commit()
