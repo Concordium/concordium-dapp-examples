@@ -34,7 +34,7 @@ type DatabaseResult<T> = Result<T, DatabaseError>;
 #[derive(Debug, Serialize)]
 pub struct StoredConfiguration {
     /// The genesis block hash of the network monitored.
-    pub genesis_block_hash: BlockHash,
+    pub genesis_block_hash:            BlockHash,
     /// The last block height that was processed.
     pub latest_processed_block_height: Option<AbsoluteBlockHeight>,
 }
@@ -66,13 +66,13 @@ impl TryFrom<tokio_postgres::Row> for StoredConfiguration {
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct StoredItemStatusChangedEvent {
     /// The timestamp of the block the event was included in.
-    pub block_time: DateTime<Utc>,
+    pub block_time:       DateTime<Utc>,
     /// The transaction hash that the event was recorded in.
     pub transaction_hash: TransactionHash,
     /// The index from the array of logged events in a transaction.
-    pub event_index: u64,
+    pub event_index:      u64,
     /// The item's id as logged in the event.
-    pub item_id: u64,
+    pub item_id:          u64,
 }
 
 impl TryFrom<tokio_postgres::Row> for StoredItemStatusChangedEvent {
@@ -85,12 +85,12 @@ impl TryFrom<tokio_postgres::Row> for StoredItemStatusChangedEvent {
         let raw_event_index: i64 = value.try_get("event_index")?;
 
         let events = Self {
-            block_time: value.try_get("block_time")?,
+            block_time:       value.try_get("block_time")?,
             transaction_hash: raw_transaction_hash
                 .try_into()
                 .map_err(|_| DatabaseError::TypeConversion("transaction_hash".to_string()))?,
-            event_index: raw_event_index as u64,
-            item_id: raw_item_id as u64,
+            event_index:      raw_event_index as u64,
+            item_id:          raw_item_id as u64,
         };
         Ok(events)
     }
@@ -100,15 +100,15 @@ impl TryFrom<tokio_postgres::Row> for StoredItemStatusChangedEvent {
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct StoredItemCreatedEvent {
     /// The timestamp of the block the event was included in.
-    pub block_time: DateTime<Utc>,
+    pub block_time:       DateTime<Utc>,
     /// The transaction hash that the event was recorded in.
     pub transaction_hash: TransactionHash,
     /// The index from the array of logged events in a transaction.
-    pub event_index: u64,
+    pub event_index:      u64,
     /// The item's id as logged in the event.
-    pub item_id: u64,
+    pub item_id:          u64,
     /// The item's metadata_url as logged in the event.
-    pub metadata_url: Option<MetadataUrl>,
+    pub metadata_url:     Option<MetadataUrl>,
 }
 
 impl TryFrom<tokio_postgres::Row> for StoredItemCreatedEvent {
@@ -121,13 +121,13 @@ impl TryFrom<tokio_postgres::Row> for StoredItemCreatedEvent {
         let raw_event_index: i64 = value.try_get("event_index")?;
 
         let events = Self {
-            block_time: value.try_get("block_time")?,
+            block_time:       value.try_get("block_time")?,
             transaction_hash: raw_transaction_hash
                 .try_into()
                 .map_err(|_| DatabaseError::TypeConversion("transaction_hash".to_string()))?,
-            event_index: raw_event_index as u64,
-            item_id: raw_item_id as u64,
-            metadata_url: from_bytes(value.try_get("metadata_url")?)
+            event_index:      raw_event_index as u64,
+            item_id:          raw_item_id as u64,
+            metadata_url:     from_bytes(value.try_get("metadata_url")?)
                 .map_err(|_| DatabaseError::TypeConversion("metadata_url".to_string()))?,
         };
         Ok(events)
@@ -141,15 +141,11 @@ pub struct Database {
 }
 
 impl From<Object> for Database {
-    fn from(client: Object) -> Self {
-        Self { client }
-    }
+    fn from(client: Object) -> Self { Self { client } }
 }
 
 impl AsRef<Object> for Database {
-    fn as_ref(&self) -> &Object {
-        &self.client
-    }
+    fn as_ref(&self) -> &Object { &self.client }
 }
 
 impl Database {
