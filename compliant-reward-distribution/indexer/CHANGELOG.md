@@ -2,4 +2,4 @@
 
 ## 0.1.0
 
--   Initial `indexer` and `server`.
+-   Initial `indexer`.

@@ -115,7 +115,7 @@ impl indexer::ProcessEvent for StoreEvents {
                     )?;
 
                     tracing::debug!(
-                        "Preparing database transaction for account {} from transaction hash {} \
+                        "Preparing database transaction for account {:} from transaction hash {} \
                          in block {}.",
                         account_creation_details.address,
                         tx.hash,
