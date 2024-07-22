@@ -1,13 +1,5 @@
 use anyhow::Context;
-use chrono::{DateTime, Utc};
-use concordium_rust_sdk::{
-    cis2::MetadataUrl,
-    smart_contracts::common::from_bytes,
-    types::{
-        hashes::{BlockHash, TransactionHash},
-        AbsoluteBlockHeight,
-    },
-};
+use concordium_rust_sdk::types::{hashes::BlockHash, AbsoluteBlockHeight};
 use deadpool_postgres::{GenericClient, Object};
 use serde::Serialize;
 use tokio_postgres::{types::ToSql, NoTls};
@@ -62,78 +54,6 @@ impl TryFrom<tokio_postgres::Row> for StoredConfiguration {
     }
 }
 
-/// A `StoredItemStatusChanged` event stored in the database.
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
-pub struct StoredItemStatusChangedEvent {
-    /// The timestamp of the block the event was included in.
-    pub block_time:       DateTime<Utc>,
-    /// The transaction hash that the event was recorded in.
-    pub transaction_hash: TransactionHash,
-    /// The index from the array of logged events in a transaction.
-    pub event_index:      u64,
-    /// The item's id as logged in the event.
-    pub item_id:          u64,
-}
-
-impl TryFrom<tokio_postgres::Row> for StoredItemStatusChangedEvent {
-    type Error = DatabaseError;
-
-    // Conversion from the postgres row to the `StoredItemStatusChangedEvent` type.
-    fn try_from(value: tokio_postgres::Row) -> DatabaseResult<Self> {
-        let raw_transaction_hash: &[u8] = value.try_get("transaction_hash")?;
-        let raw_item_id: i64 = value.try_get("item_id")?;
-        let raw_event_index: i64 = value.try_get("event_index")?;
-
-        let events = Self {
-            block_time:       value.try_get("block_time")?,
-            transaction_hash: raw_transaction_hash
-                .try_into()
-                .map_err(|_| DatabaseError::TypeConversion("transaction_hash".to_string()))?,
-            event_index:      raw_event_index as u64,
-            item_id:          raw_item_id as u64,
-        };
-        Ok(events)
-    }
-}
-
-/// A `StoredItemCreated` event stored in the database.
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
-pub struct StoredItemCreatedEvent {
-    /// The timestamp of the block the event was included in.
-    pub block_time:       DateTime<Utc>,
-    /// The transaction hash that the event was recorded in.
-    pub transaction_hash: TransactionHash,
-    /// The index from the array of logged events in a transaction.
-    pub event_index:      u64,
-    /// The item's id as logged in the event.
-    pub item_id:          u64,
-    /// The item's metadata_url as logged in the event.
-    pub metadata_url:     Option<MetadataUrl>,
-}
-
-impl TryFrom<tokio_postgres::Row> for StoredItemCreatedEvent {
-    type Error = DatabaseError;
-
-    // Conversion from the postgres row to the `StoredItemCreatedEvent` type.
-    fn try_from(value: tokio_postgres::Row) -> DatabaseResult<Self> {
-        let raw_transaction_hash: &[u8] = value.try_get("transaction_hash")?;
-        let raw_item_id: i64 = value.try_get("item_id")?;
-        let raw_event_index: i64 = value.try_get("event_index")?;
-
-        let events = Self {
-            block_time:       value.try_get("block_time")?,
-            transaction_hash: raw_transaction_hash
-                .try_into()
-                .map_err(|_| DatabaseError::TypeConversion("transaction_hash".to_string()))?,
-            event_index:      raw_event_index as u64,
-            item_id:          raw_item_id as u64,
-            metadata_url:     from_bytes(value.try_get("metadata_url")?)
-                .map_err(|_| DatabaseError::TypeConversion("metadata_url".to_string()))?,
-        };
-        Ok(events)
-    }
-}
-
 /// Database client wrapper
 pub struct Database {
     /// The database client
@@ -185,68 +105,6 @@ impl Database {
         let opt_row = self.client.query_opt(&get_settings, &[]).await?;
 
         opt_row.map(StoredConfiguration::try_from).transpose()
-    }
-
-    /// Get all [`StoredItemStatusChangedEvents`] by item id.
-    /// The query enforces pagination with the `limit` and `offset` parameter.
-    /// Note: This function will be used by the http server and the
-    /// `#[allow(dead_code)]` is only temporary until the http server is
-    /// developed.
-    #[allow(dead_code)]
-    pub async fn get_item_status_changed_events_submissions(
-        &self,
-        item_id: u64,
-        limit: u32,
-        offset: u32,
-    ) -> DatabaseResult<Vec<StoredItemStatusChangedEvent>> {
-        let get_item_status_changed_event_submissions = self
-            .client
-            .prepare_cached(
-                "SELECT block_time, transaction_hash, event_index, item_id, new_status, from \
-                 item_status_changed_events WHERE item_id = $1 LIMIT $2 OFFSET $3",
-            )
-            .await?;
-        let params: [&(dyn ToSql + Sync); 3] =
-            [&(item_id as i64), &(limit as i64), &(offset as i64)];
-
-        let rows = self
-            .client
-            .query(&get_item_status_changed_event_submissions, &params)
-            .await?;
-
-        let result: Vec<StoredItemStatusChangedEvent> = rows
-            .into_iter()
-            .map(StoredItemStatusChangedEvent::try_from)
-            .collect::<Result<Vec<_>, _>>()?;
-
-        Ok(result)
-    }
-
-    /// Get the [`StoredItemCreatedEvent`] by item id.
-    /// An error is returned if there are more than one row in the database
-    /// matching the query. Note: This function will be used by the http
-    /// server and the `#[allow(dead_code)]` is only temporary until the
-    /// http server is developed.
-    #[allow(dead_code)]
-    pub async fn get_item_created_event_submission(
-        &self,
-        item_id: u64,
-    ) -> DatabaseResult<Option<StoredItemCreatedEvent>> {
-        let get_item_created_event_submissions = self
-            .client
-            .prepare_cached(
-                "SELECT block_time, transaction_hash, event_index, item_id, metadata_url, \
-                 initial_status from item_created_events WHERE item_id = $1",
-            )
-            .await?;
-        let params: [&(dyn ToSql + Sync); 1] = [&(item_id as i64)];
-
-        let opt_row = self
-            .client
-            .query_opt(&get_item_created_event_submissions, &params)
-            .await?;
-
-        opt_row.map(StoredItemCreatedEvent::try_from).transpose()
     }
 }
 
