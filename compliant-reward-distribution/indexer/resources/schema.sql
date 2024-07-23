@@ -46,7 +46,12 @@ CREATE TABLE IF NOT EXISTS accounts (
   zk_proof_version INT8,
   -- A hash of the revealed `firstName|lastName|passportNumber` to prevent
   -- claiming with different accounts for the same identity.
-  uniqueness_hash BYTEA
+  uniqueness_hash BYTEA,
+  -- Ensure that the ZK values are set at the same time. Either the ZK values are NULL or NOT NULL.
+  CHECK (
+    (zk_proof_valid IS NULL AND zk_proof_version IS NULL AND uniqueness_hash IS NULL) OR
+    (zk_proof_valid IS NOT NULL AND zk_proof_version IS NOT NULL AND uniqueness_hash IS NOT NULL)
+  )
 );
 
 -- Improve performance on queries for a given account_address in the accounts table.
