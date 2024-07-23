@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS settings (
   -- to mainnet while the database has indexed data from testnet or vice versa.
   genesis_block_hash BYTEA NOT NULL,
   -- Start block height that was indexed.
-  start_block_height INT8,
+  start_block_height INT8 NOT NULL,
   -- The last block height that was processed.
   latest_processed_block_height INT8
 );

@@ -11,7 +11,7 @@ use concordium_rust_sdk::{
         queries::BlockInfo, AbsoluteBlockHeight, BlockItemSummary,
         BlockItemSummaryDetails::AccountCreation,
     },
-    v2::{self as sdk, Client},
+    v2::{self as sdk, Client, QueryError},
 };
 use tokio_postgres::types::ToSql;
 
@@ -217,9 +217,9 @@ async fn main() -> anyhow::Result<()> {
                 settings.genesis_block_hash
             );
 
-            // While it is possible to start the indexer and immediatly stop the indexer,
+            // While it is possible to start the indexer and immediately stop the indexer,
             // so that the settings are set in the database but no block has been processed
-            // at all, this edge case is rather theoretically and should not
+            // at all, this edge case is rather theoretical and should not
             // happen in practice (the default value here should not happen in practice).
             let last_processed_block = settings
                 .latest_processed_block_height
@@ -245,7 +245,9 @@ async fn main() -> anyhow::Result<()> {
         consensus_info.genesis_block
     );
 
-    handle_indexing(endpoint, start_block, db_pool).await
+    handle_indexing(endpoint, start_block, db_pool)
+        .await
+        .map_err(anyhow::Error::new)
 }
 
 /// Handle indexing events.
@@ -253,7 +255,7 @@ async fn handle_indexing(
     endpoint: sdk::Endpoint,
     start_block: AbsoluteBlockHeight,
     db_pool: DatabasePool,
-) -> anyhow::Result<()> {
+) -> Result<(), QueryError> {
     tracing::info!("Indexing from block height {}.", start_block);
 
     let traverse_config = indexer::TraverseConfig::new_single(endpoint, start_block);
