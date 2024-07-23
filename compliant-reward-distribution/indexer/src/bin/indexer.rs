@@ -93,17 +93,17 @@ impl indexer::ProcessEvent for StoreEvents {
         for tx in block_items {
             match &tx.details {
                 AccountCreation(account_creation_details) => {
-                    let params: [&(dyn ToSql + Sync); 4] = [
+                    let params: [&(dyn ToSql + Sync); 5] = [
                         &account_creation_details.address.0.as_ref(),
                         &block_info.block_slot_time,
                         &tx.hash.as_ref(),
                         &false,
+                        &false,
                     ];
                     let statement = db_transaction
                         .prepare_cached(
-                            "INSERT INTO accounts (id,account_address, \
-                             block_time,transaction_hash, claimed) SELECT COALESCE(MAX(id) + 1, \
-                             0), $1,$2, $3, $4 FROM accounts;",
+                            "INSERT INTO accounts (account_address, block_time, transaction_hash, \
+                             claimed, pending_approval) VALUES ($1, $2, $3, $4, $5);",
                         )
                         .await
                         .context(
@@ -209,9 +209,8 @@ async fn main() -> anyhow::Result<()> {
         // it should resume indexing from the `latest_processed_block_height+1` as stored in the
         // database.
         Some(settings) => {
-            // This check ensures when re-starting the indexer, that the current
-            // `genesis_hash/node` settings of the indexer are compatible with the
-            // stored indexer settings to prevent corrupting the database.
+            // This check prevents that the indexer is re-started with a node connection
+            // to mainnet while the database has indexed data from testnet or vice versa.
             anyhow::ensure!(
                 settings.genesis_block_hash == consensus_info.genesis_block,
                 "Genesis hash from the connected node {} does not match the genesis hash {} found \
@@ -263,10 +262,6 @@ async fn handle_indexing(
 
     let events = StoreEvents { db_pool };
 
-    // The program terminates only
-    // when the processor terminates, which in this example can only happen if
-    // there are sufficiently many errors when attempting to write to the
-    // database.
     indexer::traverse_and_process(
         traverse_config,
         TransactionIndexer {},
