@@ -19,33 +19,31 @@ use tokio_postgres::types::ToSql;
 #[derive(Debug, clap::Parser)]
 #[command(author, version, about)]
 struct Args {
+    /// The node endpoint.
     #[arg(
         long = "node",
         short = 'n',
-        help = "The node endpoint.",
         default_value = "https://grpc.testnet.concordium.com:20000",
         global = true,
         env = "CCD_INDEXER_NODE"
     )]
     node_endpoint: concordium_rust_sdk::v2::Endpoint,
-    /// Database connection string.
+    // A connection string detailing the connection to the database used by the
+    // application.
     #[arg(
         long = "db-connection",
         default_value = "host=localhost dbname=indexer user=postgres password=password port=5432",
-        help = "A connection string detailing the connection to the database used by the \
-                application.",
         env = "CCD_INDEXER_DB_CONNECTION"
     )]
     db_connection: tokio_postgres::config::Config,
-    /// Maximum log level
+    /// The maximum log level. Possible values are: `trace`, `debug`, `info`,
+    /// `warn`, and `error`.
     #[clap(
         long = "log-level",
         default_value = "info",
-        help = "The maximum log level. Possible values are: `trace`, `debug`, `info`, `warn`, and \
-                `error`.",
         env = "CCD_INDEXER_LOG_LEVEL"
     )]
-    log_level:     tracing_subscriber::filter::LevelFilter,
+    log_level: tracing_subscriber::filter::LevelFilter,
 }
 
 /// A handler for storing monitored events in the database. This implements

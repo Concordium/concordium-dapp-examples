@@ -26,7 +26,7 @@ type DatabaseResult<T> = Result<T, DatabaseError>;
 #[derive(Debug, Serialize)]
 pub struct StoredConfiguration {
     /// The genesis block hash of the network monitored.
-    pub genesis_block_hash:            BlockHash,
+    pub genesis_block_hash: BlockHash,
     /// The last block height that was processed.
     pub latest_processed_block_height: Option<AbsoluteBlockHeight>,
 }
@@ -61,11 +61,15 @@ pub struct Database {
 }
 
 impl From<Object> for Database {
-    fn from(client: Object) -> Self { Self { client } }
+    fn from(client: Object) -> Self {
+        Self { client }
+    }
 }
 
 impl AsRef<Object> for Database {
-    fn as_ref(&self) -> &Object { &self.client }
+    fn as_ref(&self) -> &Object {
+        &self.client
+    }
 }
 
 impl Database {

@@ -61,3 +61,9 @@ There are a few options to configure the indexer:
 - `--db-connection` should specify your postgreSQL database connection. If not specified, the default value `host=localhost dbname=indexer user=postgres password=password port=5432` is used.
 
 - `--log-level` specifies the maximum log level. Possible values are: `trace`, `debug`, `info`, `warn`, and `error`. If not specified, the default value `info` is used.
+
+You can open the help menu as follows:
+
+```console
+cargo run --bin indexer -- --help
+```
