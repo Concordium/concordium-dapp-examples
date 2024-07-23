@@ -29,6 +29,8 @@ pub struct StoredConfiguration {
     pub genesis_block_hash: BlockHash,
     /// The last block height that was processed.
     pub latest_processed_block_height: Option<AbsoluteBlockHeight>,
+    /// The start block height that was indexed.
+    pub start_block_height: AbsoluteBlockHeight,
 }
 
 impl TryFrom<tokio_postgres::Row> for StoredConfiguration {
@@ -38,17 +40,20 @@ impl TryFrom<tokio_postgres::Row> for StoredConfiguration {
         let raw_genesis_block_hash: &[u8] = value.try_get("genesis_block_hash")?;
         let raw_latest_processed_block_height: Option<i64> =
             value.try_get("latest_processed_block_height")?;
+        let raw_start_block_height: i64 = value.try_get("start_block_height")?;
 
         let latest_processed_block_height =
             raw_latest_processed_block_height.map(|raw_latest_processed_block_height| {
                 AbsoluteBlockHeight::from(raw_latest_processed_block_height as u64)
             });
+        let start_block_height = AbsoluteBlockHeight::from(raw_start_block_height as u64);
 
         let settings = Self {
             latest_processed_block_height,
             genesis_block_hash: raw_genesis_block_hash
                 .try_into()
                 .map_err(|_| DatabaseError::TypeConversion("genesis_block_hash".to_string()))?,
+            start_block_height,
         };
         Ok(settings)
     }

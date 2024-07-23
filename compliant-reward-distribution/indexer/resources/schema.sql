@@ -1,6 +1,6 @@
 -- Table containing indexer settings
 CREATE TABLE IF NOT EXISTS settings (
-  -- Primary key.
+  -- The primary key.
   id BOOL PRIMARY KEY DEFAULT true CHECK (id), -- To constrain the table to have a single row.
   -- The genesis block hash as queried from the node. This will be set the first time the indexer is started.
   -- Re-starting the indexer will check if the node connection is compatible with
@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS settings (
   -- The described check prevents that the indexer is re-started with a node connection
   -- to mainnet while the database has indexed data from testnet or vice versa.
   genesis_block_hash BYTEA NOT NULL,
-  -- Start block height that was indexed.
+  -- The start block height that was indexed.
   start_block_height INT8 NOT NULL,
   -- The last block height that was processed.
   latest_processed_block_height INT8
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS settings (
 -- been proven via a ZK proof. A manual check of the tasks is required now before releasing the reward.
 -- The `claimed` flag is set to true after the reward has been released.
 CREATE TABLE IF NOT EXISTS accounts (
-  -- Primary key.
+  -- The primary key.
   id BIGSERIAL PRIMARY KEY,
   -- The account address created on chain.
   account_address BYTEA NOT NULL,

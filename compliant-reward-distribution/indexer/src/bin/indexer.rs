@@ -221,11 +221,12 @@ async fn main() -> anyhow::Result<()> {
             // so that the settings are set in the database but no block has been processed
             // at all, this edge case is rather theoretical and should not
             // happen in practice (the default value here should not happen in practice).
-            let last_processed_block = settings
-                .latest_processed_block_height
-                .unwrap_or(consensus_info.last_finalized_block_height);
-
-            last_processed_block.next()
+            settings.latest_processed_block_height.map_or_else(
+                // Theoretical edge case: If the latest_processed_block_height is not set, we start from the start_block_height.
+                || settings.start_block_height,
+                // If the latest_processed_block_height is set, we start from the next block.
+                |latest_processed_block_height| latest_processed_block_height.next(),
+            )
         }
         // If the indexer is started for the first time, lookup the last block finalized, initialize
         // the database, and start to index at the last finalized block.
