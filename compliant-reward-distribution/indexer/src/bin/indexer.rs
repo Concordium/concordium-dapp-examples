@@ -24,7 +24,6 @@ struct Args {
         long = "node",
         short = 'n',
         default_value = "https://grpc.testnet.concordium.com:20000",
-        global = true,
         env = "CCD_INDEXER_NODE"
     )]
     node_endpoint: concordium_rust_sdk::v2::Endpoint,
@@ -32,6 +31,7 @@ struct Args {
     // application.
     #[arg(
         long = "db-connection",
+        short = 'c',
         default_value = "host=localhost dbname=indexer user=postgres password=password port=5432",
         env = "CCD_INDEXER_DB_CONNECTION"
     )]
@@ -40,6 +40,7 @@ struct Args {
     /// `warn`, and `error`.
     #[clap(
         long = "log-level",
+        short = 'l',
         default_value = "info",
         env = "CCD_INDEXER_LOG_LEVEL"
     )]
