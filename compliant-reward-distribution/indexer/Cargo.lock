@@ -602,9 +602,9 @@ checksum = "fd16c4719339c4530435d38e511904438d07cce7950afa3718a84ac36c10e89e"
 
 [[package]]
 name = "chrono"
-version = "0.4.32"
+version = "0.4.38"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "41daef31d7a747c5c847246f36de49ced6f7403b4cdabc807a97b5cc184cda7a"
+checksum = "a21f936df1771bf62b77f047b726c4625ff2e8aa607c01ec06e5a05bd8463401"
 dependencies = [
  "android-tzdata",
  "iana-time-zone",
@@ -683,7 +683,7 @@ dependencies = [
  "concordium-contracts-common-derive",
  "fnv",
  "hashbrown 0.11.2",
- "hex",
+ "hex 0.4.3",
  "num-bigint",
  "num-integer",
  "num-traits",
@@ -718,7 +718,7 @@ dependencies = [
  "derive_more",
  "ed25519-dalek",
  "futures",
- "hex",
+ "hex 0.4.3",
  "http",
  "num",
  "num-bigint",
@@ -800,7 +800,7 @@ dependencies = [
  "ed25519-dalek",
  "either",
  "ff",
- "hex",
+ "hex 0.4.3",
  "hmac",
  "itertools",
  "leb128",
@@ -1104,7 +1104,7 @@ dependencies = [
  "curve25519-dalek",
  "ed25519",
  "hashbrown 0.14.3",
- "hex",
+ "hex 0.4.3",
  "rand_core",
  "serde",
  "sha2",
@@ -1377,9 +1377,25 @@ checksum = "5d3d0e0f38255e7fa3cf31335b3a56f05febd18025f4db5ef7a0cfb4f8da651f"
 
 [[package]]
 name = "hex"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "805026a5d0141ffc30abb3be3173848ad46a1b1664fe632428479619a3644d77"
+
+[[package]]
+name = "hex"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
+
+[[package]]
+name = "hex-serde"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3486d7bc9e52c4c5fc1856ae8a5e4ab41d2499fc20bbc44492e244e8bf1b7012"
+dependencies = [
+ "hex 0.3.2",
+ "serde",
+]
 
 [[package]]
 name = "hmac"
@@ -1501,10 +1517,12 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "axum",
+ "chrono",
  "clap",
  "concordium-rust-sdk",
  "deadpool-postgres",
  "futures",
+ "hex-serde",
  "http",
  "serde",
  "serde_json",
@@ -2480,7 +2498,7 @@ checksum = "f58c3a1b3e418f61c25b2aeb43fc6c95eaa252b8cecdda67f401943e9e08d33f"
 dependencies = [
  "base64",
  "chrono",
- "hex",
+ "hex 0.4.3",
  "indexmap 1.9.3",
  "indexmap 2.1.0",
  "serde",
