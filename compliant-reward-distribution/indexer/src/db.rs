@@ -244,6 +244,22 @@ impl Database {
 
         opt_row.map(StoredAccountData::try_from).transpose()
     }
+
+    /// Get the settings recorded in the database.
+    pub async fn can_claim(&self, account_address: AccountAddress) -> DatabaseResult<bool> {
+        let get_account_data = self
+            .client
+            .prepare_cached("SELECT claimed FROM accounts WHERE account_address = $1")
+            .await?;
+
+        let params: [&(dyn ToSql + Sync); 1] = [&(account_address.0.as_ref())];
+
+        let opt_row = self.client.query_opt(&get_account_data, &params).await?;
+
+        let claimed: Option<bool> = opt_row.map(|value| value.try_get("claimed")).transpose()?;
+
+        Ok(claimed.unwrap_or(false))
+    }
 }
 
 /// Representation of a database pool
