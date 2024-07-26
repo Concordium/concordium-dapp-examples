@@ -1,19 +1,35 @@
 use anyhow::Context;
-use concordium_rust_sdk::types::{hashes::BlockHash, AbsoluteBlockHeight};
+use chrono::{DateTime, Utc};
+use concordium_rust_sdk::{
+    base::hashes::{IncorrectLength, TransactionHash},
+    id::types::AccountAddress,
+    types::{hashes::BlockHash, AbsoluteBlockHeight},
+};
 use deadpool_postgres::{GenericClient, Object};
+use hex_serde;
 use serde::Serialize;
+use std::string::FromUtf8Error;
+use thiserror::Error;
 use tokio_postgres::{types::ToSql, NoTls};
+
+#[derive(Debug, Error)]
+pub enum ConversionError {
+    #[error("Incorrect length")]
+    IncorrectLength(#[from] IncorrectLength),
+    #[error("UTF-8 conversion error: {0}")]
+    FromUtf8Error(#[from] FromUtf8Error),
+}
 
 /// Represents possible errors returned from [`Database`] or [`DatabasePool`]
 /// functions
-#[derive(thiserror::Error, Debug)]
+#[derive(Error, Debug)]
 pub enum DatabaseError {
     /// An error happened while interacting with the postgres DB.
     #[error("{0}")]
     Postgres(#[from] tokio_postgres::Error),
     /// Failed to perform conversion from DB representation of type.
-    #[error("Failed to convert type: {0}")]
-    TypeConversion(String),
+    #[error("Failed to convert type `{0}`: {1}")]
+    TypeConversion(String, #[source] ConversionError),
     /// Failed to configure database
     #[error("Could not configure database: {0}")]
     Configuration(#[from] anyhow::Error),
@@ -21,6 +37,97 @@ pub enum DatabaseError {
 
 /// Alias for returning results with [`DatabaseError`]s as the `Err` variant.
 type DatabaseResult<T> = Result<T, DatabaseError>;
+
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct Sha256(#[serde(with = "hex_serde")] [u8; 32]);
+
+impl TryFrom<&[u8]> for Sha256 {
+    type Error = IncorrectLength;
+
+    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+        value.try_into()
+    }
+}
+
+/// The database configuration stored in the database.
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct StoredAccountData {
+    /// The row in the database.
+    pub id: u64,
+    /// The timestamp of the block the event was included in.
+    pub block_time: DateTime<Utc>,
+    /// The transaction hash that the event was recorded in.
+    pub transaction_hash: TransactionHash,
+    /// A boolean specifying if the account has already claimed its rewards (got a reward payout).
+    /// Every account can only claim rewards once.
+    pub claimed: bool,
+    /// A boolean specifying if this account address has submitted all tasks
+    /// and the regulatory conditions have been proven via a ZK proof.
+    /// A manual check of the completed tasks is required now before releasing the reward.
+    pub pending_approval: bool,
+    /// A link to a twitter post submitted by the above account address (task 1).
+    pub twitter_post_link: Option<String>,
+    /// A boolean specifying if the identity associated with the account is eligible for the reward (task 2).
+    /// An associated ZK proof was verfied by this backend before this flag is set.
+    pub zk_proof_valid: Option<bool>,
+    /// A version that specifies the setting of the ZK proof during the verification. This enables us
+    /// to update the ZK proof verification logic in the future and invalidate older proofs.
+    pub zk_proof_version: Option<u64>,
+    /// A hash of the revealed `firstName|lastName|passportNumber` to prevent
+    /// claiming with different accounts for the same identity.
+    pub uniqueness_hash: Option<Sha256>,
+}
+
+impl TryFrom<tokio_postgres::Row> for StoredAccountData {
+    type Error = DatabaseError;
+
+    fn try_from(value: tokio_postgres::Row) -> DatabaseResult<Self> {
+        let raw_id: i64 = value.try_get("id")?;
+        let raw_twitter_post_link: Option<&[u8]> = value.try_get("twitter_post_link")?;
+        let raw_uniqueness_hash: Option<&[u8]> = value.try_get("uniqueness_hash")?;
+        let raw_zk_proof_version: Option<i64> = value.try_get("zk_proof_version")?;
+        let raw_transaction_hash: &[u8] = value.try_get("transaction_hash")?;
+
+        let events = Self {
+            id: raw_id as u64,
+            block_time: value.try_get("block_time")?,
+            claimed: value.try_get("claimed")?,
+            pending_approval: value.try_get("pending_approval")?,
+            zk_proof_valid: value.try_get("zk_proof_valid")?,
+            zk_proof_version: raw_zk_proof_version.map(|i| i as u64),
+            uniqueness_hash: raw_uniqueness_hash.and_then(|hash| {
+                hash.try_into()
+                    .map(Some)
+                    .map_err(|e| {
+                        DatabaseError::TypeConversion(
+                            "uniqueness_hash".to_string(),
+                            ConversionError::IncorrectLength(e),
+                        )
+                    })
+                    .ok()?
+            }),
+            transaction_hash: raw_transaction_hash.try_into().map_err(|e| {
+                DatabaseError::TypeConversion(
+                    "transaction_hash".to_string(),
+                    ConversionError::IncorrectLength(e),
+                )
+            })?,
+            twitter_post_link: raw_twitter_post_link.and_then(|link| {
+                String::from_utf8(link.to_vec())
+                    .map(Some)
+                    .map_err(|e| {
+                        DatabaseError::TypeConversion(
+                            "twitter_post_link".to_string(),
+                            ConversionError::FromUtf8Error(e),
+                        )
+                    })
+                    .ok()?
+            }),
+        };
+
+        Ok(events)
+    }
+}
 
 /// The database configuration stored in the database.
 #[derive(Debug, Serialize)]
@@ -50,9 +157,12 @@ impl TryFrom<tokio_postgres::Row> for StoredConfiguration {
 
         let settings = Self {
             latest_processed_block_height,
-            genesis_block_hash: raw_genesis_block_hash
-                .try_into()
-                .map_err(|_| DatabaseError::TypeConversion("genesis_block_hash".to_string()))?,
+            genesis_block_hash: raw_genesis_block_hash.try_into().map_err(|e| {
+                DatabaseError::TypeConversion(
+                    "genesis_block_hash".to_string(),
+                    ConversionError::IncorrectLength(e),
+                )
+            })?,
             start_block_height,
         };
         Ok(settings)
@@ -114,6 +224,25 @@ impl Database {
         let opt_row = self.client.query_opt(&get_settings, &[]).await?;
 
         opt_row.map(StoredConfiguration::try_from).transpose()
+    }
+
+    /// Get the settings recorded in the database.
+    pub async fn get_account_data(
+        &self,
+        account_address: AccountAddress,
+    ) -> DatabaseResult<Option<StoredAccountData>> {
+        let get_account_data = self
+            .client
+            .prepare_cached(
+                "SELECT id, block_time, transaction_hash, claimed, pending_approval, twitter_post_link, zk_proof_valid, zk_proof_version, uniqueness_hash FROM accounts WHERE account_address = $1",
+            )
+            .await?;
+
+        let params: [&(dyn ToSql + Sync); 1] = [&(account_address.0.as_ref())];
+
+        let opt_row = self.client.query_opt(&get_account_data, &params).await?;
+
+        opt_row.map(StoredAccountData::try_from).transpose()
     }
 }
 

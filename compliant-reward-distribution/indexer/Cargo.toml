@@ -29,3 +29,5 @@ tokio-postgres = { version = "0.7", features = [
   "with-chrono-0_4",
 ] }
 deadpool-postgres = "0.11"
+chrono = "0.4"
+hex-serde = "0.1.0"
