@@ -155,6 +155,7 @@ async fn main() -> anyhow::Result<()> {
 
     let router = Router::new()
         .route("/api/getAccountData", post(get_account_data))
+        .route("/api/canClaim", post(can_claim))
         .route("/health", get(health))
         .with_state(state)
         .layer(
@@ -264,4 +265,19 @@ async fn get_account_data(
     Ok(Json(ReturnStoredAccountData {
         data: database_result,
     }))
+}
+
+/// Handles the `getItemStatusChangedEvents` endpoint, returning a vector of
+/// ItemStatusChangedEvents from the database if present.
+async fn can_claim(
+    State(state): State<Server>,
+    request: Result<Json<GetAccountDataParam>, JsonRejection>,
+) -> Result<Json<bool>, ServerError> {
+    let db = state.db_pool.get().await?;
+
+    let Json(param) = request?;
+
+    let can_claim = db.can_claim(param.account_address).await?;
+
+    Ok(Json(can_claim))
 }
