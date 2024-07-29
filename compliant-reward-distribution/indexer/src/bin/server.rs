@@ -8,17 +8,25 @@ use axum::{
     Json, Router,
 };
 use clap::Parser;
-use concordium_rust_sdk::id::types::AccountAddress;
+use concordium_rust_sdk::{
+    common::types::{CredentialIndex, KeyIndex, Signature},
+    id::types::{AccountAddress, AccountCredentialWithoutProofs},
+    types::{AbsoluteBlockHeight, AccountInfo},
+    v2::{AccountIdentifier, Client, QueryResponse},
+};
 use http::StatusCode;
-use indexer::db::ConversionError;
+use indexer::db::{ConversionError, Sha256};
+use sha2::Digest;
 
-/// The maximum number of events allowed in a request to the database.
-const MAX_REQUEST_LIMIT: u32 = 30;
+/// The maximum number of rows allowed in a request to the database.
+const MAX_REQUEST_LIMIT: u32 = 40;
 
 /// Server struct to store the db_pool.
 #[derive(Clone, Debug)]
 pub struct Server {
     db_pool: DatabasePool,
+    node_client: Client,
+    admin_accounts: Vec<AccountAddress>,
 }
 
 /// Errors that this server can produce.
@@ -34,6 +42,10 @@ pub enum ServerError {
     JsonRejection(#[from] JsonRejection),
     #[error("The requested events to the database were above the limit {0}")]
     MaxRequestLimit(u32),
+    #[error("The signer account address is not an admin")]
+    SignerNotAdmin,
+    #[error("The signature is not valid")]
+    InvalidSignature,
 }
 
 /// Mapping DatabaseError to ServerError
@@ -76,12 +88,24 @@ impl IntoResponse for ServerError {
                 )
             }
             ServerError::JsonRejection(error) => {
-                tracing::info!("Bad request: Failed to extract json object: {error}");
-                (StatusCode::BAD_REQUEST, Json(format!("{}", error)))
+                let error_message = format!("Bad request: Failed to extract json object: {error}");
+                tracing::info!(error_message);
+                (StatusCode::BAD_REQUEST, Json(error_message.to_string()))
             }
             ServerError::MaxRequestLimit(error) => {
-                tracing::info!("Bad request: The requested events to the database were above the limit {error}");
-                (StatusCode::BAD_REQUEST, Json(format!("{}", error)))
+                let error_message=format!("Bad request: The requested events to the database were above the limit {error}");
+                tracing::info!(error_message);
+                (StatusCode::BAD_REQUEST, Json(error_message.to_string()))
+            }
+            ServerError::SignerNotAdmin => {
+                let error_message = "Bad request: The signer account address is not an admin";
+                tracing::info!(error_message);
+                (StatusCode::BAD_REQUEST, Json(error_message.to_string()))
+            }
+            ServerError::InvalidSignature => {
+                let error_message = "Bad request: The signature is not valid";
+                tracing::info!(error_message);
+                (StatusCode::BAD_REQUEST, Json(error_message.to_string()))
             }
         };
         r.into_response()
@@ -128,6 +152,14 @@ struct Args {
         env = "CCD_SERVER_NODE"
     )]
     node_endpoint: concordium_rust_sdk::v2::Endpoint,
+    /// The admin accounts allowed to read the database and set the `claimed`
+    /// flag in the database after having manually transferred the funds to an account.
+    #[clap(
+        long = "admin_accounts",
+        short = 'c',
+        env = "CCD_SERVER_ADMIN_ACCOUNTS"
+    )]
+    admin_accounts: Vec<AccountAddress>,
 }
 
 /// The main function.
@@ -152,7 +184,30 @@ async fn main() -> anyhow::Result<()> {
         .await
         .context("Could not create database pool")?;
 
-    let state = Server { db_pool };
+    // Set up endpoint to the node.
+    let endpoint = if app
+        .node_endpoint
+        .uri()
+        .scheme()
+        .map_or(false, |x| x == &concordium_rust_sdk::v2::Scheme::HTTPS)
+    {
+        app.node_endpoint
+            .tls_config(tonic::transport::channel::ClientTlsConfig::new())
+            .context("Unable to construct TLS configuration for the Concordium API.")?
+    } else {
+        app.node_endpoint
+    }
+    .connect_timeout(std::time::Duration::from_secs(5))
+    .timeout(std::time::Duration::from_secs(10));
+
+    // Establish connection to the blockchain node.
+    let node_client = Client::new(endpoint.clone()).await?;
+
+    let state = Server {
+        db_pool,
+        node_client,
+        admin_accounts: app.admin_accounts,
+    };
 
     tracing::info!("Starting server...");
 
@@ -238,11 +293,43 @@ async fn health() -> Json<Health> {
     })
 }
 
+/// Trait definition of the `IsMessage`. This trait is implemented for the two
+/// types `WithdrawMessage` and `TransferMessage`. The `isMessage` trait is used
+/// as an input parameter to the `validate_signature_and_increase_nonce`
+/// function so that the function works with both message types.
+trait HasSigningData {
+    fn signing_data(&self) -> &SigningData;
+}
+
+/// Struct returned by the `getItemStatusChangedEvents` endpoint. It returns a
+/// vector of ItemStatusChangedEvents from the database if present.
+#[derive(serde::Deserialize, serde::Serialize)]
+struct SigningMessage {
+    block_hash: Sha256,
+    block_height: AbsoluteBlockHeight,
+}
+
+/// Struct returned by the `getItemStatusChangedEvents` endpoint. It returns a
+/// vector of ItemStatusChangedEvents from the database if present.
+#[derive(serde::Deserialize, serde::Serialize)]
+struct SigningData {
+    signer: AccountAddress,
+    message: SigningMessage,
+    signature: Signature,
+}
+
+impl HasSigningData for GetAccountDataParam {
+    fn signing_data(&self) -> &SigningData {
+        &self.signing_data
+    }
+}
+
 /// Parameter struct for the `getItemStatusChangedEvents` endpoint send in the
 /// request body.
-#[derive(serde::Deserialize)]
+#[derive(serde::Deserialize, serde::Serialize)]
 struct GetAccountDataParam {
     account_address: AccountAddress,
+    signing_data: SigningData,
 }
 
 /// Struct returned by the `getItemStatusChangedEvents` endpoint. It returns a
@@ -252,17 +339,119 @@ struct ReturnStoredAccountData {
     data: Option<StoredAccountData>,
 }
 
+/// Check that an admin account is sending the request by checking that:
+/// - the signer is an admin account.
+/// - the signature is valid.
+/// - the signature is not expired.
+fn check_admin_and_signature(
+    state: Server,
+    param: &dyn HasSigningData,
+    signer_account_info: QueryResponse<AccountInfo>,
+) -> Result<(), ServerError> {
+    let SigningData {
+        signer,
+        message,
+        signature,
+    } = param.signing_data();
+
+    // Check that the signer is an admin account.
+    if !state.admin_accounts.contains(signer) {
+        return Err(ServerError::SignerNotAdmin);
+    }
+
+    // This backend checks that the admin has signed the "block_hash" and "block_number"
+    // of a block that is not older than 10 blocks from the most recent block.
+    // Signing the "block_hash" ensures that the signature expires after 10 blocks.
+    // The "block_number" is signed to enable the backend to look up the "block_hash" easily.
+
+    // This verification relies on the front-end (via the wallet) and back-end being connected to reliably nodes
+    // that are caught up to the top of the chain. In particular, the backend should only be run in conjunction with
+    // a reliable node connection.
+
+    // Front-end to back-end flow:
+    // The front-end should look up the most recent block and sign
+    // a previous block (such as the 5th previous block). This
+    // gives the backend a window of 5 blocks to be delayed vs. the node connection at the front-end until
+    // the signature has expired.
+
+    // Currently, it is expected that only a few "approvals" have to be retrieved
+    // by an admin such that one signature check should be sufficient.
+    // If several requests are needed, some session handling (e.g. JWT) should be implemented to avoid
+    // having to sign each request.
+
+    // The message signed in the Concordium browser wallet is prepended with the
+    // `account` address and 8 zero bytes. Accounts in the Concordium browser wallet
+    // can either sign a regular transaction (in that case the prepend is
+    // `account` address and the nonce of the account which is by design >= 1)
+    // or sign a message (in that case the prepend is `account` address and 8 zero
+    // bytes). Hence, the 8 zero bytes ensure that the user does not accidentally
+    // sign a transaction. The account nonce is of type u64 (8 bytes).
+    let mut msg_prepend = [0; 32 + 8];
+    //Prepend the `account` address of the signer.
+    msg_prepend[0..32].copy_from_slice(signer.as_ref());
+    // Prepend 8 zero bytes.
+    msg_prepend[32..40].copy_from_slice(&[0u8; 8]);
+    // Calculate the message hash.
+
+    // TODO: better handling of unwrap.
+    let message_bytes = bincode::serialize(&message).unwrap();
+    let message_hash = sha2::Sha256::digest([&msg_prepend[0..40], &message_bytes].concat());
+
+    // We use regular accounts as admin accounts.
+    // Regular accounts have only one public-private key pair at index 0 in the credential map.
+    let signer_account_credential =
+        &signer_account_info.response.account_credentials[&CredentialIndex::from(0)].value;
+
+    // We use regular accounts as admin accounts.
+    // Regular accounts have only one public-private key pair at index 0 in the key map.
+    let signer_public_key = match signer_account_credential {
+        AccountCredentialWithoutProofs::Initial { icdv } => &icdv.cred_account.keys[&KeyIndex(0)],
+        AccountCredentialWithoutProofs::Normal {
+            cdv,
+            commitments: _,
+        } => &cdv.cred_key_info.keys[&KeyIndex(0)],
+    };
+
+    let valid_signature = signer_public_key.verify(message_hash, signature);
+
+    tracing::error!("valid signature: {:?}", valid_signature);
+
+    // Check validity of the signature.
+    if !valid_signature {
+        return Err(ServerError::InvalidSignature);
+    }
+
+    // TODO check that the blockhash is from the last 10 blocks.
+
+    Ok(())
+}
+
 /// Handles the `getItemStatusChangedEvents` endpoint, returning a vector of
 /// ItemStatusChangedEvents from the database if present.
 async fn get_account_data(
-    State(state): State<Server>,
+    State(mut state): State<Server>,
     request: Result<Json<GetAccountDataParam>, JsonRejection>,
 ) -> Result<Json<ReturnStoredAccountData>, ServerError> {
     let db = state.db_pool.get().await?;
 
     let Json(param) = request?;
 
-    // Add authorization e.g. via signature check or ZK proof.
+    // TODO: better handling of unwrap.
+    let consensus_info = state.node_client.get_consensus_info().await.unwrap();
+    let signer_account_info = state
+        .node_client
+        .get_account_info(
+            &AccountIdentifier::Address(param.signing_data.signer),
+            consensus_info.best_block_height,
+        )
+        .await
+        .unwrap();
+
+    // Check that:
+    // - the signer is an admin account.
+    // - the signature is valid.
+    // - the signature is not expired.
+    check_admin_and_signature(state, &param, signer_account_info)?;
 
     let database_result = db.get_account_data(param.account_address).await?;
 
@@ -277,6 +466,7 @@ async fn get_account_data(
 struct GetPendingApprovalsParam {
     limit: u32,
     offset: u32,
+    signing_data: SigningData,
 }
 
 /// Struct returned by the `getItemStatusChangedEvents` endpoint. It returns a
@@ -286,21 +476,42 @@ struct StoredAccountDataReturnValue {
     data: Vec<StoredAccountData>,
 }
 
+impl HasSigningData for GetPendingApprovalsParam {
+    fn signing_data(&self) -> &SigningData {
+        &self.signing_data
+    }
+}
+
 /// Handles the `getItemStatusChangedEvents` endpoint, returning a vector of
 /// ItemStatusChangedEvents from the database if present.
 async fn get_pending_approvals(
-    State(state): State<Server>,
+    State(mut state): State<Server>,
     request: Result<Json<GetPendingApprovalsParam>, JsonRejection>,
 ) -> Result<Json<StoredAccountDataReturnValue>, ServerError> {
     let db = state.db_pool.get().await?;
 
     let Json(param) = request?;
 
-    // Add authorization e.g. via signature check or ZK proof.
-
     if param.limit > MAX_REQUEST_LIMIT {
         return Err(ServerError::MaxRequestLimit(MAX_REQUEST_LIMIT));
     }
+
+    // TODO: better handling of unwrap.
+    let consensus_info = state.node_client.get_consensus_info().await.unwrap();
+    let signer_account_info = state
+        .node_client
+        .get_account_info(
+            &AccountIdentifier::Address(param.signing_data.signer),
+            consensus_info.best_block_height,
+        )
+        .await
+        .unwrap();
+
+    // Check that:
+    // - the signer is an admin account.
+    // - the signature is valid.
+    // - the signature is not expired.
+    check_admin_and_signature(state, &param, signer_account_info)?;
 
     let database_result = db.get_pending_approvals(param.limit, param.offset).await?;
 
@@ -309,11 +520,18 @@ async fn get_pending_approvals(
     }))
 }
 
+/// Parameter struct for the `getItemStatusChangedEvents` endpoint send in the
+/// request body.
+#[derive(serde::Deserialize, serde::Serialize)]
+struct CanClaimParam {
+    account_address: AccountAddress,
+}
+
 /// Handles the `getItemStatusChangedEvents` endpoint, returning a vector of
 /// ItemStatusChangedEvents from the database if present.
 async fn can_claim(
     State(state): State<Server>,
-    request: Result<Json<GetAccountDataParam>, JsonRejection>,
+    request: Result<Json<CanClaimParam>, JsonRejection>,
 ) -> Result<Json<bool>, ServerError> {
     let db = state.db_pool.get().await?;
 
