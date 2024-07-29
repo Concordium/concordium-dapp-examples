@@ -246,6 +246,34 @@ impl Database {
     }
 
     /// Get the settings recorded in the database.
+    pub async fn get_pending_approvals(
+        &self,
+        limit: u32,
+        offset: u32,
+    ) -> DatabaseResult<Vec<StoredAccountData>> {
+        let get_pending_approvals = self
+            .client
+            .prepare_cached(
+                "SELECT id, block_time, transaction_hash, claimed, pending_approval, twitter_post_link, zk_proof_valid, zk_proof_version, uniqueness_hash \
+                FROM accounts \
+                WHERE pending_approval = true \
+                LIMIT $1 \
+                OFFSET $2"
+            )
+            .await?;
+        let params: [&(dyn ToSql + Sync); 2] = [&(limit as i64), &(offset as i64)];
+
+        let rows = self.client.query(&get_pending_approvals, &params).await?;
+
+        let result: Vec<StoredAccountData> = rows
+            .into_iter()
+            .map(StoredAccountData::try_from)
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(result)
+    }
+
+    /// Get the settings recorded in the database.
     pub async fn can_claim(&self, account_address: AccountAddress) -> DatabaseResult<bool> {
         let get_account_data = self
             .client

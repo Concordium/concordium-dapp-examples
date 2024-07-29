@@ -12,6 +12,9 @@ use concordium_rust_sdk::id::types::AccountAddress;
 use http::StatusCode;
 use indexer::db::ConversionError;
 
+/// The maximum number of events allowed in a request to the database.
+const MAX_REQUEST_LIMIT: u32 = 30;
+
 /// Server struct to store the db_pool.
 #[derive(Clone, Debug)]
 pub struct Server {
@@ -73,11 +76,11 @@ impl IntoResponse for ServerError {
                 )
             }
             ServerError::JsonRejection(error) => {
-                tracing::debug!("Bad request: Failed to extract json object: {error}");
+                tracing::info!("Bad request: Failed to extract json object: {error}");
                 (StatusCode::BAD_REQUEST, Json(format!("{}", error)))
             }
             ServerError::MaxRequestLimit(error) => {
-                tracing::debug!("Bad request: The requested events to the database were above the limit {error}");
+                tracing::info!("Bad request: The requested events to the database were above the limit {error}");
                 (StatusCode::BAD_REQUEST, Json(format!("{}", error)))
             }
         };
@@ -155,6 +158,7 @@ async fn main() -> anyhow::Result<()> {
 
     let router = Router::new()
         .route("/api/getAccountData", post(get_account_data))
+        .route("/api/getPendingApprovals", post(get_pending_approvals))
         .route("/api/canClaim", post(can_claim))
         .route("/health", get(health))
         .with_state(state)
@@ -234,18 +238,18 @@ async fn health() -> Json<Health> {
     })
 }
 
-/// Struct returned by the `getItemStatusChangedEvents` endpoint. It returns a
-/// vector of ItemStatusChangedEvents from the database if present.
-#[derive(serde::Serialize)]
-struct ReturnStoredAccountData {
-    data: Option<StoredAccountData>,
-}
-
 /// Parameter struct for the `getItemStatusChangedEvents` endpoint send in the
 /// request body.
 #[derive(serde::Deserialize)]
 struct GetAccountDataParam {
     account_address: AccountAddress,
+}
+
+/// Struct returned by the `getItemStatusChangedEvents` endpoint. It returns a
+/// vector of ItemStatusChangedEvents from the database if present.
+#[derive(serde::Serialize)]
+struct ReturnStoredAccountData {
+    data: Option<StoredAccountData>,
 }
 
 /// Handles the `getItemStatusChangedEvents` endpoint, returning a vector of
@@ -263,6 +267,44 @@ async fn get_account_data(
     let database_result = db.get_account_data(param.account_address).await?;
 
     Ok(Json(ReturnStoredAccountData {
+        data: database_result,
+    }))
+}
+
+/// Parameter struct for the `getItemStatusChangedEvents` endpoint send in the
+/// request body.
+#[derive(serde::Deserialize)]
+struct GetPendingApprovalsParam {
+    limit: u32,
+    offset: u32,
+}
+
+/// Struct returned by the `getItemStatusChangedEvents` endpoint. It returns a
+/// vector of ItemStatusChangedEvents from the database if present.
+#[derive(serde::Serialize)]
+struct StoredAccountDataReturnValue {
+    data: Vec<StoredAccountData>,
+}
+
+/// Handles the `getItemStatusChangedEvents` endpoint, returning a vector of
+/// ItemStatusChangedEvents from the database if present.
+async fn get_pending_approvals(
+    State(state): State<Server>,
+    request: Result<Json<GetPendingApprovalsParam>, JsonRejection>,
+) -> Result<Json<StoredAccountDataReturnValue>, ServerError> {
+    let db = state.db_pool.get().await?;
+
+    let Json(param) = request?;
+
+    // Add authorization e.g. via signature check or ZK proof.
+
+    if param.limit > MAX_REQUEST_LIMIT {
+        return Err(ServerError::MaxRequestLimit(MAX_REQUEST_LIMIT));
+    }
+
+    let database_result = db.get_pending_approvals(param.limit, param.offset).await?;
+
+    Ok(Json(StoredAccountDataReturnValue {
         data: database_result,
     }))
 }
