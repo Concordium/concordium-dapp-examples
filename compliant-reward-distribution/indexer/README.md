@@ -66,4 +66,17 @@ You can open the help menu as follows:
 
 ```console
 cargo run --bin indexer -- --help
+
+## Configure the `server`
+
+```console
+cargo run --bin server -- --admin_accounts "47b6Qe2XtZANHetanWKP1PbApLKtS3AyiCtcXaqLMbypKjCaRw" --admin_accounts "4KjE4rptF1o3QX6XuSaQzm6w9KLYYQTbKm2Zd4NooarH6YwfxS"
+```
+
+```
+curl -POST "http://localhost:8080/api/canClaim" -H "Content-Type: application/json" --data '{"account_address": "3cGEB7tTdQBFxJ9sn5JyGPNay2MSmRSKm4133UVqmKoFg4MXJ1"}' -v
+```
+
+```
+curl -POST "http://localhost:8080/api/getAccountData" -H "Content-Type: application/json" --data '{"account_address":"3cGEB7tTdQBFxJ9sn5JyGPNay2MSmRSKm4133UVqmKoFg4MXJ1","signing_data":{"signer":"47b6Qe2XtZANHetanWKP1PbApLKtS3AyiCtcXaqLMbypKjCaRw","message":{"block_hash":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","block_height":3},"signature":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab00694e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069"}}' -v
 ```
