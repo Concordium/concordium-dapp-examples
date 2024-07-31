@@ -10,9 +10,22 @@ use axum::{
 use clap::Parser;
 use concordium_rust_sdk::{
     common::types::{CredentialIndex, KeyIndex, Signature},
-    id::types::{AccountAddress, AccountCredentialWithoutProofs},
+    contract_client::CredentialStatus,
+    id::{
+        constants::ArCurve,
+        id_proof_types::{AtomicStatement, RevealAttributeStatement},
+        types::{AccountAddress, AccountCredentialWithoutProofs, GlobalContext},
+    },
     types::{AbsoluteBlockHeight, AccountInfo},
-    v2::{AccountIdentifier, Client, QueryResponse},
+    v2::{AccountIdentifier, BlockIdentifier, Client, QueryResponse},
+    web3id::{
+        did::Network, get_public_data, CredentialLookupError, Presentation,
+        PresentationVerificationError, Web3IdAttribute,
+    },
+};
+use concordium_rust_sdk::{
+    id::types::AttributeTag,
+    web3id::CredentialStatement::{Account, Web3Id},
 };
 use http::StatusCode;
 use indexer::db::{ConversionError, Sha256};
@@ -21,17 +34,32 @@ use sha2::Digest;
 /// The maximum number of rows allowed in a request to the database.
 const MAX_REQUEST_LIMIT: u32 = 40;
 
+const TESTNET_GENESIS_BLOCK_HASH: [u8; 32] = [
+    66, 33, 51, 45, 52, 225, 105, 65, 104, 194, 160, 192, 179, 253, 15, 39, 56, 9, 97, 44, 177, 61,
+    0, 13, 92, 46, 0, 232, 95, 80, 247, 150,
+];
+
+/// TODO: think if we want to save the statements in the database.
+const ZK_STATEMENT_0: RevealAttributeStatement<AttributeTag> = RevealAttributeStatement {
+    attribute_tag: AttributeTag(0),
+};
+// const ZK_STATEMENT_1: RevealAttributeStatement<AttributeTag> = RevealAttributeStatement {
+//     attribute_tag: AttributeTag(0),
+// };
+
 /// Server struct to store the db_pool.
 #[derive(Clone, Debug)]
 pub struct Server {
     db_pool: DatabasePool,
     node_client: Client,
+    network: Network,
+    cryptographic_param: GlobalContext<ArCurve>,
     admin_accounts: Vec<AccountAddress>,
 }
 
 /// Errors that this server can produce.
 #[derive(Debug, thiserror::Error)]
-pub enum ServerError {
+pub enum ServerError<'a> {
     #[error("Database error from postgres: {0}")]
     DatabaseErrorPostgres(tokio_postgres::Error),
     #[error("Database error in type `{0}` conversion: {1}")]
@@ -46,10 +74,22 @@ pub enum ServerError {
     SignerNotAdmin,
     #[error("The signature is not valid")]
     InvalidSignature,
+    #[error("Unable to look up all credentials: {0}")]
+    CredentialLookup(#[from] CredentialLookupError),
+    #[error("One or more credentials are not active")]
+    InactiveCredentials,
+    #[error("Invalid proof: {0}")]
+    InvalidProof(#[from] PresentationVerificationError),
+    #[error("Wrong length of {0}. Expect {1}. Got {2}")]
+    WrongLength(&'a str, usize, usize),
+    #[error("Statement {0} is wrong")]
+    WrongStatement(u8),
+    #[error("Expect account statement and not web3id statement")]
+    AccountStatement,
 }
 
 /// Mapping DatabaseError to ServerError
-impl From<DatabaseError> for ServerError {
+impl<'a> From<DatabaseError> for ServerError<'a> {
     fn from(e: DatabaseError) -> Self {
         match e {
             DatabaseError::Postgres(e) => ServerError::DatabaseErrorPostgres(e),
@@ -61,51 +101,79 @@ impl From<DatabaseError> for ServerError {
     }
 }
 
-impl IntoResponse for ServerError {
+impl<'a> IntoResponse for ServerError<'a> {
     fn into_response(self) -> Response {
         let r = match self {
-            ServerError::DatabaseErrorPostgres(error) => {
-                tracing::error!("Internal error: Database error from postgres: {error}");
+            ServerError::DatabaseErrorPostgres(_) => {
+                tracing::error!("Internal error: {self}");
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     Json("Internal error".to_string()),
                 )
             }
-            ServerError::DatabaseErrorTypeConversion(type_name, error) => {
-                tracing::error!(
-                    "Internal error: Database error in type `{type_name}` conversion: {error}"
-                );
+            ServerError::DatabaseErrorTypeConversion(..) => {
+                tracing::error!("Internal error: {self}");
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     Json("Internal error".to_string()),
                 )
             }
-            ServerError::DatabaseErrorConfiguration(error) => {
-                tracing::error!("Internal error: Database error in configuration: {error}");
+            ServerError::DatabaseErrorConfiguration(..) => {
+                tracing::error!("Internal error: {self}");
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     Json("Internal error".to_string()),
                 )
             }
-            ServerError::JsonRejection(error) => {
-                let error_message = format!("Bad request: Failed to extract json object: {error}");
-                tracing::info!(error_message);
-                (StatusCode::BAD_REQUEST, Json(error_message.to_string()))
+            ServerError::JsonRejection(_) => {
+                let error_message = format!("Bad request: {self}");
+                tracing::warn!(error_message);
+                (StatusCode::BAD_REQUEST, error_message.into())
             }
-            ServerError::MaxRequestLimit(error) => {
-                let error_message=format!("Bad request: The requested events to the database were above the limit {error}");
-                tracing::info!(error_message);
-                (StatusCode::BAD_REQUEST, Json(error_message.to_string()))
+            ServerError::MaxRequestLimit(_) => {
+                let error_message = format!("Bad request: {self}");
+                tracing::warn!(error_message);
+                (StatusCode::BAD_REQUEST, error_message.into())
             }
             ServerError::SignerNotAdmin => {
-                let error_message = "Bad request: The signer account address is not an admin";
-                tracing::info!(error_message);
-                (StatusCode::BAD_REQUEST, Json(error_message.to_string()))
+                let error_message = format!("Bad request: {self}");
+                tracing::warn!(error_message);
+                (StatusCode::BAD_REQUEST, error_message.into())
             }
             ServerError::InvalidSignature => {
-                let error_message = "Bad request: The signature is not valid";
-                tracing::info!(error_message);
-                (StatusCode::BAD_REQUEST, Json(error_message.to_string()))
+                let error_message = format!("Bad request: {self}");
+                tracing::warn!(error_message);
+                (StatusCode::BAD_REQUEST, error_message.into())
+            }
+            ServerError::CredentialLookup(_) => {
+                let error_message = format!("Bad request: {self}");
+                tracing::warn!(error_message);
+                (StatusCode::BAD_REQUEST, Json(error_message.into()))
+            }
+            ServerError::InactiveCredentials => {
+                let error_message = format!("Bad request: {self}");
+                tracing::warn!(error_message);
+                (StatusCode::BAD_REQUEST, Json(error_message.into()))
+            }
+            ServerError::InvalidProof(_) => {
+                let error_message = format!("Bad request: {self}");
+                tracing::warn!(error_message);
+                (StatusCode::BAD_REQUEST, Json(error_message.into()))
+            }
+            ServerError::WrongLength(..) => {
+                let error_message = format!("Bad request: {self}");
+                tracing::warn!(error_message);
+                (StatusCode::BAD_REQUEST, Json(error_message.into()))
+            }
+            ServerError::AccountStatement => {
+                let error_message = format!("Bad request: {self}");
+                tracing::warn!(error_message);
+                (StatusCode::BAD_REQUEST, Json(error_message.into()))
+            }
+            ServerError::WrongStatement(_) => {
+                let error_message = format!("Bad request: {self}");
+                tracing::warn!(error_message);
+                (StatusCode::BAD_REQUEST, Json(error_message.into()))
             }
         };
         r.into_response()
@@ -201,20 +269,37 @@ async fn main() -> anyhow::Result<()> {
     .timeout(std::time::Duration::from_secs(10));
 
     // Establish connection to the blockchain node.
-    let node_client = Client::new(endpoint.clone()).await?;
+    let mut node_client = Client::new(endpoint.clone()).await?;
+    let consensus_info = node_client.get_consensus_info().await?;
+    let genesis_hash = consensus_info.genesis_block.bytes;
+
+    let network = if genesis_hash == TESTNET_GENESIS_BLOCK_HASH {
+        Network::Testnet
+    } else {
+        Network::Mainnet
+    };
+
+    let cryptographic_param = node_client
+        .get_cryptographic_parameters(BlockIdentifier::LastFinal)
+        .await
+        .context("Unable to get cryptographic parameters.")?
+        .response;
 
     let state = Server {
         db_pool,
         node_client,
+        network,
+        cryptographic_param,
         admin_accounts: app.admin_accounts,
     };
 
     tracing::info!("Starting server...");
 
     let router = Router::new()
+        .route("/api/canClaim", post(can_claim))
         .route("/api/getAccountData", post(get_account_data))
         .route("/api/getPendingApprovals", post(get_pending_approvals))
-        .route("/api/canClaim", post(can_claim))
+        .route("/api/postZKProof", post(post_zk_proof))
         .route("/health", get(health))
         .with_state(state)
         .layer(
@@ -238,45 +323,107 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Construct a future for shutdown signals (for unix: SIGINT and SIGTERM) (for
-/// windows: ctrl c and ctrl break). The signal handler is set when the future
-/// is polled and until then the default signal handler.
-fn set_shutdown() -> anyhow::Result<impl futures::Future<Output = ()>> {
-    use futures::FutureExt;
+#[repr(transparent)]
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PostZKProofParam {
+    presentation: Presentation<ArCurve, Web3IdAttribute>,
+}
 
-    #[cfg(unix)]
+async fn post_zk_proof<'a>(
+    State(mut state): State<Server>,
+    request: Result<Json<PostZKProofParam>, JsonRejection>,
+) -> Result<Json<bool>, ServerError<'a>> {
+    let Json(param) = request?;
+
+    let presentation = param.presentation;
+
+    let block_info = state
+        .node_client
+        .get_block_info(BlockIdentifier::LastFinal)
+        .await
+        .map_err(|e| ServerError::CredentialLookup(e.into()))?;
+
+    let public_data = get_public_data(
+        &mut state.node_client,
+        state.network,
+        &presentation,
+        block_info.block_hash,
+    )
+    .await?;
+
+    // TODO check if this check is needed since we don't use `web3id` verifiable credentials.
+    // Check that all credentials are active at the time of the query.
+    if !public_data
+        .iter()
+        .all(|cm| matches!(cm.status, CredentialStatus::Active))
     {
-        use tokio::signal::unix as unix_signal;
-
-        let mut terminate_stream = unix_signal::signal(unix_signal::SignalKind::terminate())?;
-        let mut interrupt_stream = unix_signal::signal(unix_signal::SignalKind::interrupt())?;
-
-        Ok(async move {
-            futures::future::select(
-                Box::pin(terminate_stream.recv()),
-                Box::pin(interrupt_stream.recv()),
-            )
-            .map(|_| ())
-            .await
-        })
+        return Err(ServerError::InactiveCredentials);
     }
 
-    #[cfg(windows)]
-    {
-        use tokio::signal::windows as windows_signal;
+    // Verify the cryptographic proofs.
+    let request = presentation.verify(
+        &state.cryptographic_param,
+        public_data.iter().map(|cm| &cm.inputs),
+    )?;
 
-        let mut ctrl_break_stream = windows_signal::ctrl_break()?;
-        let mut ctrl_c_stream = windows_signal::ctrl_c()?;
+    let num_statements = request.credential_statements.len();
 
-        Ok(async move {
-            futures::future::select(
-                Box::pin(ctrl_break_stream.recv()),
-                Box::pin(ctrl_c_stream.recv()),
-            )
-            .map(|_| ())
-            .await
-        })
+    // The proof whould be generated from only one account credential.
+    if num_statements != 1 {
+        return Err(ServerError::WrongLength(
+            "credential_statements",
+            1,
+            num_statements,
+        ));
     }
+
+    let account_statement = request.credential_statements[0].clone();
+
+    match account_statement {
+        Account {
+            network: _,
+            cred_id,
+            statement,
+        } => {
+            // TODO: check do I need check the network
+
+            // TODO: handle unwrap
+            let account_info = state
+                .node_client
+                .get_account_info(
+                    &AccountIdentifier::CredId(cred_id),
+                    BlockIdentifier::LastFinal,
+                )
+                .await
+                .unwrap()
+                .response;
+
+            // TODO: use account_address to insert into database.
+            let _account_address = account_info.account_address;
+
+            if let Some(AtomicStatement::RevealAttribute { statement: stmt }) = statement.get(0) {
+                if stmt != &ZK_STATEMENT_0 {
+                    return Err(ServerError::WrongStatement(0));
+                }
+            } else {
+                return Err(ServerError::WrongStatement(0));
+            }
+
+            // if let Some(AtomicStatement::RevealAttribute { statement: stmt }) = statement.get(1) {
+            //     if stmt != &ZK_STATEMENT_1 {
+            //         return Err(ServerError::WrongStatement(0));
+            //     }
+            // } else {
+            //     return Err(ServerError::WrongStatement(0));
+            // }
+        }
+        Web3Id { .. } => return Err(ServerError::AccountStatement),
+    }
+
+    // TODO check that proof is not expired.
+
+    Ok(Json(true))
 }
 
 /// Struct returned by the `health` endpoint. It returns the version of the
@@ -304,6 +451,7 @@ trait HasSigningData {
 /// Struct returned by the `getItemStatusChangedEvents` endpoint. It returns a
 /// vector of ItemStatusChangedEvents from the database if present.
 #[derive(serde::Deserialize, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 struct SigningMessage {
     block_hash: Sha256,
     block_height: AbsoluteBlockHeight,
@@ -327,6 +475,7 @@ impl HasSigningData for GetAccountDataParam {
 /// Parameter struct for the `getItemStatusChangedEvents` endpoint send in the
 /// request body.
 #[derive(serde::Deserialize, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 struct GetAccountDataParam {
     account_address: AccountAddress,
     signing_data: SigningData,
@@ -343,11 +492,11 @@ struct ReturnStoredAccountData {
 /// - the signer is an admin account.
 /// - the signature is valid.
 /// - the signature is not expired.
-fn check_admin_and_signature(
+fn check_admin_and_signature<'a>(
     state: Server,
     param: &dyn HasSigningData,
     signer_account_info: QueryResponse<AccountInfo>,
-) -> Result<(), ServerError> {
+) -> Result<(), ServerError<'a>> {
     let SigningData {
         signer,
         message,
@@ -428,21 +577,20 @@ fn check_admin_and_signature(
 
 /// Handles the `getItemStatusChangedEvents` endpoint, returning a vector of
 /// ItemStatusChangedEvents from the database if present.
-async fn get_account_data(
+async fn get_account_data<'a>(
     State(mut state): State<Server>,
     request: Result<Json<GetAccountDataParam>, JsonRejection>,
-) -> Result<Json<ReturnStoredAccountData>, ServerError> {
+) -> Result<Json<ReturnStoredAccountData>, ServerError<'a>> {
     let db = state.db_pool.get().await?;
 
     let Json(param) = request?;
 
     // TODO: better handling of unwrap.
-    let consensus_info = state.node_client.get_consensus_info().await.unwrap();
     let signer_account_info = state
         .node_client
         .get_account_info(
             &AccountIdentifier::Address(param.signing_data.signer),
-            consensus_info.best_block_height,
+            BlockIdentifier::LastFinal,
         )
         .await
         .unwrap();
@@ -463,6 +611,7 @@ async fn get_account_data(
 /// Parameter struct for the `getItemStatusChangedEvents` endpoint send in the
 /// request body.
 #[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct GetPendingApprovalsParam {
     limit: u32,
     offset: u32,
@@ -484,10 +633,10 @@ impl HasSigningData for GetPendingApprovalsParam {
 
 /// Handles the `getItemStatusChangedEvents` endpoint, returning a vector of
 /// ItemStatusChangedEvents from the database if present.
-async fn get_pending_approvals(
+async fn get_pending_approvals<'a>(
     State(mut state): State<Server>,
     request: Result<Json<GetPendingApprovalsParam>, JsonRejection>,
-) -> Result<Json<StoredAccountDataReturnValue>, ServerError> {
+) -> Result<Json<StoredAccountDataReturnValue>, ServerError<'a>> {
     let db = state.db_pool.get().await?;
 
     let Json(param) = request?;
@@ -522,17 +671,19 @@ async fn get_pending_approvals(
 
 /// Parameter struct for the `getItemStatusChangedEvents` endpoint send in the
 /// request body.
+#[repr(transparent)]
 #[derive(serde::Deserialize, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 struct CanClaimParam {
     account_address: AccountAddress,
 }
 
 /// Handles the `getItemStatusChangedEvents` endpoint, returning a vector of
 /// ItemStatusChangedEvents from the database if present.
-async fn can_claim(
+async fn can_claim<'a>(
     State(state): State<Server>,
     request: Result<Json<CanClaimParam>, JsonRejection>,
-) -> Result<Json<bool>, ServerError> {
+) -> Result<Json<bool>, ServerError<'a>> {
     let db = state.db_pool.get().await?;
 
     let Json(param) = request?;
@@ -540,4 +691,45 @@ async fn can_claim(
     let can_claim = db.can_claim(param.account_address).await?;
 
     Ok(Json(can_claim))
+}
+
+/// Construct a future for shutdown signals (for unix: SIGINT and SIGTERM) (for
+/// windows: ctrl c and ctrl break). The signal handler is set when the future
+/// is polled and until then the default signal handler.
+fn set_shutdown() -> anyhow::Result<impl futures::Future<Output = ()>> {
+    use futures::FutureExt;
+
+    #[cfg(unix)]
+    {
+        use tokio::signal::unix as unix_signal;
+
+        let mut terminate_stream = unix_signal::signal(unix_signal::SignalKind::terminate())?;
+        let mut interrupt_stream = unix_signal::signal(unix_signal::SignalKind::interrupt())?;
+
+        Ok(async move {
+            futures::future::select(
+                Box::pin(terminate_stream.recv()),
+                Box::pin(interrupt_stream.recv()),
+            )
+            .map(|_| ())
+            .await
+        })
+    }
+
+    #[cfg(windows)]
+    {
+        use tokio::signal::windows as windows_signal;
+
+        let mut ctrl_break_stream = windows_signal::ctrl_break()?;
+        let mut ctrl_c_stream = windows_signal::ctrl_c()?;
+
+        Ok(async move {
+            futures::future::select(
+                Box::pin(ctrl_break_stream.recv()),
+                Box::pin(ctrl_c_stream.recv()),
+            )
+            .map(|_| ())
+            .await
+        })
+    }
 }

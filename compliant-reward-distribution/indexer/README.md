@@ -74,9 +74,13 @@ cargo run --bin server -- --admin_accounts "47b6Qe2XtZANHetanWKP1PbApLKtS3AyiCtc
 ```
 
 ```
-curl -POST "http://localhost:8080/api/canClaim" -H "Content-Type: application/json" --data '{"account_address": "3cGEB7tTdQBFxJ9sn5JyGPNay2MSmRSKm4133UVqmKoFg4MXJ1"}' -v
+curl -POST "http://localhost:8080/api/canClaim" -H "Content-Type: application/json" --data '{"accountAddress": "3cGEB7tTdQBFxJ9sn5JyGPNay2MSmRSKm4133UVqmKoFg4MXJ1"}' -v
 ```
 
 ```
-curl -POST "http://localhost:8080/api/getAccountData" -H "Content-Type: application/json" --data '{"account_address":"3cGEB7tTdQBFxJ9sn5JyGPNay2MSmRSKm4133UVqmKoFg4MXJ1","signing_data":{"signer":"47b6Qe2XtZANHetanWKP1PbApLKtS3AyiCtcXaqLMbypKjCaRw","message":{"block_hash":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","block_height":3},"signature":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab00694e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069"}}' -v
+curl -POST "http://localhost:8080/api/getAccountData" -H "Content-Type: application/json" --data '{"accountAddress":"3cGEB7tTdQBFxJ9sn5JyGPNay2MSmRSKm4133UVqmKoFg4MXJ1","signingData":{"signer":"47b6Qe2XtZANHetanWKP1PbApLKtS3AyiCtcXaqLMbypKjCaRw","message":{"blockHash":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","blockHeight":3},"signature":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab00694e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069"}}' -v
+```
+
+```
+curl -POST "http://localhost:8080/api/postZKProof" -H "Content-Type: application/json" --data '{"presentation":{"presentationContext":"7fb546cd185db58421070aac59d0c91922c49d173fb944695c920fb15f69f947","proof":{"created":"2024-07-23T11:22:01.562Z","proofValue":[],"type":"ConcordiumWeakLinkingProofV1"},"type":"VerifiablePresentation","verifiableCredential":[{"credentialSubject":{"id":"did:ccd:testnet:cred:8280babfd0a412ea2aeb2f707193e804a6104d150c5e095343c8b225ba496ad6c208a9e6bf54990a966f7d0b54cfed2e","proof":{"created":"2024-07-23T11:22:01.561Z","proofValue":[{"attribute":"John","proof":"df0ddf8d269fa2c97305ad28bafa163b0e26b3cb3d8e64fff91f5a3c97f43dd556bc8c8019845b5e670ddc9c833f38773dbbd30258aa3a6b3a7f2dbd5abaaf37","type":"RevealAttribute"}],"type":"ConcordiumZKProofV3"},"statement":[{"attributeTag":"firstName","type":"RevealAttribute"}]},"issuer":"did:ccd:testnet:idp:0","type":["VerifiableCredential","ConcordiumVerifiableCredential"]}]}}' -v
 ```
