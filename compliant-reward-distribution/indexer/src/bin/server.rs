@@ -13,8 +13,8 @@ use concordium_rust_sdk::{
     contract_client::CredentialStatus,
     id::{
         constants::ArCurve,
-        id_proof_types::{AtomicStatement, RevealAttributeStatement},
-        types::{AccountAddress, AccountCredentialWithoutProofs, AttributeTag, GlobalContext},
+        id_proof_types::Statement,
+        types::{AccountAddress, AccountCredentialWithoutProofs, GlobalContext},
     },
     types::{AbsoluteBlockHeight, AccountInfo},
     v2::{AccountIdentifier, BlockIdentifier, Client, QueryResponse},
@@ -38,12 +38,6 @@ const TESTNET_GENESIS_BLOCK_HASH: [u8; 32] = [
 ];
 
 /// TODO: think if we want to save the statements in the database.
-const ZK_STATEMENT_0: RevealAttributeStatement<AttributeTag> = RevealAttributeStatement {
-    attribute_tag: AttributeTag(0),
-};
-// const ZK_STATEMENT_1: RevealAttributeStatement<AttributeTag> = RevealAttributeStatement {
-//     attribute_tag: AttributeTag(0),
-// };
 
 /// Server struct to store the db_pool.
 #[derive(Clone, Debug)]
@@ -53,6 +47,7 @@ pub struct Server {
     network: Network,
     cryptographic_param: GlobalContext<ArCurve>,
     admin_accounts: Vec<AccountAddress>,
+    zk_statements: Statement<ArCurve, Web3IdAttribute>,
 }
 
 /// Errors that this server can produce.
@@ -80,10 +75,12 @@ pub enum ServerError<'a> {
     InvalidProof(#[from] PresentationVerificationError),
     #[error("Wrong length of {0}. Expect {1}. Got {2}")]
     WrongLength(&'a str, usize, usize),
-    #[error("Statement {0} is wrong")]
-    WrongStatement(u8),
+    #[error("Wrong ZK statement proven")]
+    WrongStatement,
     #[error("Expect account statement and not web3id statement")]
     AccountStatement,
+    #[error("Do not expect initial account credential")]
+    NotInitialAccountCredential,
 }
 
 /// Mapping DatabaseError to ServerError
@@ -122,7 +119,8 @@ impl<'a> IntoResponse for ServerError<'a> {
             | ServerError::InvalidProof(_)
             | ServerError::WrongLength(..)
             | ServerError::AccountStatement
-            | ServerError::WrongStatement(_) => {
+            | ServerError::WrongStatement
+            | ServerError::NotInitialAccountCredential => {
                 let error_message = format!("Bad request: {self}");
                 tracing::warn!(error_message);
                 (StatusCode::BAD_REQUEST, error_message.into())
@@ -180,6 +178,11 @@ struct Args {
         env = "CCD_SERVER_ADMIN_ACCOUNTS"
     )]
     admin_accounts: Vec<AccountAddress>,
+    #[clap(
+        long = "zk_statements",
+        help = "The ZK statements that the server accepts proofs for."
+    )]
+    zk_statements: String,
 }
 
 /// The main function.
@@ -237,12 +240,17 @@ async fn main() -> anyhow::Result<()> {
         .context("Unable to get cryptographic parameters.")?
         .response;
 
+    // TODO: handle unwrap
+    let zk_statements: Statement<ArCurve, Web3IdAttribute> =
+        serde_json::from_str(&app.zk_statements).unwrap();
+
     let state = Server {
         db_pool,
         node_client,
         network,
         cryptographic_param,
         admin_accounts: app.admin_accounts,
+        zk_statements,
     };
 
     tracing::info!("Starting server...");
@@ -330,6 +338,7 @@ async fn post_zk_proof<'a>(
         ));
     }
 
+    // We only use regular accounts with (exactly one credential).
     let account_statement = request.credential_statements[0].clone();
 
     match account_statement {
@@ -354,26 +363,14 @@ async fn post_zk_proof<'a>(
             // TODO: use account_address to insert into database.
             let _account_address = account_info.account_address;
 
-            if let Some(AtomicStatement::RevealAttribute { statement: stmt }) = statement.first() {
-                if stmt != &ZK_STATEMENT_0 {
-                    return Err(ServerError::WrongStatement(0));
-                }
-            } else {
-                return Err(ServerError::WrongStatement(0));
+            if statement != state.zk_statements.statements {
+                return Err(ServerError::WrongStatement);
             }
-
-            // if let Some(AtomicStatement::RevealAttribute { statement: stmt }) = statement.get(1) {
-            //     if stmt != &ZK_STATEMENT_1 {
-            //         return Err(ServerError::WrongStatement(0));
-            //     }
-            // } else {
-            //     return Err(ServerError::WrongStatement(0));
-            // }
         }
         Web3Id { .. } => return Err(ServerError::AccountStatement),
     }
 
-    // TODO check that proof is not expired.
+    // TODO check that proof is not expired -> TODO: check the challenge
 
     Ok(Json(true))
 }
@@ -506,11 +503,11 @@ fn check_admin_and_signature<'a>(
     // We use regular accounts as admin accounts.
     // Regular accounts have only one public-private key pair at index 0 in the key map.
     let signer_public_key = match signer_account_credential {
-        AccountCredentialWithoutProofs::Initial { icdv } => &icdv.cred_account.keys[&KeyIndex(0)],
-        AccountCredentialWithoutProofs::Normal {
-            cdv,
-            commitments: _,
-        } => &cdv.cred_key_info.keys[&KeyIndex(0)],
+        // TODO: usually not allowed
+        AccountCredentialWithoutProofs::Initial { .. } => {
+            return Err(ServerError::NotInitialAccountCredential)
+        }
+        AccountCredentialWithoutProofs::Normal { cdv, .. } => &cdv.cred_key_info.keys[&KeyIndex(0)],
     };
 
     let valid_signature = signer_public_key.verify(message_hash, signature);
