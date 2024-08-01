@@ -14,18 +14,16 @@ use concordium_rust_sdk::{
     id::{
         constants::ArCurve,
         id_proof_types::{AtomicStatement, RevealAttributeStatement},
-        types::{AccountAddress, AccountCredentialWithoutProofs, GlobalContext},
+        types::{AccountAddress, AccountCredentialWithoutProofs, AttributeTag, GlobalContext},
     },
     types::{AbsoluteBlockHeight, AccountInfo},
     v2::{AccountIdentifier, BlockIdentifier, Client, QueryResponse},
     web3id::{
-        did::Network, get_public_data, CredentialLookupError, Presentation,
-        PresentationVerificationError, Web3IdAttribute,
+        did::Network,
+        get_public_data, CredentialLookupError,
+        CredentialStatement::{Account, Web3Id},
+        Presentation, PresentationVerificationError, Web3IdAttribute,
     },
-};
-use concordium_rust_sdk::{
-    id::types::AttributeTag,
-    web3id::CredentialStatement::{Account, Web3Id},
 };
 use http::StatusCode;
 use indexer::db::{ConversionError, Sha256};
@@ -104,76 +102,30 @@ impl<'a> From<DatabaseError> for ServerError<'a> {
 impl<'a> IntoResponse for ServerError<'a> {
     fn into_response(self) -> Response {
         let r = match self {
-            ServerError::DatabaseErrorPostgres(_) => {
+            // Internal errors.
+            ServerError::DatabaseErrorPostgres(_)
+            | ServerError::DatabaseErrorTypeConversion(..)
+            | ServerError::DatabaseErrorConfiguration(..) => {
                 tracing::error!("Internal error: {self}");
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     Json("Internal error".to_string()),
                 )
             }
-            ServerError::DatabaseErrorTypeConversion(..) => {
-                tracing::error!("Internal error: {self}");
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json("Internal error".to_string()),
-                )
-            }
-            ServerError::DatabaseErrorConfiguration(..) => {
-                tracing::error!("Internal error: {self}");
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json("Internal error".to_string()),
-                )
-            }
-            ServerError::JsonRejection(_) => {
+            // Bad request errors.
+            ServerError::JsonRejection(_)
+            | ServerError::MaxRequestLimit(_)
+            | ServerError::SignerNotAdmin
+            | ServerError::InvalidSignature
+            | ServerError::CredentialLookup(_)
+            | ServerError::InactiveCredentials
+            | ServerError::InvalidProof(_)
+            | ServerError::WrongLength(..)
+            | ServerError::AccountStatement
+            | ServerError::WrongStatement(_) => {
                 let error_message = format!("Bad request: {self}");
                 tracing::warn!(error_message);
                 (StatusCode::BAD_REQUEST, error_message.into())
-            }
-            ServerError::MaxRequestLimit(_) => {
-                let error_message = format!("Bad request: {self}");
-                tracing::warn!(error_message);
-                (StatusCode::BAD_REQUEST, error_message.into())
-            }
-            ServerError::SignerNotAdmin => {
-                let error_message = format!("Bad request: {self}");
-                tracing::warn!(error_message);
-                (StatusCode::BAD_REQUEST, error_message.into())
-            }
-            ServerError::InvalidSignature => {
-                let error_message = format!("Bad request: {self}");
-                tracing::warn!(error_message);
-                (StatusCode::BAD_REQUEST, error_message.into())
-            }
-            ServerError::CredentialLookup(_) => {
-                let error_message = format!("Bad request: {self}");
-                tracing::warn!(error_message);
-                (StatusCode::BAD_REQUEST, Json(error_message.into()))
-            }
-            ServerError::InactiveCredentials => {
-                let error_message = format!("Bad request: {self}");
-                tracing::warn!(error_message);
-                (StatusCode::BAD_REQUEST, Json(error_message.into()))
-            }
-            ServerError::InvalidProof(_) => {
-                let error_message = format!("Bad request: {self}");
-                tracing::warn!(error_message);
-                (StatusCode::BAD_REQUEST, Json(error_message.into()))
-            }
-            ServerError::WrongLength(..) => {
-                let error_message = format!("Bad request: {self}");
-                tracing::warn!(error_message);
-                (StatusCode::BAD_REQUEST, Json(error_message.into()))
-            }
-            ServerError::AccountStatement => {
-                let error_message = format!("Bad request: {self}");
-                tracing::warn!(error_message);
-                (StatusCode::BAD_REQUEST, Json(error_message.into()))
-            }
-            ServerError::WrongStatement(_) => {
-                let error_message = format!("Bad request: {self}");
-                tracing::warn!(error_message);
-                (StatusCode::BAD_REQUEST, Json(error_message.into()))
             }
         };
         r.into_response()
@@ -402,7 +354,7 @@ async fn post_zk_proof<'a>(
             // TODO: use account_address to insert into database.
             let _account_address = account_info.account_address;
 
-            if let Some(AtomicStatement::RevealAttribute { statement: stmt }) = statement.get(0) {
+            if let Some(AtomicStatement::RevealAttribute { statement: stmt }) = statement.first() {
                 if stmt != &ZK_STATEMENT_0 {
                     return Err(ServerError::WrongStatement(0));
                 }
