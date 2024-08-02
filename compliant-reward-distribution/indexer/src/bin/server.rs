@@ -368,7 +368,7 @@ async fn post_zk_proof<'a>(
     let credential_proof = &presentation.verifiable_credential[0];
 
     // Get the revealed `national_id`, `nationality` and `account_address` from the credential proof.
-    let (_national_id, _nationality, _account_address) = match credential_proof {
+    let (national_id, nationality, account_address) = match credential_proof {
         CredentialProof::Account {
             proofs,
             network: _,
@@ -413,6 +413,10 @@ async fn post_zk_proof<'a>(
     };
 
     // TODO check that proof is not expired -> TODO: check the challenge
+
+    let db = state.db_pool.get().await?;
+    db.set_zk_proof(national_id, nationality, account_address)
+        .await?;
 
     Ok(Json(true))
 }
@@ -553,8 +557,6 @@ fn check_admin_and_signature<'a>(
     };
 
     let valid_signature = signer_public_key.verify(message_hash, signature);
-
-    tracing::error!("valid signature: {:?}", valid_signature);
 
     // Check validity of the signature.
     if !valid_signature {
