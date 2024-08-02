@@ -8,9 +8,14 @@ use concordium_rust_sdk::{
 use deadpool_postgres::{GenericClient, Object};
 use hex_serde;
 use serde::Serialize;
+use sha2::Digest;
 use std::string::FromUtf8Error;
 use thiserror::Error;
 use tokio_postgres::{types::ToSql, NoTls};
+
+/// Version of the ZK proof used in the verification logic.
+/// Update this version if you want to introduce a new ZK proof-verification logic.
+const ZK_PROOF_VERSION: u16 = 1;
 
 #[derive(Debug, Error)]
 pub enum ConversionError {
@@ -45,7 +50,13 @@ impl TryFrom<&[u8]> for Sha256 {
     type Error = IncorrectLength;
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
-        value.try_into()
+        if value.len() == 32 {
+            let mut array = [0u8; 32];
+            array.copy_from_slice(value);
+            Ok(Sha256(array))
+        } else {
+            Err(IncorrectLength)
+        }
     }
 }
 
@@ -68,10 +79,10 @@ pub struct StoredAccountData {
     /// A link to a twitter post submitted by the above account address (task 1).
     pub twitter_post_link: Option<String>,
     /// A boolean specifying if the identity associated with the account is eligible for the reward (task 2).
-    /// An associated ZK proof was verfied by this backend before this flag is set.
+    /// An associated ZK proof was verified by this backend before this flag is set.
     pub zk_proof_valid: Option<bool>,
     /// A version that specifies the setting of the ZK proof during the verification. This enables us
-    /// to update the ZK proof verification logic in the future and invalidate older proofs.
+    /// to update the ZK proof-verification logic in the future and invalidate older proofs.
     pub zk_proof_version: Option<u64>,
     /// A hash of the revealed `firstName|lastName|passportNumber` to prevent
     /// claiming with different accounts for the same identity.
@@ -95,17 +106,16 @@ impl TryFrom<tokio_postgres::Row> for StoredAccountData {
             pending_approval: value.try_get("pending_approval")?,
             zk_proof_valid: value.try_get("zk_proof_valid")?,
             zk_proof_version: raw_zk_proof_version.map(|i| i as u64),
-            uniqueness_hash: raw_uniqueness_hash.and_then(|hash| {
-                hash.try_into()
-                    .map(Some)
-                    .map_err(|e| {
+            uniqueness_hash: raw_uniqueness_hash
+                .map(|hash| {
+                    Sha256::try_from(hash).map_err(|e| {
                         DatabaseError::TypeConversion(
                             "uniqueness_hash".to_string(),
                             ConversionError::IncorrectLength(e),
                         )
                     })
-                    .ok()?
-            }),
+                })
+                .transpose()?,
             transaction_hash: raw_transaction_hash.try_into().map_err(|e| {
                 DatabaseError::TypeConversion(
                     "transaction_hash".to_string(),
@@ -199,8 +209,9 @@ impl Database {
         let init_settings = self
             .client
             .prepare_cached(
-                "INSERT INTO settings (genesis_block_hash, start_block_height) VALUES ($1, $2) ON \
-                 CONFLICT DO NOTHING",
+                "INSERT INTO settings (genesis_block_hash, start_block_height) \
+                VALUES ($1, $2) ON \
+                CONFLICT DO NOTHING",
             )
             .await?;
         let params: [&(dyn ToSql + Sync); 2] = [
@@ -211,13 +222,57 @@ impl Database {
         Ok(())
     }
 
+    // Inserts a row in the settings table holding the application
+    // configuration if row does not exist already. The table is constrained to
+    // only hold a single row.
+    pub async fn set_zk_proof(
+        &self,
+        national_id: String,
+        nationality: String,
+        account_address: AccountAddress,
+    ) -> DatabaseResult<()> {
+        // Create an `uniqueness_hash` to identify the identity associated with the account
+        // by hashing the concatenating string of `national_id` and `nationality`.
+        // Every identity should only be allowed to receive rewards once
+        // (with one of their accounts). The `nationality` is a two-letter country code
+        // (ISO 3166-1 alpha-2).
+        // Note: Concatenating a fixed-size string (`nationality`) with a non-fixed-size
+        // string (`national_id`) is safe. Two non-fixed-size strings would be unsafe.
+        // E.g. `format!("{}{}", "AA", "BB")` and `format!("{}{}", "A", "ABB")`
+        // would produce the same hash even if the strings are different.
+        let concatenated = format!("{}{}", national_id, nationality);
+        let mut hasher = sha2::Sha256::new();
+        hasher.update(concatenated);
+        let uniqueness_hash = hasher.finalize();
+
+        // TODO check hash not used in database so far
+        // TODO if `hash` and `twitter` is set, make `pending_approval` to true
+
+        let set_zk_proof = self
+            .client
+            .prepare_cached(
+                "UPDATE accounts \
+                SET zk_proof_valid = $1, zk_proof_version = $2, uniqueness_hash = $3 \
+                WHERE account_address = $4 ",
+            )
+            .await?;
+        let params: [&(dyn ToSql + Sync); 4] = [
+            &true,
+            &(ZK_PROOF_VERSION as i64),
+            &uniqueness_hash.as_slice(),
+            &account_address.0.as_ref(),
+        ];
+        self.client.execute(&set_zk_proof, &params).await?;
+        Ok(())
+    }
+
     /// Get the settings recorded in the database.
     pub async fn get_settings(&self) -> DatabaseResult<Option<StoredConfiguration>> {
         let get_settings = self
             .client
             .prepare_cached(
                 "SELECT genesis_block_hash, start_block_height, latest_processed_block_height \
-                 FROM settings",
+                FROM settings",
             )
             .await?;
 
@@ -234,9 +289,10 @@ impl Database {
         let get_account_data = self
             .client
             .prepare_cached(
-                "SELECT id, block_time, transaction_hash, claimed, pending_approval, twitter_post_link, zk_proof_valid, zk_proof_version, uniqueness_hash FROM accounts WHERE account_address = $1",
-            )
-            .await?;
+                "SELECT id, block_time, transaction_hash, claimed, pending_approval, twitter_post_link, zk_proof_valid, zk_proof_version, uniqueness_hash
+                FROM accounts
+                WHERE account_address = $1",
+            ).await?;
 
         let params: [&(dyn ToSql + Sync); 1] = [&(account_address.0.as_ref())];
 
@@ -259,8 +315,7 @@ impl Database {
                 WHERE pending_approval = true \
                 LIMIT $1 \
                 OFFSET $2"
-            )
-            .await?;
+            ).await?;
         let params: [&(dyn ToSql + Sync); 2] = [&(limit as i64), &(offset as i64)];
 
         let rows = self.client.query(&get_pending_approvals, &params).await?;
@@ -277,7 +332,11 @@ impl Database {
     pub async fn can_claim(&self, account_address: AccountAddress) -> DatabaseResult<bool> {
         let get_account_data = self
             .client
-            .prepare_cached("SELECT claimed FROM accounts WHERE account_address = $1")
+            .prepare_cached(
+                "SELECT claimed \
+                    FROM accounts \
+                    WHERE account_address = $1",
+            )
             .await?;
 
         let params: [&(dyn ToSql + Sync); 1] = [&(account_address.0.as_ref())];
