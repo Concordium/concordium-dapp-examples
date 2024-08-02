@@ -27,7 +27,8 @@ const VALID_TWITTER_POST_LINK_VERIFICATION_VERSIONS: [u16; 1] = [1];
 /// TODO: check version during the get endpoints returns
 /// TODO: add logic when accounts are too old they can not claim anymore.
 /// TODO: add check that you can only add twitter link/zk proof if account is in database.
-
+/// TODO(maybe): add check when `setClaimed` if account is not in database.
+///
 #[derive(Debug, Error)]
 pub enum ConversionError {
     #[error("Incorrect length")]
@@ -312,6 +313,25 @@ impl Database {
             &account_address.0.as_ref(),
         ];
         self.client.execute(&set_twitter_post_link, &params).await?;
+        Ok(())
+    }
+
+    // Inserts a row in the settings table holding the application
+    // configuration if row does not exist already. The table is constrained to
+    // only hold a single row.
+    pub async fn set_claimed(&self, account_addresses: Vec<AccountAddress>) -> DatabaseResult<()> {
+        for account_address in account_addresses {
+            let set_claimed = self
+                .client
+                .prepare_cached(
+                    "UPDATE accounts \
+                    SET claimed = $1 \
+                    WHERE account_address = $2",
+                )
+                .await?;
+            let params: [&(dyn ToSql + Sync); 2] = [&true, &account_address.0.as_ref()];
+            self.client.execute(&set_claimed, &params).await?;
+        }
         Ok(())
     }
 

@@ -33,8 +33,8 @@ use indexer::{
     db::ConversionError,
     types::{
         AccountDataReturn, CanClaimParam, GetAccountDataParam, GetPendingApprovalsParam,
-        HasSigningData, Health, PostTwitterPostLinkParam, PostZKProofParam, SigningData,
-        VecAccountDataReturn,
+        HasSigningData, Health, PostTwitterPostLinkParam, PostZKProofParam, SetClaimedParam,
+        SigningData, VecAccountDataReturn,
     },
 };
 use sha2::Digest;
@@ -262,11 +262,12 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("Starting server...");
 
     let router = Router::new()
-        .route("/api/canClaim", post(can_claim))
+        .route("/api/postTwitterPostLink", post(post_twitter_post_link))
+        .route("/api/postZKProof", post(post_zk_proof))
+        .route("/api/setClaimed", post(set_claimed))
         .route("/api/getAccountData", post(get_account_data))
         .route("/api/getPendingApprovals", post(get_pending_approvals))
-        .route("/api/postZKProof", post(post_zk_proof))
-        .route("/api/postTwitterPostLink", post(post_twitter_post_link))
+        .route("/api/canClaim", post(can_claim))
         .route("/health", get(health))
         .with_state(state)
         .layer(
@@ -293,7 +294,7 @@ async fn main() -> anyhow::Result<()> {
 async fn post_twitter_post_link(
     State(mut state): State<Server>,
     request: Result<Json<PostTwitterPostLinkParam>, JsonRejection>,
-) -> Result<Json<bool>, ServerError> {
+) -> Result<(), ServerError> {
     let Json(param) = request?;
 
     let signer_account_info = state
@@ -314,13 +315,13 @@ async fn post_twitter_post_link(
     db.set_twitter_post_link(param.signing_data.message.twitter_post_link, signer)
         .await?;
 
-    Ok(Json(true))
+    Ok(())
 }
 
 async fn post_zk_proof(
     State(mut state): State<Server>,
     request: Result<Json<PostZKProofParam>, JsonRejection>,
-) -> Result<Json<bool>, ServerError> {
+) -> Result<(), ServerError> {
     let Json(param) = request?;
 
     let presentation = param.presentation;
@@ -436,17 +437,42 @@ async fn post_zk_proof(
     db.set_zk_proof(national_id, nationality, account_address)
         .await?;
 
-    Ok(Json(true))
+    Ok(())
 }
 
-/// Handles the `health` endpoint, returning the version of the backend.
-async fn health() -> Json<Health> {
-    Json(Health {
-        version: env!("CARGO_PKG_VERSION"),
-    })
+async fn set_claimed(
+    State(mut state): State<Server>,
+    request: Result<Json<SetClaimedParam>, JsonRejection>,
+) -> Result<(), ServerError> {
+    let Json(param) = request?;
+
+    let signer_account_info = state
+        .node_client
+        .get_account_info(
+            &AccountIdentifier::Address(param.signing_data.signer),
+            BlockIdentifier::LastFinal,
+        )
+        .await
+        .map_err(ServerError::QueryError)?;
+
+    // Check that:
+    // - the signature is valid.
+    // - the signature is not expired.
+    let signer = check_signature(&param, signer_account_info)?;
+
+    // Check that the signer is an admin account.
+    if !state.admin_accounts.contains(&signer) {
+        return Err(ServerError::SignerNotAdmin);
+    }
+
+    let db = state.db_pool.get().await?;
+    db.set_claimed(param.signing_data.message.account_addresses)
+        .await?;
+
+    Ok(())
 }
 
-/// Check that an admin account is sending the request by checking that:
+/// Check that the signer account has signed the message by checking that:
 /// - the signature is valid.
 /// - the signature is not expired.
 fn check_signature<T>(
@@ -463,7 +489,7 @@ where
         signature,
     } = param.signing_data();
 
-    // This backend checks that the admin has signed the "block_hash" and "block_number"
+    // This backend checks that the signer account has signed the "block_hash" and "block_number"
     // of a block that is not older than 10 blocks from the most recent block.
     // Signing the "block_hash" ensures that the signature expires after 10 blocks.
     // The "block_number" is signed to enable the backend to look up the "block_hash" easily.
@@ -477,11 +503,6 @@ where
     // a previous block (such as the 5th previous block). This
     // gives the backend a window of 5 blocks to be delayed vs. the node connection at the front-end until
     // the signature has expired.
-
-    // Currently, it is expected that only a few "approvals" have to be retrieved
-    // by an admin such that one signature check should be sufficient.
-    // If several requests are needed, some session handling (e.g. JWT) should be implemented to avoid
-    // having to sign each request.
 
     // The message signed in the Concordium browser wallet is prepended with the
     // `account` address and 8 zero bytes. Accounts in the Concordium browser wallet
@@ -566,6 +587,12 @@ async fn get_account_data(
 
 /// Handles the `getItemStatusChangedEvents` endpoint, returning a vector of
 /// ItemStatusChangedEvents from the database if present.
+///
+///
+/// Currently, it is expected that only a few "approvals" have to be retrieved
+/// by an admin such that one signature check should be sufficient.
+/// If several requests are needed, some session handling (e.g. JWT) should be implemented to avoid
+/// having to sign each request.
 async fn get_pending_approvals(
     State(mut state): State<Server>,
     request: Result<Json<GetPendingApprovalsParam>, JsonRejection>,
@@ -617,6 +644,13 @@ async fn can_claim(
     let can_claim = db.can_claim(param.account_address).await?;
 
     Ok(Json(can_claim))
+}
+
+/// Handles the `health` endpoint, returning the version of the backend.
+async fn health() -> Json<Health> {
+    Json(Health {
+        version: env!("CARGO_PKG_VERSION"),
+    })
 }
 
 /// Construct a future for shutdown signals (for unix: SIGINT and SIGTERM) (for
