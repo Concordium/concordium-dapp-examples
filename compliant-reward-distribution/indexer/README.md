@@ -78,19 +78,24 @@ curl -POST "http://localhost:8080/api/canClaim" -H "Content-Type: application/js
 ```
 
 ```
+curl -POST "http://localhost:8080/api/postTwitterPostLink" -H "Content-Type: application/json" --data '{"signingData":{"signer":"3cGEB7tTdQBFxJ9sn5JyGPNay2MSmRSKm4133UVqmKoFg4MXJ1","message":{"twitterPostLink":"ABCDabcd123456789","blockMessage":{"blockHash":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","blockHeight":3}},
+"signature":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab00694e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069"}}' -v
+```
+
+```
 curl -POST "http://localhost:8080/api/getAccountData" -H "Content-Type: application/json" --data '{"accountAddress":"3cGEB7tTdQBFxJ9sn5JyGPNay2MSmRSKm4133UVqmKoFg4MXJ1","signingData":{"signer":"47b6Qe2XtZANHetanWKP1PbApLKtS3AyiCtcXaqLMbypKjCaRw","message":{"blockHash":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","blockHeight":3},"signature":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab00694e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069"}}' -v
 ```
 
 Proof statements:
 
-1.Proof: Reveal "nationalIdNo"
+1.Proof: Reveal "nationalIdNo" proof (Sigma protocol)
 
-2.Proof: Reveal "nationality"
+2.Proof: Reveal "nationality" proof (Sigma protocol)
 
-3.Proof: Range proof (older than 18 years)
+3.Proof: Range proof ("dob=dateOfBirth" is older than 18 years) (Bulletproof protocol)
 
-4.Proof: Not set membership proof (countryOfResidence is not in USA or North Korea -> https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2)
-
+4.Proof: Not set membership proof ("countryOfResidence" is not in USA or North Korea) (Bulletproof protocol)
+(ISO 3166-1 alpha-2)
 
 ```
 [

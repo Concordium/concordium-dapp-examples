@@ -1,4 +1,7 @@
-use ::indexer::db::{DatabaseError, DatabasePool, StoredAccountData};
+use ::indexer::{
+    db::{DatabaseError, DatabasePool},
+    types::Server,
+};
 use anyhow::Context;
 use axum::{
     extract::{rejection::JsonRejection, State},
@@ -9,24 +12,31 @@ use axum::{
 };
 use clap::Parser;
 use concordium_rust_sdk::{
-    common::types::{CredentialIndex, KeyIndex, Signature},
+    common::types::{CredentialIndex, KeyIndex},
     contract_client::CredentialStatus,
     id::{
         constants::ArCurve,
         id_proof_types::Statement,
-        types::{AccountAddress, AccountCredentialWithoutProofs, GlobalContext},
+        types::{AccountAddress, AccountCredentialWithoutProofs},
     },
-    types::{AbsoluteBlockHeight, AccountInfo},
+    types::AccountInfo,
     v2::{AccountIdentifier, BlockIdentifier, Client, QueryError, QueryResponse},
     web3id::{
         did::Network,
         get_public_data, CredentialLookupError, CredentialProof,
         CredentialStatement::{Account, Web3Id},
-        Presentation, PresentationVerificationError, Web3IdAttribute,
+        PresentationVerificationError, Web3IdAttribute,
     },
 };
 use http::StatusCode;
-use indexer::db::{ConversionError, Sha256};
+use indexer::{
+    db::ConversionError,
+    types::{
+        AccountDataReturn, CanClaimParam, GetAccountDataParam, GetPendingApprovalsParam,
+        HasSigningData, Health, PostTwitterPostLinkParam, PostZKProofParam, SigningData,
+        VecAccountDataReturn,
+    },
+};
 use sha2::Digest;
 
 /// The maximum number of rows allowed in a request to the database.
@@ -39,22 +49,9 @@ const TESTNET_GENESIS_BLOCK_HASH: [u8; 32] = [
 
 /// TODO: think if we want to save the statements in the database.
 
-/// Server struct to store the db_pool.
-#[derive(Clone, Debug)]
-pub struct Server {
-    ///
-    db_pool: DatabasePool,
-    ///
-    node_client: Client,
-    network: Network,
-    cryptographic_param: GlobalContext<ArCurve>,
-    admin_accounts: Vec<AccountAddress>,
-    zk_statements: Statement<ArCurve, Web3IdAttribute>,
-}
-
 /// Errors that this server can produce.
 #[derive(Debug, thiserror::Error)]
-pub enum ServerError<'a> {
+pub enum ServerError {
     #[error("Database error from postgres: {0}")]
     DatabaseErrorPostgres(tokio_postgres::Error),
     #[error("Database error in type `{0}` conversion: {1}")]
@@ -76,7 +73,7 @@ pub enum ServerError<'a> {
     #[error("Invalid proof: {0}")]
     InvalidProof(#[from] PresentationVerificationError),
     #[error("Wrong length of {0}. Expect {1}. Got {2}")]
-    WrongLength(&'a str, usize, usize),
+    WrongLength(String, usize, usize),
     #[error("Wrong ZK statement proven")]
     WrongStatement,
     #[error("Expect account statement and not web3id statement")]
@@ -92,7 +89,7 @@ pub enum ServerError<'a> {
 }
 
 /// Mapping DatabaseError to ServerError
-impl<'a> From<DatabaseError> for ServerError<'a> {
+impl From<DatabaseError> for ServerError {
     fn from(e: DatabaseError) -> Self {
         match e {
             DatabaseError::Postgres(e) => ServerError::DatabaseErrorPostgres(e),
@@ -104,7 +101,7 @@ impl<'a> From<DatabaseError> for ServerError<'a> {
     }
 }
 
-impl<'a> IntoResponse for ServerError<'a> {
+impl IntoResponse for ServerError {
     fn into_response(self) -> Response {
         let r = match self {
             // Internal errors.
@@ -269,6 +266,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/getAccountData", post(get_account_data))
         .route("/api/getPendingApprovals", post(get_pending_approvals))
         .route("/api/postZKProof", post(post_zk_proof))
+        .route("/api/postTwitterPostLink", post(post_twitter_post_link))
         .route("/health", get(health))
         .with_state(state)
         .layer(
@@ -292,17 +290,37 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[repr(transparent)]
-#[derive(serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct PostZKProofParam {
-    presentation: Presentation<ArCurve, Web3IdAttribute>,
+async fn post_twitter_post_link(
+    State(mut state): State<Server>,
+    request: Result<Json<PostTwitterPostLinkParam>, JsonRejection>,
+) -> Result<Json<bool>, ServerError> {
+    let Json(param) = request?;
+
+    let signer_account_info = state
+        .node_client
+        .get_account_info(
+            &AccountIdentifier::Address(param.signing_data.signer),
+            BlockIdentifier::LastFinal,
+        )
+        .await
+        .map_err(ServerError::QueryError)?;
+
+    // Check that:
+    // - the signature is valid.
+    // - the signature is not expired.
+    let signer = check_signature(&param, signer_account_info)?;
+
+    let db = state.db_pool.get().await?;
+    db.set_twitter_post_link(param.signing_data.message.twitter_post_link, signer)
+        .await?;
+
+    Ok(Json(true))
 }
 
-async fn post_zk_proof<'a>(
+async fn post_zk_proof(
     State(mut state): State<Server>,
     request: Result<Json<PostZKProofParam>, JsonRejection>,
-) -> Result<Json<bool>, ServerError<'a>> {
+) -> Result<Json<bool>, ServerError> {
     let Json(param) = request?;
 
     let presentation = param.presentation;
@@ -335,7 +353,7 @@ async fn post_zk_proof<'a>(
     // We use regular accounts with exactly one credential at index 0.
     if num_credential_statements != 1 {
         return Err(ServerError::WrongLength(
-            "credential_statements",
+            "credential_statements".to_string(),
             1,
             num_credential_statements,
         ));
@@ -421,13 +439,6 @@ async fn post_zk_proof<'a>(
     Ok(Json(true))
 }
 
-/// Struct returned by the `health` endpoint. It returns the version of the
-/// backend.
-#[derive(serde::Serialize)]
-struct Health {
-    version: &'static str,
-}
-
 /// Handles the `health` endpoint, returning the version of the backend.
 async fn health() -> Json<Health> {
     Json(Health {
@@ -435,73 +446,22 @@ async fn health() -> Json<Health> {
     })
 }
 
-/// Trait definition of the `IsMessage`. This trait is implemented for the two
-/// types `WithdrawMessage` and `TransferMessage`. The `isMessage` trait is used
-/// as an input parameter to the `validate_signature_and_increase_nonce`
-/// function so that the function works with both message types.
-trait HasSigningData {
-    fn signing_data(&self) -> &SigningData;
-}
-
-/// Struct returned by the `getItemStatusChangedEvents` endpoint. It returns a
-/// vector of ItemStatusChangedEvents from the database if present.
-#[derive(serde::Deserialize, serde::Serialize)]
-#[serde(rename_all = "camelCase")]
-struct SigningMessage {
-    block_hash: Sha256,
-    block_height: AbsoluteBlockHeight,
-}
-
-/// Struct returned by the `getItemStatusChangedEvents` endpoint. It returns a
-/// vector of ItemStatusChangedEvents from the database if present.
-#[derive(serde::Deserialize, serde::Serialize)]
-struct SigningData {
-    signer: AccountAddress,
-    message: SigningMessage,
-    signature: Signature,
-}
-
-impl HasSigningData for GetAccountDataParam {
-    fn signing_data(&self) -> &SigningData {
-        &self.signing_data
-    }
-}
-
-/// Parameter struct for the `getItemStatusChangedEvents` endpoint send in the
-/// request body.
-#[derive(serde::Deserialize, serde::Serialize)]
-#[serde(rename_all = "camelCase")]
-struct GetAccountDataParam {
-    account_address: AccountAddress,
-    signing_data: SigningData,
-}
-
-/// Struct returned by the `getItemStatusChangedEvents` endpoint. It returns a
-/// vector of ItemStatusChangedEvents from the database if present.
-#[derive(serde::Serialize)]
-struct ReturnStoredAccountData {
-    data: Option<StoredAccountData>,
-}
-
 /// Check that an admin account is sending the request by checking that:
-/// - the signer is an admin account.
 /// - the signature is valid.
 /// - the signature is not expired.
-fn check_admin_and_signature<'a>(
-    state: Server,
-    param: &dyn HasSigningData,
+fn check_signature<T>(
+    param: &T,
     signer_account_info: QueryResponse<AccountInfo>,
-) -> Result<(), ServerError<'a>> {
+) -> Result<AccountAddress, ServerError>
+where
+    T: HasSigningData + serde::Serialize,
+    <T as HasSigningData>::Message: serde::Serialize,
+{
     let SigningData {
         signer,
         message,
         signature,
     } = param.signing_data();
-
-    // Check that the signer is an admin account.
-    if !state.admin_accounts.contains(signer) {
-        return Err(ServerError::SignerNotAdmin);
-    }
 
     // This backend checks that the admin has signed the "block_hash" and "block_number"
     // of a block that is not older than 10 blocks from the most recent block.
@@ -565,15 +525,15 @@ fn check_admin_and_signature<'a>(
 
     // TODO check that the blockhash is from the last 10 blocks.
 
-    Ok(())
+    Ok(*signer)
 }
 
 /// Handles the `getItemStatusChangedEvents` endpoint, returning a vector of
 /// ItemStatusChangedEvents from the database if present.
-async fn get_account_data<'a>(
+async fn get_account_data(
     State(mut state): State<Server>,
     request: Result<Json<GetAccountDataParam>, JsonRejection>,
-) -> Result<Json<ReturnStoredAccountData>, ServerError<'a>> {
+) -> Result<Json<AccountDataReturn>, ServerError> {
     let db = state.db_pool.get().await?;
 
     let Json(param) = request?;
@@ -588,47 +548,28 @@ async fn get_account_data<'a>(
         .map_err(ServerError::QueryError)?;
 
     // Check that:
-    // - the signer is an admin account.
     // - the signature is valid.
     // - the signature is not expired.
-    check_admin_and_signature(state, &param, signer_account_info)?;
+    let signer = check_signature(&param, signer_account_info)?;
+
+    // Check that the signer is an admin account.
+    if !state.admin_accounts.contains(&signer) {
+        return Err(ServerError::SignerNotAdmin);
+    }
 
     let database_result = db.get_account_data(param.account_address).await?;
 
-    Ok(Json(ReturnStoredAccountData {
+    Ok(Json(AccountDataReturn {
         data: database_result,
     }))
 }
 
-/// Parameter struct for the `getItemStatusChangedEvents` endpoint send in the
-/// request body.
-#[derive(serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct GetPendingApprovalsParam {
-    limit: u32,
-    offset: u32,
-    signing_data: SigningData,
-}
-
-/// Struct returned by the `getItemStatusChangedEvents` endpoint. It returns a
-/// vector of ItemStatusChangedEvents from the database if present.
-#[derive(serde::Serialize)]
-struct StoredAccountDataReturnValue {
-    data: Vec<StoredAccountData>,
-}
-
-impl HasSigningData for GetPendingApprovalsParam {
-    fn signing_data(&self) -> &SigningData {
-        &self.signing_data
-    }
-}
-
 /// Handles the `getItemStatusChangedEvents` endpoint, returning a vector of
 /// ItemStatusChangedEvents from the database if present.
-async fn get_pending_approvals<'a>(
+async fn get_pending_approvals(
     State(mut state): State<Server>,
     request: Result<Json<GetPendingApprovalsParam>, JsonRejection>,
-) -> Result<Json<StoredAccountDataReturnValue>, ServerError<'a>> {
+) -> Result<Json<VecAccountDataReturn>, ServerError> {
     let db = state.db_pool.get().await?;
 
     let Json(param) = request?;
@@ -647,33 +588,28 @@ async fn get_pending_approvals<'a>(
         .map_err(ServerError::QueryError)?;
 
     // Check that:
-    // - the signer is an admin account.
     // - the signature is valid.
     // - the signature is not expired.
-    check_admin_and_signature(state, &param, signer_account_info)?;
+    let signer = check_signature(&param, signer_account_info)?;
+
+    // Check that the signer is an admin account.
+    if !state.admin_accounts.contains(&signer) {
+        return Err(ServerError::SignerNotAdmin);
+    }
 
     let database_result = db.get_pending_approvals(param.limit, param.offset).await?;
 
-    Ok(Json(StoredAccountDataReturnValue {
+    Ok(Json(VecAccountDataReturn {
         data: database_result,
     }))
 }
 
-/// Parameter struct for the `getItemStatusChangedEvents` endpoint send in the
-/// request body.
-#[repr(transparent)]
-#[derive(serde::Deserialize, serde::Serialize)]
-#[serde(rename_all = "camelCase")]
-struct CanClaimParam {
-    account_address: AccountAddress,
-}
-
 /// Handles the `getItemStatusChangedEvents` endpoint, returning a vector of
 /// ItemStatusChangedEvents from the database if present.
-async fn can_claim<'a>(
+async fn can_claim(
     State(state): State<Server>,
     request: Result<Json<CanClaimParam>, JsonRejection>,
-) -> Result<Json<bool>, ServerError<'a>> {
+) -> Result<Json<bool>, ServerError> {
     let db = state.db_pool.get().await?;
 
     let Json(param) = request?;
