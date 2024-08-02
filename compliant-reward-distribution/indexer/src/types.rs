@@ -81,6 +81,26 @@ pub struct PostTwitterPostLinkParam {
     pub signing_data: SigningData<TwitterPostLinkMessage>,
 }
 
+#[derive(serde::Deserialize, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetClaimedMessage {
+    pub account_addresses: Vec<AccountAddress>,
+    pub block_message: BlockMessage,
+}
+
+impl HasSigningData for SetClaimedParam {
+    type Message = SetClaimedMessage;
+    fn signing_data(&self) -> &SigningData<SetClaimedMessage> {
+        &self.signing_data
+    }
+}
+
+#[derive(serde::Deserialize, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetClaimedParam {
+    pub signing_data: SigningData<SetClaimedMessage>,
+}
+
 impl HasSigningData for GetAccountDataParam {
     type Message = BlockMessage;
     fn signing_data(&self) -> &SigningData<BlockMessage> {
