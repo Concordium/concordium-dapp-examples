@@ -13,9 +13,20 @@ use std::string::FromUtf8Error;
 use thiserror::Error;
 use tokio_postgres::{types::ToSql, NoTls};
 
-/// Version of the ZK proof used in the verification logic.
+/// Current version of the verification logic used for the ZK proof.
 /// Update this version if you want to introduce a new ZK proof-verification logic.
-const ZK_PROOF_VERSION: u16 = 1;
+const CURRENT_ZK_PROOF_VERIFICATION_VERSION: u16 = 1;
+/// Current version of the verification logic used for the twitter post link.
+/// Update this version if you want to introduce a new twitter post link verification logic.
+const CURRENT_TWITTER_POST_LINK_VERIFICATION_VERSION: u16 = 1;
+/// All versions that should be considered valid for the ZK proof verification.
+const VALID_ZK_PROOF_VERIFICATION_VERSIONS: [u16; 1] = [1];
+/// All versions that should be considered valid for the twiter post link verification.
+const VALID_TWITTER_POST_LINK_VERIFICATION_VERSIONS: [u16; 1] = [1];
+
+/// TODO: check version during the get endpoints returns
+/// TODO: add logic when accounts are too old they can not claim anymore.
+/// TODO: add check that you can only add twitter link/zk proof if account is in database.
 
 #[derive(Debug, Error)]
 pub enum ConversionError {
@@ -78,15 +89,21 @@ pub struct StoredAccountData {
     pub pending_approval: bool,
     /// A link to a twitter post submitted by the above account address (task 1).
     pub twitter_post_link: Option<String>,
+    /// A boolean specifying if the text content of the twitter post link is eligible for the reward.
+    /// The content of the text was verified by this backend before this flag is set (or will be verified manually).
+    pub twitter_post_link_valid: Option<bool>,
+    /// A version that specifies the setting of the twitter post link verification. This enables us
+    /// to update the twitter post link verification logic in the future and invalidate older versions.
+    pub twitter_post_link_verification_version: Option<u64>,
+    /// A hash of the concatenated revealed `national_id_number` and `nationality` to prevent
+    /// claiming with different accounts for the same identity.
+    pub uniqueness_hash: Option<Sha256>,
     /// A boolean specifying if the identity associated with the account is eligible for the reward (task 2).
     /// An associated ZK proof was verified by this backend before this flag is set.
     pub zk_proof_valid: Option<bool>,
     /// A version that specifies the setting of the ZK proof during the verification. This enables us
     /// to update the ZK proof-verification logic in the future and invalidate older proofs.
-    pub zk_proof_version: Option<u64>,
-    /// A hash of the revealed `firstName|lastName|passportNumber` to prevent
-    /// claiming with different accounts for the same identity.
-    pub uniqueness_hash: Option<Sha256>,
+    pub zk_proof_verification_version: Option<u64>,
 }
 
 impl TryFrom<tokio_postgres::Row> for StoredAccountData {
@@ -96,7 +113,10 @@ impl TryFrom<tokio_postgres::Row> for StoredAccountData {
         let raw_id: i64 = value.try_get("id")?;
         let raw_twitter_post_link: Option<&[u8]> = value.try_get("twitter_post_link")?;
         let raw_uniqueness_hash: Option<&[u8]> = value.try_get("uniqueness_hash")?;
-        let raw_zk_proof_version: Option<i64> = value.try_get("zk_proof_version")?;
+        let raw_zk_proof_verification_version: Option<i64> =
+            value.try_get("zk_proof_verification_version")?;
+        let raw_twitter_post_link_verification_version: Option<i64> =
+            value.try_get("twitter_post_link_verification_version")?;
         let raw_transaction_hash: &[u8] = value.try_get("transaction_hash")?;
 
         let events = Self {
@@ -105,7 +125,7 @@ impl TryFrom<tokio_postgres::Row> for StoredAccountData {
             claimed: value.try_get("claimed")?,
             pending_approval: value.try_get("pending_approval")?,
             zk_proof_valid: value.try_get("zk_proof_valid")?,
-            zk_proof_version: raw_zk_proof_version.map(|i| i as u64),
+            zk_proof_verification_version: raw_zk_proof_verification_version.map(|i| i as u64),
             uniqueness_hash: raw_uniqueness_hash
                 .map(|hash| {
                     Sha256::try_from(hash).map_err(|e| {
@@ -116,6 +136,9 @@ impl TryFrom<tokio_postgres::Row> for StoredAccountData {
                     })
                 })
                 .transpose()?,
+            twitter_post_link_valid: value.try_get("twitter_post_link_valid")?,
+            twitter_post_link_verification_version: raw_twitter_post_link_verification_version
+                .map(|i| i as u64),
             transaction_hash: raw_transaction_hash.try_into().map_err(|e| {
                 DatabaseError::TypeConversion(
                     "transaction_hash".to_string(),
@@ -252,17 +275,43 @@ impl Database {
             .client
             .prepare_cached(
                 "UPDATE accounts \
-                SET zk_proof_valid = $1, zk_proof_version = $2, uniqueness_hash = $3 \
+                SET zk_proof_valid = $1, zk_proof_verification_version = $2, uniqueness_hash = $3 \
                 WHERE account_address = $4 ",
             )
             .await?;
         let params: [&(dyn ToSql + Sync); 4] = [
             &true,
-            &(ZK_PROOF_VERSION as i64),
+            &(CURRENT_ZK_PROOF_VERIFICATION_VERSION as i64),
             &uniqueness_hash.as_slice(),
             &account_address.0.as_ref(),
         ];
         self.client.execute(&set_zk_proof, &params).await?;
+        Ok(())
+    }
+
+    // Inserts a row in the settings table holding the application
+    // configuration if row does not exist already. The table is constrained to
+    // only hold a single row.
+    pub async fn set_twitter_post_link(
+        &self,
+        tweet_post_link: String,
+        account_address: AccountAddress,
+    ) -> DatabaseResult<()> {
+        let set_twitter_post_link = self
+            .client
+            .prepare_cached(
+                "UPDATE accounts \
+                SET twitter_post_link_valid = $1, twitter_post_link_verification_version = $2, twitter_post_link = $3 \
+                WHERE account_address = $4 ",
+            )
+            .await?;
+        let params: [&(dyn ToSql + Sync); 4] = [
+            &true,
+            &(CURRENT_TWITTER_POST_LINK_VERIFICATION_VERSION as i64),
+            &tweet_post_link.as_bytes(),
+            &account_address.0.as_ref(),
+        ];
+        self.client.execute(&set_twitter_post_link, &params).await?;
         Ok(())
     }
 
@@ -289,7 +338,7 @@ impl Database {
         let get_account_data = self
             .client
             .prepare_cached(
-                "SELECT id, block_time, transaction_hash, claimed, pending_approval, twitter_post_link, zk_proof_valid, zk_proof_version, uniqueness_hash
+                "SELECT id, block_time, transaction_hash, claimed, pending_approval, twitter_post_link, twitter_post_link_valid, twitter_post_link_verification_version, zk_proof_valid, zk_proof_verification_version, uniqueness_hash
                 FROM accounts
                 WHERE account_address = $1",
             ).await?;
@@ -310,7 +359,7 @@ impl Database {
         let get_pending_approvals = self
             .client
             .prepare_cached(
-                "SELECT id, block_time, transaction_hash, claimed, pending_approval, twitter_post_link, zk_proof_valid, zk_proof_version, uniqueness_hash \
+                "SELECT id, block_time, transaction_hash, claimed, pending_approval, twitter_post_link, twitter_post_link_valid, twitter_post_link_verification_version, uniqueness_hash, zk_proof_valid, zk_proof_verification_version \
                 FROM accounts \
                 WHERE pending_approval = true \
                 LIMIT $1 \

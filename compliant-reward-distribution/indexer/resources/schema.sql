@@ -36,21 +36,41 @@ CREATE TABLE IF NOT EXISTS accounts (
   -- and the regulatory conditions have been proven via a ZK proof.
   -- A manual check of the completed tasks is required now before releasing the reward.
   pending_approval BOOL NOT NULL,
-  -- A link to a twitter post submitted by the above account address (task 1).
+
+  -- Task 1:
+  -- A link to a twitter post submitted by the above account address. For MVP this post is
+  -- collected to manually verify the text content. Nonethless, it is possible to automate this process
+  -- and this value should not be set in the long run to preserve better privacy for the users
+  -- (to not link a twitter account to a Concordium account address and its associated verified ZK proof).
   twitter_post_link BYTEA,
-  -- A boolean specifying if the identity associated with the account is eligible for the reward (task 2).
+  -- A boolean specifying if the text content of the twitter post link is eligible for the reward.
+  -- The content of the text was verified by this backend before this flag is set (or will be verified manually).
+  twitter_post_link_valid BOOL,
+  -- A version that specifies the setting of the twitter post link verification. This enables us
+  -- to update the twitter post link verification logic in the future and invalidate older versions.
+  twitter_post_link_verification_version INT8,
+
+  -- Task 2:
+  -- A hash of the concatenated revealed `national_id_number` and `nationality` to prevent
+  -- claiming with different accounts for the same identity.
+  uniqueness_hash BYTEA,
+  -- A boolean specifying if the identity associated with the account is eligible for the reward.
   -- An associated ZK proof was verfied by this backend before this flag is set.
   zk_proof_valid BOOL,
   -- A version that specifies the setting of the ZK proof during the verification. This enables us
   -- to update the ZK proof verification logic in the future and invalidate older proofs.
-  zk_proof_version INT8,
-  -- A hash of the revealed `firstName|lastName|passportNumber` to prevent
-  -- claiming with different accounts for the same identity.
-  uniqueness_hash BYTEA,
-  -- Ensure that the ZK values are set at the same time. Either the ZK values are NULL or NOT NULL.
+  zk_proof_verification_version INT8,
+
   CHECK (
-    (zk_proof_valid IS NULL AND zk_proof_version IS NULL AND uniqueness_hash IS NULL) OR
-    (zk_proof_valid IS NOT NULL AND zk_proof_version IS NOT NULL AND uniqueness_hash IS NOT NULL)
+    -- Ensure that the twitter values are set at the same time. Either the twitter values are NULL or NOT NULL.
+    (twitter_post_link_valid IS NULL AND twitter_post_link_verification_version IS NULL AND twitter_post_link IS NULL) OR
+    -- For MVP the `twitter_post_link` is set but in the future the process should be automated to not link
+    -- a twitter account to a Concordium account address anymore. As such the `twitter_post_link`
+    -- might be come obsolete and set to NULL.
+    (twitter_post_link_valid IS NOT NULL AND twitter_post_link_verification_version IS NOT NULL) OR
+    -- Ensure that the ZK values are set at the same time. Either the ZK values are NULL or NOT NULL.
+    (zk_proof_valid IS NULL AND zk_proof_verification_version IS NULL AND uniqueness_hash IS NULL) OR
+    (zk_proof_valid IS NOT NULL AND zk_proof_verification_version IS NOT NULL AND uniqueness_hash IS NOT NULL)
   )
 );
 
