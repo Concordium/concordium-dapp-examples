@@ -71,6 +71,7 @@ jobs:
           - sponsoredTransactionsAuction/frontend
           - trackAndTrace/frontend
           - testnet-faucet
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -114,6 +115,7 @@ jobs:
           - sponsoredTransactionsAuction/frontend
           - trackAndTrace/frontend
           - testnet-faucet
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
