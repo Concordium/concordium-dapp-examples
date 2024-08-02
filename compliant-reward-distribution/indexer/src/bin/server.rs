@@ -17,10 +17,10 @@ use concordium_rust_sdk::{
         types::{AccountAddress, AccountCredentialWithoutProofs, GlobalContext},
     },
     types::{AbsoluteBlockHeight, AccountInfo},
-    v2::{AccountIdentifier, BlockIdentifier, Client, QueryResponse},
+    v2::{AccountIdentifier, BlockIdentifier, Client, QueryError, QueryResponse},
     web3id::{
         did::Network,
-        get_public_data, CredentialLookupError,
+        get_public_data, CredentialLookupError, CredentialProof,
         CredentialStatement::{Account, Web3Id},
         Presentation, PresentationVerificationError, Web3IdAttribute,
     },
@@ -42,7 +42,9 @@ const TESTNET_GENESIS_BLOCK_HASH: [u8; 32] = [
 /// Server struct to store the db_pool.
 #[derive(Clone, Debug)]
 pub struct Server {
+    ///
     db_pool: DatabasePool,
+    ///
     node_client: Client,
     network: Network,
     cryptographic_param: GlobalContext<ArCurve>,
@@ -81,6 +83,12 @@ pub enum ServerError<'a> {
     AccountStatement,
     #[error("Do not expect initial account credential")]
     NotInitialAccountCredential,
+    #[error("ZK proof was created for the wrong network. Got network {0}, Expected network: {1}")]
+    WrongNetwork(Network, Network),
+    #[error("Expect reveal attribute statement at position {0}")]
+    RevealAttribute(usize),
+    #[error("Network error: {0}")]
+    QueryError(#[from] QueryError),
 }
 
 /// Mapping DatabaseError to ServerError
@@ -102,6 +110,7 @@ impl<'a> IntoResponse for ServerError<'a> {
             // Internal errors.
             ServerError::DatabaseErrorPostgres(_)
             | ServerError::DatabaseErrorTypeConversion(..)
+            | ServerError::QueryError(..)
             | ServerError::DatabaseErrorConfiguration(..) => {
                 tracing::error!("Internal error: {self}");
                 (
@@ -120,7 +129,9 @@ impl<'a> IntoResponse for ServerError<'a> {
             | ServerError::WrongLength(..)
             | ServerError::AccountStatement
             | ServerError::WrongStatement
-            | ServerError::NotInitialAccountCredential => {
+            | ServerError::NotInitialAccountCredential
+            | ServerError::WrongNetwork(..)
+            | ServerError::RevealAttribute(_) => {
                 let error_message = format!("Bad request: {self}");
                 tracing::warn!(error_message);
                 (StatusCode::BAD_REQUEST, error_message.into())
@@ -178,10 +189,8 @@ struct Args {
         env = "CCD_SERVER_ADMIN_ACCOUNTS"
     )]
     admin_accounts: Vec<AccountAddress>,
-    #[clap(
-        long = "zk_statements",
-        help = "The ZK statements that the server accepts proofs for."
-    )]
+    /// The ZK statements that the server accepts proofs for.
+    #[clap(long = "zk_statements", short = 'z', env = "CCD_SERVER_ZK_STATEMENTS")]
     zk_statements: String,
 }
 
@@ -298,17 +307,11 @@ async fn post_zk_proof<'a>(
 
     let presentation = param.presentation;
 
-    let block_info = state
-        .node_client
-        .get_block_info(BlockIdentifier::LastFinal)
-        .await
-        .map_err(|e| ServerError::CredentialLookup(e.into()))?;
-
     let public_data = get_public_data(
         &mut state.node_client,
         state.network,
         &presentation,
-        block_info.block_hash,
+        BlockIdentifier::LastFinal,
     )
     .await?;
 
@@ -316,7 +319,7 @@ async fn post_zk_proof<'a>(
     // Check that all credentials are active at the time of the query.
     if !public_data
         .iter()
-        .all(|cm| matches!(cm.status, CredentialStatus::Active))
+        .all(|credential| matches!(credential.status, CredentialStatus::Active))
     {
         return Err(ServerError::InactiveCredentials);
     }
@@ -324,51 +327,90 @@ async fn post_zk_proof<'a>(
     // Verify the cryptographic proofs.
     let request = presentation.verify(
         &state.cryptographic_param,
-        public_data.iter().map(|cm| &cm.inputs),
+        public_data.iter().map(|credential| &credential.inputs),
     )?;
 
-    let num_statements = request.credential_statements.len();
+    let num_credential_statements = request.credential_statements.len();
 
-    // The proof whould be generated from only one account credential.
-    if num_statements != 1 {
+    // We use regular accounts with exactly one credential at index 0.
+    if num_credential_statements != 1 {
         return Err(ServerError::WrongLength(
             "credential_statements",
             1,
-            num_statements,
+            num_credential_statements,
         ));
     }
 
-    // We only use regular accounts with (exactly one credential).
+    // We use regular accounts with exactly one credential at index 0.
     let account_statement = request.credential_statements[0].clone();
 
+    // Check the ZK proof has been generated as expected.
     match account_statement {
         Account {
-            network: _,
-            cred_id,
+            network,
+            cred_id: _,
             statement,
         } => {
-            // TODO: check do I need check the network
-
-            // TODO: handle unwrap
-            let account_info = state
-                .node_client
-                .get_account_info(
-                    &AccountIdentifier::CredId(cred_id),
-                    BlockIdentifier::LastFinal,
-                )
-                .await
-                .unwrap()
-                .response;
-
-            // TODO: use account_address to insert into database.
-            let _account_address = account_info.account_address;
-
+            // Check that the expected ZK statement has been proven.
             if statement != state.zk_statements.statements {
                 return Err(ServerError::WrongStatement);
+            }
+
+            // Check that the proof has been generated for the correct network.
+            if network != state.network {
+                return Err(ServerError::WrongNetwork(network, state.network));
             }
         }
         Web3Id { .. } => return Err(ServerError::AccountStatement),
     }
+
+    // We use regular accounts with exactly one credential at index 0.
+    let credential_proof = &presentation.verifiable_credential[0];
+
+    // Get the revealed `national_id`, `nationality` and `account_address` from the credential proof.
+    let (_national_id, _nationality, _account_address) = match credential_proof {
+        CredentialProof::Account {
+            proofs,
+            network: _,
+            cred_id,
+            ..
+        } => {
+            // Get revealed `national_id` from proof.
+            let index_0 = 0;
+            let national_id = match &proofs[index_0].1 {
+                concordium_rust_sdk::id::id_proof_types::AtomicProof::RevealAttribute {
+                    attribute,
+                    ..
+                } => attribute.to_string(),
+                _ => return Err(ServerError::RevealAttribute(index_0)),
+            };
+
+            // Get revealed `nationality` from proof.
+            let index_1 = 1;
+            let nationality = match &proofs[index_1].1 {
+                concordium_rust_sdk::id::id_proof_types::AtomicProof::RevealAttribute {
+                    attribute,
+                    ..
+                } => attribute.to_string(),
+                _ => return Err(ServerError::RevealAttribute(index_1)),
+            };
+
+            // Get `account_address` linked to the proof.
+            let account_info = state
+                .node_client
+                .get_account_info(
+                    &AccountIdentifier::CredId(*cred_id),
+                    BlockIdentifier::LastFinal,
+                )
+                .await
+                .map_err(ServerError::QueryError)?
+                .response;
+            let account_address = account_info.account_address;
+
+            (national_id, nationality, account_address)
+        }
+        _ => return Err(ServerError::AccountStatement),
+    };
 
     // TODO check that proof is not expired -> TODO: check the challenge
 
@@ -534,7 +576,6 @@ async fn get_account_data<'a>(
 
     let Json(param) = request?;
 
-    // TODO: better handling of unwrap.
     let signer_account_info = state
         .node_client
         .get_account_info(
@@ -542,7 +583,7 @@ async fn get_account_data<'a>(
             BlockIdentifier::LastFinal,
         )
         .await
-        .unwrap();
+        .map_err(ServerError::QueryError)?;
 
     // Check that:
     // - the signer is an admin account.
@@ -594,16 +635,14 @@ async fn get_pending_approvals<'a>(
         return Err(ServerError::MaxRequestLimit(MAX_REQUEST_LIMIT));
     }
 
-    // TODO: better handling of unwrap.
-    let consensus_info = state.node_client.get_consensus_info().await.unwrap();
     let signer_account_info = state
         .node_client
         .get_account_info(
             &AccountIdentifier::Address(param.signing_data.signer),
-            consensus_info.best_block_height,
+            BlockIdentifier::LastFinal,
         )
         .await
-        .unwrap();
+        .map_err(ServerError::QueryError)?;
 
     // Check that:
     // - the signer is an admin account.
