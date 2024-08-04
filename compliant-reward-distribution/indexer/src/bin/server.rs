@@ -10,6 +10,7 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
+use chrono::Utc;
 use clap::Parser;
 use concordium_rust_sdk::{
     common::types::{CredentialIndex, KeyIndex},
@@ -19,7 +20,7 @@ use concordium_rust_sdk::{
         id_proof_types::Statement,
         types::{AccountAddress, AccountCredentialWithoutProofs},
     },
-    types::AccountInfo,
+    types::{AbsoluteBlockHeight, AccountInfo},
     v2::{AccountIdentifier, BlockIdentifier, Client, QueryError, QueryResponse},
     web3id::{
         did::Network,
@@ -28,13 +29,14 @@ use concordium_rust_sdk::{
         PresentationVerificationError, Web3IdAttribute,
     },
 };
+use deadpool_postgres::PoolError;
 use http::StatusCode;
 use indexer::{
-    db::ConversionError,
+    db::{ConversionError, StoredAccountData},
     types::{
-        AccountDataReturn, CanClaimParam, GetAccountDataParam, GetPendingApprovalsParam,
-        HasSigningData, Health, PostTwitterPostLinkParam, PostZKProofParam, SetClaimedParam,
-        SigningData, VecAccountDataReturn,
+        AccountDataReturn, CanClaimParam, ClaimExpiryDurationDays, GetAccountDataParam,
+        GetPendingApprovalsParam, HasSigningData, Health, PostTwitterPostLinkParam,
+        PostZKProofParam, SetClaimedParam, SigningData, VecAccountDataReturn,
     },
 };
 use sha2::Digest;
@@ -47,17 +49,32 @@ const TESTNET_GENESIS_BLOCK_HASH: [u8; 32] = [
     0, 13, 92, 46, 0, 232, 95, 80, 247, 150,
 ];
 
-/// TODO: think if we want to save the statements in the database.
+/// Current version of the verification logic used for the ZK proof.
+/// Update this version if you want to introduce a new ZK proof-verification logic.
+const CURRENT_ZK_PROOF_VERIFICATION_VERSION: u16 = 1;
+/// Current version of the verification logic used for the twitter post link.
+/// Update this version if you want to introduce a new twitter post link verification logic.
+const CURRENT_TWITTER_POST_LINK_VERIFICATION_VERSION: u16 = 1;
+/// All versions that should be considered valid for the ZK proof verification.
+const VALID_ZK_PROOF_VERIFICATION_VERSIONS: [u16; 1] = [1];
+/// All versions that should be considered valid for the twiter post link verification.
+const VALID_TWITTER_POST_LINK_VERIFICATION_VERSIONS: [u16; 1] = [1];
+
+/// TODO: check versions during `can_claim` endpoint (potentially invalidate the query)
+/// TODO: think if we want to save the ZK statements in the database.
+/// TODO: GetZKProofSettings() gets the current ZK proof generation configuration setting for the front end to draft a ZK proof request to be sent to a connected wallet.
 
 /// Errors that this server can produce.
 #[derive(Debug, thiserror::Error)]
 pub enum ServerError {
     #[error("Database error from postgres: {0}")]
-    DatabaseErrorPostgres(tokio_postgres::Error),
+    DatabasePostgres(tokio_postgres::Error),
     #[error("Database error in type `{0}` conversion: {1}")]
-    DatabaseErrorTypeConversion(String, ConversionError),
-    #[error("Database error in configuration: {0}")]
-    DatabaseErrorConfiguration(anyhow::Error),
+    DatabaseTypeConversion(String, ConversionError),
+    #[error("Could not configure database because of {0}: {1}")]
+    DatabaseConfiguration(String, anyhow::Error),
+    #[error("Could not get pool: {0}")]
+    PoolError(#[from] PoolError),
     #[error("Failed to extract json object: {0}")]
     JsonRejection(#[from] JsonRejection),
     #[error("The requested events to the database were above the limit {0}")]
@@ -86,29 +103,108 @@ pub enum ServerError {
     RevealAttribute(usize),
     #[error("Network error: {0}")]
     QueryError(#[from] QueryError),
+    #[error("Underflow error")]
+    UnderFlow,
+    #[error(
+        "The account was not captured by the indexer and is not in the database. \
+        Only accounts earlier than block height {0} are captured."
+    )]
+    AccountExists(AbsoluteBlockHeight),
+    #[error("Claim already expired. Your account creation has to be not older than {0}.")]
+    ClaimExpired(ClaimExpiryDurationDays),
 }
 
 /// Mapping DatabaseError to ServerError
 impl From<DatabaseError> for ServerError {
     fn from(e: DatabaseError) -> Self {
         match e {
-            DatabaseError::Postgres(e) => ServerError::DatabaseErrorPostgres(e),
+            DatabaseError::Postgres(e) => ServerError::DatabasePostgres(e),
             DatabaseError::TypeConversion(type_name, e) => {
-                ServerError::DatabaseErrorTypeConversion(type_name, e)
+                ServerError::DatabaseTypeConversion(type_name, e)
             }
-            DatabaseError::Configuration(e) => ServerError::DatabaseErrorConfiguration(e),
+            DatabaseError::Configuration(type_error, e) => {
+                ServerError::DatabaseConfiguration(type_error, e)
+            }
+            DatabaseError::PoolError(e) => ServerError::PoolError(e),
         }
     }
+}
+
+/// Check that the account is eligible for claiming the reward by checking that:
+/// - the account creation has not expired.
+/// - the account exists in the database.
+pub async fn check_account_eligible(
+    state: &Server,
+    account: AccountAddress,
+) -> Result<(), ServerError> {
+    let db = state.db_pool.get().await?;
+    let database_result = db.get_account_data(account).await?;
+
+    if let Some(database_result) = database_result {
+        // Check if the claim for the reward for this account has already expired.
+        // After creating a new account, the account is eligible to claim the reward for a certain duration.
+        let expiry_date_time = Utc::now()
+            .checked_sub_days(state.claim_expiry_duration_days.0)
+            .ok_or(ServerError::UnderFlow)?;
+        if database_result.block_time < expiry_date_time {
+            return Err(ServerError::ClaimExpired(
+                state.claim_expiry_duration_days.clone(),
+            ));
+        }
+    } else {
+        // Return an error if the account does not exist in the database.
+        // The account has to be created at a time when the indexer was running.
+        let settings = db.get_settings().await?;
+        let start_block = settings.start_block_height;
+        return Err(ServerError::AccountExists(start_block));
+    }
+    Ok(())
+}
+
+/// Correct the `zk_proof_valid`, `twitter_post_link_valid` and `pending_approval` values,
+/// if they have become invalid due to the verification process has changed. This can happen
+/// if the verification logic during the submission by the user has been different than now.
+/// Also sets the `pending_approval` flag to false if the account has already claimed.
+pub fn check_for_changed_verification_logic(
+    mut sad: StoredAccountData,
+) -> Result<StoredAccountData, ServerError> {
+    // Check if the ZK proof verification version is still valid.
+    if sad.zk_proof_verification_version.map_or(true, |version| {
+        !VALID_ZK_PROOF_VERIFICATION_VERSIONS.contains(&(version as u16))
+    }) {
+        sad.zk_proof_valid = Some(false);
+        sad.pending_approval = false;
+    }
+
+    // Check if the twitter post link verification version is still valid.
+    if sad
+        .twitter_post_link_verification_version
+        .map_or(true, |version| {
+            !VALID_TWITTER_POST_LINK_VERIFICATION_VERSIONS.contains(&(version as u16))
+        })
+    {
+        sad.twitter_post_link_valid = Some(false);
+        sad.pending_approval = false;
+    }
+
+    // Check if already `claimed`.
+    if sad.claimed {
+        sad.pending_approval = false;
+    }
+
+    Ok(sad)
 }
 
 impl IntoResponse for ServerError {
     fn into_response(self) -> Response {
         let r = match self {
             // Internal errors.
-            ServerError::DatabaseErrorPostgres(_)
-            | ServerError::DatabaseErrorTypeConversion(..)
+            ServerError::DatabasePostgres(_)
+            | ServerError::DatabaseTypeConversion(..)
             | ServerError::QueryError(..)
-            | ServerError::DatabaseErrorConfiguration(..) => {
+            | ServerError::UnderFlow
+            | ServerError::DatabaseConfiguration(..)
+            | ServerError::PoolError(_) => {
                 tracing::error!("Internal error: {self}");
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
@@ -128,7 +224,9 @@ impl IntoResponse for ServerError {
             | ServerError::WrongStatement
             | ServerError::NotInitialAccountCredential
             | ServerError::WrongNetwork(..)
-            | ServerError::RevealAttribute(_) => {
+            | ServerError::RevealAttribute(_)
+            | ServerError::ClaimExpired(_)
+            | ServerError::AccountExists(..) => {
                 let error_message = format!("Bad request: {self}");
                 tracing::warn!(error_message);
                 (StatusCode::BAD_REQUEST, error_message.into())
@@ -178,7 +276,7 @@ struct Args {
         env = "CCD_SERVER_NODE"
     )]
     node_endpoint: concordium_rust_sdk::v2::Endpoint,
-    /// The admin accounts allowed to read the database and set the `claimed`
+    /// The admin accounts that are allowed to read the database and set the `claimed`
     /// flag in the database after having manually transferred the funds to an account.
     #[clap(
         long = "admin_accounts",
@@ -186,6 +284,14 @@ struct Args {
         env = "CCD_SERVER_ADMIN_ACCOUNTS"
     )]
     admin_accounts: Vec<AccountAddress>,
+    /// The duration after creating a new account during which the account is eligible to claim the reward.
+    #[clap(
+        long = "claim_expiry_duration_days",
+        short = 'e',
+        env = "CCD_SERVER_CLAIM_EXPIRY_DURATION_DAYS",
+        default_value = "60"
+    )]
+    claim_expiry_duration_days: ClaimExpiryDurationDays,
     /// The ZK statements that the server accepts proofs for.
     #[clap(long = "zk_statements", short = 'z', env = "CCD_SERVER_ZK_STATEMENTS")]
     zk_statements: String,
@@ -257,6 +363,7 @@ async fn main() -> anyhow::Result<()> {
         cryptographic_param,
         admin_accounts: app.admin_accounts,
         zk_statements,
+        claim_expiry_duration_days: app.claim_expiry_duration_days,
     };
 
     tracing::info!("Starting server...");
@@ -311,9 +418,19 @@ async fn post_twitter_post_link(
     // - the signature is not expired.
     let signer = check_signature(&param, signer_account_info)?;
 
+    // Check that:
+    // - the account creation has not expired.
+    // - the account exists in the database.
+    check_account_eligible(&state, signer).await?;
+
     let db = state.db_pool.get().await?;
-    db.set_twitter_post_link(param.signing_data.message.twitter_post_link, signer)
-        .await?;
+
+    db.set_twitter_post_link(
+        param.signing_data.message.twitter_post_link,
+        signer,
+        CURRENT_TWITTER_POST_LINK_VERIFICATION_VERSION,
+    )
+    .await?;
 
     Ok(())
 }
@@ -433,9 +550,19 @@ async fn post_zk_proof(
 
     // TODO check that proof is not expired -> TODO: check the challenge
 
+    // Check that:
+    // - the account creation has not expired.
+    // - the account exists in the database.
+    check_account_eligible(&state, account_address).await?;
+
     let db = state.db_pool.get().await?;
-    db.set_zk_proof(national_id, nationality, account_address)
-        .await?;
+    db.set_zk_proof(
+        national_id,
+        nationality,
+        account_address,
+        CURRENT_ZK_PROOF_VERIFICATION_VERSION,
+    )
+    .await?;
 
     Ok(())
 }
@@ -516,6 +643,11 @@ where
     msg_prepend[0..32].copy_from_slice(signer.as_ref());
     // Prepend 8 zero bytes.
     msg_prepend[32..40].copy_from_slice(&[0u8; 8]);
+
+    // TODO: do we want to add a context string.
+    // // Add a context for this signing.
+    // msg_prepend[32..40].copy_from_slice("compliant_reward_distribution_dapp".as_bytes());
+
     // Calculate the message hash.
 
     // TODO: better handling of unwrap.
@@ -578,7 +710,11 @@ async fn get_account_data(
         return Err(ServerError::SignerNotAdmin);
     }
 
-    let database_result = db.get_account_data(param.account_address).await?;
+    let mut database_result = db.get_account_data(param.account_address).await?;
+
+    if let Some(data) = database_result {
+        database_result = Some(check_for_changed_verification_logic(data)?);
+    }
 
     Ok(Json(AccountDataReturn {
         data: database_result,
@@ -624,7 +760,12 @@ async fn get_pending_approvals(
         return Err(ServerError::SignerNotAdmin);
     }
 
-    let database_result = db.get_pending_approvals(param.limit, param.offset).await?;
+    let mut database_result = db.get_pending_approvals(param.limit, param.offset).await?;
+
+    database_result = database_result
+        .iter()
+        .map(|sad| check_for_changed_verification_logic(sad.clone()))
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(Json(VecAccountDataReturn {
         data: database_result,
