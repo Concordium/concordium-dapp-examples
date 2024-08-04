@@ -1,11 +1,10 @@
-use anyhow::Context;
 use chrono::{DateTime, Utc};
 use concordium_rust_sdk::{
     base::hashes::{IncorrectLength, TransactionHash},
     id::types::AccountAddress,
     types::{hashes::BlockHash, AbsoluteBlockHeight},
 };
-use deadpool_postgres::{GenericClient, Object};
+use deadpool_postgres::{GenericClient, Object, PoolError};
 use hex_serde;
 use serde::Serialize;
 use sha2::Digest;
@@ -13,21 +12,9 @@ use std::string::FromUtf8Error;
 use thiserror::Error;
 use tokio_postgres::{types::ToSql, NoTls};
 
-/// Current version of the verification logic used for the ZK proof.
-/// Update this version if you want to introduce a new ZK proof-verification logic.
-const CURRENT_ZK_PROOF_VERIFICATION_VERSION: u16 = 1;
-/// Current version of the verification logic used for the twitter post link.
-/// Update this version if you want to introduce a new twitter post link verification logic.
-const CURRENT_TWITTER_POST_LINK_VERIFICATION_VERSION: u16 = 1;
-/// All versions that should be considered valid for the ZK proof verification.
-const VALID_ZK_PROOF_VERIFICATION_VERSIONS: [u16; 1] = [1];
-/// All versions that should be considered valid for the twiter post link verification.
-const VALID_TWITTER_POST_LINK_VERIFICATION_VERSIONS: [u16; 1] = [1];
-
-/// TODO: check version during the get endpoints returns
-/// TODO: add logic when accounts are too old they can not claim anymore.
-/// TODO: add check that you can only add twitter link/zk proof if account is in database.
 /// TODO(maybe): add check when `setClaimed` if account is not in database.
+/// TODO(maybe): add timestamp when ZK proof, twitter link was submitted
+/// TODO add one setter functions for all values in database (even if not used)
 ///
 #[derive(Debug, Error)]
 pub enum ConversionError {
@@ -47,15 +34,18 @@ pub enum DatabaseError {
     /// Failed to perform conversion from DB representation of type.
     #[error("Failed to convert type `{0}`: {1}")]
     TypeConversion(String, #[source] ConversionError),
-    /// Failed to configure database
-    #[error("Could not configure database: {0}")]
-    Configuration(#[from] anyhow::Error),
+    /// Failed to configure database.
+    #[error("Could not configure database because of {0}: {1}")]
+    Configuration(String, anyhow::Error),
+    /// Failed to get pool.
+    #[error("Could not get pool: {0}")]
+    PoolError(#[from] PoolError),
 }
 
 /// Alias for returning results with [`DatabaseError`]s as the `Err` variant.
 type DatabaseResult<T> = Result<T, DatabaseError>;
 
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Sha256(#[serde(with = "hex_serde")] [u8; 32]);
 
 impl TryFrom<&[u8]> for Sha256 {
@@ -73,7 +63,7 @@ impl TryFrom<&[u8]> for Sha256 {
 }
 
 /// The database configuration stored in the database.
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct StoredAccountData {
     /// The row in the database.
     pub id: u64,
@@ -230,19 +220,26 @@ impl Database {
         genesis_block_hash: &BlockHash,
         start_block_height: AbsoluteBlockHeight,
     ) -> DatabaseResult<()> {
-        let init_settings = self
-            .client
-            .prepare_cached(
-                "INSERT INTO settings (genesis_block_hash, start_block_height) \
-                VALUES ($1, $2) ON \
-                CONFLICT DO NOTHING",
-            )
-            .await?;
-        let params: [&(dyn ToSql + Sync); 2] = [
-            &genesis_block_hash.as_ref(),
-            &(start_block_height.height as i64),
-        ];
-        self.client.execute(&init_settings, &params).await?;
+        let conflict_check_query = "SELECT *  FROM settings WHERE id = true";
+
+        let opt_row = self.client.query_opt(conflict_check_query, &[]).await?;
+
+        // If `settings` table already has one row, don't update it, otherwise set the initial settings.
+        if opt_row.is_none() {
+            let init_settings = self
+                .client
+                .prepare_cached(
+                    "INSERT INTO settings (genesis_block_hash, start_block_height) \
+                    VALUES ($1, $2)",
+                )
+                .await?;
+            let params: [&(dyn ToSql + Sync); 2] = [
+                &genesis_block_hash.as_ref(),
+                &(start_block_height.height as i64),
+            ];
+            self.client.execute(&init_settings, &params).await?;
+        }
+
         Ok(())
     }
 
@@ -254,6 +251,7 @@ impl Database {
         national_id: String,
         nationality: String,
         account_address: AccountAddress,
+        current_zk_proof_verification_version: u16,
     ) -> DatabaseResult<()> {
         // Create an `uniqueness_hash` to identify the identity associated with the account
         // by hashing the concatenating string of `national_id` and `nationality`.
@@ -282,7 +280,7 @@ impl Database {
             .await?;
         let params: [&(dyn ToSql + Sync); 4] = [
             &true,
-            &(CURRENT_ZK_PROOF_VERIFICATION_VERSION as i64),
+            &(current_zk_proof_verification_version as i64),
             &uniqueness_hash.as_slice(),
             &account_address.0.as_ref(),
         ];
@@ -297,6 +295,7 @@ impl Database {
         &self,
         tweet_post_link: String,
         account_address: AccountAddress,
+        current_twitter_post_link_verification_version: u16,
     ) -> DatabaseResult<()> {
         let set_twitter_post_link = self
             .client
@@ -308,7 +307,7 @@ impl Database {
             .await?;
         let params: [&(dyn ToSql + Sync); 4] = [
             &true,
-            &(CURRENT_TWITTER_POST_LINK_VERIFICATION_VERSION as i64),
+            &(current_twitter_post_link_verification_version as i64),
             &tweet_post_link.as_bytes(),
             &account_address.0.as_ref(),
         ];
@@ -326,17 +325,18 @@ impl Database {
                 .prepare_cached(
                     "UPDATE accounts \
                     SET claimed = $1 \
-                    WHERE account_address = $2",
+                    SET pending_approval = $2 \
+                    WHERE account_address = $3",
                 )
                 .await?;
-            let params: [&(dyn ToSql + Sync); 2] = [&true, &account_address.0.as_ref()];
+            let params: [&(dyn ToSql + Sync); 3] = [&true, &false, &account_address.0.as_ref()];
             self.client.execute(&set_claimed, &params).await?;
         }
         Ok(())
     }
 
     /// Get the settings recorded in the database.
-    pub async fn get_settings(&self) -> DatabaseResult<Option<StoredConfiguration>> {
+    pub async fn get_settings(&self) -> DatabaseResult<StoredConfiguration> {
         let get_settings = self
             .client
             .prepare_cached(
@@ -344,10 +344,7 @@ impl Database {
                 FROM settings",
             )
             .await?;
-
-        let opt_row = self.client.query_opt(&get_settings, &[]).await?;
-
-        opt_row.map(StoredConfiguration::try_from).transpose()
+        self.client.query_one(&get_settings, &[]).await?.try_into()
     }
 
     /// Get the settings recorded in the database.
@@ -446,28 +443,28 @@ impl DatabasePool {
             .max_size(pool_size)
             .runtime(deadpool_postgres::Runtime::Tokio1)
             .build()
-            .context("Failed to build database pool")?;
+            .map_err(|e| {
+                DatabaseError::Configuration("Failed to build database pool".to_string(), e.into())
+            })?;
 
         if try_create_tables {
-            let client = pool
-                .get()
-                .await
-                .context("Could not get database connection from pool")?;
+            let client = pool.get().await?;
             client
                 .batch_execute(include_str!("../resources/schema.sql"))
                 .await
-                .context("Failed to execute create statements")?;
+                .map_err(|e| {
+                    DatabaseError::Configuration(
+                        "Failed to execute create statements".to_string(),
+                        e.into(),
+                    )
+                })?;
         }
         Ok(Self { pool })
     }
 
     /// Get a [`Database`] connection from the pool.
     pub async fn get(&self) -> DatabaseResult<Database> {
-        let client = self
-            .pool
-            .get()
-            .await
-            .context("Failed to get connection from pool")?;
+        let client = self.pool.get().await?;
         Ok(client.into())
     }
 }

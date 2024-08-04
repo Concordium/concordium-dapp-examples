@@ -2,6 +2,7 @@ use crate::{
     db::{Sha256, StoredAccountData},
     DatabasePool,
 };
+use chrono::Days;
 use concordium_rust_sdk::{
     common::types::Signature,
     id::{
@@ -13,6 +14,7 @@ use concordium_rust_sdk::{
     v2::Client,
     web3id::{did::Network, Presentation, Web3IdAttribute},
 };
+use std::{num::ParseIntError, str::FromStr};
 
 /// Server struct to store the db_pool.
 #[derive(Clone, Debug)]
@@ -25,6 +27,7 @@ pub struct Server {
     pub cryptographic_param: GlobalContext<ArCurve>,
     pub admin_accounts: Vec<AccountAddress>,
     pub zk_statements: Statement<ArCurve, Web3IdAttribute>,
+    pub claim_expiry_duration_days: ClaimExpiryDurationDays,
 }
 
 /// Struct returned by the `getItemStatusChangedEvents` endpoint. It returns a
@@ -162,4 +165,22 @@ pub struct CanClaimParam {
 #[derive(serde::Serialize)]
 pub struct Health {
     pub version: &'static str,
+}
+
+#[derive(Debug, Clone)]
+pub struct ClaimExpiryDurationDays(pub Days);
+
+impl FromStr for ClaimExpiryDurationDays {
+    type Err = ParseIntError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let days = s.parse::<u64>()?;
+        Ok(ClaimExpiryDurationDays(Days::new(days)))
+    }
+}
+
+impl std::fmt::Display for ClaimExpiryDurationDays {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self.0)
+    }
 }

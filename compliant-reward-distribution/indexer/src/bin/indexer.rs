@@ -198,48 +198,39 @@ async fn main() -> anyhow::Result<()> {
         .await
         .context("Could not get database connection from pool")?;
 
+    // If the indexer is started for the first time, lookup the last block finalized and initialize
+    // the database.
+    let current_block = consensus_info.last_finalized_block_height;
+
+    // This function only sets the settings in the database if they haven't been set before.
+    // Meaning only if the indexer is run for the first time.
+    db.init_settings(&consensus_info.genesis_block, current_block)
+        .await
+        .context("Could not init settings for database")?;
+
     let settings = db
         .get_settings()
         .await
         .context("Could not get settings from database")?;
 
-    let start_block = match settings {
+    // This check prevents that the indexer is re-started with a node connection
+    // to mainnet while the database has indexed data from testnet or vice versa.
+    anyhow::ensure!(
+        settings.genesis_block_hash == consensus_info.genesis_block,
+        "Genesis hash from the connected node {} does not match the genesis hash {} found \
+                 in the database",
+        consensus_info.genesis_block,
+        settings.genesis_block_hash
+    );
+
+    // Get the block to start indexing from.
+    let start_block = match settings.latest_processed_block_height {
         // If the indexer is re-started with the same database settings,
         // it should resume indexing from the `latest_processed_block_height+1` as stored in the
         // database.
-        Some(settings) => {
-            // This check prevents that the indexer is re-started with a node connection
-            // to mainnet while the database has indexed data from testnet or vice versa.
-            anyhow::ensure!(
-                settings.genesis_block_hash == consensus_info.genesis_block,
-                "Genesis hash from the connected node {} does not match the genesis hash {} found \
-                 in the database",
-                consensus_info.genesis_block,
-                settings.genesis_block_hash
-            );
-
-            // While it is possible to start the indexer and immediately stop the indexer,
-            // so that the settings are set in the database but no block has been processed
-            // at all, this edge case is rather theoretical and should not
-            // happen in practice (the default value here should not happen in practice).
-            settings.latest_processed_block_height.map_or_else(
-                // Theoretical edge case: If the latest_processed_block_height is not set, we start from the start_block_height.
-                || settings.start_block_height,
-                // If the latest_processed_block_height is set, we start from the next block.
-                |latest_processed_block_height| latest_processed_block_height.next(),
-            )
-        }
-        // If the indexer is started for the first time, lookup the last block finalized, initialize
-        // the database, and start to index at the last finalized block.
-        None => {
-            let start_block = consensus_info.last_finalized_block_height;
-
-            db.init_settings(&consensus_info.genesis_block, start_block)
-                .await
-                .context("Could not init settings for database")?;
-
-            start_block
-        }
+        Some(processed_block) => processed_block.next(),
+        // If the indexer is started for the first time, use the current block height.
+        None => current_block,
     };
 
     tracing::info!(
