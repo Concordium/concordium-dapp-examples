@@ -17,7 +17,7 @@ export const SingleInputForm = ({
   submitButtonText,
   inputDisabled,
   submitButtonDisabled,
-  children
+  children,
 }: IProps) => (
   <div className="flex flex-col w-full max-w-xl gap-3">
     <input
@@ -37,4 +37,4 @@ export const SingleInputForm = ({
       {submitButtonText}
     </button>
   </div>
-)
+);
