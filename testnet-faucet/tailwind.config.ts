@@ -9,7 +9,7 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        mono: ['var(--font-ibm-plex-mono)'],
+        mono: ["var(--font-ibm-plex-mono)"],
       },
     },
   },
