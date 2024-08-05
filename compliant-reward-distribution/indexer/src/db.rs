@@ -36,6 +36,12 @@ pub enum DatabaseError {
     /// Failed to get pool.
     #[error("Could not get pool: {0}")]
     PoolError(#[from] PoolError),
+    /// Failed because identity was re-used.
+    #[error(
+        "You already submitted a ZK proof with your identity for the account {0}. \
+        You can claim rewards only once with your identity. Use the account {0} for claiming the reward instead of account {1}."
+    )]
+    IdentityReUsed(AccountAddress, AccountAddress),
 }
 
 /// Alias for returning results with [`DatabaseError`]s as the `Err` variant.
@@ -295,7 +301,29 @@ impl Database {
         hasher.update(concatenated);
         let uniqueness_hash = hasher.finalize();
 
-        // TODO check hash not used in database so far
+        // Check if `uniqueness_hash` has been used for another account before.
+        let get_account_data = self
+            .client
+            .prepare_cached(
+                "SELECT account_address
+                FROM accounts
+                WHERE uniqueness_hash = $1",
+            )
+            .await?;
+        let params: [&(dyn ToSql + Sync); 1] = [&(uniqueness_hash.as_slice())];
+        let opt_row = self.client.query_opt(&get_account_data, &params).await?;
+
+        if let Some(row) = opt_row {
+            let raw_old_account_address: &[u8] = row.try_get("account_address")?;
+            let mut array = [0u8; 32];
+            array.copy_from_slice(raw_old_account_address);
+            let old_account_address = AccountAddress(array);
+
+            return Err(DatabaseError::IdentityReUsed(
+                old_account_address,
+                account_address,
+            ));
+        }
 
         let set_zk_proof = self
             .client
