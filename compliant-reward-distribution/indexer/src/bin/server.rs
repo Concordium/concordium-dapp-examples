@@ -37,6 +37,7 @@ use indexer::{
         AccountDataReturn, CanClaimParam, ClaimExpiryDurationDays, GetAccountDataParam,
         GetPendingApprovalsParam, HasSigningData, Health, PostTwitterPostLinkParam,
         PostZKProofParam, SetClaimedParam, SigningData, VecAccountDataReturn, ZKProofExtractedData,
+        ZKProofStatementsReturn,
     },
 };
 use sha2::Digest;
@@ -62,8 +63,7 @@ const VALID_TWITTER_POST_LINK_VERIFICATION_VERSIONS: [u16; 1] = [1];
 
 /// TODO: check versions during `can_claim` endpoint (potentially invalidate the query)
 /// TODO: think if we want to save the ZK statements in the database.
-/// TODO: GetZKProofSettings() gets the current ZK proof generation configuration setting for the front end to draft a ZK proof request to be sent to a connected wallet.
-
+///
 /// Errors that this server can produce.
 #[derive(Debug, thiserror::Error)]
 pub enum ServerError {
@@ -383,6 +383,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/getAccountData", post(get_account_data))
         .route("/api/getPendingApprovals", post(get_pending_approvals))
         .route("/api/canClaim", post(can_claim))
+        .route("/api/getZKProofStatements", get(get_zk_proof_statements))
         .route("/health", get(health))
         .with_state(state)
         .layer(
@@ -799,6 +800,13 @@ async fn can_claim(
 async fn health() -> Json<Health> {
     Json(Health {
         version: env!("CARGO_PKG_VERSION"),
+    })
+}
+
+/// Handles the `health` endpoint, returning the version of the backend.
+async fn get_zk_proof_statements(State(state): State<Server>) -> Json<ZKProofStatementsReturn> {
+    Json(ZKProofStatementsReturn {
+        data: state.zk_statements,
     })
 }
 

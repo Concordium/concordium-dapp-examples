@@ -69,8 +69,14 @@ cargo run --bin indexer -- --help
 
 ## Configure the `server`
 
+Future improvements: `dob=dateOfBirth` ZK statement should automatically adjust over time instead of hardcoding lower bound in ZK statement.
+
 ```console
 cargo run --bin server -- --zk_statements "$(<./zk_statements_config.json)" --admin_accounts "47b6Qe2XtZANHetanWKP1PbApLKtS3AyiCtcXaqLMbypKjCaRw" --admin_accounts "4KjE4rptF1o3QX6XuSaQzm6w9KLYYQTbKm2Zd4NooarH6YwfxS"
+```
+
+```
+curl -GET "http://localhost:8080/api/getZKProofStatements" -H "Content-Type: application/json" -v
 ```
 
 ```
