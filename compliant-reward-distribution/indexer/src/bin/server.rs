@@ -20,13 +20,13 @@ use concordium_rust_sdk::{
         id_proof_types::Statement,
         types::{AccountAddress, AccountCredentialWithoutProofs},
     },
-    types::{AbsoluteBlockHeight, AccountInfo},
-    v2::{AccountIdentifier, BlockIdentifier, Client, QueryError, QueryResponse},
+    types::AbsoluteBlockHeight,
+    v2::{AccountIdentifier, BlockIdentifier, Client, QueryError},
     web3id::{
         did::Network,
         get_public_data, CredentialLookupError, CredentialProof,
         CredentialStatement::{Account, Web3Id},
-        PresentationVerificationError, Web3IdAttribute,
+        Presentation, PresentationVerificationError, Web3IdAttribute,
     },
 };
 use deadpool_postgres::PoolError;
@@ -36,7 +36,7 @@ use indexer::{
     types::{
         AccountDataReturn, CanClaimParam, ClaimExpiryDurationDays, GetAccountDataParam,
         GetPendingApprovalsParam, HasSigningData, Health, PostTwitterPostLinkParam,
-        PostZKProofParam, SetClaimedParam, SigningData, VecAccountDataReturn,
+        PostZKProofParam, SetClaimedParam, SigningData, VecAccountDataReturn, ZKProofExtractedData,
     },
 };
 use sha2::Digest;
@@ -112,6 +112,8 @@ pub enum ServerError {
     AccountExists(AbsoluteBlockHeight),
     #[error("Claim already expired. Your account creation has to be not older than {0}.")]
     ClaimExpired(ClaimExpiryDurationDays),
+    #[error("Converting message to bytes caused an error: {0}.")]
+    MessageConversion(bincode::ErrorKind),
 }
 
 /// Mapping DatabaseError to ServerError
@@ -127,6 +129,12 @@ impl From<DatabaseError> for ServerError {
             }
             DatabaseError::PoolError(e) => ServerError::PoolError(e),
         }
+    }
+}
+
+impl From<Box<bincode::ErrorKind>> for ServerError {
+    fn from(e: Box<bincode::ErrorKind>) -> Self {
+        ServerError::MessageConversion(*e)
     }
 }
 
@@ -226,6 +234,7 @@ impl IntoResponse for ServerError {
             | ServerError::WrongNetwork(..)
             | ServerError::RevealAttribute(_)
             | ServerError::ClaimExpired(_)
+            | ServerError::MessageConversion(_)
             | ServerError::AccountExists(..) => {
                 let error_message = format!("Bad request: {self}");
                 tracing::warn!(error_message);
@@ -352,9 +361,8 @@ async fn main() -> anyhow::Result<()> {
         .context("Unable to get cryptographic parameters.")?
         .response;
 
-    // TODO: handle unwrap
     let zk_statements: Statement<ArCurve, Web3IdAttribute> =
-        serde_json::from_str(&app.zk_statements).unwrap();
+        serde_json::from_str(&app.zk_statements)?;
 
     let state = Server {
         db_pool,
@@ -404,19 +412,10 @@ async fn post_twitter_post_link(
 ) -> Result<(), ServerError> {
     let Json(param) = request?;
 
-    let signer_account_info = state
-        .node_client
-        .get_account_info(
-            &AccountIdentifier::Address(param.signing_data.signer),
-            BlockIdentifier::LastFinal,
-        )
-        .await
-        .map_err(ServerError::QueryError)?;
-
     // Check that:
     // - the signature is valid.
     // - the signature is not expired.
-    let signer = check_signature(&param, signer_account_info)?;
+    let signer = check_signature(&mut state, &param).await?;
 
     // Check that:
     // - the account creation has not expired.
@@ -435,14 +434,16 @@ async fn post_twitter_post_link(
     Ok(())
 }
 
-async fn post_zk_proof(
-    State(mut state): State<Server>,
-    request: Result<Json<PostZKProofParam>, JsonRejection>,
-) -> Result<(), ServerError> {
-    let Json(param) = request?;
-
-    let presentation = param.presentation;
-
+/// Check that the zk proof is valid by checking that:
+/// - the credential statuses are active.
+/// - the cryptographic proofs are valid.
+/// - exactly one credential statement is present in the proof.
+/// - the expected zk statements have been proven.
+/// - the proof has been generated for the correct network.
+async fn check_zk_proof(
+    state: &mut Server,
+    presentation: Presentation<ArCurve, Web3IdAttribute>,
+) -> Result<ZKProofExtractedData, ServerError> {
     let public_data = get_public_data(
         &mut state.node_client,
         state.network,
@@ -550,6 +551,35 @@ async fn post_zk_proof(
 
     // TODO check that proof is not expired -> TODO: check the challenge
 
+    Ok(ZKProofExtractedData {
+        national_id,
+        nationality,
+        account_address,
+    })
+}
+
+async fn post_zk_proof(
+    State(mut state): State<Server>,
+    request: Result<Json<PostZKProofParam>, JsonRejection>,
+) -> Result<(), ServerError> {
+    let Json(param) = request?;
+
+    let presentation = param.presentation;
+
+    // Check that:
+    // - the credential statuses are active.
+    // - the cryptographic proofs are valid.
+    // - exactly one credential statement is present in the proof.
+    // - the expected zk statements have been proven.
+    // - the proof has been generated for the correct network.
+    // Return the extracted `national_id`, `nationality` and
+    // `account_address` associated to the proof.
+    let ZKProofExtractedData {
+        national_id,
+        nationality,
+        account_address,
+    } = check_zk_proof(&mut state, presentation).await?;
+
     // Check that:
     // - the account creation has not expired.
     // - the account exists in the database.
@@ -573,19 +603,10 @@ async fn set_claimed(
 ) -> Result<(), ServerError> {
     let Json(param) = request?;
 
-    let signer_account_info = state
-        .node_client
-        .get_account_info(
-            &AccountIdentifier::Address(param.signing_data.signer),
-            BlockIdentifier::LastFinal,
-        )
-        .await
-        .map_err(ServerError::QueryError)?;
-
     // Check that:
     // - the signature is valid.
     // - the signature is not expired.
-    let signer = check_signature(&param, signer_account_info)?;
+    let signer = check_signature(&mut state, &param).await?;
 
     // Check that the signer is an admin account.
     if !state.admin_accounts.contains(&signer) {
@@ -602,10 +623,7 @@ async fn set_claimed(
 /// Check that the signer account has signed the message by checking that:
 /// - the signature is valid.
 /// - the signature is not expired.
-fn check_signature<T>(
-    param: &T,
-    signer_account_info: QueryResponse<AccountInfo>,
-) -> Result<AccountAddress, ServerError>
+async fn check_signature<T>(state: &mut Server, param: &T) -> Result<AccountAddress, ServerError>
 where
     T: HasSigningData + serde::Serialize,
     <T as HasSigningData>::Message: serde::Serialize,
@@ -615,6 +633,15 @@ where
         message,
         signature,
     } = param.signing_data();
+
+    let signer_account_info = state
+        .node_client
+        .get_account_info(
+            &AccountIdentifier::Address(*signer),
+            BlockIdentifier::LastFinal,
+        )
+        .await
+        .map_err(ServerError::QueryError)?;
 
     // This backend checks that the signer account has signed the "block_hash" and "block_number"
     // of a block that is not older than 10 blocks from the most recent block.
@@ -650,8 +677,7 @@ where
 
     // Calculate the message hash.
 
-    // TODO: better handling of unwrap.
-    let message_bytes = bincode::serialize(&message).unwrap();
+    let message_bytes = bincode::serialize(&message)?;
     let message_hash = sha2::Sha256::digest([&msg_prepend[0..40], &message_bytes].concat());
 
     // We use regular accounts as admin accounts.
@@ -669,10 +695,10 @@ where
         AccountCredentialWithoutProofs::Normal { cdv, .. } => &cdv.cred_key_info.keys[&KeyIndex(0)],
     };
 
-    let valid_signature = signer_public_key.verify(message_hash, signature);
+    let is_valid = signer_public_key.verify(message_hash, signature);
 
     // Check validity of the signature.
-    if !valid_signature {
+    if !is_valid {
         return Err(ServerError::InvalidSignature);
     }
 
@@ -691,19 +717,10 @@ async fn get_account_data(
 
     let Json(param) = request?;
 
-    let signer_account_info = state
-        .node_client
-        .get_account_info(
-            &AccountIdentifier::Address(param.signing_data.signer),
-            BlockIdentifier::LastFinal,
-        )
-        .await
-        .map_err(ServerError::QueryError)?;
-
     // Check that:
     // - the signature is valid.
     // - the signature is not expired.
-    let signer = check_signature(&param, signer_account_info)?;
+    let signer = check_signature(&mut state, &param).await?;
 
     // Check that the signer is an admin account.
     if !state.admin_accounts.contains(&signer) {
@@ -741,19 +758,10 @@ async fn get_pending_approvals(
         return Err(ServerError::MaxRequestLimit(MAX_REQUEST_LIMIT));
     }
 
-    let signer_account_info = state
-        .node_client
-        .get_account_info(
-            &AccountIdentifier::Address(param.signing_data.signer),
-            BlockIdentifier::LastFinal,
-        )
-        .await
-        .map_err(ServerError::QueryError)?;
-
     // Check that:
     // - the signature is valid.
     // - the signature is not expired.
-    let signer = check_signature(&param, signer_account_info)?;
+    let signer = check_signature(&mut state, &param).await?;
 
     // Check that the signer is an admin account.
     if !state.admin_accounts.contains(&signer) {
