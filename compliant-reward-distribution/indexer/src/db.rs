@@ -14,8 +14,7 @@ use tokio_postgres::{types::ToSql, NoTls};
 
 /// TODO(maybe): add check when `setClaimed` if account is not in database.
 /// TODO(maybe): add timestamp when ZK proof, twitter link was submitted
-/// TODO add one setter functions for all values in database (even if not used)
-///
+
 #[derive(Debug, Error)]
 pub enum ConversionError {
     #[error("Incorrect length")]
@@ -220,7 +219,7 @@ impl Database {
         genesis_block_hash: &BlockHash,
         start_block_height: AbsoluteBlockHeight,
     ) -> DatabaseResult<()> {
-        let conflict_check_query = "SELECT *  FROM settings WHERE id = true";
+        let conflict_check_query = "SELECT id FROM settings WHERE id = true";
 
         let opt_row = self.client.query_opt(conflict_check_query, &[]).await?;
 
@@ -253,6 +252,31 @@ impl Database {
         account_address: AccountAddress,
         current_zk_proof_verification_version: u16,
     ) -> DatabaseResult<()> {
+        // Check if we need to update `pending_approval` to true.
+        let get_account_data = self
+            .client
+            .prepare_cached(
+                "SELECT claimed, twitter_post_link_valid, pending_approval
+                    FROM accounts
+                    WHERE account_address = $1",
+            )
+            .await?;
+
+        let params: [&(dyn ToSql + Sync); 1] = [&(account_address.0.as_ref())];
+        let row = self.client.query_one(&get_account_data, &params).await?;
+
+        let claimed: bool = row.try_get("claimed")?;
+        let twitter_post_link_valid: Option<bool> = row.try_get("twitter_post_link_valid")?;
+        let mut pending_approval: bool = row.try_get("pending_approval")?;
+
+        if let Some(twitter_post_link_valid) = twitter_post_link_valid {
+            if !claimed && twitter_post_link_valid {
+                // If the account has submitted a twitter post link already and can still claim,
+                // set the `pending_approval` to true.
+                pending_approval = true
+            }
+        }
+
         // Create an `uniqueness_hash` to identify the identity associated with the account
         // by hashing the concatenating string of `national_id` and `nationality`.
         // Every identity should only be allowed to receive rewards once
@@ -268,20 +292,20 @@ impl Database {
         let uniqueness_hash = hasher.finalize();
 
         // TODO check hash not used in database so far
-        // TODO if `hash` and `twitter` is set, make `pending_approval` to true
 
         let set_zk_proof = self
             .client
             .prepare_cached(
                 "UPDATE accounts \
-                SET zk_proof_valid = $1, zk_proof_verification_version = $2, uniqueness_hash = $3 \
-                WHERE account_address = $4 ",
+                SET zk_proof_valid = $1, zk_proof_verification_version = $2, uniqueness_hash = $3, pending_approval = $4 \
+                WHERE account_address = $5 ",
             )
             .await?;
-        let params: [&(dyn ToSql + Sync); 4] = [
+        let params: [&(dyn ToSql + Sync); 5] = [
             &true,
             &(current_zk_proof_verification_version as i64),
             &uniqueness_hash.as_slice(),
+            &pending_approval,
             &account_address.0.as_ref(),
         ];
         self.client.execute(&set_zk_proof, &params).await?;
@@ -297,21 +321,48 @@ impl Database {
         account_address: AccountAddress,
         current_twitter_post_link_verification_version: u16,
     ) -> DatabaseResult<()> {
+        // Check if we need to update `pending_approval` to true.
+        let get_account_data = self
+            .client
+            .prepare_cached(
+                "SELECT claimed, zk_proof_valid, pending_approval
+                FROM accounts
+                WHERE account_address = $1",
+            )
+            .await?;
+
+        let params: [&(dyn ToSql + Sync); 1] = [&(account_address.0.as_ref())];
+        let row = self.client.query_one(&get_account_data, &params).await?;
+
+        let claimed: bool = row.try_get("claimed")?;
+        let zk_proof_valid: Option<bool> = row.try_get("zk_proof_valid")?;
+        let mut pending_approval: bool = row.try_get("pending_approval")?;
+
+        if let Some(zk_proof_valid) = zk_proof_valid {
+            if !claimed && zk_proof_valid {
+                // If the account has submitted a ZK proof already and can still claim,
+                // set the `pending_approval` to true.
+                pending_approval = true
+            }
+        }
+
         let set_twitter_post_link = self
             .client
             .prepare_cached(
                 "UPDATE accounts \
-                SET twitter_post_link_valid = $1, twitter_post_link_verification_version = $2, twitter_post_link = $3 \
-                WHERE account_address = $4 ",
+                SET twitter_post_link_valid = $1, twitter_post_link_verification_version = $2, twitter_post_link = $3, pending_approval = $4 \
+                WHERE account_address = $5",
             )
             .await?;
-        let params: [&(dyn ToSql + Sync); 4] = [
+        let params: [&(dyn ToSql + Sync); 5] = [
             &true,
             &(current_twitter_post_link_verification_version as i64),
             &tweet_post_link.as_bytes(),
+            &pending_approval,
             &account_address.0.as_ref(),
         ];
         self.client.execute(&set_twitter_post_link, &params).await?;
+
         Ok(())
     }
 

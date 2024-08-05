@@ -64,6 +64,16 @@ pub struct PostZKProofParam {
     pub presentation: Presentation<ArCurve, Web3IdAttribute>,
 }
 
+/// Helper type
+pub struct ZKProofExtractedData {
+    ///
+    pub national_id: String,
+    ///
+    pub nationality: String,
+    ///
+    pub account_address: AccountAddress,
+}
+
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TwitterPostLinkMessage {

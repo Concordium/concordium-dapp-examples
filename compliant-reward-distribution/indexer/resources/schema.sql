@@ -77,4 +77,4 @@ CREATE TABLE IF NOT EXISTS accounts (
 -- Improve performance on queries for a given account_address in the accounts table.
 CREATE INDEX IF NOT EXISTS accounts_index ON accounts (account_address);
 -- Improve performance on queries for given pending_approvals in the accounts table.
-CREATE INDEX IF NOT EXISTS pending_approval_index ON accounts (pending_approval);
+CREATE INDEX IF NOT EXISTS pending_approvals_index ON accounts (pending_approval);
