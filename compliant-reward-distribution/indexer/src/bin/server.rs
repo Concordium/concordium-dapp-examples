@@ -62,7 +62,6 @@ const VALID_ZK_PROOF_VERIFICATION_VERSIONS: [u16; 1] = [1];
 const VALID_TWITTER_POST_LINK_VERIFICATION_VERSIONS: [u16; 1] = [1];
 
 /// TODO: check versions during `can_claim` endpoint (potentially invalidate the query)
-/// TODO: think if we want to save the ZK statements in the database.
 ///
 /// Errors that this server can produce.
 #[derive(Debug, thiserror::Error)]
@@ -114,6 +113,11 @@ pub enum ServerError {
     ClaimExpired(ClaimExpiryDurationDays),
     #[error("Converting message to bytes caused an error: {0}.")]
     MessageConversion(bincode::ErrorKind),
+    #[error(
+        "You already submitted a ZK proof with your identity for the account {0}. \
+        You can claim rewards only once with your identity. Use the account {0} for claiming the reward instead of account {1}."
+    )]
+    IdentityReUsed(AccountAddress, AccountAddress),
 }
 
 /// Mapping DatabaseError to ServerError
@@ -128,6 +132,9 @@ impl From<DatabaseError> for ServerError {
                 ServerError::DatabaseConfiguration(type_error, e)
             }
             DatabaseError::PoolError(e) => ServerError::PoolError(e),
+            DatabaseError::IdentityReUsed(old_address, new_address) => {
+                ServerError::IdentityReUsed(old_address, new_address)
+            }
         }
     }
 }
@@ -235,7 +242,8 @@ impl IntoResponse for ServerError {
             | ServerError::RevealAttribute(_)
             | ServerError::ClaimExpired(_)
             | ServerError::MessageConversion(_)
-            | ServerError::AccountExists(..) => {
+            | ServerError::AccountExists(..)
+            | ServerError::IdentityReUsed(..) => {
                 let error_message = format!("Bad request: {self}");
                 tracing::warn!(error_message);
                 (StatusCode::BAD_REQUEST, error_message.into())
