@@ -6,7 +6,7 @@ on:
 
   pull_request:
     branches: main
-  
+
   workflow_dispatch: # allows manual trigger
 
 jobs:
@@ -24,20 +24,20 @@ jobs:
           - {dir: simpleAgeVerification, dockerfile: Dockerfile}
           - {dir: ., dockerfile: sponsoredTransactions/Dockerfile}
           - {dir: ., dockerfile: sponsoredTransactionsAuction/Dockerfile}
-          
+
     steps:
     - name: Checkout
       uses: actions/checkout@v4
       with:
         submodules: recursive
-    
+
     - name: Build image
       working-directory: ${{ matrix.image.dir }}
       run:
         docker build -f ${{ matrix.image.dockerfile }} .
 
   compose-build:
-    name: Building with docker-compose
+    name: Building with docker compose
     # Don't run on draft pull requests
     if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
@@ -47,11 +47,11 @@ jobs:
       with:
         submodules: recursive
 
-    - name: Build with docker-compose
+    - name: Build with docker compose
       working-directory: trackAndTrace
       env:
-        # Dummy values set because `docker-compose build` enforces the variables only needed on runtime when building.
+        # Dummy values set because `docker compose build` enforces the variables only needed on runtime when building.
         TRACK_AND_TRACE_CONTRACT_ADDRESS: "<8351,0>"
         TRACK_AND_TRACE_PRIVATE_KEY_FILE: "./trackAndTrace/README.md"
       run:
-        docker-compose build
+        docker compose build
