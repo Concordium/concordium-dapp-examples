@@ -177,6 +177,13 @@ pub struct Health {
     pub version: &'static str,
 }
 
+/// Struct returned by the `getItemStatusChangedEvents` endpoint. It returns a
+/// vector of ItemStatusChangedEvents from the database if present.
+#[derive(serde::Serialize)]
+pub struct ZKProofStatementsReturn {
+    pub data: Statement<ArCurve, Web3IdAttribute>,
+}
+
 #[derive(Debug, Clone)]
 pub struct ClaimExpiryDurationDays(pub Days);
 

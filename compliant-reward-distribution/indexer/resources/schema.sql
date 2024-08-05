@@ -49,6 +49,8 @@ CREATE TABLE IF NOT EXISTS accounts (
   -- A version that specifies the setting of the twitter post link verification. This enables us
   -- to update the twitter post link verification logic in the future and invalidate older versions.
   twitter_post_link_verification_version INT8,
+  -- The timestamp when the twitter post link was submitted.
+  twitter_post_link_submit_time TIMESTAMP WITH TIME ZONE,
 
   -- Task 2:
   -- A hash of the concatenated revealed `national_id_number` and `nationality` to prevent
@@ -60,17 +62,19 @@ CREATE TABLE IF NOT EXISTS accounts (
   -- A version that specifies the setting of the ZK proof during the verification. This enables us
   -- to update the ZK proof verification logic in the future and invalidate older proofs.
   zk_proof_verification_version INT8,
+   -- The timestamp when the ZK proof verification was submitted.
+  zk_proof_verification_submit_time TIMESTAMP WITH TIME ZONE,
 
   CHECK (
     -- Ensure that the twitter values are set at the same time. Either the twitter values are NULL or NOT NULL.
-    (twitter_post_link_valid IS NULL AND twitter_post_link_verification_version IS NULL AND twitter_post_link IS NULL) OR
-    -- For MVP the `twitter_post_link` is set but in the future the process should be automated to not link
+    (twitter_post_link_valid IS NULL AND twitter_post_link_verification_version IS NULL AND twitter_post_link IS NULL AND twitter_post_link_submit_time IS NULL) OR
+    -- For MVP the `twitter_post_link` is set but the process should be automated in the future to not link
     -- a twitter account to a Concordium account address anymore. As such the `twitter_post_link`
     -- might be come obsolete and set to NULL.
-    (twitter_post_link_valid IS NOT NULL AND twitter_post_link_verification_version IS NOT NULL) OR
+    (twitter_post_link_valid IS NOT NULL AND twitter_post_link_verification_version IS NOT NULL AND twitter_post_link_submit_time IS NOT NULL) OR
     -- Ensure that the ZK values are set at the same time. Either the ZK values are NULL or NOT NULL.
-    (zk_proof_valid IS NULL AND zk_proof_verification_version IS NULL AND uniqueness_hash IS NULL) OR
-    (zk_proof_valid IS NOT NULL AND zk_proof_verification_version IS NOT NULL AND uniqueness_hash IS NOT NULL)
+    (zk_proof_valid IS NULL AND zk_proof_verification_version IS NULL AND uniqueness_hash IS NULL AND zk_proof_verification_submit_time IS NULL) OR
+    (zk_proof_valid IS NOT NULL AND zk_proof_verification_version IS NOT NULL AND uniqueness_hash IS NOT NULL AND zk_proof_verification_submit_time IS NOT NULL)
   )
 );
 
@@ -78,3 +82,5 @@ CREATE TABLE IF NOT EXISTS accounts (
 CREATE INDEX IF NOT EXISTS accounts_index ON accounts (account_address);
 -- Improve performance on queries for given pending_approvals in the accounts table.
 CREATE INDEX IF NOT EXISTS pending_approvals_index ON accounts (pending_approval);
+-- Improve performance on queries for a given uniqueness_hash in the accounts table.
+CREATE INDEX IF NOT EXISTS uniqueness_hash_index ON accounts (uniqueness_hash);
