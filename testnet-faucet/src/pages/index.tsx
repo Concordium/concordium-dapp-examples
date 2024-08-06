@@ -147,7 +147,7 @@ export default function Home() {
                 const { ok, data } = await checkUsageLimit(address);
                 if (ok && !data.isAllowed) {
                     setAddressValidationError(
-                        `You already get tokens in the last ${usageLimit} ${usageLimit > 1 ? 'hours' : ' hour'}. Please try again later.`,
+                        `You already get tokens in the last ${usageLimit} ${usageLimit > 1 ? 'hours' : 'hour'}. Please try again later.`,
                     );
                     return;
                 }
@@ -198,7 +198,7 @@ export default function Home() {
             </div>
             <main className="flex flex-col items-center justify-between py-8 md:pt-12 md:pb-28 w-full">
                 <p className="text-center text-sm md:text-base mb-4 md:mb-8 px-10">
-                    {`Get Testnet CDDs every ${usageLimit} ${usageLimit > 1 ? 'hours' : ' hour'} for testing your dApps!`}
+                    {`Get Testnet CDDs every ${usageLimit} ${usageLimit > 1 ? 'hours' : 'hour'} for testing your dApps!`}
                 </p>
                 <div className="flex flex-col md:flex-row justify-center items-center md:items-start w-full text-sm md:text-base px-4 gap-6 lg:gap-12">
                     <div
