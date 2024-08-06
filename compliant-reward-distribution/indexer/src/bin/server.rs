@@ -145,35 +145,56 @@ impl From<Box<bincode::ErrorKind>> for ServerError {
     }
 }
 
+pub fn update_pending_approval(
+    old_pending_approval: bool,
+    other_task_valid: Option<bool>,
+    claimed: bool,
+) -> bool {
+    let mut new_pending_approval = old_pending_approval;
+
+    // Check if we need to update `pending_approval` to true.
+    if let Some(other_task_valid) = other_task_valid {
+        if !claimed && other_task_valid {
+            // If the account already submitted the other task and can still claim,
+            // set the `pending_approval` to true.
+            new_pending_approval = true
+        }
+    }
+    new_pending_approval
+}
+
 /// Check that the account is eligible for claiming the reward by checking that:
 /// - the account creation has not expired.
 /// - the account exists in the database.
+/// Returns the account data stored in the database.
 pub async fn check_account_eligible(
     state: &Server,
     account: AccountAddress,
-) -> Result<(), ServerError> {
+) -> Result<StoredAccountData, ServerError> {
     let db = state.db_pool.get().await?;
     let database_result = db.get_account_data(account).await?;
 
-    if let Some(database_result) = database_result {
-        // Check if the claim for the reward for this account has already expired.
-        // After creating a new account, the account is eligible to claim the reward for a certain duration.
-        let expiry_date_time = Utc::now()
-            .checked_sub_days(state.claim_expiry_duration_days.0)
-            .ok_or(ServerError::UnderFlow)?;
-        if database_result.block_time < expiry_date_time {
-            return Err(ServerError::ClaimExpired(
-                state.claim_expiry_duration_days.clone(),
-            ));
+    match database_result {
+        Some(database_result) => {
+            // Check if the claim for the reward for this account has already expired.
+            // After creating a new account, the account is eligible to claim the reward for a certain duration.
+            let expiry_date_time = Utc::now()
+                .checked_sub_days(state.claim_expiry_duration_days.0)
+                .ok_or(ServerError::UnderFlow)?;
+            if database_result.block_time < expiry_date_time {
+                return Err(ServerError::ClaimExpired(
+                    state.claim_expiry_duration_days.clone(),
+                ));
+            }
+            Ok(database_result)
         }
-    } else {
-        // Return an error if the account does not exist in the database.
-        // The account has to be created at a time when the indexer was running.
-        let settings = db.get_settings().await?;
-        let start_block = settings.start_block_height;
-        return Err(ServerError::AccountExists(start_block));
+        None => {
+            // Return an error if the account does not exist in the database.
+            // The account has to be created at a time when the indexer was running.
+            let start_block_height = db.get_settings().await?.start_block_height;
+            Err(ServerError::AccountExists(start_block_height))
+        }
     }
-    Ok(())
 }
 
 /// Correct the `zk_proof_valid`, `twitter_post_link_valid` and `pending_approval` values,
@@ -429,13 +450,21 @@ async fn post_twitter_post_link(
     // Check that:
     // - the account creation has not expired.
     // - the account exists in the database.
-    check_account_eligible(&state, signer).await?;
+    let StoredAccountData {
+        pending_approval,
+        zk_proof_valid,
+        claimed,
+        ..
+    } = check_account_eligible(&state, signer).await?;
+
+    let new_pending_approval = update_pending_approval(pending_approval, zk_proof_valid, claimed);
 
     let db = state.db_pool.get().await?;
 
     db.set_twitter_post_link(
         param.signing_data.message.twitter_post_link,
         signer,
+        new_pending_approval,
         CURRENT_TWITTER_POST_LINK_VERIFICATION_VERSION,
     )
     .await?;
@@ -478,7 +507,7 @@ async fn check_zk_proof(
 
     let num_credential_statements = request.credential_statements.len();
 
-    // We use regular accounts with exactly one credential at index 0.
+    // We support regular accounts with exactly one credential at index 0.
     if num_credential_statements != 1 {
         return Err(ServerError::WrongLength(
             "credential_statements".to_string(),
@@ -487,7 +516,7 @@ async fn check_zk_proof(
         ));
     }
 
-    // We use regular accounts with exactly one credential at index 0.
+    // We support regular accounts with exactly one credential at index 0.
     let account_statement = request.credential_statements[0].clone();
 
     // Check the ZK proof has been generated as expected.
@@ -510,11 +539,11 @@ async fn check_zk_proof(
         Web3Id { .. } => return Err(ServerError::AccountStatement),
     }
 
-    // We use regular accounts with exactly one credential at index 0.
+    // We support regular accounts with exactly one credential at index 0.
     let credential_proof = &presentation.verifiable_credential[0];
 
     // Get the revealed `national_id`, `nationality` and `account_address` from the credential proof.
-    let (national_id, nationality, account_address) = match credential_proof {
+    let (national_id, nationality, prover) = match credential_proof {
         CredentialProof::Account {
             proofs,
             network: _,
@@ -551,9 +580,9 @@ async fn check_zk_proof(
                 .await
                 .map_err(ServerError::QueryError)?
                 .response;
-            let account_address = account_info.account_address;
+            let prover = account_info.account_address;
 
-            (national_id, nationality, account_address)
+            (national_id, nationality, prover)
         }
         _ => return Err(ServerError::AccountStatement),
     };
@@ -563,7 +592,7 @@ async fn check_zk_proof(
     Ok(ZKProofExtractedData {
         national_id,
         nationality,
-        account_address,
+        prover,
     })
 }
 
@@ -586,19 +615,28 @@ async fn post_zk_proof(
     let ZKProofExtractedData {
         national_id,
         nationality,
-        account_address,
+        prover,
     } = check_zk_proof(&mut state, presentation).await?;
 
     // Check that:
     // - the account creation has not expired.
     // - the account exists in the database.
-    check_account_eligible(&state, account_address).await?;
+    let StoredAccountData {
+        pending_approval,
+        twitter_post_link_valid,
+        claimed,
+        ..
+    } = check_account_eligible(&state, prover).await?;
+
+    let new_pending_approval =
+        update_pending_approval(pending_approval, twitter_post_link_valid, claimed);
 
     let db = state.db_pool.get().await?;
     db.set_zk_proof(
         national_id,
         nationality,
-        account_address,
+        prover,
+        new_pending_approval,
         CURRENT_ZK_PROOF_VERIFICATION_VERSION,
     )
     .await?;
@@ -689,12 +727,12 @@ where
     let message_bytes = bincode::serialize(&message)?;
     let message_hash = sha2::Sha256::digest([&msg_prepend[0..40], &message_bytes].concat());
 
-    // We use regular accounts as admin accounts.
+    // We use/support regular accounts.
     // Regular accounts have only one public-private key pair at index 0 in the credential map.
     let signer_account_credential =
         &signer_account_info.response.account_credentials[&CredentialIndex::from(0)].value;
 
-    // We use regular accounts as admin accounts.
+    // We use/support regular accounts.
     // Regular accounts have only one public-private key pair at index 0 in the key map.
     let signer_public_key = match signer_account_credential {
         // TODO: usually not allowed

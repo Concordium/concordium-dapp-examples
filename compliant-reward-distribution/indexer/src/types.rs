@@ -71,7 +71,7 @@ pub struct ZKProofExtractedData {
     ///
     pub nationality: String,
     ///
-    pub account_address: AccountAddress,
+    pub prover: AccountAddress,
 }
 
 #[derive(serde::Deserialize, serde::Serialize)]
