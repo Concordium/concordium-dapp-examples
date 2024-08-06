@@ -36,7 +36,7 @@ jobs:
           export VERSION=$(jq -r .version testnet-faucet/package.json)
           export FULL_IMAGE_TAG="${{ env.REGISTRY }}/concordium/$IMAGE_NAME:$VERSION"
           echo "::notice FULL_IMAGE_TAG=${FULL_IMAGE_TAG}"
-          # Make sure the image does not exist. Abort if we can retrieve any metadata.
+          Make sure the image does not exist. Abort if we can retrieve any metadata.
           if docker manifest inspect ${FULL_IMAGE_TAG} > /dev/null; then
              echo "::error ${FULL_IMAGE_TAG} already exists"
              exit 1
