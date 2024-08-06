@@ -18,7 +18,7 @@ import Image from 'next/image';
 import { ErrorAlert } from '@/components/ErrorAlert';
 import { SingleInputForm } from '@/components/SingleInpuForm';
 import { Step } from '@/components/Step';
-import { FAQ, TWEET_TEMPLATE } from '@/constants';
+import { FAQ, TWEET_TEMPLATE, usageLimit } from '@/constants';
 import getLatestTransactions from '@/lib/getLatestTransactions';
 import { extractITweetdFromUrl, formatTimestamp, formatTxHash } from '@/lib/utils';
 
@@ -73,7 +73,6 @@ const checkUsageLimit = async (receiver: string) => {
 };
 
 export default function Home() {
-    const usageLimit = Number(process.env.NEXT_PUBLIC_USAGE_LIMIT_IN_HOURS!);
     const [latestTransactions, setLatestTransactions] = useState<PartialTransaction[]>([]);
     const [address, setAddress] = useState<string>('');
     const [addressValidationError, setAddressValidationError] = useState<string | undefined>();
