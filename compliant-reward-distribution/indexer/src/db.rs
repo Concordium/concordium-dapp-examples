@@ -295,10 +295,12 @@ impl Database {
             array.copy_from_slice(raw_old_account_address);
             let old_account_address = AccountAddress(array);
 
-            return Err(DatabaseError::IdentityReUsed(
-                old_account_address,
-                account_address,
-            ));
+            if old_account_address != account_address {
+                return Err(DatabaseError::IdentityReUsed(
+                    old_account_address,
+                    account_address,
+                ));
+            }
         }
 
         let set_zk_proof = self
@@ -361,8 +363,7 @@ impl Database {
                 .client
                 .prepare_cached(
                     "UPDATE accounts \
-                    SET claimed = $1 \
-                    SET pending_approval = $2 \
+                    SET claimed = $1, pending_approval = $2 \
                     WHERE account_address = $3",
                 )
                 .await?;
