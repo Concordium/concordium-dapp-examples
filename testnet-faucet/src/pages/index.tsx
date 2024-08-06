@@ -72,7 +72,6 @@ const checkUsageLimit = async (receiver: string) => {
     }
 };
 
-
 export default function Home() {
     const [latestTransactions, setLatestTransactions] = useState<PartialTransaction[]>([]);
     const [address, setAddress] = useState<string>('');
@@ -113,8 +112,7 @@ export default function Home() {
             `https://x.com/intent/tweet?text=${encodeURIComponent(TWEET_TEMPLATE + ' ' + address)}`,
             '_blank',
             'width=500,height=500',
-    );
-
+        );
 
     const handleVerifyTweetAndSendTokens = async () => {
         setTurnstileOpen(false);
@@ -139,19 +137,21 @@ export default function Home() {
 
     useEffect(() => {
         setAddressValidationError(undefined);
-        setIsAddressValid(false)
+        setIsAddressValid(false);
         if (!address) {
             return;
         }
         const isWithinUsageLimit = async () => {
             try {
                 const { ok, data } = await checkUsageLimit(address);
-                const usageLimit = process.env.NEXT_PUBLIC_USAGE_LIMIT_IN_HOURS!
+                const usageLimit = process.env.NEXT_PUBLIC_USAGE_LIMIT_IN_HOURS!;
                 if (ok && !data.isAllowed) {
-                    setAddressValidationError(`You already get tokens in the last ${usageLimit} ${Number(usageLimit) > 1 ? 'hours' : ' hour'}. Please try again later.`);
-                    return
+                    setAddressValidationError(
+                        `You already get tokens in the last ${usageLimit} ${Number(usageLimit) > 1 ? 'hours' : ' hour'}. Please try again later.`,
+                    );
+                    return;
                 }
-                setIsAddressValid(true)
+                setIsAddressValid(true);
             } catch (error) {
                 console.log('Error on checkUsageLimit:', error);
             }
@@ -197,7 +197,7 @@ export default function Home() {
                 <p className="text-xl md:text-2xl text-center font-semibold text-white">Concordium Testnet Faucet</p>
             </div>
             <main className="flex flex-col items-center justify-between py-8 md:pt-12 md:pb-28 w-full">
-                {isAddressValid ? "address valid" : "not valid address"}
+                {isAddressValid ? 'address valid' : 'not valid address'}
                 <p className="text-center text-sm md:text-base mb-4 md:mb-8 px-10">
                     {`Get Testnet CDDs every ${Number(process.env.NEXT_PUBLIC_USAGE_LIMIT_IN_HOURS) * 24} hours for testing your dApps!`}
                 </p>
@@ -215,7 +215,10 @@ export default function Home() {
                             submitButtonText="Share on X"
                             inputDisabled={Boolean(tweetPostedUrl)}
                             submitButtonDisabled={
-                                !address || (address && Boolean(addressValidationError)) || Boolean(tweetPostedUrl) || !isAddressValid
+                                !address ||
+                                (address && Boolean(addressValidationError)) ||
+                                Boolean(tweetPostedUrl) ||
+                                !isAddressValid
                             }
                         >
                             {addressValidationError && (
