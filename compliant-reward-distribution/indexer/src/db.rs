@@ -5,7 +5,6 @@ use concordium_rust_sdk::{
     types::{hashes::BlockHash, AbsoluteBlockHeight},
 };
 use deadpool_postgres::{GenericClient, Object, PoolError};
-use hex_serde;
 use serde::Serialize;
 use sha2::Digest;
 use std::string::FromUtf8Error;
@@ -47,22 +46,10 @@ pub enum DatabaseError {
 /// Alias for returning results with [`DatabaseError`]s as the `Err` variant.
 type DatabaseResult<T> = Result<T, DatabaseError>;
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct Sha256(#[serde(with = "hex_serde")] [u8; 32]);
-
-impl TryFrom<&[u8]> for Sha256 {
-    type Error = IncorrectLength;
-
-    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
-        if value.len() == 32 {
-            let mut array = [0u8; 32];
-            array.copy_from_slice(value);
-            Ok(Sha256(array))
-        } else {
-            Err(IncorrectLength)
-        }
-    }
-}
+/// Use the `BlockHash` as an alias for the `UniquenessHash`.
+/// The `BlockHash` implements helper functions (e.g. serde::Serialize, serde::Deserialize, and Display)
+/// that are needed for the `UniquenessHash` as well.
+type UniquenessHash = BlockHash;
 
 /// The database configuration stored in the database.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -92,7 +79,7 @@ pub struct StoredAccountData {
     pub twitter_post_link_submit_time: Option<DateTime<Utc>>,
     /// A hash of the concatenated revealed `national_id_number` and `nationality` to prevent
     /// claiming with different accounts for the same identity.
-    pub uniqueness_hash: Option<Sha256>,
+    pub uniqueness_hash: Option<UniquenessHash>,
     /// A boolean specifying if the identity associated with the account is eligible for the reward (task 2).
     /// An associated ZK proof was verified by this backend before this flag is set.
     pub zk_proof_valid: Option<bool>,
@@ -125,7 +112,7 @@ impl TryFrom<tokio_postgres::Row> for StoredAccountData {
             zk_proof_verification_version: raw_zk_proof_verification_version.map(|i| i as u64),
             uniqueness_hash: raw_uniqueness_hash
                 .map(|hash| {
-                    Sha256::try_from(hash).map_err(|e| {
+                    UniquenessHash::try_from(hash).map_err(|e| {
                         DatabaseError::TypeConversion(
                             "uniqueness_hash".to_string(),
                             ConversionError::IncorrectLength(e),
