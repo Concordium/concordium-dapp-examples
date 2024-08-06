@@ -26,7 +26,7 @@ use concordium_rust_sdk::{
         did::Network,
         get_public_data, CredentialLookupError, CredentialProof,
         CredentialStatement::{Account, Web3Id},
-        Presentation, PresentationVerificationError, Web3IdAttribute,
+        PresentationVerificationError, Web3IdAttribute,
     },
 };
 use deadpool_postgres::PoolError;
@@ -44,6 +44,9 @@ use sha2::Digest;
 
 /// The maximum number of rows allowed in a request to the database.
 const MAX_REQUEST_LIMIT: u32 = 40;
+
+/// The number of blocks after that a generated signature or ZK proof is considered expired.
+const SIGNATURE_AND_PROOF_EXPIRY_DURATION_BLOCKS: u64 = 200;
 
 const TESTNET_GENESIS_BLOCK_HASH: [u8; 32] = [
     66, 33, 51, 45, 52, 225, 105, 65, 104, 194, 160, 192, 179, 253, 15, 39, 56, 9, 97, 44, 177, 61,
@@ -118,6 +121,14 @@ pub enum ServerError {
         You can claim rewards only once with your identity. Use the account {0} for claiming the reward instead of account {1}."
     )]
     IdentityReUsed(AccountAddress, AccountAddress),
+    #[error("The block hash and block height in the signing data are not from the same block.")]
+    BlockSigningDataInvalid,
+    #[error("The block hash used as challenge and block height passed as parameter are not from the same block.")]
+    BlockProofDataInvalid,
+    #[error("Signature already expired. Your block hash signed has to be not older than the block hash from block {0}.")]
+    SignatureExpired(u64),
+    #[error("Proof already expired. Your block hash included as challenge in the proof has to be not older than block {0}.")]
+    ProofExpired(u64),
 }
 
 /// Mapping DatabaseError to ServerError
@@ -264,7 +275,11 @@ impl IntoResponse for ServerError {
             | ServerError::ClaimExpired(_)
             | ServerError::MessageConversion(_)
             | ServerError::AccountExists(..)
-            | ServerError::IdentityReUsed(..) => {
+            | ServerError::IdentityReUsed(..)
+            | ServerError::BlockSigningDataInvalid
+            | ServerError::BlockProofDataInvalid
+            | ServerError::SignatureExpired(_)
+            | ServerError::ProofExpired(_) => {
                 let error_message = format!("Bad request: {self}");
                 tracing::warn!(error_message);
                 (StatusCode::BAD_REQUEST, error_message.into())
@@ -480,8 +495,11 @@ async fn post_twitter_post_link(
 /// - the proof has been generated for the correct network.
 async fn check_zk_proof(
     state: &mut Server,
-    presentation: Presentation<ArCurve, Web3IdAttribute>,
+    param: PostZKProofParam,
 ) -> Result<ZKProofExtractedData, ServerError> {
+    let presentation = param.presentation;
+    let challenge_block_height = param.block_height;
+
     let public_data = get_public_data(
         &mut state.node_client,
         state.network,
@@ -587,7 +605,28 @@ async fn check_zk_proof(
         _ => return Err(ServerError::AccountStatement),
     };
 
-    // TODO check that proof is not expired -> TODO: check the challenge
+    // Check if the proof is not expired by checking if a recent block hash was used as challenge.
+    let block_info = state
+        .node_client
+        .get_block_info(challenge_block_height)
+        .await
+        .map_err(ServerError::QueryError)?;
+
+    if *block_info.block_hash != *presentation.presentation_context {
+        return Err(ServerError::BlockProofDataInvalid);
+    }
+
+    let current_block_height = state
+        .node_client
+        .get_consensus_info()
+        .await?
+        .best_block_height;
+
+    let lower_bound = current_block_height.height - SIGNATURE_AND_PROOF_EXPIRY_DURATION_BLOCKS;
+
+    if challenge_block_height.height < lower_bound {
+        return Err(ServerError::ProofExpired(lower_bound));
+    }
 
     Ok(ZKProofExtractedData {
         national_id,
@@ -602,8 +641,6 @@ async fn post_zk_proof(
 ) -> Result<(), ServerError> {
     let Json(param) = request?;
 
-    let presentation = param.presentation;
-
     // Check that:
     // - the credential statuses are active.
     // - the cryptographic proofs are valid.
@@ -616,7 +653,7 @@ async fn post_zk_proof(
         national_id,
         nationality,
         prover,
-    } = check_zk_proof(&mut state, presentation).await?;
+    } = check_zk_proof(&mut state, param).await?;
 
     // Check that:
     // - the account creation has not expired.
@@ -679,6 +716,7 @@ where
         signer,
         message,
         signature,
+        block,
     } = param.signing_data();
 
     let signer_account_info = state
@@ -696,8 +734,8 @@ where
     // The "block_number" is signed to enable the backend to look up the "block_hash" easily.
 
     // This verification relies on the front-end (via the wallet) and back-end being connected to reliably nodes
-    // that are caught up to the top of the chain. In particular, the backend should only be run in conjunction with
-    // a reliable node connection.
+    // that are caught up to the top of the chain. In particular, the backend server should only be run in conjunction with
+    // a reliable node connection, otherwise the verification of expired signatures/proofs are not correct.
 
     // Front-end to back-end flow:
     // The front-end should look up the most recent block and sign
@@ -712,20 +750,23 @@ where
     // or sign a message (in that case the prepend is `account` address and 8 zero
     // bytes). Hence, the 8 zero bytes ensure that the user does not accidentally
     // sign a transaction. The account nonce is of type u64 (8 bytes).
-    let mut msg_prepend = [0; 32 + 8];
+    let mut msg_prepend = [0; 117];
     //Prepend the `account` address of the signer.
     msg_prepend[0..32].copy_from_slice(signer.as_ref());
     // Prepend 8 zero bytes.
     msg_prepend[32..40].copy_from_slice(&[0u8; 8]);
-
-    // TODO: do we want to add a context string.
-    // // Add a context for this signing.
-    // msg_prepend[32..40].copy_from_slice("compliant_reward_distribution_dapp".as_bytes());
+    // Prepend the `block_hash` of the block when the message was signed.
+    msg_prepend[40..72].copy_from_slice(&block.hash);
+    // Prepend the message with a context string.
+    // The string "CONCORDIUM_COMPLIANT_REWARD_DISTRIBUTION_DAPP" in bytes is:
+    // [67, 79, 78, 67, 79, 82, 68, 73, 85, 77, 95, 67, 79, 77, 80, 76, 73, 65, 78, 84, 95, 82, 69, 87, 65, 82, 68, 95, 68, 73, 83, 84, 82, 73, 66, 85, 84, 73, 79, 78, 95, 68, 65, 80, 80]
+    msg_prepend[72..117]
+        .copy_from_slice("CONCORDIUM_COMPLIANT_REWARD_DISTRIBUTION_DAPP".as_bytes());
 
     // Calculate the message hash.
 
     let message_bytes = bincode::serialize(&message)?;
-    let message_hash = sha2::Sha256::digest([&msg_prepend[0..40], &message_bytes].concat());
+    let message_hash = sha2::Sha256::digest([&msg_prepend[0..117], &message_bytes].concat());
 
     // We use/support regular accounts.
     // Regular accounts have only one public-private key pair at index 0 in the credential map.
@@ -749,7 +790,28 @@ where
         return Err(ServerError::InvalidSignature);
     }
 
-    // TODO check that the blockhash is from the last 10 blocks.
+    // Check if the signature is not expired by checking if a recent block hash was signed.
+    let block_info = state
+        .node_client
+        .get_block_info(block.height)
+        .await
+        .map_err(ServerError::QueryError)?;
+
+    if block_info.block_hash != block.hash {
+        return Err(ServerError::BlockSigningDataInvalid);
+    }
+
+    let current_block_height = state
+        .node_client
+        .get_consensus_info()
+        .await?
+        .best_block_height;
+
+    let lower_bound = current_block_height.height - SIGNATURE_AND_PROOF_EXPIRY_DURATION_BLOCKS;
+
+    if block.height.height < lower_bound {
+        return Err(ServerError::SignatureExpired(lower_bound));
+    }
 
     Ok(*signer)
 }
@@ -764,6 +826,8 @@ async fn get_account_data(
 
     let Json(param) = request?;
 
+    let lookup_account_address = param.signing_data.message.account_address;
+
     // Check that:
     // - the signature is valid.
     // - the signature is not expired.
@@ -774,7 +838,7 @@ async fn get_account_data(
         return Err(ServerError::SignerNotAdmin);
     }
 
-    let mut database_result = db.get_account_data(param.account_address).await?;
+    let mut database_result = db.get_account_data(lookup_account_address).await?;
 
     if let Some(data) = database_result {
         database_result = Some(check_for_changed_verification_logic(data)?);
@@ -801,7 +865,10 @@ async fn get_pending_approvals(
 
     let Json(param) = request?;
 
-    if param.limit > MAX_REQUEST_LIMIT {
+    let limit = param.signing_data.message.limit;
+    let offset = param.signing_data.message.offset;
+
+    if limit > MAX_REQUEST_LIMIT {
         return Err(ServerError::MaxRequestLimit(MAX_REQUEST_LIMIT));
     }
 
@@ -815,7 +882,7 @@ async fn get_pending_approvals(
         return Err(ServerError::SignerNotAdmin);
     }
 
-    let mut database_result = db.get_pending_approvals(param.limit, param.offset).await?;
+    let mut database_result = db.get_pending_approvals(limit, offset).await?;
 
     database_result = database_result
         .iter()

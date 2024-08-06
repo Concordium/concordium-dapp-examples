@@ -1,9 +1,7 @@
-use crate::{
-    db::{Sha256, StoredAccountData},
-    DatabasePool,
-};
+use crate::{db::StoredAccountData, DatabasePool};
 use chrono::Days;
 use concordium_rust_sdk::{
+    base::hashes::BlockHash,
     common::types::Signature,
     id::{
         constants::ArCurve,
@@ -37,6 +35,7 @@ pub struct SigningData<T> {
     pub signer: AccountAddress,
     pub message: T,
     pub signature: Signature,
+    pub block: BlockMessage,
 }
 
 /// Trait definition of the `IsMessage`. This trait is implemented for the two
@@ -53,14 +52,14 @@ pub trait HasSigningData {
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BlockMessage {
-    pub block_hash: Sha256,
-    pub block_height: AbsoluteBlockHeight,
+    pub hash: BlockHash,
+    pub height: AbsoluteBlockHeight,
 }
 
-#[repr(transparent)]
 #[derive(serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PostZKProofParam {
+    pub block_height: AbsoluteBlockHeight,
     pub presentation: Presentation<ArCurve, Web3IdAttribute>,
 }
 
@@ -74,11 +73,11 @@ pub struct ZKProofExtractedData {
     pub prover: AccountAddress,
 }
 
+#[repr(transparent)]
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TwitterPostLinkMessage {
     pub twitter_post_link: String,
-    pub block_message: BlockMessage,
 }
 
 impl HasSigningData for PostTwitterPostLinkParam {
@@ -94,11 +93,11 @@ pub struct PostTwitterPostLinkParam {
     pub signing_data: SigningData<TwitterPostLinkMessage>,
 }
 
+#[repr(transparent)]
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SetClaimedMessage {
     pub account_addresses: Vec<AccountAddress>,
-    pub block_message: BlockMessage,
 }
 
 impl HasSigningData for SetClaimedParam {
@@ -115,19 +114,26 @@ pub struct SetClaimedParam {
 }
 
 impl HasSigningData for GetAccountDataParam {
-    type Message = BlockMessage;
-    fn signing_data(&self) -> &SigningData<BlockMessage> {
+    type Message = GetAccountDataMessage;
+    fn signing_data(&self) -> &SigningData<GetAccountDataMessage> {
         &self.signing_data
     }
 }
 
+#[repr(transparent)]
+#[derive(serde::Deserialize, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetAccountDataMessage {
+    pub account_address: AccountAddress,
+}
+
 /// Parameter struct for the `getItemStatusChangedEvents` endpoint send in the
 /// request body.
+#[repr(transparent)]
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GetAccountDataParam {
-    pub account_address: AccountAddress,
-    pub signing_data: SigningData<BlockMessage>,
+    pub signing_data: SigningData<GetAccountDataMessage>,
 }
 
 /// Struct returned by the `getItemStatusChangedEvents` endpoint. It returns a
@@ -145,10 +151,17 @@ pub struct VecAccountDataReturn {
 }
 
 impl HasSigningData for GetPendingApprovalsParam {
-    type Message = BlockMessage;
-    fn signing_data(&self) -> &SigningData<BlockMessage> {
+    type Message = GetPendingApprovalsMessage;
+    fn signing_data(&self) -> &SigningData<GetPendingApprovalsMessage> {
         &self.signing_data
     }
+}
+
+#[derive(serde::Deserialize, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetPendingApprovalsMessage {
+    pub limit: u32,
+    pub offset: u32,
 }
 
 /// Parameter struct for the `getItemStatusChangedEvents` endpoint send in the
@@ -156,9 +169,7 @@ impl HasSigningData for GetPendingApprovalsParam {
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GetPendingApprovalsParam {
-    pub limit: u32,
-    pub offset: u32,
-    pub signing_data: SigningData<BlockMessage>,
+    pub signing_data: SigningData<GetPendingApprovalsMessage>,
 }
 
 /// Parameter struct for the `getItemStatusChangedEvents` endpoint send in the
