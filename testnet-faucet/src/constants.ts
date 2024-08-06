@@ -13,7 +13,7 @@ export const FAQ = [
     },
     {
         question: 'Is there any usage limit?',
-        response: `Yes, currently you can use the faucet once every ${Number(process.env.NEXT_PUBLIC_USAGE_LIMIT_IN_DAYS) * 24} hours`,
+        response: `Yes, currently you can use the faucet once every ${Number(process.env.NEXT_PUBLIC_USAGE_LIMIT_IN_HOURS) * 24} hours`,
     },
 ];
 
