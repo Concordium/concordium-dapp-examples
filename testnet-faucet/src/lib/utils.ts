@@ -9,10 +9,12 @@ export const extractITweetdFromUrl = (url: string): string | null => {
         return null;
     }
 };
+
 export const formatTimestamp = (timestamp: number): string => format(fromUnixTime(timestamp), 'yyyy-MM-dd HH:mm:ss');
-export const shiftDateBackwards = (days: number) => {
+
+export const shiftDateBackwards = (hours: number) => {
     const shiftedDate = new Date();
-    shiftedDate.setDate(shiftedDate.getDate() - days);
+    shiftedDate.setHours(shiftedDate.getHours() - hours);
     return shiftedDate;
 };
 

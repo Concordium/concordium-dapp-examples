@@ -20,7 +20,6 @@ import { SingleInputForm } from '@/components/SingleInpuForm';
 import { Step } from '@/components/Step';
 import { FAQ, TWEET_TEMPLATE } from '@/constants';
 import getLatestTransactions from '@/lib/getLatestTransactions';
-import isWithinUsageLimit from '@/lib/isWithinUsageLimit';
 import { extractITweetdFromUrl, formatTimestamp, formatTxHash } from '@/lib/utils';
 
 import concordiumLogo from '../../public/concordium-logo-back.svg';
@@ -33,6 +32,47 @@ const IBMPlexMono = IBM_Plex_Mono({
     variable: '--font-ibm-plex-mono',
 });
 
+const validateAndClaim = async (XPostId: string | undefined, receiver: string) => {
+    try {
+        const response = await fetch('/api/validateAndClaim', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                XPostId,
+                receiver,
+                sender: process.env.NEXT_PUBLIC_SENDER_ADDRESS,
+            }),
+        });
+
+        const data = await response.json();
+
+        return { ok: response.ok, data };
+    } catch (error) {
+        throw new Error('Network error. Please check your connection.');
+    }
+};
+
+const checkUsageLimit = async (receiver: string) => {
+    try {
+        const response = await fetch('/api/checkUsageLimit', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ receiver }),
+        });
+
+        const data = await response.json();
+
+        return { ok: response.ok, data };
+    } catch (error) {
+        throw new Error('Network error. Please check your connection.');
+    }
+};
+
+
 export default function Home() {
     const [latestTransactions, setLatestTransactions] = useState<PartialTransaction[]>([]);
     const [address, setAddress] = useState<string>('');
@@ -41,6 +81,7 @@ export default function Home() {
     const [tweetPostedUrl, setTweetPostedUrl] = useState('');
     const [XPostId, SetXPostId] = useState<string | undefined>();
 
+    const [isAddressValid, setIsAddressValid] = useState<boolean>(false);
     const [isValidTweetUrl, setIsValidTweetUrl] = useState<boolean | undefined>();
     const [isValidVerification, setIsValidVerification] = useState<boolean | undefined>();
     const [isVerifyLoading, setIsVerifyLoading] = useState<boolean>(false);
@@ -72,35 +113,14 @@ export default function Home() {
             `https://x.com/intent/tweet?text=${encodeURIComponent(TWEET_TEMPLATE + ' ' + address)}`,
             '_blank',
             'width=500,height=500',
-        );
+    );
 
-    const validateAndClaim = async () => {
-        try {
-            const response = await fetch('/api/validateAndClaim', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    XPostId,
-                    sender: process.env.NEXT_PUBLIC_SENDER_ADDRESS,
-                    receiver: address,
-                }),
-            });
-
-            const data = await response.json();
-
-            return { ok: response.ok, data };
-        } catch (error) {
-            throw new Error('Network error. Please check your connection.');
-        }
-    };
 
     const handleVerifyTweetAndSendTokens = async () => {
         setTurnstileOpen(false);
         setIsVerifyLoading(true);
         try {
-            const response = await validateAndClaim();
+            const response = await validateAndClaim(XPostId, address);
 
             if (response.ok) {
                 setIsValidVerification(true);
@@ -118,27 +138,27 @@ export default function Home() {
     };
 
     useEffect(() => {
+        setAddressValidationError(undefined);
+        setIsAddressValid(false)
         if (!address) {
-            setAddressValidationError(undefined);
             return;
         }
-        const checkUsageLimit = async () => {
+        const isWithinUsageLimit = async () => {
             try {
-                const isAllowed = await isWithinUsageLimit(address);
-
-                if (!isAllowed) {
-                    setAddressValidationError(
-                        `You already get tokens in the last ${Number(process.env.NEXT_PUBLIC_USAGE_LIMIT_IN_DAYS) * 24} hours. Please try again later.`,
-                    );
+                const { ok, data } = await checkUsageLimit(address);
+                const usageLimit = process.env.NEXT_PUBLIC_USAGE_LIMIT_IN_HOURS!
+                if (ok && !data.isAllowed) {
+                    setAddressValidationError(`You already get tokens in the last ${usageLimit} ${Number(usageLimit) > 1 ? 'hours' : ' hour'}. Please try again later.`);
+                    return
                 }
+                setIsAddressValid(true)
             } catch (error) {
-                console.log('Error on checkUsageLimit', error);
+                console.log('Error on checkUsageLimit:', error);
             }
         };
         try {
             AccountAddress.fromBase58(address);
-            setAddressValidationError(undefined);
-            checkUsageLimit();
+            isWithinUsageLimit();
         } catch (error) {
             setAddressValidationError('Invalid address. Please insert a valid one.');
         }
@@ -177,8 +197,9 @@ export default function Home() {
                 <p className="text-xl md:text-2xl text-center font-semibold text-white">Concordium Testnet Faucet</p>
             </div>
             <main className="flex flex-col items-center justify-between py-8 md:pt-12 md:pb-28 w-full">
+                {isAddressValid ? "address valid" : "not valid address"}
                 <p className="text-center text-sm md:text-base mb-4 md:mb-8 px-10">
-                    {`Get Testnet CDDs every ${Number(process.env.NEXT_PUBLIC_USAGE_LIMIT_IN_DAYS) * 24} hours for testing your dApps!`}
+                    {`Get Testnet CDDs every ${Number(process.env.NEXT_PUBLIC_USAGE_LIMIT_IN_HOURS) * 24} hours for testing your dApps!`}
                 </p>
                 <div className="flex flex-col md:flex-row justify-center items-center md:items-start w-full text-sm md:text-base px-4 gap-6 lg:gap-12">
                     <div
@@ -194,7 +215,7 @@ export default function Home() {
                             submitButtonText="Share on X"
                             inputDisabled={Boolean(tweetPostedUrl)}
                             submitButtonDisabled={
-                                !address || (address && Boolean(addressValidationError)) || Boolean(tweetPostedUrl)
+                                !address || (address && Boolean(addressValidationError)) || Boolean(tweetPostedUrl) || !isAddressValid
                             }
                         >
                             {addressValidationError && (
