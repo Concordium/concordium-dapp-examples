@@ -73,6 +73,7 @@ const checkUsageLimit = async (receiver: string) => {
 };
 
 export default function Home() {
+    const usageLimit = Number(process.env.NEXT_PUBLIC_USAGE_LIMIT_IN_HOURS!);
     const [latestTransactions, setLatestTransactions] = useState<PartialTransaction[]>([]);
     const [address, setAddress] = useState<string>('');
     const [addressValidationError, setAddressValidationError] = useState<string | undefined>();
@@ -144,10 +145,9 @@ export default function Home() {
         const isWithinUsageLimit = async () => {
             try {
                 const { ok, data } = await checkUsageLimit(address);
-                const usageLimit = process.env.NEXT_PUBLIC_USAGE_LIMIT_IN_HOURS!;
                 if (ok && !data.isAllowed) {
                     setAddressValidationError(
-                        `You already get tokens in the last ${usageLimit} ${Number(usageLimit) > 1 ? 'hours' : ' hour'}. Please try again later.`,
+                        `You already get tokens in the last ${usageLimit} ${usageLimit > 1 ? 'hours' : ' hour'}. Please try again later.`,
                     );
                     return;
                 }
@@ -197,9 +197,8 @@ export default function Home() {
                 <p className="text-xl md:text-2xl text-center font-semibold text-white">Concordium Testnet Faucet</p>
             </div>
             <main className="flex flex-col items-center justify-between py-8 md:pt-12 md:pb-28 w-full">
-                {isAddressValid ? 'address valid' : 'not valid address'}
                 <p className="text-center text-sm md:text-base mb-4 md:mb-8 px-10">
-                    {`Get Testnet CDDs every ${Number(process.env.NEXT_PUBLIC_USAGE_LIMIT_IN_HOURS) * 24} hours for testing your dApps!`}
+                    {`Get Testnet CDDs every ${usageLimit} ${usageLimit > 1 ? 'hours' : ' hour'} for testing your dApps!`}
                 </p>
                 <div className="flex flex-col md:flex-row justify-center items-center md:items-start w-full text-sm md:text-base px-4 gap-6 lg:gap-12">
                     <div
