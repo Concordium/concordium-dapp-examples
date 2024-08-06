@@ -1,6 +1,8 @@
 export const TWEET_TEMPLATE =
     'Excited to use the testnet faucet! 🚀 Requesting CCD tokens to power my blockchain experiments. Check it out! #Concordium #Blockchain #Testnet';
 
+export const usageLimit = Number(process.env.NEXT_PUBLIC_USAGE_LIMIT_IN_HOURS!);
+
 export const FAQ = [
     {
         question: 'What do I need to use the faucet?',
@@ -13,7 +15,7 @@ export const FAQ = [
     },
     {
         question: 'Is there any usage limit?',
-        response: `Yes, currently you can use the faucet once every ${Number(process.env.NEXT_PUBLIC_USAGE_LIMIT_IN_HOURS) * 24} hours`,
+        response: `Yes, currently you can use the faucet once every ${usageLimit} ${usageLimit > 1 ? 'hours' : 'hour'}.`,
     },
 ];
 
