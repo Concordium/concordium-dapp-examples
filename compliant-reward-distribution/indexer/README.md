@@ -335,6 +335,3 @@ The example includes 4 proof statements:
     }
 ]
 ```
-
-An example proof for the above statement:
-

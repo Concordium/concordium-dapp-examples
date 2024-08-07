@@ -87,6 +87,7 @@ impl HasSigningData for PostTwitterPostLinkParam {
     }
 }
 
+#[repr(transparent)]
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PostTwitterPostLinkParam {
@@ -107,10 +108,27 @@ impl HasSigningData for SetClaimedParam {
     }
 }
 
+#[repr(transparent)]
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SetClaimedParam {
     pub signing_data: SigningData<SetClaimedMessage>,
+}
+
+#[derive(serde::Deserialize, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UserData {
+    pub claimed: bool,
+    pub twitter_post_link_valid: bool,
+    pub zk_proof_valid: bool,
+}
+
+/// Struct returned by the `getItemStatusChangedEvents` endpoint. It returns a
+/// vector of ItemStatusChangedEvents from the database if present.
+#[repr(transparent)]
+#[derive(serde::Serialize)]
+pub struct CanClaimReturn {
+    pub data: UserData,
 }
 
 impl HasSigningData for GetAccountDataParam {
@@ -138,6 +156,7 @@ pub struct GetAccountDataParam {
 
 /// Struct returned by the `getItemStatusChangedEvents` endpoint. It returns a
 /// vector of ItemStatusChangedEvents from the database if present.
+#[repr(transparent)]
 #[derive(serde::Serialize)]
 pub struct AccountDataReturn {
     pub data: Option<StoredAccountData>,
@@ -145,6 +164,7 @@ pub struct AccountDataReturn {
 
 /// Struct returned by the `getItemStatusChangedEvents` endpoint. It returns a
 /// vector of ItemStatusChangedEvents from the database if present.
+#[repr(transparent)]
 #[derive(serde::Serialize)]
 pub struct VecAccountDataReturn {
     pub data: Vec<StoredAccountData>,
@@ -166,6 +186,7 @@ pub struct GetPendingApprovalsMessage {
 
 /// Parameter struct for the `getItemStatusChangedEvents` endpoint send in the
 /// request body.
+#[repr(transparent)]
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GetPendingApprovalsParam {
@@ -190,6 +211,7 @@ pub struct Health {
 
 /// Struct returned by the `getItemStatusChangedEvents` endpoint. It returns a
 /// vector of ItemStatusChangedEvents from the database if present.
+#[repr(transparent)]
 #[derive(serde::Serialize)]
 pub struct ZKProofStatementsReturn {
     pub data: Statement<ArCurve, Web3IdAttribute>,
