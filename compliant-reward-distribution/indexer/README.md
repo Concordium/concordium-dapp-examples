@@ -1,4 +1,6 @@
-## Compliant-Reward-Distribution Indexer
+## Compliant-Reward-Distribution Indexer And Server
+
+There are two binaries in this project. An `indexer` that indexes data into a database and a `server` that provides API endpoints to post/get data to/from the database.
 
 ## Prerequisites
 
@@ -20,7 +22,7 @@ Alternatively, you can run the Postgres database in a docker container. The comm
 docker run -p 5432:5432 -e POSTGRES_PASSWORD=password -e POSTGRES_DB="indexer" --rm postgres
 ```
 
-## Build the `indexer`
+## Build the `indexer` and `server`
 
 To build the tools make sure you have the repository submodules initialized
 
@@ -34,7 +36,7 @@ The tool can be built by running
 cargo build --release
 ```
 
-This will produce the binaries (`indexer`) in the `target/release` directory.
+This will produce two binaries (`indexer` and `server`) in the `target/release` directory.
 
 # The `indexer` binary
 
@@ -56,23 +58,211 @@ cargo run --bin indexer -- --node https://grpc.testnet.concordium.com:20000 --lo
 
 There are a few options to configure the indexer:
 
-- `--node` is the endpoint to the Concordium node grpc v2 API. If not specified, the default value `https://grpc.testnet.concordium.com:20000` is used.
+- `--node (env: CCD_INDEXER_NODE)` is the endpoint to the Concordium node grpc v2 API. If not specified, the default value `https://grpc.testnet.concordium.com:20000` is used.
 
-- `--db-connection` should specify your postgreSQL database connection. If not specified, the default value `host=localhost dbname=indexer user=postgres password=password port=5432` is used.
+- `--db-connection (env: CCD_INDEXER_DB_CONNECTION)` should specify your postgreSQL database connection. If not specified, the default value `host=localhost dbname=indexer user=postgres password=password port=5432` is used.
 
-- `--log-level` specifies the maximum log level. Possible values are: `trace`, `debug`, `info`, `warn`, and `error`. If not specified, the default value `info` is used.
+- `--log-level (env: CCD_INDEXER_LOG_LEVEL)` specifies the maximum log level. Possible values are: `trace`, `debug`, `info`, `warn`, and `error`. If not specified, the default value `info` is used.
 
 You can open the help menu as follows:
 
 ```console
 cargo run --bin indexer -- --help
+```
 
-## Configure the `server`
-
-Future improvements: `dob=dateOfBirth` ZK statement should automatically adjust over time instead of hardcoding lower bound in ZK statement.
+## Run the `server`
 
 ```console
 cargo run --bin server -- --zk_statements "$(<./zk_statements_config.json)" --admin_accounts "47b6Qe2XtZANHetanWKP1PbApLKtS3AyiCtcXaqLMbypKjCaRw" --admin_accounts "4KjE4rptF1o3QX6XuSaQzm6w9KLYYQTbKm2Zd4NooarH6YwfxS"
+```
+
+## Configure the `server`
+
+There are a few options to configure the server:
+
+- `--listen-address (env: CCD_SERVER_LISTEN_ADDRESS)` is the listen address where the server will be listen on. If not specified, the default value `0.0.0.0:8080` is used.
+
+- `--db-connection (env: CCD_SERVER_DB_CONNECTION)` should specify your postgreSQL database connection. If not specified, the default value `host=localhost dbname=indexer user=postgres password=password port=5432` is used.
+
+- `--log-level (env: CCD_SERVER_LOG_LEVEL)` specifies the maximum log level. Possible values are: `trace`, `debug`, `info`, `warn`, and `error`. If not specified, the default value `info` is used.
+
+- `--node (env: CCD_SERVER_NODE)` specifies the gRPC interface of a Concordium node, the default value `https://grpc.testnet.concordium.com:20000` is used.
+
+- `--admin_accounts (env: CCD_SERVER_CLAIM_EXPIRY_DURATION_DAYS)` are allowed to read all data from the database and set the `claimed` flag in the database. Admin accounts have elevated permission and the flag can be re-used to set several admin accounts.
+
+- `--claim_expiry_duration_days (env: CCD_SERVER_ADMIN_ACCOUNTS)` is the duration after creating a new account during which the account is eligible to claim the reward, the default value `60` is used.
+
+- `--zk_statements (env: CCD_SERVER_CLAIM_EXPIRY_DURATION_DAYS)` requires a JSON formatted input of the ZK statements that the server should accept proofs for. An example file is given in `./zk_statements_config.json`.
+
+## API endpoints of the `server`
+
+The `/getZKProofStatements` and `/health` endpoints expect no JSON body.
+
+The `/canClaim` endpoint expects a JSON body with the fields shown in the example below:
+
+``` json
+{
+    "accountAddress": "3cGEB7tTdQBFxJ9sn5JyGPNay2MSmRSKm4133UVqmKoFg4MXJ1"
+}
+```
+
+The `/getPendingApprovals` endpoint expects a JSON body with the fields shown in the example below:
+
+``` json
+{
+    "signingData": {
+        "signer": "47b6Qe2XtZANHetanWKP1PbApLKtS3AyiCtcXaqLMbypKjCaRw",
+        "message": {
+            "limit": 10,
+            "offset": 0
+        },
+        "signature": "4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab00694e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069",
+        "block": {
+            "hash": "4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069",
+            "height": 3
+        }
+    }
+}
+```
+
+The `/getAccountData` endpoint expects a JSON body with the fields shown in the example below:
+
+``` json
+{
+    "signingData": {
+        "signer": "47b6Qe2XtZANHetanWKP1PbApLKtS3AyiCtcXaqLMbypKjCaRw",
+        "message": {
+            "accountAddress": "3cGEB7tTdQBFxJ9sn5JyGPNay2MSmRSKm4133UVqmKoFg4MXJ1"
+        },
+        "signature": "4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab00694e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069",
+        "block": {
+            "hash": "4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069",
+            "height": 3
+        }
+    }
+}
+```
+
+The `/setClaimed` endpoint expects a JSON body with the fields shown in the example below:
+
+``` json
+{
+    "signingData": {
+        "signer": "47b6Qe2XtZANHetanWKP1PbApLKtS3AyiCtcXaqLMbypKjCaRw",
+        "message": {
+            "accountAddresses": [
+                "47b6Qe2XtZANHetanWKP1PbApLKtS3AyiCtcXaqLMbypKjCaRw",
+                "3cGEB7tTdQBFxJ9sn5JyGPNay2MSmRSKm4133UVqmKoFg4MXJ1"
+            ]
+        },
+        "signature": "4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab00694e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069",
+        "block": {
+            "hash": "4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069",
+            "height": 3
+        }
+    }
+}
+```
+
+The `/postZKProof` endpoint expects a JSON body depending on the ZK statements configured with the `--zk_statements` option. An example JSON body with the fields are shown in the example below if the server was configured to use the ZK statements from the file `./zk_statements_config.json`:
+
+``` json
+{
+    "blockHeight": 3,
+    "presentation": {
+        "presentationContext": "d2db9b790c3c8257c5a591963c802c4673c6327966407ece603319a350ec7b32",
+        "proof": {
+            "created": "2024-08-01T21:05:50.426Z",
+            "proofValue": [],
+            "type": "ConcordiumWeakLinkingProofV1"
+        },
+        "type": "VerifiablePresentation",
+        "verifiableCredential": [
+            {
+                "credentialSubject": {
+                    "id": "did:ccd:testnet:cred:af521c107ee686b2e60da2e71fbf60e29cff4f6a29aed86a0752a3913e7abc663ecd30e07e14b50662b7b51ab14bc64d",
+                    "proof": {
+                        "created": "2024-08-01T21:05:50.425Z",
+                        "proofValue": [
+                            {
+                                "attribute": "N-1234",
+                                "proof": "06bbf27d5a8c0ff88e7333b4d1f4f6f58cdaa9b8daf966daf4dbb950435c57a22a2f466e59e7a92052af4a8428118334cd85aff3cede542d501f17c9fc5423c7",
+                                "type": "RevealAttribute"
+                            },
+                            {
+                                "attribute": "DK",
+                                "proof": "e96e90b2252dd4dbc7d4397d552fb246d8568b21da9968e0a0249ee2685fdd95559661d5454bb2d4e3a95f30265a4e164848161c48abb274df7c862010b217ca",
+                                "type": "RevealAttribute"
+                            },
+                            {
+                                "proof": "b841f20dcdda4118fd727bb6332066479f0dcc32e6d3cb0b1e41b8c0f0cb580ac1b134663118647bf777e798fe37172f9775db6d055ee0679d27c929187de82effbba2f65840456fd92f44e2973004a1d2a3a00aaf04689c83ca86a669b3fb0ea2ef45296d6e770d533c13b2347e06920acbe29180fecefdb90d9d40c95afedd07b7eac8eb5323063ac0b4c58418ad8ab1cc20540e95520dd20516d1b61b2bb4d6eb66aa5697d4b577aad4a27c8a1da7de56ca4ac1e5ef79bf50e41bf86a48044c9060ec15329cf9400ba2956065850a0ef5971684e61fb86ff46fb33a7bcc442703761bb2019616c6425adf4a4bcc29aede39e1becc73783a3d2e75967ef4946387a5d54ba35053a6421b2f4250f6d23d70c7632df37080ea7910037fe4b78000000007814b3b4990c7d9fd4f20c9aebd5d5e54c604e1f0b8fda61f9638bef8d5980e0cdae6dfa69f5838e44bfbed1bdd2ae2fd963ec740eeddaa4be359d1cd4de86a7b3dfdd24646630576581bcb3fcb09876a6a245839d7514f3397a9ab233cf9cd38ae9efdfceb831fcfa758e7bb75eb0fe7dc94524b9128aad0ddd40d08c96a442d5fcdfcefbeaedad70639b4fbd526b91bae16fc64a13cba15156cf25e7c27874d18aff61cb283c8902d761ec25302d29c579780532b958120b9733f523a1eb73da6c5eba2956da92f95caac80b9a4a6b78e6caf547caffe6ffb4e11785c5f6bdbae2ba25b2acda02e856ee003020f8262b158869289dc3b1abd6a49e4da506fec0e8eedb10e4efc01317f986d4d727601719caf70e383e35d626ddd66845cd9cf87ce746f187aae12fcbf482ffbb4721721f0ac747e8576e83285eb1da70f5565a5175f8930ef3e608c6c6b1fc698dd7ba145fd8c820a6f3f36878cc3a282ad3cca65fa550e3b3d6a0c11d862fba9d96f9d68425ecfa1b117a3509d57ca96b80b8eb83f1eb858f26cfabe749e5ae0697d5253355acb0499e5ccfa9a9ecaa8a802db01533cf64e2aeeedc4a6adb41b2c09a39a31f0f3ee5c126f52525309aac542f3f529b68868b37daaa992c70ce33867cfda03bb5a8406b9c85444710f23ac94832d9824fe359cfe9a8ce118699dec60e01c2c6a842cf19230a08e74ce115ca32c2d36caee6d7cf588172cd2c5bb563a899371b97bd8cc91fc8d2a4b4b5f75de3c007c31b4abfd8a8de787a4b8c4ea483b580d1c2ba4b8c4b8ec399ff22828d4a52b7527a101d2a14008056cb09d06780c401459ae27c6344465233858cc136c88e9a73aa9e7f944cd0844437f46d032b93d36ab7ad911d5d886b7895cf9644edf8bf17db6592b473cf5ffa4ad4cb8da015ac3fd07d49f89d26fad9ed437fec11bc6217f22a53e64006a021e11b58ee4f0d0686d919a41cc8bc97a8f568874ac1421cb79c1964bf8db8215202edaf23297b8bc3c35184071531de8fd198f8f2f",
+                                "type": "AttributeInRange"
+                            },
+                            {
+                                "proof": "86aeeb7aba255d278e4c925255354b286ad6e078e5570fd24b7bac51610d0db9f677bbc5f0fc9ebc5b750adff9320bfc90822580ea43a650b3a57930dc07b0f0ae44ae054e6d5d5581861491d8635ced5343cd58fd488a6f95717fde4640a0c1a921a6744ff898050b6920d529f3b5cd12bb7cd237e4c92ed5aa744fb93ce9d178534fbd713a8f5f22d9f4792cbb95a6a9390c4630f16a6f74a5555831a0555b142304b8a1da45d9ed8c0ee0c4d1dbf72be3f321ade90eeed83a60c284a948036f9ee0d1c5d4fa479e78fdcb03317516c8c84c4784ddadf36b1579eb1e9e066d6fa3f300d55f4eee8a56ea8109d3987dace8d569d3e6f0e92170c24a0c3285741ba67d40510356fd995710eaff37cedfd651e3504d651c5f1ac022270a7e0ccb000000019392a7da2231ee75b57155277d0bc4a3917746596fea55df22b11ae1f5a795553cb532a322857fa5c6a080158c781f18b2786218b8a8124666c75be9f750db9857915c011e605f1df280006bad22fc0d50b4f577c2dc997461320b040aacbb645b11a80d5b53248029cc8043eaf7718df409426c7f24cced137480d5fcf57aad672fa2b22a6be2c61709a6af17cdc4a022ba936fa029e5c607c152713dda77d9",
+                                "type": "AttributeNotInSet"
+                            }
+                        ],
+                        "type": "ConcordiumZKProofV3"
+                    },
+                    "statement": [
+                        {
+                            "attributeTag": "nationalIdNo",
+                            "type": "RevealAttribute"
+                        },
+                        {
+                            "attributeTag": "nationality",
+                            "type": "RevealAttribute"
+                        },
+                        {
+                            "attributeTag": "dob",
+                            "lower": "18000101",
+                            "type": "AttributeInRange",
+                            "upper": "20060802"
+                        },
+                        {
+                            "attributeTag": "countryOfResidence",
+                            "set": [
+                                "KP",
+                                "US"
+                            ],
+                            "type": "AttributeNotInSet"
+                        }
+                    ]
+                },
+                "issuer": "did:ccd:testnet:idp:0",
+                "type": [
+                    "VerifiableCredential",
+                    "ConcordiumVerifiableCredential"
+                ]
+            }
+        ]
+    }
+}
+```
+
+The `/postTwitterPostLink` endpoint expects a JSON body with the fields shown in the example below:
+
+``` json
+{
+    "signingData": {
+        "signer": "3cGEB7tTdQBFxJ9sn5JyGPNay2MSmRSKm4133UVqmKoFg4MXJ1",
+        "message": {
+            "twitterPostLink": "ABCDabcd123456789"
+        },
+        "signature": "4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab00694e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069",
+        "block": {
+            "hash": "4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069",
+            "height": 3
+        }
+    }
+}
+```
+
+After running the server, you can invoke its endpoints with e.g. the following `curl` commands:
+
+```
+curl -GET "http://localhost:8080/api/health" -H "Content-Type: application/json" -v
 ```
 
 ```
@@ -88,10 +278,6 @@ curl -POST "http://localhost:8080/api/setClaimed" -H "Content-Type: application/
 "signature":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab00694e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","block":{"hash":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","height":3}}}' -v
 ```
 
-```
-curl -POST "http://localhost:8080/api/postTwitterPostLink" -H "Content-Type: application/json" --data '{"signingData":{"signer":"3cGEB7tTdQBFxJ9sn5JyGPNay2MSmRSKm4133UVqmKoFg4MXJ1","message":{"twitterPostLink":"ABCDabcd123456789"},
-"signature":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab00694e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","block":{"hash":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","height":3}}}' -v
-```
 
 ```
 curl -POST "http://localhost:8080/api/getAccountData" -H "Content-Type: application/json" --data '{"signingData":{"signer":"47b6Qe2XtZANHetanWKP1PbApLKtS3AyiCtcXaqLMbypKjCaRw","message":{"accountAddress":"3cGEB7tTdQBFxJ9sn5JyGPNay2MSmRSKm4133UVqmKoFg4MXJ1"},"signature":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab00694e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","block":{"hash":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","height":3}}}' -v
@@ -101,16 +287,28 @@ curl -POST "http://localhost:8080/api/getAccountData" -H "Content-Type: applicat
 curl -POST "http://localhost:8080/api/getPendingApprovals" -H "Content-Type: application/json" --data '{"signingData":{"signer":"47b6Qe2XtZANHetanWKP1PbApLKtS3AyiCtcXaqLMbypKjCaRw","message":{"limit":10,"offset":0},"signature":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab00694e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","block":{"hash":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","height":3}}}' -v
 ```
 
-Proof statements:
+```
+curl -POST "http://localhost:8080/api/postTwitterPostLink" -H "Content-Type: application/json" --data '{"signingData":{"signer":"3cGEB7tTdQBFxJ9sn5JyGPNay2MSmRSKm4133UVqmKoFg4MXJ1","message":{"twitterPostLink":"ABCDabcd123456789"},
+"signature":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab00694e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","block":{"hash":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","height":3}}}' -v
+```
 
-1.Proof: Reveal "nationalIdNo" proof (Sigma protocol)
+```
+curl -POST "http://localhost:8080/api/postZKProof" -H "Content-Type: application/json" --data '{"blockHeight":3,"presentation":{"presentationContext":"d2db9b790c3c8257c5a591963c802c4673c6327966407ece603319a350ec7b32","proof":{"created":"2024-08-01T21:05:50.426Z","proofValue":[],"type":"ConcordiumWeakLinkingProofV1"},"type":"VerifiablePresentation","verifiableCredential":[{"credentialSubject":{"id":"did:ccd:testnet:cred:af521c107ee686b2e60da2e71fbf60e29cff4f6a29aed86a0752a3913e7abc663ecd30e07e14b50662b7b51ab14bc64d","proof":{"created":"2024-08-01T21:05:50.425Z","proofValue":[{"attribute":"N-1234","proof":"06bbf27d5a8c0ff88e7333b4d1f4f6f58cdaa9b8daf966daf4dbb950435c57a22a2f466e59e7a92052af4a8428118334cd85aff3cede542d501f17c9fc5423c7","type":"RevealAttribute"},{"attribute":"DK","proof":"e96e90b2252dd4dbc7d4397d552fb246d8568b21da9968e0a0249ee2685fdd95559661d5454bb2d4e3a95f30265a4e164848161c48abb274df7c862010b217ca","type":"RevealAttribute"},{"proof":"b841f20dcdda4118fd727bb6332066479f0dcc32e6d3cb0b1e41b8c0f0cb580ac1b134663118647bf777e798fe37172f9775db6d055ee0679d27c929187de82effbba2f65840456fd92f44e2973004a1d2a3a00aaf04689c83ca86a669b3fb0ea2ef45296d6e770d533c13b2347e06920acbe29180fecefdb90d9d40c95afedd07b7eac8eb5323063ac0b4c58418ad8ab1cc20540e95520dd20516d1b61b2bb4d6eb66aa5697d4b577aad4a27c8a1da7de56ca4ac1e5ef79bf50e41bf86a48044c9060ec15329cf9400ba2956065850a0ef5971684e61fb86ff46fb33a7bcc442703761bb2019616c6425adf4a4bcc29aede39e1becc73783a3d2e75967ef4946387a5d54ba35053a6421b2f4250f6d23d70c7632df37080ea7910037fe4b78000000007814b3b4990c7d9fd4f20c9aebd5d5e54c604e1f0b8fda61f9638bef8d5980e0cdae6dfa69f5838e44bfbed1bdd2ae2fd963ec740eeddaa4be359d1cd4de86a7b3dfdd24646630576581bcb3fcb09876a6a245839d7514f3397a9ab233cf9cd38ae9efdfceb831fcfa758e7bb75eb0fe7dc94524b9128aad0ddd40d08c96a442d5fcdfcefbeaedad70639b4fbd526b91bae16fc64a13cba15156cf25e7c27874d18aff61cb283c8902d761ec25302d29c579780532b958120b9733f523a1eb73da6c5eba2956da92f95caac80b9a4a6b78e6caf547caffe6ffb4e11785c5f6bdbae2ba25b2acda02e856ee003020f8262b158869289dc3b1abd6a49e4da506fec0e8eedb10e4efc01317f986d4d727601719caf70e383e35d626ddd66845cd9cf87ce746f187aae12fcbf482ffbb4721721f0ac747e8576e83285eb1da70f5565a5175f8930ef3e608c6c6b1fc698dd7ba145fd8c820a6f3f36878cc3a282ad3cca65fa550e3b3d6a0c11d862fba9d96f9d68425ecfa1b117a3509d57ca96b80b8eb83f1eb858f26cfabe749e5ae0697d5253355acb0499e5ccfa9a9ecaa8a802db01533cf64e2aeeedc4a6adb41b2c09a39a31f0f3ee5c126f52525309aac542f3f529b68868b37daaa992c70ce33867cfda03bb5a8406b9c85444710f23ac94832d9824fe359cfe9a8ce118699dec60e01c2c6a842cf19230a08e74ce115ca32c2d36caee6d7cf588172cd2c5bb563a899371b97bd8cc91fc8d2a4b4b5f75de3c007c31b4abfd8a8de787a4b8c4ea483b580d1c2ba4b8c4b8ec399ff22828d4a52b7527a101d2a14008056cb09d06780c401459ae27c6344465233858cc136c88e9a73aa9e7f944cd0844437f46d032b93d36ab7ad911d5d886b7895cf9644edf8bf17db6592b473cf5ffa4ad4cb8da015ac3fd07d49f89d26fad9ed437fec11bc6217f22a53e64006a021e11b58ee4f0d0686d919a41cc8bc97a8f568874ac1421cb79c1964bf8db8215202edaf23297b8bc3c35184071531de8fd198f8f2f","type":"AttributeInRange"},{"proof":"86aeeb7aba255d278e4c925255354b286ad6e078e5570fd24b7bac51610d0db9f677bbc5f0fc9ebc5b750adff9320bfc90822580ea43a650b3a57930dc07b0f0ae44ae054e6d5d5581861491d8635ced5343cd58fd488a6f95717fde4640a0c1a921a6744ff898050b6920d529f3b5cd12bb7cd237e4c92ed5aa744fb93ce9d178534fbd713a8f5f22d9f4792cbb95a6a9390c4630f16a6f74a5555831a0555b142304b8a1da45d9ed8c0ee0c4d1dbf72be3f321ade90eeed83a60c284a948036f9ee0d1c5d4fa479e78fdcb03317516c8c84c4784ddadf36b1579eb1e9e066d6fa3f300d55f4eee8a56ea8109d3987dace8d569d3e6f0e92170c24a0c3285741ba67d40510356fd995710eaff37cedfd651e3504d651c5f1ac022270a7e0ccb000000019392a7da2231ee75b57155277d0bc4a3917746596fea55df22b11ae1f5a795553cb532a322857fa5c6a080158c781f18b2786218b8a8124666c75be9f750db9857915c011e605f1df280006bad22fc0d50b4f577c2dc997461320b040aacbb645b11a80d5b53248029cc8043eaf7718df409426c7f24cced137480d5fcf57aad672fa2b22a6be2c61709a6af17cdc4a022ba936fa029e5c607c152713dda77d9","type":"AttributeNotInSet"}],"type":"ConcordiumZKProofV3"},"statement":[{"attributeTag":"nationalIdNo","type":"RevealAttribute"},{"attributeTag":"nationality","type":"RevealAttribute"},{"attributeTag":"dob","lower":"18000101","type":"AttributeInRange","upper":"20060802"},{"attributeTag":"countryOfResidence","set":["KP","US"],"type":"AttributeNotInSet"}]},"issuer":"did:ccd:testnet:idp:0","type":["VerifiableCredential","ConcordiumVerifiableCredential"]}]}}' -v
+```
 
-2.Proof: Reveal "nationality" proof (Sigma protocol)
+## ZK Statements
 
-3.Proof: Range proof ("dob=dateOfBirth" is older than 18 years) (Bulletproof protocol)
+An example is given in the file `./zk_statements_config.json`.
 
-4.Proof: Not set membership proof ("countryOfResidence" is not in USA or North Korea) (Bulletproof protocol)
-(ISO 3166-1 alpha-2)
+The example includes 4 proof statements:
+
+1. Proof: Reveal "nationalIdNo" proof using the Sigma protocol.
+
+2. Proof: Reveal "nationality" proof using the Sigma protocol.
+
+3. Proof: Range proof ("dob=dateOfBirth" is older than 18 years) using the Bulletproof protocol.
+
+4. Proof: Not set membership proof ("countryOfResidence" is not the USA or North Korea) using the Bulletproof protocol. Countries are represented by 2 letters (ISO 3166-1 alpha-2).
 
 ```
 [
@@ -140,6 +338,3 @@ Proof statements:
 
 An example proof for the above statement:
 
-```
-curl -POST "http://localhost:8080/api/postZKProof" -H "Content-Type: application/json" --data '{"blockHeight":3,"presentation":{"presentationContext":"d2db9b790c3c8257c5a591963c802c4673c6327966407ece603319a350ec7b32","proof":{"created":"2024-08-01T21:05:50.426Z","proofValue":[],"type":"ConcordiumWeakLinkingProofV1"},"type":"VerifiablePresentation","verifiableCredential":[{"credentialSubject":{"id":"did:ccd:testnet:cred:af521c107ee686b2e60da2e71fbf60e29cff4f6a29aed86a0752a3913e7abc663ecd30e07e14b50662b7b51ab14bc64d","proof":{"created":"2024-08-01T21:05:50.425Z","proofValue":[{"attribute":"N-1234","proof":"06bbf27d5a8c0ff88e7333b4d1f4f6f58cdaa9b8daf966daf4dbb950435c57a22a2f466e59e7a92052af4a8428118334cd85aff3cede542d501f17c9fc5423c7","type":"RevealAttribute"},{"attribute":"DK","proof":"e96e90b2252dd4dbc7d4397d552fb246d8568b21da9968e0a0249ee2685fdd95559661d5454bb2d4e3a95f30265a4e164848161c48abb274df7c862010b217ca","type":"RevealAttribute"},{"proof":"b841f20dcdda4118fd727bb6332066479f0dcc32e6d3cb0b1e41b8c0f0cb580ac1b134663118647bf777e798fe37172f9775db6d055ee0679d27c929187de82effbba2f65840456fd92f44e2973004a1d2a3a00aaf04689c83ca86a669b3fb0ea2ef45296d6e770d533c13b2347e06920acbe29180fecefdb90d9d40c95afedd07b7eac8eb5323063ac0b4c58418ad8ab1cc20540e95520dd20516d1b61b2bb4d6eb66aa5697d4b577aad4a27c8a1da7de56ca4ac1e5ef79bf50e41bf86a48044c9060ec15329cf9400ba2956065850a0ef5971684e61fb86ff46fb33a7bcc442703761bb2019616c6425adf4a4bcc29aede39e1becc73783a3d2e75967ef4946387a5d54ba35053a6421b2f4250f6d23d70c7632df37080ea7910037fe4b78000000007814b3b4990c7d9fd4f20c9aebd5d5e54c604e1f0b8fda61f9638bef8d5980e0cdae6dfa69f5838e44bfbed1bdd2ae2fd963ec740eeddaa4be359d1cd4de86a7b3dfdd24646630576581bcb3fcb09876a6a245839d7514f3397a9ab233cf9cd38ae9efdfceb831fcfa758e7bb75eb0fe7dc94524b9128aad0ddd40d08c96a442d5fcdfcefbeaedad70639b4fbd526b91bae16fc64a13cba15156cf25e7c27874d18aff61cb283c8902d761ec25302d29c579780532b958120b9733f523a1eb73da6c5eba2956da92f95caac80b9a4a6b78e6caf547caffe6ffb4e11785c5f6bdbae2ba25b2acda02e856ee003020f8262b158869289dc3b1abd6a49e4da506fec0e8eedb10e4efc01317f986d4d727601719caf70e383e35d626ddd66845cd9cf87ce746f187aae12fcbf482ffbb4721721f0ac747e8576e83285eb1da70f5565a5175f8930ef3e608c6c6b1fc698dd7ba145fd8c820a6f3f36878cc3a282ad3cca65fa550e3b3d6a0c11d862fba9d96f9d68425ecfa1b117a3509d57ca96b80b8eb83f1eb858f26cfabe749e5ae0697d5253355acb0499e5ccfa9a9ecaa8a802db01533cf64e2aeeedc4a6adb41b2c09a39a31f0f3ee5c126f52525309aac542f3f529b68868b37daaa992c70ce33867cfda03bb5a8406b9c85444710f23ac94832d9824fe359cfe9a8ce118699dec60e01c2c6a842cf19230a08e74ce115ca32c2d36caee6d7cf588172cd2c5bb563a899371b97bd8cc91fc8d2a4b4b5f75de3c007c31b4abfd8a8de787a4b8c4ea483b580d1c2ba4b8c4b8ec399ff22828d4a52b7527a101d2a14008056cb09d06780c401459ae27c6344465233858cc136c88e9a73aa9e7f944cd0844437f46d032b93d36ab7ad911d5d886b7895cf9644edf8bf17db6592b473cf5ffa4ad4cb8da015ac3fd07d49f89d26fad9ed437fec11bc6217f22a53e64006a021e11b58ee4f0d0686d919a41cc8bc97a8f568874ac1421cb79c1964bf8db8215202edaf23297b8bc3c35184071531de8fd198f8f2f","type":"AttributeInRange"},{"proof":"86aeeb7aba255d278e4c925255354b286ad6e078e5570fd24b7bac51610d0db9f677bbc5f0fc9ebc5b750adff9320bfc90822580ea43a650b3a57930dc07b0f0ae44ae054e6d5d5581861491d8635ced5343cd58fd488a6f95717fde4640a0c1a921a6744ff898050b6920d529f3b5cd12bb7cd237e4c92ed5aa744fb93ce9d178534fbd713a8f5f22d9f4792cbb95a6a9390c4630f16a6f74a5555831a0555b142304b8a1da45d9ed8c0ee0c4d1dbf72be3f321ade90eeed83a60c284a948036f9ee0d1c5d4fa479e78fdcb03317516c8c84c4784ddadf36b1579eb1e9e066d6fa3f300d55f4eee8a56ea8109d3987dace8d569d3e6f0e92170c24a0c3285741ba67d40510356fd995710eaff37cedfd651e3504d651c5f1ac022270a7e0ccb000000019392a7da2231ee75b57155277d0bc4a3917746596fea55df22b11ae1f5a795553cb532a322857fa5c6a080158c781f18b2786218b8a8124666c75be9f750db9857915c011e605f1df280006bad22fc0d50b4f577c2dc997461320b040aacbb645b11a80d5b53248029cc8043eaf7718df409426c7f24cced137480d5fcf57aad672fa2b22a6be2c61709a6af17cdc4a022ba936fa029e5c607c152713dda77d9","type":"AttributeNotInSet"}],"type":"ConcordiumZKProofV3"},"statement":[{"attributeTag":"nationalIdNo","type":"RevealAttribute"},{"attributeTag":"nationality","type":"RevealAttribute"},{"attributeTag":"dob","lower":"18000101","type":"AttributeInRange","upper":"20060802"},{"attributeTag":"countryOfResidence","set":["KP","US"],"type":"AttributeNotInSet"}]},"issuer":"did:ccd:testnet:idp:0","type":["VerifiableCredential","ConcordiumVerifiableCredential"]}]}}' -v
-```

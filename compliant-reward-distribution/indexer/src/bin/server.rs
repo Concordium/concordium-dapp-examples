@@ -588,7 +588,7 @@ async fn check_zk_proof(
                 _ => return Err(ServerError::RevealAttribute(index_1)),
             };
 
-            // Get `account_address` linked to the proof.
+            // Get the `prover` which is the `account_address` that created the proof.
             let account_info = state
                 .node_client
                 .get_account_info(
