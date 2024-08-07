@@ -190,7 +190,7 @@ async fn main() -> anyhow::Result<()> {
     let consensus_info = client.get_consensus_info().await?;
 
     // Establish connection to the postgres database.
-    let db_pool = DatabasePool::create(app.db_connection.clone(), 2, true)
+    let db_pool = DatabasePool::create(app.db_connection, 2, true)
         .await
         .context("Could not create database pool")?;
     let db = db_pool
