@@ -92,9 +92,6 @@ There are a few options to configure the server:
 
 - `--claim_expiry_duration_days (env: CCD_SERVER_ADMIN_ACCOUNTS)` is the duration after creating a new account during which the account is eligible to claim the reward, the default value `60` is used.
 
-- `--zk_statements (env: CCD_SERVER_CLAIM_EXPIRY_DURATION_DAYS)` requires a JSON formatted input of the ZK statements that the server should accept proofs for. An example file is given in `./zk_statements_config.json`.
-Note: If you re-start the server with new ZK proof statements, increase the `CURRENT_ZK_PROOF_VERIFICATION_VERSION` constant in `server.rs` file. The versioning can be used to invalidate older proofs.
-
 ## API endpoints of the `server`
 
 The `/getZKProofStatements` and `/health` endpoints expect no JSON body.
@@ -279,7 +276,6 @@ curl -POST "http://localhost:8080/api/setClaimed" -H "Content-Type: application/
 "signature":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab00694e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","block":{"hash":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","height":3}}}' -v
 ```
 
-
 ```
 curl -POST "http://localhost:8080/api/getAccountData" -H "Content-Type: application/json" --data '{"signingData":{"signer":"47b6Qe2XtZANHetanWKP1PbApLKtS3AyiCtcXaqLMbypKjCaRw","message":{"accountAddress":"3cGEB7tTdQBFxJ9sn5JyGPNay2MSmRSKm4133UVqmKoFg4MXJ1"},"signature":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab00694e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","block":{"hash":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","height":3}}}' -v
 ```
@@ -299,9 +295,7 @@ curl -POST "http://localhost:8080/api/postZKProof" -H "Content-Type: application
 
 ## ZK Statements
 
-An example is given in the file `./zk_statements_config.json`.
-
-The example includes 4 proof statements:
+The server uses the 4 ZK statements:
 
 1. Proof: Reveal "nationalIdNo" proof using the Sigma protocol.
 
@@ -344,3 +338,14 @@ Update the `CURRENT_ZK_PROOF_VERIFICATION_VERSION` and/or `CURRENT_TWITTER_POST_
 in the `server.rs` file to introduce a new version when re-starting the server. Correspondingly, update the
 `VALID_ZK_PROOF_VERIFICATION_VERSIONS` and/or `VALID_TWITTER_POST_LINK_VERIFICATION_VERSIONS` list in the
 `server.rs` file to specify which versions should be still considered valid.
+
+## Expiry of signatures and proofs.
+
+Proofs and signatures have to be generated including a recent `block_hash` (either as the challenge or as part of the message signed).
+Since `block_hashes` cannot be predicted much in advance, this ensures that proofs and signatures are generated on the spot and
+expiry after `SIGNATURE_AND_PROOF_EXPIRY_DURATION_BLOCKS` (constant in the `server.rs` file). The corresponding `block_height`
+is passed to the backend (while not part of the proof or part of the message signed), the `block_height` eases the check for
+expiry and the backend checks that the `block_height` corresponds to the `block_hash` included in the proof/signature.
+
+This verification relies on the front end (via the wallet) and back end being connected to reliable nodes that are caught up to the
+top of the chain. The front end should look up some recent `block_hash` (not the most recent) to give the backend a small window of being delayed. The backend server should only be run in conjunction with a reliable node connection otherwise, the verification of expired signatures/proofs is not correct.
