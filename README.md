@@ -28,7 +28,7 @@ The following examples are available.
 
 - [track-and-trace](./track-and-trace/) demonstrates an example frontend, backend, smart contract and event indexer to track items along the supply chain. It also has a [CIS-3](https://proposals.concordium.software/CIS/cis-3.html) sponsored transactions service that is compatible with any CIS-3 contract.
 
-- [compliant-reward-distribution](./compliant-reward-distribution/) demonstrates airdrop example with an indexer, a frontend, and a backend with signature and ZK proof verification at the backend. The ZK proof is uses to ensure `Sybil-Resistance/uniqueness` as each identity on the chain can interact with service with only one of its accounts.
+- [compliant-reward-distribution](./compliant-reward-distribution/) demonstrates an airdrop example with an indexer, a frontend, and a backend with signature and ZK proof verification at the backend. The ZK proof is uses to ensure `Sybil-resistance/uniqueness` as each identity on the chain can interact with the service with only one of its accounts.
 
 - [testnet-faucet](./testnet-faucet/) implements the Concordium testnet faucet which requires the user to post on X (former Twitter) and complete a CAPTCHA task to claim testnet CCDs. The faucet allows claiming once within a specified timeframe.
 
