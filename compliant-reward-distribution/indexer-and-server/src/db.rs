@@ -19,8 +19,7 @@ pub enum ConversionError {
     FromUtf8Error(#[from] FromUtf8Error),
 }
 
-/// Represents possible errors returned from [`Database`] or [`DatabasePool`]
-/// functions
+/// Represents possible errors returned from [`Database`] or [`DatabasePool`] functions
 #[derive(Error, Debug)]
 pub enum DatabaseError {
     /// An error happened while interacting with the postgres DB.
