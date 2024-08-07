@@ -53,15 +53,15 @@ const TESTNET_GENESIS_BLOCK_HASH: [u8; 32] = [
     0, 13, 92, 46, 0, 232, 95, 80, 247, 150,
 ];
 
-/// Current version of the verification logic used for the ZK proof.
+/// Current version of the verification logic used when submitting a ZK proof.
 /// Update this version if you want to introduce a new ZK proof-verification logic.
 const CURRENT_ZK_PROOF_VERIFICATION_VERSION: u16 = 1;
-/// Current version of the verification logic used for the twitter post link.
+/// Current version of the verification logic used when submitting a twitter post link.
 /// Update this version if you want to introduce a new twitter post link verification logic.
 const CURRENT_TWITTER_POST_LINK_VERIFICATION_VERSION: u16 = 1;
-/// All versions that should be considered valid for the ZK proof verification.
+/// All versions that should be considered valid for the ZK proof verification when querrying data from the database.
 const VALID_ZK_PROOF_VERIFICATION_VERSIONS: [u16; 1] = [1];
-/// All versions that should be considered valid for the twiter post link verification.
+/// All versions that should be considered valid for the twiter post link verification when querrying data from the database.
 const VALID_TWITTER_POST_LINK_VERIFICATION_VERSIONS: [u16; 1] = [1];
 
 /// Errors that this server can produce.
@@ -132,22 +132,20 @@ pub enum ServerError {
 /// Mapping DatabaseError to ServerError
 impl From<DatabaseError> for ServerError {
     fn from(e: DatabaseError) -> Self {
+        use DatabaseError::*;
         match e {
-            DatabaseError::Postgres(e) => ServerError::DatabasePostgres(e),
-            DatabaseError::TypeConversion(type_name, e) => {
-                ServerError::DatabaseTypeConversion(type_name, e)
-            }
-            DatabaseError::Configuration(type_error, e) => {
-                ServerError::DatabaseConfiguration(type_error, e)
-            }
-            DatabaseError::PoolError(e) => ServerError::PoolError(e),
-            DatabaseError::IdentityReUsed(old_address, new_address) => {
+            Postgres(e) => ServerError::DatabasePostgres(e),
+            TypeConversion(type_name, e) => ServerError::DatabaseTypeConversion(type_name, e),
+            Configuration(type_error, e) => ServerError::DatabaseConfiguration(type_error, e),
+            PoolError(e) => ServerError::PoolError(e),
+            IdentityReUsed(old_address, new_address) => {
                 ServerError::IdentityReUsed(old_address, new_address)
             }
         }
     }
 }
 
+/// Mapping Box<bincode::ErrorKind> to ServerError
 impl From<Box<bincode::ErrorKind>> for ServerError {
     fn from(e: Box<bincode::ErrorKind>) -> Self {
         ServerError::MessageConversion(*e)
@@ -397,7 +395,7 @@ async fn main() -> anyhow::Result<()> {
         Network::Mainnet
     };
 
-    let cryptographic_param = node_client
+    let cryptographic_params = node_client
         .get_cryptographic_parameters(BlockIdentifier::LastFinal)
         .await
         .context("Unable to get cryptographic parameters.")?
@@ -410,7 +408,7 @@ async fn main() -> anyhow::Result<()> {
         db_pool,
         node_client,
         network,
-        cryptographic_param,
+        cryptographic_params,
         admin_accounts: app.admin_accounts,
         zk_statements,
         claim_expiry_duration_days: app.claim_expiry_duration_days,
@@ -517,7 +515,7 @@ async fn check_zk_proof(
 
     // Verify the cryptographic proofs.
     let request = presentation.verify(
-        &state.cryptographic_param,
+        &state.cryptographic_params,
         public_data.iter().map(|credential| &credential.inputs),
     )?;
 

@@ -93,6 +93,7 @@ There are a few options to configure the server:
 - `--claim_expiry_duration_days (env: CCD_SERVER_ADMIN_ACCOUNTS)` is the duration after creating a new account during which the account is eligible to claim the reward, the default value `60` is used.
 
 - `--zk_statements (env: CCD_SERVER_CLAIM_EXPIRY_DURATION_DAYS)` requires a JSON formatted input of the ZK statements that the server should accept proofs for. An example file is given in `./zk_statements_config.json`.
+Note: If you re-start the server with new ZK proof statements, increase the `CURRENT_ZK_PROOF_VERIFICATION_VERSION` constant in `server.rs` file. The versioning can be used to invalidate older proofs.
 
 ## API endpoints of the `server`
 
@@ -335,3 +336,11 @@ The example includes 4 proof statements:
     }
 ]
 ```
+
+## Versioning
+
+The ZK proof verification logic and the twitter post link verification logic can be versioning.
+Update the `CURRENT_ZK_PROOF_VERIFICATION_VERSION` and/or `CURRENT_TWITTER_POST_LINK_VERIFICATION_VERSION`
+in the `server.rs` file to introduce a new version when re-starting the server. Correspondingly, update the
+`VALID_ZK_PROOF_VERIFICATION_VERSIONS` and/or `VALID_TWITTER_POST_LINK_VERIFICATION_VERSIONS` list in the
+`server.rs` file to specify which versions should be still considered valid.
