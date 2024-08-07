@@ -34,10 +34,10 @@ use http::StatusCode;
 use indexer::{
     db::{ConversionError, StoredAccountData},
     types::{
-        AccountDataReturn, CanClaimParam, ClaimExpiryDurationDays, GetAccountDataParam,
-        GetPendingApprovalsParam, HasSigningData, Health, PostTwitterPostLinkParam,
-        PostZKProofParam, SetClaimedParam, SigningData, VecAccountDataReturn, ZKProofExtractedData,
-        ZKProofStatementsReturn,
+        AccountDataReturn, CanClaimParam, CanClaimReturn, ClaimExpiryDurationDays,
+        GetAccountDataParam, GetPendingApprovalsParam, HasSigningData, Health,
+        PostTwitterPostLinkParam, PostZKProofParam, SetClaimedParam, SigningData, UserData,
+        VecAccountDataReturn, ZKProofExtractedData, ZKProofStatementsReturn,
     },
 };
 use sha2::Digest;
@@ -64,8 +64,6 @@ const VALID_ZK_PROOF_VERIFICATION_VERSIONS: [u16; 1] = [1];
 /// All versions that should be considered valid for the twiter post link verification.
 const VALID_TWITTER_POST_LINK_VERIFICATION_VERSIONS: [u16; 1] = [1];
 
-/// TODO: check versions during `can_claim` endpoint (potentially invalidate the query)
-///
 /// Errors that this server can produce.
 #[derive(Debug, thiserror::Error)]
 pub enum ServerError {
@@ -899,14 +897,30 @@ async fn get_pending_approvals(
 async fn can_claim(
     State(state): State<Server>,
     request: Result<Json<CanClaimParam>, JsonRejection>,
-) -> Result<Json<bool>, ServerError> {
+) -> Result<Json<Option<CanClaimReturn>>, ServerError> {
     let db = state.db_pool.get().await?;
 
     let Json(param) = request?;
 
-    let can_claim = db.can_claim(param.account_address).await?;
+    let database_result = db.get_account_data(param.account_address).await?;
 
-    Ok(Json(can_claim))
+    if let Some(data) = database_result {
+        let user_data = check_for_changed_verification_logic(data)?;
+
+        let claimed = user_data.claimed;
+        let twitter_post_link_valid = user_data.twitter_post_link_valid.unwrap_or(false);
+        let zk_proof_valid = user_data.zk_proof_valid.unwrap_or(false);
+
+        Ok(Json(Some(CanClaimReturn {
+            data: UserData {
+                claimed,
+                twitter_post_link_valid,
+                zk_proof_valid,
+            },
+        })))
+    } else {
+        Ok(Json(None))
+    }
 }
 
 /// Handles the `health` endpoint, returning the version of the backend.
