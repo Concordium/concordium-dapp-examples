@@ -14,41 +14,53 @@ use concordium_rust_sdk::{
 };
 use std::{num::ParseIntError, str::FromStr};
 
-/// Server struct to store the db_pool.
+/// Server struct to store values that are not persisted in the database.
+/// When re-starting the server this struct will be re-initialized based on the options/flags provided.
 #[derive(Clone, Debug)]
 pub struct Server {
-    ///
+    /// The database pool used to connect to the database.
     pub db_pool: DatabasePool,
-    ///
+    /// The node client to the Concordium node.
     pub node_client: Client,
+    /// The network used (testnet or mainnet).
     pub network: Network,
-    pub cryptographic_param: GlobalContext<ArCurve>,
+    /// The global cryptographic parameters that are stored publicly on chain.
+    pub cryptographic_params: GlobalContext<ArCurve>,
+    /// The admin accounts that have elevated permission to read/write from/to the database.
     pub admin_accounts: Vec<AccountAddress>,
+    /// The ZK statements that are used to verify submitted ZK proofs.
     pub zk_statements: Statement<ArCurve, Web3IdAttribute>,
+    /// The duration in days after a new account is created that the account is eligible to claim the reward.
     pub claim_expiry_duration_days: ClaimExpiryDurationDays,
 }
 
-/// Struct returned by the `getItemStatusChangedEvents` endpoint. It returns a
-/// vector of ItemStatusChangedEvents from the database if present.
+/// Generalised parameter struct used by all endpoints that require a signature check. The generic type <T>
+/// can be customized for each endpoint to specify additional data to be part of the message signed.
 #[derive(serde::Deserialize, serde::Serialize)]
 pub struct SigningData<T> {
+    /// Signer account.
     pub signer: AccountAddress,
+    /// Message signed.
     pub message: T,
+    /// Signature.
     pub signature: Signature,
+    /// Contains the block height and the corresponding block hash around the time when the message was signed.
+    /// The block hash is signed as part of the message. The block height is not signed but checked that it
+    /// corresponds to the block hash. The block height is used to ensure that the signature expires after some time.
     pub block: BlockMessage,
 }
 
-/// Trait definition of the `IsMessage`. This trait is implemented for the two
-/// types `WithdrawMessage` and `TransferMessage`. The `isMessage` trait is used
-/// as an input parameter to the `validate_signature_and_increase_nonce`
-/// function so that the function works with both message types.
+/// Trait definition of `HasSigningData`. This trait is implemented for all input parameter structs
+/// used by endpoints that require a signature check.
 pub trait HasSigningData {
     type Message;
     fn signing_data(&self) -> &SigningData<Self::Message>;
 }
 
-/// Struct returned by the `getItemStatusChangedEvents` endpoint. It returns a
-/// vector of ItemStatusChangedEvents from the database if present.
+/// Struct included in all parameters used by endpoints that require a signature check.
+/// It contains the block height and the corresponding block hash around the time when the message was signed.
+/// The block hash is signed as part of the message. The block height is not signed but checked that it
+/// corresponds to the block hash. The block height is used to ensure that the signature expires after some time.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BlockMessage {
@@ -56,23 +68,28 @@ pub struct BlockMessage {
     pub height: AbsoluteBlockHeight,
 }
 
+/// Parameter struct for the `postZKProof` endpoint.
 #[derive(serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PostZKProofParam {
+    /// The block height is used to ensure that the proof expires after some time.
+    /// The corresponding block hash is used as `challenge` when generating the ZK proof.
     pub block_height: AbsoluteBlockHeight,
+    /// The ZK proof.
     pub presentation: Presentation<ArCurve, Web3IdAttribute>,
 }
 
-/// Helper type
+/// Helper type returned by the `check_zk_proof` function.
 pub struct ZKProofExtractedData {
-    ///
+    /// Revealed `national_id` attribute.
     pub national_id: String,
-    ///
+    /// Revealed `nationality` attribute.
     pub nationality: String,
-    ///
+    /// Prover that generated the ZK proof.
     pub prover: AccountAddress,
 }
 
+/// Message struct for the `postTwitterPostLink` endpoint.
 #[repr(transparent)]
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -80,6 +97,7 @@ pub struct TwitterPostLinkMessage {
     pub twitter_post_link: String,
 }
 
+/// Implement the `HasSigningData` trait for `PostTwitterPostLinkParam`.
 impl HasSigningData for PostTwitterPostLinkParam {
     type Message = TwitterPostLinkMessage;
     fn signing_data(&self) -> &SigningData<TwitterPostLinkMessage> {
@@ -87,6 +105,7 @@ impl HasSigningData for PostTwitterPostLinkParam {
     }
 }
 
+/// Parameter struct for the `postZKProof` endpoint.
 #[repr(transparent)]
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -94,13 +113,16 @@ pub struct PostTwitterPostLinkParam {
     pub signing_data: SigningData<TwitterPostLinkMessage>,
 }
 
+/// Message struct for the `setClaimed` endpoint.
 #[repr(transparent)]
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SetClaimedMessage {
+    /// Vector of accounts that should be marked as `claimed` in the database.
     pub account_addresses: Vec<AccountAddress>,
 }
 
+/// Implement the `HasSigningData` trait for `SetClaimedMessage`.
 impl HasSigningData for SetClaimedParam {
     type Message = SetClaimedMessage;
     fn signing_data(&self) -> &SigningData<SetClaimedMessage> {
@@ -108,6 +130,7 @@ impl HasSigningData for SetClaimedParam {
     }
 }
 
+/// Parameter struct for the `setClaimed` endpoint.
 #[repr(transparent)]
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -115,22 +138,26 @@ pub struct SetClaimedParam {
     pub signing_data: SigningData<SetClaimedMessage>,
 }
 
+/// Partial struct returned by the `canClaim` endpoint.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UserData {
+    /// True, if the user has not claimed the reward yet.
     pub claimed: bool,
+    /// True, if the user has submitted a valid twitter post link and the verification version is still valid.
     pub twitter_post_link_valid: bool,
+    /// True, if the user has submitted a valid ZK proof and the verification version is still valid.
     pub zk_proof_valid: bool,
 }
 
-/// Struct returned by the `getItemStatusChangedEvents` endpoint. It returns a
-/// vector of ItemStatusChangedEvents from the database if present.
+/// Struct returned by the `canClaim` endpoint.
 #[repr(transparent)]
 #[derive(serde::Serialize)]
 pub struct CanClaimReturn {
     pub data: UserData,
 }
 
+/// Implement the `HasSigningData` trait for `GetAccountDataMessage`.
 impl HasSigningData for GetAccountDataParam {
     type Message = GetAccountDataMessage;
     fn signing_data(&self) -> &SigningData<GetAccountDataMessage> {
@@ -138,15 +165,16 @@ impl HasSigningData for GetAccountDataParam {
     }
 }
 
+/// Message struct for the `getAccountData` endpoint.
 #[repr(transparent)]
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GetAccountDataMessage {
+    /// Account address for which the data should be retrieved.
     pub account_address: AccountAddress,
 }
 
-/// Parameter struct for the `getItemStatusChangedEvents` endpoint send in the
-/// request body.
+/// Parameter struct for the `getAccountData` endpoint.
 #[repr(transparent)]
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -154,22 +182,24 @@ pub struct GetAccountDataParam {
     pub signing_data: SigningData<GetAccountDataMessage>,
 }
 
-/// Struct returned by the `getItemStatusChangedEvents` endpoint. It returns a
-/// vector of ItemStatusChangedEvents from the database if present.
+/// Struct returned by the `getAccountData` endpoint.
 #[repr(transparent)]
 #[derive(serde::Serialize)]
 pub struct AccountDataReturn {
     pub data: Option<StoredAccountData>,
 }
 
-/// Struct returned by the `getItemStatusChangedEvents` endpoint. It returns a
-/// vector of ItemStatusChangedEvents from the database if present.
-#[repr(transparent)]
-#[derive(serde::Serialize)]
-pub struct VecAccountDataReturn {
-    pub data: Vec<StoredAccountData>,
+/// Message struct for the `getPendingApprovals` endpoint.
+#[derive(serde::Deserialize, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetPendingApprovalsMessage {
+    /// Limit used in the query to the database.
+    pub limit: u32,
+    /// Offset used in the query to the database.
+    pub offset: u32,
 }
 
+/// Implement the `HasSigningData` trait for `GetPendingApprovalsMessage`.
 impl HasSigningData for GetPendingApprovalsParam {
     type Message = GetPendingApprovalsMessage;
     fn signing_data(&self) -> &SigningData<GetPendingApprovalsMessage> {
@@ -177,15 +207,7 @@ impl HasSigningData for GetPendingApprovalsParam {
     }
 }
 
-#[derive(serde::Deserialize, serde::Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct GetPendingApprovalsMessage {
-    pub limit: u32,
-    pub offset: u32,
-}
-
-/// Parameter struct for the `getItemStatusChangedEvents` endpoint send in the
-/// request body.
+/// Parameter struct for the `getPendingApprovals` endpoint.
 #[repr(transparent)]
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -193,30 +215,39 @@ pub struct GetPendingApprovalsParam {
     pub signing_data: SigningData<GetPendingApprovalsMessage>,
 }
 
-/// Parameter struct for the `getItemStatusChangedEvents` endpoint send in the
-/// request body.
+/// Struct returned by the `getPendingApprovals` endpoint.
+#[repr(transparent)]
+#[derive(serde::Serialize)]
+pub struct VecAccountDataReturn {
+    /// Vector of account data that have their pending approval set to `true`.
+    pub data: Vec<StoredAccountData>,
+}
+
+/// Parameter struct for the `canClaim` endpoint.
 #[repr(transparent)]
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CanClaimParam {
+    /// Account address for which the data should be retrieved.
     pub account_address: AccountAddress,
 }
 
-/// Struct returned by the `health` endpoint. It returns the version of the
-/// backend.
+/// Struct returned by the `health` endpoint.
+/// It returns the version of the backend.
 #[derive(serde::Serialize)]
 pub struct Health {
     pub version: &'static str,
 }
 
-/// Struct returned by the `getItemStatusChangedEvents` endpoint. It returns a
-/// vector of ItemStatusChangedEvents from the database if present.
+/// Struct returned by the `getZKProofStatements` endpoint.
 #[repr(transparent)]
 #[derive(serde::Serialize)]
 pub struct ZKProofStatementsReturn {
+    /// ZK statements that should be used by the front end to construct the ZK proofs.
     pub data: Statement<ArCurve, Web3IdAttribute>,
 }
 
+/// Wrapper around Days. This is used to parse the claim expiry duration from the command line.
 #[derive(Debug, Clone)]
 pub struct ClaimExpiryDurationDays(pub Days);
 
