@@ -38,19 +38,19 @@ CREATE TABLE IF NOT EXISTS accounts (
   pending_approval BOOL NOT NULL,
 
   -- Task 1:
-  -- A link to a twitter post submitted by the above account address. For MVP this post is
+  -- A tweet id to a twitter post submitted by the above account address. For MVP this post is
   -- collected to manually verify the text content. Nonethless, it is possible to automate this process
   -- and this value should not be set in the long run to preserve better privacy for the users
   -- (to not link a twitter account to a Concordium account address and its associated verified ZK proof).
-  twitter_post_link BYTEA,
-  -- A boolean specifying if the text content of the twitter post link is eligible for the reward.
+  tweet_id BYTEA,
+  -- A boolean specifying if the text content of the tweet is eligible for the reward.
   -- The content of the text was verified by this backend before this flag is set (or will be verified manually).
-  twitter_post_link_valid BOOL,
-  -- A version that specifies the setting of the twitter post link verification. This enables us
-  -- to update the twitter post link verification logic in the future and invalidate older versions.
-  twitter_post_link_verification_version INT8,
-  -- The timestamp when the twitter post link was submitted.
-  twitter_post_link_submit_time TIMESTAMP WITH TIME ZONE,
+  tweet_valid BOOL,
+  -- A version that specifies the setting of the tweet verification. This enables us
+  -- to update the tweet verification logic in the future and invalidate older versions.
+  tweet_verification_version INT8,
+  -- The timestamp when the tweet was submitted.
+  tweet_submit_time TIMESTAMP WITH TIME ZONE,
 
   -- Task 2:
   -- A hash of the concatenated revealed `national_id_number` and `nationality` to prevent
@@ -67,11 +67,11 @@ CREATE TABLE IF NOT EXISTS accounts (
 
   CHECK (
     -- Ensure that the twitter values are set at the same time. Either the twitter values are NULL or NOT NULL.
-    (twitter_post_link_valid IS NULL AND twitter_post_link_verification_version IS NULL AND twitter_post_link IS NULL AND twitter_post_link_submit_time IS NULL) OR
-    -- For MVP the `twitter_post_link` is set but the process should be automated in the future to not link
-    -- a twitter account to a Concordium account address anymore. As such the `twitter_post_link`
+    (tweet_valid IS NULL AND tweet_verification_version IS NULL AND tweet_id IS NULL AND tweet_submit_time IS NULL) OR
+    -- For MVP the `tweet_id` is set but the process should be automated in the future to not link
+    -- a twitter account to a Concordium account address anymore. As such the `tweet_id`
     -- might be come obsolete and set to NULL.
-    (twitter_post_link_valid IS NOT NULL AND twitter_post_link_verification_version IS NOT NULL AND twitter_post_link_submit_time IS NOT NULL) OR
+    (tweet_valid IS NOT NULL AND tweet_verification_version IS NOT NULL AND tweet_submit_time IS NOT NULL) OR
     -- Ensure that the ZK values are set at the same time. Either the ZK values are NULL or NOT NULL.
     (zk_proof_valid IS NULL AND zk_proof_verification_version IS NULL AND uniqueness_hash IS NULL AND zk_proof_verification_submit_time IS NULL) OR
     (zk_proof_valid IS NOT NULL AND zk_proof_verification_version IS NOT NULL AND uniqueness_hash IS NOT NULL AND zk_proof_verification_submit_time IS NOT NULL)
