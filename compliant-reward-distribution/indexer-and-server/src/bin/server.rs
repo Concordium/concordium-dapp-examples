@@ -125,8 +125,6 @@ pub enum ServerError {
     WrongStatement,
     #[error("Expect account statement and not web3id statement")]
     AccountStatement,
-    #[error("Do not expect initial account credential")]
-    NotInitialAccountCredential,
     #[error("ZK proof was created for the wrong network. Expect: {0}. Got: {1}.")]
     WrongNetwork(Network, Network),
     #[error("Expect reveal attribute statement at position {0}")]
@@ -213,7 +211,6 @@ impl IntoResponse for ServerError {
             | ServerError::WrongLength(..)
             | ServerError::AccountStatement
             | ServerError::WrongStatement
-            | ServerError::NotInitialAccountCredential
             | ServerError::WrongNetwork(..)
             | ServerError::RevealAttribute(_)
             | ServerError::ClaimExpired(_)
@@ -688,10 +685,7 @@ where
 
     // We use/support regular accounts. Regular accounts have only one public-private key pair at index 0 in the key map.
     let signer_public_key = match signer_account_credential {
-        // TODO: usually not allowed
-        AccountCredentialWithoutProofs::Initial { .. } => {
-            return Err(ServerError::NotInitialAccountCredential)
-        }
+        AccountCredentialWithoutProofs::Initial { icdv } => &icdv.cred_account.keys[&KeyIndex(0)],
         AccountCredentialWithoutProofs::Normal { cdv, .. } => &cdv.cred_key_info.keys[&KeyIndex(0)],
     };
 
