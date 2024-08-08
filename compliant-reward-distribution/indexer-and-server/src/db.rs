@@ -66,16 +66,16 @@ pub struct StoredAccountData {
     /// and the regulatory conditions have been proven via a ZK proof.
     /// A manual check of the completed tasks is required now before releasing the reward.
     pub pending_approval: bool,
-    /// A link to a twitter post submitted by the above account address (task 1).
-    pub twitter_post_link: Option<String>,
-    /// A boolean specifying if the text content of the twitter post link is eligible for the reward.
+    /// A tweet id submitted by the above account address (task 1).
+    pub tweet_id: Option<String>,
+    /// A boolean specifying if the text content of the tweet is eligible for the reward.
     /// The content of the text was verified by this backend before this flag is set (or will be verified manually).
-    pub twitter_post_link_valid: Option<bool>,
-    /// A version that specifies the setting of the twitter post link verification. This enables us
-    /// to update the twitter post link verification logic in the future and invalidate older versions.
-    pub twitter_post_link_verification_version: Option<u64>,
-    /// The timestamp when the twitter post link was submitted.
-    pub twitter_post_link_submit_time: Option<DateTime<Utc>>,
+    pub tweet_valid: Option<bool>,
+    /// A version that specifies the setting of the tweet verification. This enables us
+    /// to update the tweet verification logic in the future and invalidate older versions.
+    pub tweet_verification_version: Option<u64>,
+    /// The timestamp when the tweet was submitted.
+    pub tweet_submit_time: Option<DateTime<Utc>>,
     /// A hash of the concatenated revealed `national_id_number` and `nationality` to prevent
     /// claiming with different accounts for the same identity.
     pub uniqueness_hash: Option<UniquenessHash>,
@@ -94,12 +94,12 @@ impl TryFrom<tokio_postgres::Row> for StoredAccountData {
 
     fn try_from(value: tokio_postgres::Row) -> DatabaseResult<Self> {
         let raw_id: i64 = value.try_get("id")?;
-        let raw_twitter_post_link: Option<&[u8]> = value.try_get("twitter_post_link")?;
+        let raw_tweet_id: Option<&[u8]> = value.try_get("tweet_id")?;
         let raw_uniqueness_hash: Option<&[u8]> = value.try_get("uniqueness_hash")?;
         let raw_zk_proof_verification_version: Option<i64> =
             value.try_get("zk_proof_verification_version")?;
-        let raw_twitter_post_link_verification_version: Option<i64> =
-            value.try_get("twitter_post_link_verification_version")?;
+        let raw_tweet_verification_version: Option<i64> =
+            value.try_get("tweet_verification_version")?;
         let raw_transaction_hash: &[u8] = value.try_get("transaction_hash")?;
 
         let events = Self {
@@ -119,22 +119,21 @@ impl TryFrom<tokio_postgres::Row> for StoredAccountData {
                     })
                 })
                 .transpose()?,
-            twitter_post_link_valid: value.try_get("twitter_post_link_valid")?,
-            twitter_post_link_verification_version: raw_twitter_post_link_verification_version
-                .map(|i| i as u64),
-            twitter_post_link_submit_time: value.try_get("twitter_post_link_submit_time")?,
+            tweet_valid: value.try_get("tweet_valid")?,
+            tweet_verification_version: raw_tweet_verification_version.map(|i| i as u64),
+            tweet_submit_time: value.try_get("tweet_submit_time")?,
             transaction_hash: raw_transaction_hash.try_into().map_err(|e| {
                 DatabaseError::TypeConversion(
                     "transaction_hash".to_string(),
                     ConversionError::IncorrectLength(e),
                 )
             })?,
-            twitter_post_link: raw_twitter_post_link.and_then(|link| {
-                String::from_utf8(link.to_vec())
+            tweet_id: raw_tweet_id.and_then(|tweet| {
+                String::from_utf8(tweet.to_vec())
                     .map(Some)
                     .map_err(|e| {
                         DatabaseError::TypeConversion(
-                            "twitter_post_link".to_string(),
+                            "tweet_id".to_string(),
                             ConversionError::FromUtf8Error(e),
                         )
                     })
@@ -306,30 +305,30 @@ impl Database {
         Ok(())
     }
 
-    pub async fn set_twitter_post_link(
+    pub async fn set_tweet(
         &self,
-        tweet_post_link: String,
+        tweet_id: String,
         account_address: AccountAddress,
         pending_approval: bool,
-        current_twitter_post_link_verification_version: u16,
+        current_tweet_verification_version: u16,
     ) -> DatabaseResult<()> {
-        let set_twitter_post_link = self
+        let set_tweet = self
             .client
             .prepare_cached(
                 "UPDATE accounts \
-                SET twitter_post_link_valid = $1, twitter_post_link_verification_version = $2, twitter_post_link = $3, twitter_post_link_submit_time = $4, pending_approval = $5 \
+                SET tweet_valid = $1, tweet_verification_version = $2, tweet_id = $3, tweet_submit_time = $4, pending_approval = $5 \
                 WHERE account_address = $6",
             )
             .await?;
         let params: [&(dyn ToSql + Sync); 6] = [
             &true,
-            &(current_twitter_post_link_verification_version as i64),
-            &tweet_post_link.as_bytes(),
+            &(current_tweet_verification_version as i64),
+            &tweet_id.as_bytes(),
             &Utc::now(),
             &pending_approval,
             &account_address.0.as_ref(),
         ];
-        self.client.execute(&set_twitter_post_link, &params).await?;
+        self.client.execute(&set_tweet, &params).await?;
 
         Ok(())
     }
@@ -368,7 +367,7 @@ impl Database {
         let get_account_data = self
             .client
             .prepare_cached(
-                "SELECT id, block_time, transaction_hash, claimed, pending_approval, twitter_post_link, twitter_post_link_valid, twitter_post_link_verification_version, twitter_post_link_submit_time, uniqueness_hash, zk_proof_valid, zk_proof_verification_version, zk_proof_verification_submit_time
+                "SELECT id, block_time, transaction_hash, claimed, pending_approval, tweet_id, tweet_valid, tweet_verification_version, tweet_submit_time, uniqueness_hash, zk_proof_valid, zk_proof_verification_version, zk_proof_verification_submit_time
                 FROM accounts
                 WHERE account_address = $1",
             ).await?;
@@ -388,7 +387,7 @@ impl Database {
         let get_pending_approvals = self
             .client
             .prepare_cached(
-                "SELECT id, block_time, transaction_hash, claimed, pending_approval, twitter_post_link, twitter_post_link_valid, twitter_post_link_verification_version, twitter_post_link_submit_time, uniqueness_hash, zk_proof_valid, zk_proof_verification_version, zk_proof_verification_submit_time \
+                "SELECT id, block_time, transaction_hash, claimed, pending_approval, tweet_id, tweet_valid, tweet_verification_version, tweet_submit_time, uniqueness_hash, zk_proof_valid, zk_proof_verification_version, zk_proof_verification_submit_time \
                 FROM accounts \
                 WHERE pending_approval = true \
                 LIMIT $1 \

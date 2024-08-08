@@ -239,14 +239,14 @@ The `/api/postZKProof` endpoint expects a JSON body with the fields shown in the
 }
 ```
 
-The `/api/postTwitterPostLink` endpoint expects a JSON body with the fields shown in the example below:
+The `/api/postTweet` endpoint expects a JSON body with the fields shown in the example below:
 
 ``` json
 {
     "signingData": {
         "signer": "3cGEB7tTdQBFxJ9sn5JyGPNay2MSmRSKm4133UVqmKoFg4MXJ1",
         "message": {
-            "twitterPostLink": "ABCDabcd123456789"
+            "tweet": "ABCDabcd123456789"
         },
         "signature": "4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab00694e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069",
         "block": {
@@ -285,7 +285,7 @@ curl -POST "http://localhost:8080/api/getPendingApprovals" -H "Content-Type: app
 ```
 
 ```
-curl -POST "http://localhost:8080/api/postTwitterPostLink" -H "Content-Type: application/json" --data '{"signingData":{"signer":"3cGEB7tTdQBFxJ9sn5JyGPNay2MSmRSKm4133UVqmKoFg4MXJ1","message":{"twitterPostLink":"ABCDabcd123456789"},
+curl -POST "http://localhost:8080/api/postTweet" -H "Content-Type: application/json" --data '{"signingData":{"signer":"3cGEB7tTdQBFxJ9sn5JyGPNay2MSmRSKm4133UVqmKoFg4MXJ1","message":{"tweet":"ABCDabcd123456789"},
 "signature":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab00694e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","block":{"hash":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","height":3}}}' -v
 ```
 
@@ -333,10 +333,10 @@ The server uses the 4 ZK statements:
 
 ## Versioning
 
-The ZK proof verification logic and the twitter post link verification logic can be versioning.
-Update the `CURRENT_ZK_PROOF_VERIFICATION_VERSION` and/or `CURRENT_TWITTER_POST_LINK_VERIFICATION_VERSION`
+The ZK proof verification logic and the tweet verification logic can be versioning.
+Update the `CURRENT_ZK_PROOF_VERIFICATION_VERSION` and/or `CURRENT_TWEET_VERIFICATION_VERSION`
 in the `server.rs` file to introduce a new version when re-starting the server. Correspondingly, update the
-`VALID_ZK_PROOF_VERIFICATION_VERSIONS` and/or `VALID_TWITTER_POST_LINK_VERIFICATION_VERSIONS` list in the
+`VALID_ZK_PROOF_VERIFICATION_VERSIONS` and/or `VALID_TWEET_VERIFICATION_VERSIONS` list in the
 `server.rs` file to specify which versions should be still considered valid.
 
 ## Expiry of signatures and proofs.

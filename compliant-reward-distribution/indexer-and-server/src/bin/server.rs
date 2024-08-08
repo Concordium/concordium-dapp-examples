@@ -35,9 +35,9 @@ use indexer::{
     db::{ConversionError, StoredAccountData},
     types::{
         AccountDataReturn, CanClaimParam, CanClaimReturn, ClaimExpiryDurationDays,
-        GetAccountDataParam, GetPendingApprovalsParam, HasSigningData, Health,
-        PostTwitterPostLinkParam, PostZKProofParam, SetClaimedParam, SigningData, UserData,
-        VecAccountDataReturn, ZKProofExtractedData, ZKProofStatementsReturn,
+        GetAccountDataParam, GetPendingApprovalsParam, HasSigningData, Health, PostTweetParam,
+        PostZKProofParam, SetClaimedParam, SigningData, UserData, VecAccountDataReturn,
+        ZKProofExtractedData, ZKProofStatementsReturn,
     },
 };
 use sha2::Digest;
@@ -57,13 +57,13 @@ const SIGNATURE_AND_PROOF_EXPIRY_DURATION_BLOCKS: u64 = 200;
 /// Current version of the verification logic used when submitting a ZK proof.
 /// Update this version if you want to introduce a new ZK proof-verification logic.
 const CURRENT_ZK_PROOF_VERIFICATION_VERSION: u16 = 1;
-/// Current version of the verification logic used when submitting a twitter post link.
-/// Update this version if you want to introduce a new twitter post link verification logic.
-const CURRENT_TWITTER_POST_LINK_VERIFICATION_VERSION: u16 = 1;
+/// Current version of the verification logic used when submitting a tweet.
+/// Update this version if you want to introduce a new tweet verification logic.
+const CURRENT_TWEET_VERIFICATION_VERSION: u16 = 1;
 /// All versions that should be considered valid for the ZK proof verification when querrying data from the database.
 const VALID_ZK_PROOF_VERIFICATION_VERSIONS: [u16; 1] = [1];
-/// All versions that should be considered valid for the twitter post link verification when querrying data from the database.
-const VALID_TWITTER_POST_LINK_VERIFICATION_VERSIONS: [u16; 1] = [1];
+/// All versions that should be considered valid for the tweet verification when querrying data from the database.
+const VALID_TWEET_VERIFICATION_VERSIONS: [u16; 1] = [1];
 
 /// 1. Proof: Reveal attribute proof ("nationalIdNo" attribute).
 /// 2. Proof: Reveal attribute proof ("nationality" attribute).
@@ -359,7 +359,7 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("Starting server...");
 
     let router = Router::new()
-        .route("/api/postTwitterPostLink", post(post_twitter_post_link))
+        .route("/api/postTweet", post(post_tweet))
         .route("/api/postZKProof", post(post_zk_proof))
         .route("/api/setClaimed", post(set_claimed))
         .route("/api/getAccountData", post(get_account_data))
@@ -410,7 +410,7 @@ pub fn update_pending_approval(
     new_pending_approval
 }
 
-/// When querrying data from the database, correct the `zk_proof_valid`, `twitter_post_link_valid`
+/// When querrying data from the database, correct the `zk_proof_valid`, `tweet_valid`
 /// and `pending_approval` values, if they have become invalid due to the verification process has changed.
 /// This can happen if the verification logic during the submission by the user has been different than now.
 /// Also sets the `pending_approval` flag to false if the account has already been claimed.
@@ -425,14 +425,11 @@ pub fn check_for_changed_verification_logic(
         sad.pending_approval = false;
     }
 
-    // Check if the twitter post link verification version is still valid.
-    if sad
-        .twitter_post_link_verification_version
-        .map_or(true, |version| {
-            !VALID_TWITTER_POST_LINK_VERIFICATION_VERSIONS.contains(&(version as u16))
-        })
-    {
-        sad.twitter_post_link_valid = Some(false);
+    // Check if the tweet verification version is still valid.
+    if sad.tweet_verification_version.map_or(true, |version| {
+        !VALID_TWEET_VERIFICATION_VERSIONS.contains(&(version as u16))
+    }) {
+        sad.tweet_valid = Some(false);
         sad.pending_approval = false;
     }
 
@@ -732,9 +729,9 @@ where
 
 // All the endpoints:
 
-async fn post_twitter_post_link(
+async fn post_tweet(
     State(mut state): State<Server>,
-    request: Result<Json<PostTwitterPostLinkParam>, JsonRejection>,
+    request: Result<Json<PostTweetParam>, JsonRejection>,
 ) -> Result<(), ServerError> {
     let Json(param) = request?;
 
@@ -758,11 +755,11 @@ async fn post_twitter_post_link(
 
     // Update the database.
     let db = state.db_pool.get().await?;
-    db.set_twitter_post_link(
-        param.signing_data.message.twitter_post_link,
+    db.set_tweet(
+        param.signing_data.message.tweet,
         signer,
         new_pending_approval,
-        CURRENT_TWITTER_POST_LINK_VERIFICATION_VERSION,
+        CURRENT_TWEET_VERIFICATION_VERSION,
     )
     .await?;
 
@@ -794,14 +791,13 @@ async fn post_zk_proof(
     // - the account exists in the database.
     let StoredAccountData {
         pending_approval,
-        twitter_post_link_valid,
+        tweet_valid,
         claimed,
         ..
     } = check_account_eligible(&state, prover).await?;
 
     // Calculate the `new_pending_approval` flag`.
-    let new_pending_approval =
-        update_pending_approval(pending_approval, twitter_post_link_valid, claimed);
+    let new_pending_approval = update_pending_approval(pending_approval, tweet_valid, claimed);
 
     // Update the database.
     let db = state.db_pool.get().await?;
@@ -929,13 +925,13 @@ async fn can_claim(
             .transpose()?
             .map(|user_data| {
                 let claimed = user_data.claimed;
-                let twitter_post_link_valid = user_data.twitter_post_link_valid.unwrap_or(false);
+                let tweet_valid = user_data.tweet_valid.unwrap_or(false);
                 let zk_proof_valid = user_data.zk_proof_valid.unwrap_or(false);
 
                 CanClaimReturn {
                     data: UserData {
                         claimed,
-                        twitter_post_link_valid,
+                        tweet_valid,
                         zk_proof_valid,
                     },
                 }

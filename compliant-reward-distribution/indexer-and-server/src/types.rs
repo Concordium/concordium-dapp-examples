@@ -89,18 +89,18 @@ pub struct ZKProofExtractedData {
     pub prover: AccountAddress,
 }
 
-/// Message struct for the `postTwitterPostLink` endpoint.
+/// Message struct for the `postTweet` endpoint.
 #[repr(transparent)]
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct TwitterPostLinkMessage {
-    pub twitter_post_link: String,
+pub struct TweetMessage {
+    pub tweet: String,
 }
 
-/// Implement the `HasSigningData` trait for `PostTwitterPostLinkParam`.
-impl HasSigningData for PostTwitterPostLinkParam {
-    type Message = TwitterPostLinkMessage;
-    fn signing_data(&self) -> &SigningData<TwitterPostLinkMessage> {
+/// Implement the `HasSigningData` trait for `PostTweetParam`.
+impl HasSigningData for PostTweetParam {
+    type Message = TweetMessage;
+    fn signing_data(&self) -> &SigningData<TweetMessage> {
         &self.signing_data
     }
 }
@@ -109,8 +109,8 @@ impl HasSigningData for PostTwitterPostLinkParam {
 #[repr(transparent)]
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct PostTwitterPostLinkParam {
-    pub signing_data: SigningData<TwitterPostLinkMessage>,
+pub struct PostTweetParam {
+    pub signing_data: SigningData<TweetMessage>,
 }
 
 /// Message struct for the `setClaimed` endpoint.
@@ -144,8 +144,8 @@ pub struct SetClaimedParam {
 pub struct UserData {
     /// True, if the user has not claimed the reward yet.
     pub claimed: bool,
-    /// True, if the user has submitted a valid twitter post link and the verification version is still valid.
-    pub twitter_post_link_valid: bool,
+    /// True, if the user has submitted a valid tweet and the verification version is still valid.
+    pub tweet_valid: bool,
     /// True, if the user has submitted a valid ZK proof and the verification version is still valid.
     pub zk_proof_valid: bool,
 }
