@@ -30,7 +30,7 @@ To build the tools make sure you have the repository submodules initialized
 git submodule update --init --recursive
 ```
 
-The tool can be built by running
+The tools can be built by running
 
 ```console
 cargo build --release
@@ -73,7 +73,7 @@ cargo run --bin indexer -- --help
 ## Run the `server`
 
 ```console
-cargo run --bin server -- --zk_statements "$(<./zk_statements_config.json)" --admin_accounts "47b6Qe2XtZANHetanWKP1PbApLKtS3AyiCtcXaqLMbypKjCaRw" --admin_accounts "4KjE4rptF1o3QX6XuSaQzm6w9KLYYQTbKm2Zd4NooarH6YwfxS"
+cargo run --bin server -- --admin_accounts "47b6Qe2XtZANHetanWKP1PbApLKtS3AyiCtcXaqLMbypKjCaRw" --admin_accounts "4KjE4rptF1o3QX6XuSaQzm6w9KLYYQTbKm2Zd4NooarH6YwfxS"
 ```
 
 ## Configure the `server`
@@ -88,15 +88,15 @@ There are a few options to configure the server:
 
 - `--node (env: CCD_SERVER_NODE)` specifies the gRPC interface of a Concordium node, the default value `https://grpc.testnet.concordium.com:20000` is used.
 
-- `--admin_accounts (env: CCD_SERVER_CLAIM_EXPIRY_DURATION_DAYS)` are allowed to read all data from the database and set the `claimed` flag in the database. Admin accounts have elevated permission and the flag can be re-used to set several admin accounts.
+- `--admin_accounts (env: CCD_SERVER_ADMIN_ACCOUNTS)` are allowed to read all data from the database and set the `claimed` flag in the database. Admin accounts have elevated permission and the flag can be re-used to set several admin accounts.
 
-- `--claim_expiry_duration_days (env: CCD_SERVER_ADMIN_ACCOUNTS)` is the duration after creating a new account during which the account is eligible to claim the reward, the default value `60` is used.
+- `--claim_expiry_duration_days (env: CCD_SERVER_CLAIM_EXPIRY_DURATION_DAYS)` is the duration after creating a new account during which the account is eligible to claim the reward, the default value `60` is used.
 
 ## API endpoints of the `server`
 
-The `/getZKProofStatements` and `/health` endpoints expect no JSON body.
+The `/api/getZKProofStatements` and `/health` endpoints expect no JSON body.
 
-The `/canClaim` endpoint expects a JSON body with the fields shown in the example below:
+The `/api/canClaim` endpoint expects a JSON body with the fields shown in the example below:
 
 ``` json
 {
@@ -104,7 +104,7 @@ The `/canClaim` endpoint expects a JSON body with the fields shown in the exampl
 }
 ```
 
-The `/getPendingApprovals` endpoint expects a JSON body with the fields shown in the example below:
+The `/api/getPendingApprovals` endpoint expects a JSON body with the fields shown in the example below:
 
 ``` json
 {
@@ -123,7 +123,7 @@ The `/getPendingApprovals` endpoint expects a JSON body with the fields shown in
 }
 ```
 
-The `/getAccountData` endpoint expects a JSON body with the fields shown in the example below:
+The `/api/getAccountData` endpoint expects a JSON body with the fields shown in the example below:
 
 ``` json
 {
@@ -141,7 +141,7 @@ The `/getAccountData` endpoint expects a JSON body with the fields shown in the 
 }
 ```
 
-The `/setClaimed` endpoint expects a JSON body with the fields shown in the example below:
+The `/api/setClaimed` endpoint expects a JSON body with the fields shown in the example below:
 
 ``` json
 {
@@ -162,7 +162,7 @@ The `/setClaimed` endpoint expects a JSON body with the fields shown in the exam
 }
 ```
 
-The `/postZKProof` endpoint expects a JSON body depending on the ZK statements configured with the `--zk_statements` option. An example JSON body with the fields are shown in the example below if the server was configured to use the ZK statements from the file `./zk_statements_config.json`:
+The `/api/postZKProof` endpoint expects a JSON body with the fields shown in the example below:
 
 ``` json
 {
@@ -239,7 +239,7 @@ The `/postZKProof` endpoint expects a JSON body depending on the ZK statements c
 }
 ```
 
-The `/postTwitterPostLink` endpoint expects a JSON body with the fields shown in the example below:
+The `/api/postTwitterPostLink` endpoint expects a JSON body with the fields shown in the example below:
 
 ``` json
 {
@@ -297,13 +297,13 @@ curl -POST "http://localhost:8080/api/postZKProof" -H "Content-Type: application
 
 The server uses the 4 ZK statements:
 
-1. Proof: Reveal "nationalIdNo" proof using the Sigma protocol.
+1. Proof: Reveal attribute proof ("nationalIdNo" attribute) using the Sigma protocol.
 
-2. Proof: Reveal "nationality" proof using the Sigma protocol.
+2. Proof: Reveal attribute proof ("nationality" attribute) using the Sigma protocol.
 
-3. Proof: Range proof ("dob=dateOfBirth" is older than 18 years) using the Bulletproof protocol.
+3. Proof: Range proof ("dob=dateOfBirth" attribute) using the Bulletproof protocol. User is older than 18 years.
 
-4. Proof: Not set membership proof ("countryOfResidence" is not the USA or North Korea) using the Bulletproof protocol. Countries are represented by 2 letters (ISO 3166-1 alpha-2).
+4. Proof: Not set membership proof ("countryOfResidence" attribute) using the Bulletproof protocol. User is not from the USA or North Korea. Countries are represented by 2 letters (ISO 3166-1 alpha-2).
 
 ```
 [
@@ -348,4 +348,6 @@ is passed to the backend (while not part of the proof or part of the message sig
 expiry and the backend checks that the `block_height` corresponds to the `block_hash` included in the proof/signature.
 
 This verification relies on the front end (via the wallet) and back end being connected to reliable nodes that are caught up to the
-top of the chain. The front end should look up some recent `block_hash` (not the most recent) to give the backend a small window of being delayed. The backend server should only be run in conjunction with a reliable node connection otherwise, the verification of expired signatures/proofs is not correct.
+top of the chain. The front end should look up some recent `block_hash` (not the most recent) to give the backend a small window of
+being delayed. The backend server should only be run in conjunction with a reliable node connection otherwise, the verification of
+expired signatures/proofs is not correct.
