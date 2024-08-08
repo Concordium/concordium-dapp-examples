@@ -36,10 +36,13 @@ pub enum DatabaseError {
     PoolError(#[from] PoolError),
     /// Failed because identity was re-used.
     #[error(
-        "You already submitted a ZK proof with your identity for the account {0}. \
-        You can claim rewards only once with your identity. Use the account {0} for claiming the reward instead of account {1}."
+        "You already submitted a ZK proof with your identity for the account {expected}. \
+        You can claim rewards only once with your identity. Use the account {expected} for claiming the reward instead of account {actual}."
     )]
-    IdentityReUsed(AccountAddress, AccountAddress),
+    IdentityReUsed {
+        expected: AccountAddress,
+        actual: AccountAddress,
+    },
 }
 
 /// Alias for returning results with [`DatabaseError`]s as the `Err` variant.
@@ -278,10 +281,10 @@ impl Database {
             let old_account_address = AccountAddress(array);
 
             if old_account_address != account_address {
-                return Err(DatabaseError::IdentityReUsed(
-                    old_account_address,
-                    account_address,
-                ));
+                return Err(DatabaseError::IdentityReUsed {
+                    expected: old_account_address,
+                    actual: account_address,
+                });
             }
         }
 
