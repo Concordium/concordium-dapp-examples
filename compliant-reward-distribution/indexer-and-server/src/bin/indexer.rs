@@ -38,7 +38,7 @@ struct Args {
     db_connection: tokio_postgres::config::Config,
     /// The maximum log level. Possible values are: `trace`, `debug`, `info`,
     /// `warn`, and `error`.
-    #[clap(
+    #[arg(
         long = "log-level",
         short = 'l',
         default_value = "info",

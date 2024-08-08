@@ -42,7 +42,7 @@ This will produce two binaries (`indexer` and `server`) in the `target/release` 
 
 It is a tool for indexing newly created accounts on Concordium into a postgres database. The database is configured with the tables from the file `../resources/schema.sql`. A table `settings` exists to store global configurations.
 
-The global configurations are set when the indexer is started for the first time. Re-starting the indexer will check if its current settings are compatible will the stored indexer settings to prevent corrupting the database. In addition, the settings can be queried by the front end to check compatibility.
+The global configurations are set when the indexer is started for the first time. Restarting the indexer will check if its current settings are compatible with the stored indexer settings to prevent corrupting the database. In addition, the settings can be queried by the frontend to check compatibility.
 
 When the indexer is started for the first time, it will look up the current block height and start indexing from that block. When the indexer is re-started with the same database settings, it resumes indexing from the `latest_processed_block_height+1` as stored in the database.
 
@@ -272,8 +272,7 @@ curl -POST "http://localhost:8080/api/canClaim" -H "Content-Type: application/js
 ```
 
 ```
-curl -POST "http://localhost:8080/api/setClaimed" -H "Content-Type: application/json" --data '{"signingData":{"signer":"47b6Qe2XtZANHetanWKP1PbApLKtS3AyiCtcXaqLMbypKjCaRw","message":{"accountAddresses":["47b6Qe2XtZANHetanWKP1PbApLKtS3AyiCtcXaqLMbypKjCaRw","3cGEB7tTdQBFxJ9sn5JyGPNay2MSmRSKm4133UVqmKoFg4MXJ1"]},
-"signature":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab00694e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","block":{"hash":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","height":3}}}' -v
+curl -POST "http://localhost:8080/api/setClaimed" -H "Content-Type: application/json" --data '{"signingData":{"signer":"47b6Qe2XtZANHetanWKP1PbApLKtS3AyiCtcXaqLMbypKjCaRw","message":{"accountAddresses":["47b6Qe2XtZANHetanWKP1PbApLKtS3AyiCtcXaqLMbypKjCaRw","3cGEB7tTdQBFxJ9sn5JyGPNay2MSmRSKm4133UVqmKoFg4MXJ1"]},"signature":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab00694e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","block":{"hash":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","height":3}}}' -v
 ```
 
 ```
@@ -285,8 +284,7 @@ curl -POST "http://localhost:8080/api/getPendingApprovals" -H "Content-Type: app
 ```
 
 ```
-curl -POST "http://localhost:8080/api/postTweet" -H "Content-Type: application/json" --data '{"signingData":{"signer":"3cGEB7tTdQBFxJ9sn5JyGPNay2MSmRSKm4133UVqmKoFg4MXJ1","message":{"tweet":"ABCDabcd123456789"},
-"signature":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab00694e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","block":{"hash":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","height":3}}}' -v
+curl -POST "http://localhost:8080/api/postTweet" -H "Content-Type: application/json" --data '{"signingData":{"signer":"3cGEB7tTdQBFxJ9sn5JyGPNay2MSmRSKm4133UVqmKoFg4MXJ1","message":{"tweet":"ABCDabcd123456789"},"signature":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab00694e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","block":{"hash":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","height":3}}}' -v
 ```
 
 ```
@@ -333,7 +331,7 @@ The server uses the 4 ZK statements:
 
 ## Versioning
 
-The ZK proof verification logic and the tweet verification logic can be versioning.
+The ZK proof verification logic and the tweet verification logic can be versioned.
 Update the `CURRENT_ZK_PROOF_VERIFICATION_VERSION` and/or `CURRENT_TWEET_VERIFICATION_VERSION`
 in the `server.rs` file to introduce a new version when re-starting the server. Correspondingly, update the
 `VALID_ZK_PROOF_VERIFICATION_VERSIONS` and/or `VALID_TWEET_VERIFICATION_VERSIONS` list in the

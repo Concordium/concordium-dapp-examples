@@ -29,10 +29,9 @@ use concordium_rust_sdk::{
         PresentationVerificationError, Web3IdAttribute,
     },
 };
-use deadpool_postgres::PoolError;
 use http::StatusCode;
 use indexer::{
-    db::{ConversionError, StoredAccountData},
+    db::StoredAccountData,
     types::{
         AccountDataReturn, CanClaimParam, CanClaimReturn, ClaimExpiryDurationDays,
         GetAccountDataParam, GetPendingApprovalsParam, HasSigningData, Health, PostTweetParam,
@@ -45,7 +44,7 @@ use sha2::Digest;
 /// The maximum number of rows allowed in a request to the database.
 const MAX_REQUEST_LIMIT: u32 = 40;
 
-/// The testnet genesis block hash .
+/// The testnet genesis block hash.
 const TESTNET_GENESIS_BLOCK_HASH: [u8; 32] = [
     66, 33, 51, 45, 52, 225, 105, 65, 104, 194, 160, 192, 179, 253, 15, 39, 56, 9, 97, 44, 177, 61,
     0, 13, 92, 46, 0, 232, 95, 80, 247, 150,
@@ -97,14 +96,8 @@ const ZK_STATEMENTS: &str = r#"[
 /// Errors that this server can produce.
 #[derive(Debug, thiserror::Error)]
 pub enum ServerError {
-    #[error("Database error from postgres: {0}")]
-    DatabasePostgres(tokio_postgres::Error),
-    #[error("Database error in type `{0}` conversion: {1}")]
-    DatabaseTypeConversion(String, ConversionError),
-    #[error("Could not configure database because of {0}: {1}")]
-    DatabaseConfiguration(String, anyhow::Error),
-    #[error("Could not get pool: {0}")]
-    PoolError(#[from] PoolError),
+    #[error("Database error: {0}")]
+    DatabaseError(#[from] DatabaseError),
     #[error("Failed to extract json object: {0}")]
     JsonRejection(#[from] JsonRejection),
     #[error("The requested rows returned by the database were above the limit {0}")]
@@ -119,14 +112,17 @@ pub enum ServerError {
     InactiveCredentials,
     #[error("Invalid proof: {0}")]
     InvalidProof(#[from] PresentationVerificationError),
-    #[error("Wrong length of {0}. Expect: {1}. Got: {2}")]
-    WrongLength(String, usize, usize),
+    #[error("Wrong length of {actual_string}. Expect: {expected_length}. Got: {}", .actual_string.len())]
+    WrongLength {
+        actual_string: String,
+        expected_length: usize,
+    },
     #[error("Wrong ZK statement proven")]
     WrongStatement,
     #[error("Expect account statement and not web3id statement")]
     AccountStatement,
-    #[error("ZK proof was created for the wrong network. Expect: {0}. Got: {1}.")]
-    WrongNetwork(Network, Network),
+    #[error("ZK proof was created for the wrong network. Expect: {expected}. Got: {actual}.")]
+    WrongNetwork { expected: Network, actual: Network },
     #[error("Expect reveal attribute statement at position {0}")]
     RevealAttribute(usize),
     #[error("Network error: {0}")]
@@ -140,13 +136,8 @@ pub enum ServerError {
     AccountNotExist(AbsoluteBlockHeight),
     #[error("Claim already expired. Your account creation has to be not older than {0}.")]
     ClaimExpired(ClaimExpiryDurationDays),
-    #[error("Converting message to bytes caused an error: {0}.")]
-    MessageConversion(bincode::ErrorKind),
-    #[error(
-        "You already submitted a ZK proof with your identity for the account {0}. \
-        You can claim rewards only once with your identity. Use the account {0} for claiming the reward instead of account {1}."
-    )]
-    IdentityReUsed(AccountAddress, AccountAddress),
+    #[error("Converting message to bytes caused an error: {0}")]
+    MessageConversion(#[from] bincode::Error),
     #[error("The block hash and block height in the signing data are not from the same block.")]
     BlockSigningDataInvalid,
     #[error("The block hash used as challenge and block height passed as parameter are not from the same block.")]
@@ -157,39 +148,13 @@ pub enum ServerError {
     ProofExpired(u64),
 }
 
-/// Mapping DatabaseError to ServerError
-impl From<DatabaseError> for ServerError {
-    fn from(e: DatabaseError) -> Self {
-        use DatabaseError::*;
-        match e {
-            Postgres(e) => ServerError::DatabasePostgres(e),
-            TypeConversion(type_name, e) => ServerError::DatabaseTypeConversion(type_name, e),
-            Configuration(type_error, e) => ServerError::DatabaseConfiguration(type_error, e),
-            PoolError(e) => ServerError::PoolError(e),
-            IdentityReUsed(old_address, new_address) => {
-                ServerError::IdentityReUsed(old_address, new_address)
-            }
-        }
-    }
-}
-
-/// Mapping Box<bincode::ErrorKind> to ServerError
-impl From<Box<bincode::ErrorKind>> for ServerError {
-    fn from(e: Box<bincode::ErrorKind>) -> Self {
-        ServerError::MessageConversion(*e)
-    }
-}
-
 impl IntoResponse for ServerError {
     fn into_response(self) -> Response {
         let r = match self {
             // Internal errors.
-            ServerError::DatabasePostgres(_)
-            | ServerError::DatabaseTypeConversion(..)
+            ServerError::DatabaseError(_)
             | ServerError::QueryError(..)
-            | ServerError::UnderFlow
-            | ServerError::DatabaseConfiguration(..)
-            | ServerError::PoolError(_) => {
+            | ServerError::UnderFlow => {
                 tracing::error!("Internal error: {self}");
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
@@ -198,7 +163,7 @@ impl IntoResponse for ServerError {
             }
             // Unauthorized errors.
             ServerError::SignerNotAdmin => {
-                tracing::error!("Internal error: {self}");
+                tracing::error!("Unauthorized: {self}");
                 (StatusCode::UNAUTHORIZED, Json("Unauthorized".to_string()))
             }
             // Bad request errors.
@@ -208,15 +173,14 @@ impl IntoResponse for ServerError {
             | ServerError::CredentialLookup(_)
             | ServerError::InactiveCredentials
             | ServerError::InvalidProof(_)
-            | ServerError::WrongLength(..)
+            | ServerError::WrongLength { .. }
             | ServerError::AccountStatement
             | ServerError::WrongStatement
-            | ServerError::WrongNetwork(..)
+            | ServerError::WrongNetwork { .. }
             | ServerError::RevealAttribute(_)
             | ServerError::ClaimExpired(_)
             | ServerError::MessageConversion(_)
             | ServerError::AccountNotExist(..)
-            | ServerError::IdentityReUsed(..)
             | ServerError::BlockSigningDataInvalid
             | ServerError::BlockProofDataInvalid
             | ServerError::SignatureExpired(_)
@@ -235,7 +199,7 @@ impl IntoResponse for ServerError {
 #[command(author, version, about)]
 struct Args {
     /// Address where the server will listen on.
-    #[clap(
+    #[arg(
         long = "listen-address",
         short = 'a',
         default_value = "0.0.0.0:8080",
@@ -253,7 +217,7 @@ struct Args {
     db_connection: tokio_postgres::config::Config,
     /// The maximum log level. Possible values are: `trace`, `debug`, `info`, `warn`, and \
     /// `error`.
-    #[clap(
+    #[arg(
         long = "log-level",
         short = 'l',
         default_value = "info",
@@ -270,14 +234,14 @@ struct Args {
     node_endpoint: concordium_rust_sdk::v2::Endpoint,
     /// The admin accounts that are allowed to read the database and set the `claimed`
     /// flag in the database after having manually transferred the funds to an account.
-    #[clap(
+    #[arg(
         long = "admin_accounts",
         short = 'c',
         env = "CCD_SERVER_ADMIN_ACCOUNTS"
     )]
     admin_accounts: Vec<AccountAddress>,
     /// The duration after creating a new account during which the account is eligible to claim the reward.
-    #[clap(
+    #[arg(
         long = "claim_expiry_duration_days",
         short = 'e',
         env = "CCD_SERVER_CLAIM_EXPIRY_DURATION_DAYS",
@@ -386,27 +350,6 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Assuming that the current task submitted is valid, this function calculates
-/// if the `pending_approval` flag has to be set to `true` based on if the `other_task`
-/// is valid as well and funds have not been claimed yet.
-pub fn update_pending_approval(
-    old_pending_approval: bool,
-    other_task_valid: Option<bool>,
-    claimed: bool,
-) -> bool {
-    let mut new_pending_approval = old_pending_approval;
-
-    // Check if we need to update `pending_approval` to true.
-    if let Some(other_task_valid) = other_task_valid {
-        if !claimed && other_task_valid {
-            // If the account already submitted the other task and can still claim,
-            // set the `pending_approval` to true.
-            new_pending_approval = true
-        }
-    }
-    new_pending_approval
-}
-
 /// When querrying data from the database, correct the `zk_proof_valid`, `tweet_valid`
 /// and `pending_approval` values, if they have become invalid due to the verification process has changed.
 /// This can happen if the verification logic during the submission by the user has been different than now.
@@ -415,17 +358,21 @@ pub fn check_for_changed_verification_logic(
     mut sad: StoredAccountData,
 ) -> Result<StoredAccountData, ServerError> {
     // Check if the ZK proof verification version is still valid.
-    if sad.zk_proof_verification_version.map_or(true, |version| {
-        !VALID_ZK_PROOF_VERIFICATION_VERSIONS.contains(&(version as u16))
-    }) {
+    let is_still_valid = sad
+        .zk_proof_verification_version
+        .map(|version| VALID_ZK_PROOF_VERIFICATION_VERSIONS.contains(&(version as u16)));
+    if !(is_still_valid.unwrap_or(false)) {
+        // If not valid, correct the flags.
         sad.zk_proof_valid = Some(false);
         sad.pending_approval = false;
     }
 
     // Check if the tweet verification version is still valid.
-    if sad.tweet_verification_version.map_or(true, |version| {
-        !VALID_TWEET_VERIFICATION_VERSIONS.contains(&(version as u16))
-    }) {
+    let is_still_valid = sad
+        .tweet_verification_version
+        .map(|version| VALID_TWEET_VERIFICATION_VERSIONS.contains(&(version as u16)));
+    if !(is_still_valid.unwrap_or(false)) {
+        // If not valid, correct the flags.
         sad.tweet_valid = Some(false);
         sad.pending_approval = false;
     }
@@ -439,37 +386,34 @@ pub fn check_for_changed_verification_logic(
 }
 
 /// Check that the account is eligible for claiming the reward by checking that:
-/// - the account creation has not expired.
 /// - the account exists in the database.
+/// - the account creation has not expired.
 /// Returns the account data stored in the database.
 pub async fn check_account_eligible(
     state: &Server,
     account: AccountAddress,
 ) -> Result<StoredAccountData, ServerError> {
     let db = state.db_pool.get().await?;
-    let database_result = db.get_account_data(account).await?;
 
-    match database_result {
-        Some(database_result) => {
-            // Check if the claim for the reward for this account has already expired.
-            // After creating a new account, the account is eligible to claim the reward for a certain duration.
-            let expiry_date_time = Utc::now()
-                .checked_sub_days(state.claim_expiry_duration_days.0)
-                .ok_or(ServerError::UnderFlow)?;
-            if database_result.block_time < expiry_date_time {
-                return Err(ServerError::ClaimExpired(
-                    state.claim_expiry_duration_days.clone(),
-                ));
-            }
-            Ok(database_result)
-        }
-        None => {
-            // Return an error if the account does not exist in the database.
-            // The account has to be created at a time when the indexer was running.
-            let start_block_height = db.get_settings().await?.start_block_height;
-            Err(ServerError::AccountNotExist(start_block_height))
-        }
+    let Some(database_result) = db.get_account_data(account).await? else {
+        // Return an error if the account does not exist in the database.
+        // The account has to be created at a time when the indexer was running.
+        let start_block_height = db.get_settings().await?.start_block_height;
+        return Err(ServerError::AccountNotExist(start_block_height));
+    };
+
+    // Check if the claim for the reward for this account has already expired.
+    // After creating a new account, the account is eligible to claim the reward for a certain duration.
+    let expiry_date_time = Utc::now()
+        .checked_sub_days(state.claim_expiry_duration_days.0)
+        .ok_or(ServerError::UnderFlow)?;
+    if database_result.block_time < expiry_date_time {
+        return Err(ServerError::ClaimExpired(
+            state.claim_expiry_duration_days.clone(),
+        ));
     }
+
+    Ok(database_result)
 }
 
 /// Check that the zk proof is valid by checking that:
@@ -510,15 +454,12 @@ async fn check_zk_proof(
         public_data.iter().map(|credential| &credential.inputs),
     )?;
 
-    let num_credential_statements = request.credential_statements.len();
-
     // We support regular accounts with exactly one credential at index 0.
-    if num_credential_statements != 1 {
-        return Err(ServerError::WrongLength(
-            "credential_statements".to_string(),
-            1,
-            num_credential_statements,
-        ));
+    if request.credential_statements.len() != 1 {
+        return Err(ServerError::WrongLength {
+            actual_string: "credential_statements".to_string(),
+            expected_length: 1,
+        });
     }
 
     // We support regular accounts with exactly one credential at index 0.
@@ -538,7 +479,10 @@ async fn check_zk_proof(
 
             // Check that the proof has been generated for the correct network.
             if network != state.network {
-                return Err(ServerError::WrongNetwork(state.network, network));
+                return Err(ServerError::WrongNetwork {
+                    expected: state.network,
+                    actual: network,
+                });
             }
         }
         Web3Id { .. } => return Err(ServerError::AccountStatement),
@@ -735,17 +679,16 @@ async fn post_tweet(
     let signer = check_signature(&mut state, &param).await?;
 
     // Check that:
-    // - the account creation has not expired.
     // - the account exists in the database.
+    // - the account creation has not expired.
     let StoredAccountData {
-        pending_approval,
         zk_proof_valid,
         claimed,
         ..
     } = check_account_eligible(&state, signer).await?;
 
     // Calculate the `new_pending_approval` flag`.
-    let new_pending_approval = update_pending_approval(pending_approval, zk_proof_valid, claimed);
+    let new_pending_approval = zk_proof_valid.unwrap_or_default() && !claimed;
 
     // Update the database.
     let db = state.db_pool.get().await?;
@@ -781,17 +724,16 @@ async fn post_zk_proof(
     } = check_zk_proof(&mut state, param).await?;
 
     // Check that:
-    // - the account creation has not expired.
     // - the account exists in the database.
+    // - the account creation has not expired.
     let StoredAccountData {
-        pending_approval,
         tweet_valid,
         claimed,
         ..
     } = check_account_eligible(&state, prover).await?;
 
     // Calculate the `new_pending_approval` flag`.
-    let new_pending_approval = update_pending_approval(pending_approval, tweet_valid, claimed);
+    let new_pending_approval = tweet_valid.unwrap_or_default() && !claimed;
 
     // Update the database.
     let db = state.db_pool.get().await?;
