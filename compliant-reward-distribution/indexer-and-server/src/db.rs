@@ -238,9 +238,6 @@ impl Database {
         Ok(())
     }
 
-    // Inserts a row in the settings table holding the application
-    // configuration if row does not exist already. The table is constrained to
-    // only hold a single row.
     pub async fn set_zk_proof(
         &self,
         national_id: String,
@@ -250,7 +247,7 @@ impl Database {
         current_zk_proof_verification_version: u16,
     ) -> DatabaseResult<()> {
         // Create an `uniqueness_hash` to identify the identity associated with the account
-        // by hashing the concatenating string of `national_id` and `nationality`.
+        // by hashing the concatenated string of `national_id` and `nationality`.
         // Every identity should only be allowed to receive rewards once
         // (with one of their accounts). The `nationality` is a two-letter country code
         // (ISO 3166-1 alpha-2).
@@ -309,9 +306,6 @@ impl Database {
         Ok(())
     }
 
-    // Inserts a row in the settings table holding the application
-    // configuration if row does not exist already. The table is constrained to
-    // only hold a single row.
     pub async fn set_twitter_post_link(
         &self,
         tweet_post_link: String,
@@ -340,9 +334,6 @@ impl Database {
         Ok(())
     }
 
-    // Inserts a row in the settings table holding the application
-    // configuration if row does not exist already. The table is constrained to
-    // only hold a single row.
     pub async fn set_claimed(&self, account_addresses: Vec<AccountAddress>) -> DatabaseResult<()> {
         for account_address in account_addresses {
             let set_claimed = self
@@ -359,7 +350,6 @@ impl Database {
         Ok(())
     }
 
-    /// Get the settings recorded in the database.
     pub async fn get_settings(&self) -> DatabaseResult<StoredConfiguration> {
         let get_settings = self
             .client
@@ -371,7 +361,6 @@ impl Database {
         self.client.query_one(&get_settings, &[]).await?.try_into()
     }
 
-    /// Get the settings recorded in the database.
     pub async fn get_account_data(
         &self,
         account_address: AccountAddress,
@@ -391,7 +380,6 @@ impl Database {
         opt_row.map(StoredAccountData::try_from).transpose()
     }
 
-    /// Get the settings recorded in the database.
     pub async fn get_pending_approvals(
         &self,
         limit: u32,

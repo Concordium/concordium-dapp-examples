@@ -2,4 +2,5 @@
 
 ## 0.1.0
 
--   Initial `indexer`.
+-   Add initial `server`.
+-   Add initial `indexer`.

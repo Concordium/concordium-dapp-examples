@@ -122,7 +122,7 @@ pub struct SetClaimedMessage {
     pub account_addresses: Vec<AccountAddress>,
 }
 
-/// Implement the `HasSigningData` trait for `SetClaimedMessage`.
+/// Implement the `HasSigningData` trait for `SetClaimedParam`.
 impl HasSigningData for SetClaimedParam {
     type Message = SetClaimedMessage;
     fn signing_data(&self) -> &SigningData<SetClaimedMessage> {
@@ -157,7 +157,7 @@ pub struct CanClaimReturn {
     pub data: UserData,
 }
 
-/// Implement the `HasSigningData` trait for `GetAccountDataMessage`.
+/// Implement the `HasSigningData` trait for `GetAccountDataParam`.
 impl HasSigningData for GetAccountDataParam {
     type Message = GetAccountDataMessage;
     fn signing_data(&self) -> &SigningData<GetAccountDataMessage> {
@@ -199,7 +199,7 @@ pub struct GetPendingApprovalsMessage {
     pub offset: u32,
 }
 
-/// Implement the `HasSigningData` trait for `GetPendingApprovalsMessage`.
+/// Implement the `HasSigningData` trait for `GetPendingApprovalsParam`.
 impl HasSigningData for GetPendingApprovalsParam {
     type Message = GetPendingApprovalsMessage;
     fn signing_data(&self) -> &SigningData<GetPendingApprovalsMessage> {

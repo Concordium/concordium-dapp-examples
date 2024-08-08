@@ -45,7 +45,7 @@ use sha2::Digest;
 /// The maximum number of rows allowed in a request to the database.
 const MAX_REQUEST_LIMIT: u32 = 40;
 
-/// The genesis block hash.
+/// The testnet genesis block hash .
 const TESTNET_GENESIS_BLOCK_HASH: [u8; 32] = [
     66, 33, 51, 45, 52, 225, 105, 65, 104, 194, 160, 192, 179, 253, 15, 39, 56, 9, 97, 44, 177, 61,
     0, 13, 92, 46, 0, 232, 95, 80, 247, 150,
@@ -62,9 +62,14 @@ const CURRENT_ZK_PROOF_VERIFICATION_VERSION: u16 = 1;
 const CURRENT_TWITTER_POST_LINK_VERIFICATION_VERSION: u16 = 1;
 /// All versions that should be considered valid for the ZK proof verification when querrying data from the database.
 const VALID_ZK_PROOF_VERIFICATION_VERSIONS: [u16; 1] = [1];
-/// All versions that should be considered valid for the twiter post link verification when querrying data from the database.
+/// All versions that should be considered valid for the twitter post link verification when querrying data from the database.
 const VALID_TWITTER_POST_LINK_VERIFICATION_VERSIONS: [u16; 1] = [1];
 
+/// 1. Proof: Reveal attribute proof ("nationalIdNo" attribute).
+/// 2. Proof: Reveal attribute proof ("nationality" attribute).
+/// 3. Proof: Range proof ("dob=dateOfBirth" attribute). User is older than 18 years.
+/// 4. Proof: Not set membership proof ("countryOfResidence" attribute). User is not from the USA or North Korea.
+/// Countries are represented by 2 letters (ISO 3166-1 alpha-2).
 const ZK_STATEMENTS: &str = r#"[
     {
         "type": "RevealAttribute",
