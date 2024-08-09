@@ -19,7 +19,6 @@ import { ErrorAlert } from '@/components/ErrorAlert';
 import { SingleInputForm } from '@/components/SingleInpuForm';
 import { Step } from '@/components/Step';
 import { FAQ, TWEET_TEMPLATE, usageLimit } from '@/constants';
-import getLatestTransactions from '@/lib/getLatestTransactions';
 import { extractITweetdFromUrl, formatTimestamp, formatTxHash } from '@/lib/utils';
 
 import concordiumLogo from '../../public/concordium-logo-back.svg';
@@ -32,7 +31,23 @@ const IBMPlexMono = IBM_Plex_Mono({
     variable: '--font-ibm-plex-mono',
 });
 
-const validateAndClaim = async (XPostId: string | undefined, receiver: string) => {
+const getLatestTransactions = async () => {
+    try {
+        const response = await fetch('/api/latestTransactions', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        const data = await response.json();
+
+        return { ok: response.ok, data };
+    } catch (error) {
+        throw new Error('Network error. Please check your connection.');
+    }
+};
+
+const validateAndClaim = async (hoursLimit: number, XPostId: string | undefined, receiver: string) => {
     try {
         const response = await fetch('/api/validateAndClaim', {
             method: 'POST',
@@ -40,9 +55,9 @@ const validateAndClaim = async (XPostId: string | undefined, receiver: string) =
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
+                hoursLimit,
                 XPostId,
-                receiver,
-                sender: process.env.NEXT_PUBLIC_SENDER_ADDRESS,
+                receiver
             }),
         });
 
@@ -54,14 +69,14 @@ const validateAndClaim = async (XPostId: string | undefined, receiver: string) =
     }
 };
 
-const checkUsageLimit = async (receiver: string) => {
+const checkUsageLimit = async (hoursLimit: number, receiver: string) => {
     try {
-        const response = await fetch('/api/checkUsageLimit', {
+        const response = await fetch('/api/usageLimit', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ receiver }),
+            body: JSON.stringify({ hoursLimit, receiver }),
         });
 
         const data = await response.json();
@@ -118,9 +133,9 @@ export default function Home() {
         setTurnstileOpen(false);
         setIsVerifyLoading(true);
         try {
-            const response = await validateAndClaim(XPostId, address);
+            const response = await validateAndClaim(usageLimit, XPostId, address);
 
-            if (response.ok) {
+            if (response.ok && !response.data.error) {
                 setIsValidVerification(true);
                 await new Promise((resolve) => setTimeout(resolve, 15000));
                 setTransactionHash(response.data.transactionHash);
@@ -143,7 +158,7 @@ export default function Home() {
         }
         const isWithinUsageLimit = async () => {
             try {
-                const { ok, data } = await checkUsageLimit(address);
+                const { ok, data } = await checkUsageLimit(usageLimit, address);
                 if (ok && !data.isAllowed) {
                     setAddressValidationError(
                         `You already get tokens in the last ${usageLimit} ${usageLimit > 1 ? 'hours' : 'hour'}. Please try again later.`,
@@ -175,8 +190,11 @@ export default function Home() {
     useEffect(() => {
         const fetchTransactions = async () => {
             try {
-                const transactions = await getLatestTransactions();
-                setLatestTransactions(transactions);
+                const { ok, data } = await getLatestTransactions();
+                if (ok && !data.transactions) {
+                    return;
+                }
+                setLatestTransactions(data.transactions);
             } catch (error) {
                 console.error('Error fetching transactions:', error);
             }
