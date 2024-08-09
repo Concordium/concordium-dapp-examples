@@ -329,14 +329,6 @@ The server uses the 4 ZK statements:
 ]
 ```
 
-## Versioning
-
-The ZK proof verification logic and the tweet verification logic can be versioned.
-Update the `CURRENT_ZK_PROOF_VERIFICATION_VERSION` and/or `CURRENT_TWEET_VERIFICATION_VERSION`
-in the `server.rs` file to introduce a new version when re-starting the server. Correspondingly, update the
-`VALID_ZK_PROOF_VERIFICATION_VERSIONS` and/or `VALID_TWEET_VERIFICATION_VERSIONS` list in the
-`server.rs` file to specify which versions should be still considered valid.
-
 ## Expiry of signatures and proofs.
 
 Proofs and signatures have to be generated including a recent `block_hash` (either as the challenge or as part of the message signed).

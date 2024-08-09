@@ -68,10 +68,6 @@ const CURRENT_ZK_PROOF_VERIFICATION_VERSION: u16 = 1;
 /// Current version of the verification logic used when submitting a tweet.
 /// Update this version if you want to introduce a new tweet verification logic.
 const CURRENT_TWEET_VERIFICATION_VERSION: u16 = 1;
-/// All versions that should be considered valid for the ZK proof verification when querrying data from the database.
-const VALID_ZK_PROOF_VERIFICATION_VERSIONS: [u16; 1] = [1];
-/// All versions that should be considered valid for the tweet verification when querrying data from the database.
-const VALID_TWEET_VERIFICATION_VERSIONS: [u16; 1] = [1];
 
 /// 1. Proof: Reveal attribute proof ("nationalIdNo" attribute).
 /// 2. Proof: Reveal attribute proof ("nationality" attribute).
@@ -363,41 +359,6 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-/// When querrying data from the database, correct the `zk_proof_valid`, `tweet_valid`
-/// and `pending_approval` values, if they have become invalid due to the verification process has changed.
-/// This can happen if the verification logic during the submission by the user has been different than now.
-/// Also sets the `pending_approval` flag to false if the account has already been claimed.
-pub fn check_for_changed_verification_logic(
-    mut sad: StoredAccountData,
-) -> Result<StoredAccountData, ServerError> {
-    // Check if the ZK proof verification version is still valid.
-    let is_still_valid = sad
-        .zk_proof_verification_version
-        .map(|version| VALID_ZK_PROOF_VERIFICATION_VERSIONS.contains(&(version as u16)));
-    if !(is_still_valid.unwrap_or(false)) {
-        // If not valid, correct the flags.
-        sad.zk_proof_valid = Some(false);
-        sad.pending_approval = false;
-    }
-
-    // Check if the tweet verification version is still valid.
-    let is_still_valid = sad
-        .tweet_verification_version
-        .map(|version| VALID_TWEET_VERIFICATION_VERSIONS.contains(&(version as u16)));
-    if !(is_still_valid.unwrap_or(false)) {
-        // If not valid, correct the flags.
-        sad.tweet_valid = Some(false);
-        sad.pending_approval = false;
-    }
-
-    // Check if already `claimed`.
-    if sad.claimed {
-        sad.pending_approval = false;
-    }
-
-    Ok(sad)
-}
-
 /// Check that the account is eligible for claiming the reward by checking that:
 /// - the account exists in the database.
 /// - the account creation has not expired.
@@ -421,9 +382,7 @@ pub async fn check_account_eligible(
         .checked_sub_days(state.claim_expiry_duration_days.0)
         .ok_or(ServerError::UnderFlow)?;
     if database_result.block_time < expiry_date_time {
-        return Err(ServerError::ClaimExpired(
-            state.claim_expiry_duration_days.clone(),
-        ));
+        return Err(ServerError::ClaimExpired(state.claim_expiry_duration_days));
     }
 
     Ok(database_result)
@@ -481,9 +440,7 @@ async fn check_zk_proof(
     // Check the ZK proof has been generated as expected.
     match account_statement {
         Account {
-            network,
-            cred_id: _,
-            statement,
+            network, statement, ..
         } => {
             // Check that the expected ZK statement has been proven.
             if statement != state.zk_statements.statements {
@@ -508,14 +465,8 @@ async fn check_zk_proof(
         .await
         .map_err(ServerError::QueryError)?;
 
-    let challenge_hash = sha2::Sha256::digest(
-        [
-            block_info.block_hash.as_ref(),
-            &CONTEXT_STRING,
-            &[state.network as u8],
-        ]
-        .concat(),
-    );
+    let challenge_hash =
+        sha2::Sha256::digest([block_info.block_hash.as_ref(), &CONTEXT_STRING].concat());
     let challenge = Challenge::try_from(challenge_hash.as_slice())
         .map_err(|e| ServerError::TypeConversion("challenge".to_string(), e))?;
 
@@ -536,6 +487,8 @@ async fn check_zk_proof(
     }
 
     // We support regular accounts with exactly one credential at index 0.
+    // Accessing the index at position `0` is safe because the `request.credential_statements.len()`
+    // has length 1 which was checked above which means that one `verifiable_credential` exists.
     let credential_proof = &presentation.verifiable_credential[0];
 
     // Get the revealed `national_id`, `nationality` and `account_address` from the credential proof.
@@ -547,6 +500,8 @@ async fn check_zk_proof(
             ..
         } => {
             // Get revealed `national_id` from proof.
+            // Accessing the index at position `0` is safe because we checked that `state.zk_statements.statements`
+            // were proven, which means we know that the first proof is a reveal `national_id` attribute proof.
             let index_0 = 0;
             let national_id = match &proofs[index_0].1 {
                 concordium_rust_sdk::id::id_proof_types::AtomicProof::RevealAttribute {
@@ -557,6 +512,8 @@ async fn check_zk_proof(
             };
 
             // Get revealed `nationality` from proof.
+            // Accessing the index at position `1` is safe because we checked that `state.zk_statements.statements`
+            // were proven, which means we know that the second proof is a reveal `nationality` attribute proof.
             let index_1 = 1;
             let nationality = match &proofs[index_1].1 {
                 concordium_rust_sdk::id::id_proof_types::AtomicProof::RevealAttribute {
@@ -624,8 +581,7 @@ where
     // sign a transaction. The account nonce is of type u64 (8 bytes).
     // In addition, we prepend the recent `block_hash` (this ensures that the signature is generated on the spot
     // and the signature expires after SIGNATURE_AND_PROOF_EXPIRY_DURATION_BLOCKS),
-    // a context string (this ensures that an account can be re-used for signing in different contexts),
-    // and the network (this ensures that the signature is only valid for the network it was generated for).
+    // and a context string (this ensures that an account can be re-used for signing in different contexts).
     let mut msg_prepend = [0; 40];
     //Prepend the `account` address of the signer.
     msg_prepend[0..32].copy_from_slice(signer.as_ref());
@@ -638,7 +594,6 @@ where
             &msg_prepend[0..40],
             &block.hash,
             &CONTEXT_STRING,
-            &[state.network as u8],
             &message_bytes,
         ]
         .concat(),
@@ -818,12 +773,7 @@ async fn get_account_data(
     }
 
     let db = state.db_pool.get().await?;
-    let mut database_result = db.get_account_data(lookup_account_address).await?;
-
-    // Check that the verification versions are still valid.
-    if let Some(data) = database_result {
-        database_result = check_for_changed_verification_logic(data).map(Some)?;
-    }
+    let database_result = db.get_account_data(lookup_account_address).await?;
 
     Ok(Json(AccountDataReturn {
         data: database_result,
@@ -858,13 +808,7 @@ async fn get_pending_approvals(
     }
 
     let db = state.db_pool.get().await?;
-    let mut database_result = db.get_pending_approvals(limit, offset).await?;
-
-    // Check that the verification versions are still valid.
-    database_result = database_result
-        .into_iter()
-        .map(check_for_changed_verification_logic)
-        .collect::<Result<Vec<_>, _>>()?;
+    let database_result = db.get_pending_approvals(limit, offset).await?;
 
     Ok(Json(VecAccountDataReturn {
         data: database_result,
@@ -880,25 +824,19 @@ async fn can_claim(
     let db = state.db_pool.get().await?;
     let database_result = db.get_account_data(param.account_address).await?;
 
-    Ok(Json(
-        database_result
-            // Check that the verification versions are still valid.
-            .map(check_for_changed_verification_logic)
-            .transpose()?
-            .map(|user_data| {
-                let claimed = user_data.claimed;
-                let tweet_valid = user_data.tweet_valid.unwrap_or(false);
-                let zk_proof_valid = user_data.zk_proof_valid.unwrap_or(false);
+    Ok(Json(database_result.map(|user_data| {
+        let claimed = user_data.claimed;
+        let tweet_valid = user_data.tweet_valid.unwrap_or(false);
+        let zk_proof_valid = user_data.zk_proof_valid.unwrap_or(false);
 
-                CanClaimReturn {
-                    data: UserData {
-                        claimed,
-                        tweet_valid,
-                        zk_proof_valid,
-                    },
-                }
-            }),
-    ))
+        CanClaimReturn {
+            data: UserData {
+                claimed,
+                tweet_valid,
+                zk_proof_valid,
+            },
+        }
+    })))
 }
 
 /// Handle the `health` endpoint, returning the version of the backend.

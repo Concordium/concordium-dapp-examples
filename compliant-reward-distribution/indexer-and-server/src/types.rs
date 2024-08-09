@@ -248,7 +248,7 @@ pub struct ZKProofStatementsReturn {
 }
 
 /// Wrapper around Days. This is used to parse the claim expiry duration from the command line.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct ClaimExpiryDurationDays(pub Days);
 
 impl FromStr for ClaimExpiryDurationDays {
