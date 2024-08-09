@@ -37,10 +37,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         });
     }
     try {
-        const isAllowed = await checkUsageLimit(hoursLimit, receiver)
+        const isAllowed = await checkUsageLimit(hoursLimit, receiver);
         if (!isAllowed) {
             return res.status(401).json({
-                error: `You already get tokens in the last ${hoursLimit} ${hoursLimit > 1  ? 'hours' : 'hour'}. Please try again later.`,
+                error: `You already get tokens in the last ${hoursLimit} ${hoursLimit > 1 ? 'hours' : 'hour'}. Please try again later.`,
             });
         }
         const rettiwt = new Rettiwt();
@@ -60,7 +60,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
                 error: 'X Post verification failed. Please make sure you do not modify the template text and that your address is present.',
             });
         }
-        
+
         const client = createGRPCNodeClient();
         const signer = getSenderAccountSigner();
 
