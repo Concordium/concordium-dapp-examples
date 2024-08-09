@@ -3,14 +3,15 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { Rettiwt } from 'rettiwt-api';
 
 import { extraKeywordToVerify } from '@/constants';
+import checkUsageLimit from '@/lib/checkUsageLimit';
 import createAccountTransaction from '@/lib/createAccountTrasantion';
 import createGRPCNodeClient from '@/lib/createGPRCClient';
-import { getSenderAccountSigner } from '@/lib/getSenderAccountSigner';
+import getSenderAccountSigner from '@/lib/getSenderAccountSigner';
 
 interface IBody {
-    XPostId: string;
+    hoursLimit: number;
     receiver: string;
-    sender: string;
+    XPostId: string;
 }
 
 type Data = {
@@ -23,15 +24,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         return res.status(405).json({ error: 'Method Not Allowed. Please use POST.' });
     }
 
-    const { XPostId, receiver, sender } = req.body as IBody;
-
-    if (!XPostId || !receiver || !sender) {
-        return res.status(400).json({
-            error: 'Missing parameters. Please provide XPostId, receiver and sender.',
-        });
+    const senderAddress = process.env.SENDER_ADDRESS;
+    if (!senderAddress) {
+        throw new Error('SENDER_ADDRESS env vars undefined.');
     }
 
+    const { hoursLimit, XPostId, receiver } = req.body as IBody;
+
+    if (!hoursLimit || !XPostId || !receiver) {
+        return res.status(400).json({
+            error: 'Missing parameters. Please provide hoursLimit XPostId, and receiver params.',
+        });
+    }
     try {
+        const isAllowed = await checkUsageLimit(hoursLimit, receiver)
+        if (!isAllowed) {
+            return res.status(401).json({
+                error: `You already get tokens in the last ${hoursLimit} ${hoursLimit > 1  ? 'hours' : 'hour'}. Please try again later.`,
+            });
+        }
         const rettiwt = new Rettiwt();
         const response = await rettiwt.tweet.details(XPostId);
 
@@ -49,11 +60,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
                 error: 'X Post verification failed. Please make sure you do not modify the template text and that your address is present.',
             });
         }
-
+        
         const client = createGRPCNodeClient();
         const signer = getSenderAccountSigner();
 
-        const accountTransaction = await createAccountTransaction(client, sender, receiver);
+        const accountTransaction = await createAccountTransaction(client, senderAddress, receiver);
         const signature: AccountTransactionSignature = await signTransaction(accountTransaction, signer);
 
         const transactionHash = await client.sendAccountTransaction(accountTransaction, signature);
