@@ -2,14 +2,13 @@ import { AccountTransactionSignature, signTransaction } from '@concordium/web-sd
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { Rettiwt } from 'rettiwt-api';
 
-import { extraKeywordToVerify } from '@/constants';
+import { extraKeywordToVerify, usageLimit } from '@/constants';
 import checkUsageLimit from '@/lib/checkUsageLimit';
 import createAccountTransaction from '@/lib/createAccountTrasantion';
 import createGRPCNodeClient from '@/lib/createGPRCClient';
 import getSenderAccountSigner from '@/lib/getSenderAccountSigner';
 
 interface IBody {
-    hoursLimit: number;
     receiver: string;
     XPostId: string;
 }
@@ -29,18 +28,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         throw new Error('SENDER_ADDRESS env vars undefined.');
     }
 
-    const { hoursLimit, XPostId, receiver } = req.body as IBody;
+    const { XPostId, receiver } = req.body as IBody;
 
-    if (!hoursLimit || !XPostId || !receiver) {
+    if (!XPostId || !receiver) {
         return res.status(400).json({
-            error: 'Missing parameters. Please provide hoursLimit XPostId, and receiver params.',
+            error: 'Missing parameters. Please provide XPostId, and receiver params.',
         });
     }
     try {
-        const isAllowed = await checkUsageLimit(hoursLimit, receiver);
+        const isAllowed = await checkUsageLimit(receiver);
         if (!isAllowed) {
             return res.status(401).json({
-                error: `You already get tokens in the last ${hoursLimit} ${hoursLimit > 1 ? 'hours' : 'hour'}. Please try again later.`,
+                error: `You already get tokens in the last ${usageLimit} ${usageLimit > 1 ? 'hours' : 'hour'}. Please try again later.`,
             });
         }
         const rettiwt = new Rettiwt();

@@ -47,7 +47,7 @@ const getLatestTransactions = async () => {
     }
 };
 
-const validateAndClaim = async (hoursLimit: number, XPostId: string | undefined, receiver: string) => {
+const validateAndClaim = async (XPostId: string | undefined, receiver: string) => {
     try {
         const response = await fetch('/api/validateAndClaim', {
             method: 'POST',
@@ -55,7 +55,6 @@ const validateAndClaim = async (hoursLimit: number, XPostId: string | undefined,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                hoursLimit,
                 XPostId,
                 receiver,
             }),
@@ -69,14 +68,14 @@ const validateAndClaim = async (hoursLimit: number, XPostId: string | undefined,
     }
 };
 
-const checkUsageLimit = async (hoursLimit: number, receiver: string) => {
+const checkUsageLimit = async (receiver: string) => {
     try {
         const response = await fetch('/api/usageLimit', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ hoursLimit, receiver }),
+            body: JSON.stringify({ receiver }),
         });
 
         const data = await response.json();
@@ -133,7 +132,7 @@ export default function Home() {
         setTurnstileOpen(false);
         setIsVerifyLoading(true);
         try {
-            const response = await validateAndClaim(usageLimit, XPostId, address);
+            const response = await validateAndClaim(XPostId, address);
 
             if (response.ok && !response.data.error) {
                 setIsValidVerification(true);
@@ -158,7 +157,7 @@ export default function Home() {
         }
         const isWithinUsageLimit = async () => {
             try {
-                const { ok, data } = await checkUsageLimit(usageLimit, address);
+                const { ok, data } = await checkUsageLimit(address);
                 if (ok && !data.isAllowed) {
                     setAddressValidationError(
                         `You already get tokens in the last ${usageLimit} ${usageLimit > 1 ? 'hours' : 'hour'}. Please try again later.`,
