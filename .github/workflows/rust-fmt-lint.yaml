@@ -33,7 +33,7 @@ jobs:
           - trackAndTrace/test-scripts/Cargo.toml
           - trackAndTrace/indexer/Cargo.toml
           - trackAndTrace/sponsored-transaction-service/Cargo.toml
-          - compliant-reward-distribution/indexer/Cargo.toml
+          - compliant-reward-distribution/indexer-and-server/Cargo.toml
 
     steps:
       - name: Checkout
@@ -66,7 +66,7 @@ jobs:
           - trackAndTrace/test-scripts/Cargo.toml
           - trackAndTrace/indexer/Cargo.toml
           - trackAndTrace/sponsored-transaction-service/Cargo.toml
-          - compliant-reward-distribution/indexer/Cargo.toml
+          - compliant-reward-distribution/indexer-and-server/Cargo.toml
 
     steps:
       - name: Checkout
@@ -93,7 +93,7 @@ jobs:
           - trackAndTrace/indexer/Cargo.toml
           - trackAndTrace/sponsored-transaction-service/Cargo.toml
           - trackAndTrace/test-scripts/Cargo.toml
-          - compliant-reward-distribution/indexer/Cargo.toml
+          - compliant-reward-distribution/indexer-and-server/Cargo.toml
 
     steps:
       - name: Checkout
