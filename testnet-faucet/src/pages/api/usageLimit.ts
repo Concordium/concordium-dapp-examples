@@ -24,7 +24,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         });
     }
     try {
-        const isAllowed = await checkUsageLimit(hoursLimit, receiver)
+        const isAllowed = await checkUsageLimit(hoursLimit, receiver);
         return res.status(200).json({ isAllowed });
     } catch (e) {
         return res.status(500).json({ error: `An unexpected error has occurred: ${e}` });

@@ -37,7 +37,7 @@ const getLatestTransactions = async () => {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-            }
+            },
         });
         const data = await response.json();
 
@@ -57,7 +57,7 @@ const validateAndClaim = async (hoursLimit: number, XPostId: string | undefined,
             body: JSON.stringify({
                 hoursLimit,
                 XPostId,
-                receiver
+                receiver,
             }),
         });
 

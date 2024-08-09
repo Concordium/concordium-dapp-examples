@@ -6,4 +6,4 @@ export default function getSenderAccountSigner(): AccountSigner {
         throw new Error('SENDER_PRIVATE_KEY env var undefined');
     }
     return buildBasicAccountSigner(SENDER_PRIVATE_KEY);
-};
+}
