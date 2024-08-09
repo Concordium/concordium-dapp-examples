@@ -13,6 +13,7 @@ use axum::{
 use chrono::Utc;
 use clap::Parser;
 use concordium_rust_sdk::{
+    base::hashes::IncorrectLength,
     common::types::{CredentialIndex, KeyIndex},
     contract_client::CredentialStatus,
     id::{
@@ -24,7 +25,7 @@ use concordium_rust_sdk::{
     v2::{AccountIdentifier, BlockIdentifier, Client, QueryError},
     web3id::{
         did::Network,
-        get_public_data, CredentialLookupError, CredentialProof,
+        get_public_data, Challenge, CredentialLookupError, CredentialProof,
         CredentialStatement::{Account, Web3Id},
         PresentationVerificationError, Web3IdAttribute,
     },
@@ -48,6 +49,14 @@ const MAX_REQUEST_LIMIT: u32 = 40;
 const TESTNET_GENESIS_BLOCK_HASH: [u8; 32] = [
     66, 33, 51, 45, 52, 225, 105, 65, 104, 194, 160, 192, 179, 253, 15, 39, 56, 9, 97, 44, 177, 61,
     0, 13, 92, 46, 0, 232, 95, 80, 247, 150,
+];
+
+/// The string "CONCORDIUM_COMPLIANT_REWARD_DISTRIBUTION_DAPP" in bytes is used as context for
+/// signing messages and generating ZK proofs. The same account can be used in different Concordium services
+/// without the risk of re-playing signatures/zk-proofs across the different services due to this context string.
+const CONTEXT_STRING: [u8; 45] = [
+    67, 79, 78, 67, 79, 82, 68, 73, 85, 77, 95, 67, 79, 77, 80, 76, 73, 65, 78, 84, 95, 82, 69, 87,
+    65, 82, 68, 95, 68, 73, 83, 84, 82, 73, 66, 85, 84, 73, 79, 78, 95, 68, 65, 80, 80,
 ];
 
 /// The number of blocks after that a generated signature or ZK proof is considered expired.
@@ -146,6 +155,8 @@ pub enum ServerError {
     SignatureExpired(u64),
     #[error("Proof already expired. Your block hash included as challenge in the proof has to be not older than the block hash from block {0}.")]
     ProofExpired(u64),
+    #[error("Failed to convert type `{0}`: {1}")]
+    TypeConversion(String, IncorrectLength),
 }
 
 impl IntoResponse for ServerError {
@@ -163,8 +174,9 @@ impl IntoResponse for ServerError {
             }
             // Unauthorized errors.
             ServerError::SignerNotAdmin => {
-                tracing::error!("Unauthorized: {self}");
-                (StatusCode::UNAUTHORIZED, Json("Unauthorized".to_string()))
+                let error_message = format!("Unauthorized: {self}");
+                tracing::info!(error_message);
+                (StatusCode::UNAUTHORIZED, error_message.into())
             }
             // Bad request errors.
             ServerError::JsonRejection(_)
@@ -184,9 +196,10 @@ impl IntoResponse for ServerError {
             | ServerError::BlockSigningDataInvalid
             | ServerError::BlockProofDataInvalid
             | ServerError::SignatureExpired(_)
-            | ServerError::ProofExpired(_) => {
+            | ServerError::ProofExpired(_)
+            | ServerError::TypeConversion(..) => {
                 let error_message = format!("Bad request: {self}");
-                tracing::warn!(error_message);
+                tracing::info!(error_message);
                 (StatusCode::BAD_REQUEST, error_message.into())
             }
         };
@@ -495,7 +508,18 @@ async fn check_zk_proof(
         .await
         .map_err(ServerError::QueryError)?;
 
-    if *block_info.block_hash != *presentation.presentation_context {
+    let challenge_hash = sha2::Sha256::digest(
+        [
+            block_info.block_hash.as_ref(),
+            &CONTEXT_STRING,
+            &[state.network as u8],
+        ]
+        .concat(),
+    );
+    let challenge = Challenge::try_from(challenge_hash.as_slice())
+        .map_err(|e| ServerError::TypeConversion("challenge".to_string(), e))?;
+
+    if presentation.presentation_context != challenge {
         return Err(ServerError::BlockProofDataInvalid);
     }
 
@@ -600,23 +624,25 @@ where
     // sign a transaction. The account nonce is of type u64 (8 bytes).
     // In addition, we prepend the recent `block_hash` (this ensures that the signature is generated on the spot
     // and the signature expires after SIGNATURE_AND_PROOF_EXPIRY_DURATION_BLOCKS),
-    // and a context string (this ensures that an account can be re-used for signing in different contexts).
-    let mut msg_prepend = [0; 117];
+    // a context string (this ensures that an account can be re-used for signing in different contexts),
+    // and the network (this ensures that the signature is only valid for the network it was generated for).
+    let mut msg_prepend = [0; 40];
     //Prepend the `account` address of the signer.
     msg_prepend[0..32].copy_from_slice(signer.as_ref());
     // Prepend 8 zero bytes.
     msg_prepend[32..40].copy_from_slice(&[0u8; 8]);
-    // Prepend the `block_hash` of the block when the message was signed.
-    msg_prepend[40..72].copy_from_slice(&block.hash);
-    // Prepend the message with a context string.
-    // The string "CONCORDIUM_COMPLIANT_REWARD_DISTRIBUTION_DAPP" in bytes is:
-    // [67, 79, 78, 67, 79, 82, 68, 73, 85, 77, 95, 67, 79, 77, 80, 76, 73, 65, 78, 84, 95, 82, 69, 87, 65, 82, 68, 95, 68, 73, 83, 84, 82, 73, 66, 85, 84, 73, 79, 78, 95, 68, 65, 80, 80]
-    msg_prepend[72..117]
-        .copy_from_slice("CONCORDIUM_COMPLIANT_REWARD_DISTRIBUTION_DAPP".as_bytes());
-
     // Add the prepend to the message and calculate the message hash.
     let message_bytes = bincode::serialize(&message)?;
-    let message_hash = sha2::Sha256::digest([&msg_prepend[0..117], &message_bytes].concat());
+    let message_hash = sha2::Sha256::digest(
+        [
+            &msg_prepend[0..40],
+            &block.hash,
+            &CONTEXT_STRING,
+            &[state.network as u8],
+            &message_bytes,
+        ]
+        .concat(),
+    );
 
     // Get the public key of the signer.
 
