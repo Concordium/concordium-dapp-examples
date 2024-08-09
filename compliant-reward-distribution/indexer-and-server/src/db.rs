@@ -258,9 +258,7 @@ impl Database {
         // E.g. `format!("{}{}", "AA", "BB")` and `format!("{}{}", "A", "ABB")`
         // would produce the same hash even if the strings are different.
         let concatenated = format!("{}{}", national_id, nationality);
-        let mut hasher = sha2::Sha256::new();
-        hasher.update(concatenated);
-        let uniqueness_hash = hasher.finalize();
+        let uniqueness_hash = sha2::Sha256::digest(concatenated.as_bytes());
 
         // Check if `uniqueness_hash` has been used for another account before.
         let get_account_data = self
