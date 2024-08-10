@@ -15,7 +15,8 @@ use concordium_rust_sdk::{
 use std::{num::ParseIntError, str::FromStr};
 
 /// Server struct to store values that are not persisted in the database.
-/// When re-starting the server this struct will be re-initialized based on the options/flags provided.
+/// When re-starting the server this struct will be re-initialized based on the
+/// options/flags provided.
 #[derive(Clone, Debug)]
 pub struct Server {
     /// The database pool used to connect to the database.
@@ -26,16 +27,19 @@ pub struct Server {
     pub network: Network,
     /// The global cryptographic parameters that are stored publicly on chain.
     pub cryptographic_params: GlobalContext<ArCurve>,
-    /// The admin accounts that have elevated permission to read/write from/to the database.
+    /// The admin accounts that have elevated permission to read/write from/to
+    /// the database.
     pub admin_accounts: Vec<AccountAddress>,
     /// The ZK statements that are used to verify submitted ZK proofs.
     pub zk_statements: Statement<ArCurve, Web3IdAttribute>,
-    /// The duration in days after a new account is created that the account is eligible to claim the reward.
+    /// The duration in days after a new account is created that the account is
+    /// eligible to claim the reward.
     pub claim_expiry_duration_days: ClaimExpiryDurationDays,
 }
 
-/// Generalised parameter struct used by all endpoints that require a signature check. The generic type <T>
-/// can be customized for each endpoint to specify additional data to be part of the message signed.
+/// Generalised parameter struct used by all endpoints that require a signature
+/// check. The generic type <T> can be customized for each endpoint to specify
+/// additional data to be part of the message signed.
 #[derive(serde::Deserialize, serde::Serialize)]
 pub struct SigningData<T> {
     /// Signer account.
@@ -44,23 +48,27 @@ pub struct SigningData<T> {
     pub message: T,
     /// Signature.
     pub signature: Signature,
-    /// Contains the block height and the corresponding block hash around the time when the message was signed.
-    /// The block hash is signed as part of the message. The block height is not signed but checked that it
-    /// corresponds to the block hash. The block height is used to ensure that the signature expires after some time.
+    /// Contains the block height and the corresponding block hash around the
+    /// time when the message was signed. The block hash is signed as part
+    /// of the message. The block height is not signed but checked that it
+    /// corresponds to the block hash. The block height is used to ensure that
+    /// the signature expires after some time.
     pub block: BlockMessage,
 }
 
-/// Trait definition of `HasSigningData`. This trait is implemented for all input parameter structs
-/// used by endpoints that require a signature check.
+/// Trait definition of `HasSigningData`. This trait is implemented for all
+/// input parameter structs used by endpoints that require a signature check.
 pub trait HasSigningData {
     type Message;
     fn signing_data(&self) -> &SigningData<Self::Message>;
 }
 
-/// Struct included in all parameters used by endpoints that require a signature check.
-/// It contains the block height and the corresponding block hash around the time when the message was signed.
-/// The block hash is signed as part of the message. The block height is not signed but checked that it
-/// corresponds to the block hash. The block height is used to ensure that the signature expires after some time.
+/// Struct included in all parameters used by endpoints that require a signature
+/// check. It contains the block height and the corresponding block hash around
+/// the time when the message was signed. The block hash is signed as part of
+/// the message. The block height is not signed but checked that it corresponds
+/// to the block hash. The block height is used to ensure that the signature
+/// expires after some time.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BlockMessage {
@@ -72,8 +80,9 @@ pub struct BlockMessage {
 #[derive(serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PostZKProofParam {
-    /// The block height is used to ensure that the proof expires after some time.
-    /// The corresponding block hash is used as `challenge` when generating the ZK proof.
+    /// The block height is used to ensure that the proof expires after some
+    /// time. The corresponding block hash is used as `challenge` when
+    /// generating the ZK proof.
     pub block_height: AbsoluteBlockHeight,
     /// The ZK proof.
     pub presentation: Presentation<ArCurve, Web3IdAttribute>,
@@ -100,6 +109,7 @@ pub struct TweetMessage {
 /// Implement the `HasSigningData` trait for `PostTweetParam`.
 impl HasSigningData for PostTweetParam {
     type Message = TweetMessage;
+
     fn signing_data(&self) -> &SigningData<TweetMessage> {
         &self.signing_data
     }
@@ -125,6 +135,7 @@ pub struct SetClaimedMessage {
 /// Implement the `HasSigningData` trait for `SetClaimedParam`.
 impl HasSigningData for SetClaimedParam {
     type Message = SetClaimedMessage;
+
     fn signing_data(&self) -> &SigningData<SetClaimedMessage> {
         &self.signing_data
     }
@@ -144,9 +155,11 @@ pub struct SetClaimedParam {
 pub struct UserData {
     /// True, if the user has not claimed the reward yet.
     pub claimed: bool,
-    /// True, if the user has submitted a valid tweet and the verification version is still valid.
+    /// True, if the user has submitted a valid tweet and the verification
+    /// version is still valid.
     pub tweet_valid: bool,
-    /// True, if the user has submitted a valid ZK proof and the verification version is still valid.
+    /// True, if the user has submitted a valid ZK proof and the verification
+    /// version is still valid.
     pub zk_proof_valid: bool,
 }
 
@@ -160,6 +173,7 @@ pub struct CanClaimReturn {
 /// Implement the `HasSigningData` trait for `GetAccountDataParam`.
 impl HasSigningData for GetAccountDataParam {
     type Message = GetAccountDataMessage;
+
     fn signing_data(&self) -> &SigningData<GetAccountDataMessage> {
         &self.signing_data
     }
@@ -202,6 +216,7 @@ pub struct GetPendingApprovalsMessage {
 /// Implement the `HasSigningData` trait for `GetPendingApprovalsParam`.
 impl HasSigningData for GetPendingApprovalsParam {
     type Message = GetPendingApprovalsMessage;
+
     fn signing_data(&self) -> &SigningData<GetPendingApprovalsMessage> {
         &self.signing_data
     }
@@ -243,11 +258,13 @@ pub struct Health {
 #[repr(transparent)]
 #[derive(serde::Serialize)]
 pub struct ZKProofStatementsReturn {
-    /// ZK statements that should be used by the front end to construct the ZK proofs.
+    /// ZK statements that should be used by the front end to construct the ZK
+    /// proofs.
     pub data: Statement<ArCurve, Web3IdAttribute>,
 }
 
-/// Wrapper around Days. This is used to parse the claim expiry duration from the command line.
+/// Wrapper around Days. This is used to parse the claim expiry duration from
+/// the command line.
 #[derive(Debug, Clone, Copy)]
 pub struct ClaimExpiryDurationDays(pub Days);
 

@@ -198,12 +198,12 @@ async fn main() -> anyhow::Result<()> {
         .await
         .context("Could not get database connection from pool")?;
 
-    // If the indexer is started for the first time, lookup the last block finalized and initialize
-    // the database.
+    // If the indexer is started for the first time, lookup the last block finalized
+    // and initialize the database.
     let current_block = consensus_info.last_finalized_block_height;
 
-    // This function only sets the settings in the database if they haven't been set before.
-    // Meaning only if the indexer is run for the first time.
+    // This function only sets the settings in the database if they haven't been set
+    // before. Meaning only if the indexer is run for the first time.
     db.init_settings(&consensus_info.genesis_block, current_block)
         .await
         .context("Could not init settings for database")?;
@@ -217,8 +217,8 @@ async fn main() -> anyhow::Result<()> {
     // to mainnet while the database has indexed data from testnet or vice versa.
     anyhow::ensure!(
         settings.genesis_block_hash == consensus_info.genesis_block,
-        "Genesis hash from the connected node {} does not match the genesis hash {} found \
-                 in the database",
+        "Genesis hash from the connected node {} does not match the genesis hash {} found in the \
+         database",
         consensus_info.genesis_block,
         settings.genesis_block_hash
     );
