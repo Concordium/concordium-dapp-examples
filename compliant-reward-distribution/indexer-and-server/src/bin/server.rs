@@ -15,7 +15,6 @@ use clap::Parser;
 use concordium_rust_sdk::{
     base::hashes::IncorrectLength,
     common::types::{CredentialIndex, KeyIndex},
-    contract_client::CredentialStatus,
     id::{
         constants::ArCurve,
         id_proof_types::Statement,
@@ -51,15 +50,18 @@ const TESTNET_GENESIS_BLOCK_HASH: [u8; 32] = [
     0, 13, 92, 46, 0, 232, 95, 80, 247, 150,
 ];
 
-/// The string "CONCORDIUM_COMPLIANT_REWARD_DISTRIBUTION_DAPP" in bytes is used as context for
-/// signing messages and generating ZK proofs. The same account can be used in different Concordium services
-/// without the risk of re-playing signatures/zk-proofs across the different services due to this context string.
+/// The string "CONCORDIUM_COMPLIANT_REWARD_DISTRIBUTION_DAPP" in bytes is used
+/// as context for signing messages and generating ZK proofs. The same account
+/// can be used in different Concordium services without the risk of re-playing
+/// signatures/zk-proofs across the different services due to this context
+/// string.
 const CONTEXT_STRING: [u8; 45] = [
     67, 79, 78, 67, 79, 82, 68, 73, 85, 77, 95, 67, 79, 77, 80, 76, 73, 65, 78, 84, 95, 82, 69, 87,
     65, 82, 68, 95, 68, 73, 83, 84, 82, 73, 66, 85, 84, 73, 79, 78, 95, 68, 65, 80, 80,
 ];
 
-/// The number of blocks after that a generated signature or ZK proof is considered expired.
+/// The number of blocks after that a generated signature or ZK proof is
+/// considered expired.
 const SIGNATURE_AND_PROOF_EXPIRY_DURATION_BLOCKS: u64 = 200;
 
 /// Current version of the verification logic used when submitting a ZK proof.
@@ -135,8 +137,8 @@ pub enum ServerError {
     #[error("Underflow error")]
     UnderFlow,
     #[error(
-        "The account was not captured by the indexer and is not in the database. \
-        Only accounts earlier than block height {0} are captured."
+        "The account was not captured by the indexer and is not in the database. Only accounts \
+         earlier than block height {0} are captured."
     )]
     AccountNotExist(AbsoluteBlockHeight),
     #[error("Claim already expired. Your account creation has to be not older than {0}.")]
@@ -145,11 +147,20 @@ pub enum ServerError {
     MessageConversion(#[from] bincode::Error),
     #[error("The block hash and block height in the signing data are not from the same block.")]
     BlockSigningDataInvalid,
-    #[error("The block hash used as challenge and block height passed as parameter are not from the same block.")]
+    #[error(
+        "The block hash used as challenge and block height passed as parameter are not from the \
+         same block."
+    )]
     BlockProofDataInvalid,
-    #[error("Signature already expired. Your block hash signed has to be not older than the block hash from block {0}.")]
+    #[error(
+        "Signature already expired. Your block hash signed has to be not older than the block \
+         hash from block {0}."
+    )]
     SignatureExpired(u64),
-    #[error("Proof already expired. Your block hash included as challenge in the proof has to be not older than the block hash from block {0}.")]
+    #[error(
+        "Proof already expired. Your block hash included as challenge in the proof has to be not \
+         older than the block hash from block {0}."
+    )]
     ProofExpired(u64),
     #[error("Failed to convert type `{0}`: {1}")]
     TypeConversion(String, IncorrectLength),
@@ -377,7 +388,8 @@ pub async fn check_account_eligible(
     };
 
     // Check if the claim for the reward for this account has already expired.
-    // After creating a new account, the account is eligible to claim the reward for a certain duration.
+    // After creating a new account, the account is eligible to claim the reward for
+    // a certain duration.
     let expiry_date_time = Utc::now()
         .checked_sub_days(state.claim_expiry_duration_days.0)
         .ok_or(ServerError::UnderFlow)?;
@@ -389,13 +401,14 @@ pub async fn check_account_eligible(
 }
 
 /// Check that the zk proof is valid by checking that:
-/// - the credential statuses are active.
 /// - the cryptographic proofs are valid.
 /// - exactly one credential statement is present in the proof.
 /// - the expected zk statements have been proven.
 /// - the proof has been generated for the correct network.
 /// - the proof is not expired.
-/// The function returns the revealed `national_id`, `nationality` and `prover` associated with the proof.
+/// - the proof was intended for this service.
+/// The function returns the revealed `national_id`, `nationality` and `prover`
+/// associated with the proof.
 async fn check_zk_proof(
     state: &mut Server,
     param: PostZKProofParam,
@@ -410,15 +423,6 @@ async fn check_zk_proof(
         BlockIdentifier::LastFinal,
     )
     .await?;
-
-    // TODO check if this check is needed since we don't use `web3id` verifiable credentials.
-    // Check that all credentials are active at the time of the query.
-    if !public_data
-        .iter()
-        .all(|credential| matches!(credential.status, CredentialStatus::Active))
-    {
-        return Err(ServerError::InactiveCredentials);
-    }
 
     // Verify the cryptographic proofs.
     let request = presentation.verify(
@@ -458,13 +462,20 @@ async fn check_zk_proof(
         Web3Id { .. } => return Err(ServerError::AccountStatement),
     }
 
-    // Check if the proof is not expired by checking if a recent block hash was used as the challenge (presentation_context).
+    // Check if the proof is not expired by checking if a recent block hash was
+    // included in the challenge (also called presentation_context).
     let block_info = state
         .node_client
         .get_block_info(challenge_block_height)
         .await
         .map_err(ServerError::QueryError)?;
 
+    // The presentation context (also called challenge) includes the `block_hash`
+    // and a `CONTEXT_STRING`. The `block_hash` ensures that the proof is
+    // generated on the spot and the proof expires after
+    // SIGNATURE_AND_PROOF_EXPIRY_DURATION_BLOCKS. The `CONTEXT_STRING` ensures
+    // that the proof is generated for this specific service. These checks are
+    // done similarly in the `signature` verification flow in this service.
     let challenge_hash =
         sha2::Sha256::digest([block_info.block_hash.as_ref(), &CONTEXT_STRING].concat());
     let challenge = Challenge::try_from(challenge_hash.as_slice())
@@ -487,11 +498,13 @@ async fn check_zk_proof(
     }
 
     // We support regular accounts with exactly one credential at index 0.
-    // Accessing the index at position `0` is safe because the `request.credential_statements.len()`
-    // has length 1 which was checked above which means that one `verifiable_credential` exists.
+    // Accessing the index at position `0` is safe because the
+    // `request.credential_statements.len()` has length 1 which was checked
+    // above which means that one `verifiable_credential` exists.
     let credential_proof = &presentation.verifiable_credential[0];
 
-    // Get the revealed `national_id`, `nationality` and `account_address` from the credential proof.
+    // Get the revealed `national_id`, `nationality` and `account_address` from the
+    // credential proof.
     let (national_id, nationality, prover) = match credential_proof {
         CredentialProof::Account {
             proofs,
@@ -499,9 +512,10 @@ async fn check_zk_proof(
             cred_id,
             ..
         } => {
-            // Get revealed `national_id` from proof.
-            // Accessing the index at position `0` is safe because we checked that `state.zk_statements.statements`
-            // were proven, which means we know that the first proof is a reveal `national_id` attribute proof.
+            // Get the revealed `national_id` from the proof.
+            // Accessing the index at position `0` is safe because we checked that
+            // `state.zk_statements.statements` were proven, which means we know
+            // that the first proof is a reveal `national_id` attribute proof.
             let index_0 = 0;
             let national_id = match &proofs[index_0].1 {
                 concordium_rust_sdk::id::id_proof_types::AtomicProof::RevealAttribute {
@@ -511,9 +525,10 @@ async fn check_zk_proof(
                 _ => return Err(ServerError::RevealAttribute(index_0)),
             };
 
-            // Get revealed `nationality` from proof.
-            // Accessing the index at position `1` is safe because we checked that `state.zk_statements.statements`
-            // were proven, which means we know that the second proof is a reveal `nationality` attribute proof.
+            // Get the revealed `nationality` from the proof.
+            // Accessing the index at position `1` is safe because we checked that
+            // `state.zk_statements.statements` were proven, which means we know
+            // that the second proof is a reveal `nationality` attribute proof.
             let index_1 = 1;
             let nationality = match &proofs[index_1].1 {
                 concordium_rust_sdk::id::id_proof_types::AtomicProof::RevealAttribute {
@@ -550,6 +565,7 @@ async fn check_zk_proof(
 /// Check that the signer account has signed the message by checking that:
 /// - the signature is valid.
 /// - the signature is not expired.
+/// - the signature was intended for this service.
 /// The function returns the `signer`.
 async fn check_signature<T>(state: &mut Server, param: &T) -> Result<AccountAddress, ServerError>
 where
@@ -573,25 +589,23 @@ where
         .map_err(ServerError::QueryError)?;
 
     // The message signed in the Concordium browser wallet is prepended with the
-    // `account` address and 8 zero bytes. Accounts in the Concordium browser wallet
-    // can either sign a regular transaction (in that case the prepend is
-    // `account` address and the nonce of the account which is by design >= 1)
-    // or sign a message (in that case the prepend is `account` address and 8 zero
-    // bytes). Hence, the 8 zero bytes ensure that the user does not accidentally
-    // sign a transaction. The account nonce is of type u64 (8 bytes).
-    // In addition, we prepend the recent `block_hash` (this ensures that the signature is generated on the spot
-    // and the signature expires after SIGNATURE_AND_PROOF_EXPIRY_DURATION_BLOCKS),
-    // and a context string (this ensures that an account can be re-used for signing in different contexts).
-    let mut msg_prepend = [0; 40];
-    //Prepend the `account` address of the signer.
-    msg_prepend[0..32].copy_from_slice(signer.as_ref());
-    // Prepend 8 zero bytes.
-    msg_prepend[32..40].copy_from_slice(&[0u8; 8]);
+    // `account` address (signer) and 8 zero bytes. Accounts in the Concordium
+    // browser wallet can either sign a regular transaction (in that case the
+    // prepend is `account` address and the nonce of the account which is by
+    // design >= 1) or sign a message (in that case the prepend is `account`
+    // address and 8 zero bytes). Hence, the 8 zero bytes ensure that the user
+    // does not accidentally sign a transaction. The account nonce is of type
+    // u64 (8 bytes). In addition, we prepend the recent `block_hash` (this
+    // ensures that the signature is generated on the spot and the signature
+    // expires after SIGNATURE_AND_PROOF_EXPIRY_DURATION_BLOCKS), and a context
+    // string (this ensures that an account can be re-used for signing in different
+    // Concordium services).
     // Add the prepend to the message and calculate the message hash.
     let message_bytes = bincode::serialize(&message)?;
     let message_hash = sha2::Sha256::digest(
         [
-            &msg_prepend[0..40],
+            &signer.as_ref() as &[u8],
+            &[0u8; 8],
             &block.hash,
             &CONTEXT_STRING,
             &message_bytes,
@@ -601,14 +615,16 @@ where
 
     // Get the public key of the signer.
 
-    // The intention is to only use/support regular accounts (no multi-sig accounts).
-    // While it works for some (but not all) multi-sig accounts, to reduce complexity we will
-    // communicate that multi-sig accounts are not supported.
-    // Regular accounts have only one public-private key pair at index 0 in the credential map.
+    // The intention is to only use/support regular accounts (no multi-sig
+    // accounts). While it works for some (but not all) multi-sig accounts, to
+    // reduce complexity we will communicate that multi-sig accounts are not
+    // supported. Regular accounts have only one public-private key pair at
+    // index 0 in the credential map.
     let signer_account_credential =
         &signer_account_info.response.account_credentials[&CredentialIndex::from(0)].value;
 
-    // We use/support regular accounts. Regular accounts have only one public-private key pair at index 0 in the key map.
+    // We use/support regular accounts. Regular accounts have only one
+    // public-private key pair at index 0 in the key map.
     let signer_public_key = match signer_account_credential {
         AccountCredentialWithoutProofs::Initial { icdv } => &icdv.cred_account.keys[&KeyIndex(0)],
         AccountCredentialWithoutProofs::Normal { cdv, .. } => &cdv.cred_key_info.keys[&KeyIndex(0)],
@@ -620,7 +636,8 @@ where
         return Err(ServerError::InvalidSignature);
     }
 
-    // Check if the signature is not expired by checking if a recent block hash was signed.
+    // Check if the signature is not expired by checking if a recent block hash was
+    // signed.
     let block_info = state
         .node_client
         .get_block_info(block.height)
@@ -657,6 +674,7 @@ async fn post_tweet(
     // Check that:
     // - the signature is valid.
     // - the signature is not expired.
+    // - the signature was intended for this service.
     let signer = check_signature(&mut state, &param).await?;
 
     // Check that:
@@ -691,13 +709,14 @@ async fn post_zk_proof(
     let Json(param) = request?;
 
     // Check that:
-    // - the credential statuses are active.
     // - the cryptographic proofs are valid.
     // - exactly one credential statement is present in the proof.
     // - the expected zk statements have been proven.
     // - the proof has been generated for the correct network.
     // - the proof is not expired.
-    // Return the extracted `national_id`, `nationality` and `prover` associated with the proof.
+    // - the proof was intended for this service.
+    // Return the extracted `national_id`, `nationality` and `prover` associated
+    // with the proof.
     let ZKProofExtractedData {
         national_id,
         nationality,
@@ -739,6 +758,7 @@ async fn set_claimed(
     // Check that:
     // - the signature is valid.
     // - the signature is not expired.
+    // - the signature was intended for this service.
     let signer = check_signature(&mut state, &param).await?;
 
     // Check that the signer is an admin account.
@@ -765,6 +785,7 @@ async fn get_account_data(
     // Check that:
     // - the signature is valid.
     // - the signature is not expired.
+    // - the signature was intended for this service.
     let signer = check_signature(&mut state, &param).await?;
 
     // Check that the signer is an admin account.
@@ -782,8 +803,8 @@ async fn get_account_data(
 
 /// Currently, it is expected that only a few "approvals" have to be retrieved
 /// by an admin such that one signature check should be sufficient.
-/// If several requests are needed, some session handling (e.g. JWT) should be implemented to avoid
-/// having to sign each request.
+/// If several requests are needed, some session handling (e.g. JWT) should be
+/// implemented to avoid having to sign each request.
 async fn get_pending_approvals(
     State(mut state): State<Server>,
     request: Result<Json<GetPendingApprovalsParam>, JsonRejection>,
@@ -800,6 +821,7 @@ async fn get_pending_approvals(
     // Check that:
     // - the signature is valid.
     // - the signature is not expired.
+    // - the signature was intended for this service.
     let signer = check_signature(&mut state, &param).await?;
 
     // Check that the signer is an admin account.
@@ -846,7 +868,8 @@ async fn health() -> Json<Health> {
     })
 }
 
-/// Handle the `getZKProofStatements` endpoint, returning the ZK statements that should be used at the front end to construct the proof.
+/// Handle the `getZKProofStatements` endpoint, returning the ZK statements that
+/// should be used at the front end to construct the proof.
 async fn get_zk_proof_statements(State(state): State<Server>) -> Json<ZKProofStatementsReturn> {
     Json(ZKProofStatementsReturn {
         data: state.zk_statements,

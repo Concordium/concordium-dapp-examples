@@ -36,8 +36,9 @@ pub enum DatabaseError {
     PoolError(#[from] PoolError),
     /// Failed because identity was re-used.
     #[error(
-        "You already submitted a ZK proof with your identity for the account {expected}. \
-        You can claim rewards only once with your identity. Use the account {expected} for claiming the reward instead of account {actual}."
+        "You already submitted a ZK proof with your identity for the account {expected}. You can \
+         claim rewards only once with your identity. Use the account {expected} for claiming the \
+         reward instead of account {actual}."
     )]
     IdentityReUsed {
         expected: AccountAddress,
@@ -49,8 +50,9 @@ pub enum DatabaseError {
 type DatabaseResult<T> = Result<T, DatabaseError>;
 
 /// Use the `BlockHash` as an alias for the `UniquenessHash`.
-/// The `BlockHash` implements helper functions (e.g. serde::Serialize, serde::Deserialize, and Display)
-/// that are needed for the `UniquenessHash` as well.
+/// The `BlockHash` implements helper functions (e.g. serde::Serialize,
+/// serde::Deserialize, and Display) that are needed for the `UniquenessHash` as
+/// well.
 type UniquenessHash = BlockHash;
 
 /// The database configuration stored in the database.
@@ -62,31 +64,37 @@ pub struct StoredAccountData {
     pub block_time: DateTime<Utc>,
     /// The transaction hash that the event was recorded in.
     pub transaction_hash: TransactionHash,
-    /// A boolean specifying if the account has already claimed its rewards (got a reward payout).
-    /// Every account can only claim rewards once.
+    /// A boolean specifying if the account has already claimed its rewards (got
+    /// a reward payout). Every account can only claim rewards once.
     pub claimed: bool,
     /// A boolean specifying if this account address has submitted all tasks
     /// and the regulatory conditions have been proven via a ZK proof.
-    /// A manual check of the completed tasks is required now before releasing the reward.
+    /// A manual check of the completed tasks is required now before releasing
+    /// the reward.
     pub pending_approval: bool,
     /// A tweet id submitted by the above account address (task 1).
     pub tweet_id: Option<String>,
-    /// A boolean specifying if the text content of the tweet is eligible for the reward.
-    /// The content of the text was verified by this backend before this flag is set (or will be verified manually).
+    /// A boolean specifying if the text content of the tweet is eligible for
+    /// the reward. The content of the text was verified by this backend
+    /// before this flag is set (or will be verified manually).
     pub tweet_valid: Option<bool>,
-    /// A version that specifies the setting of the tweet verification. This enables us
-    /// to update the tweet verification logic in the future and invalidate older versions.
+    /// A version that specifies the setting of the tweet verification. This
+    /// enables us to update the tweet verification logic in the future and
+    /// invalidate older versions.
     pub tweet_verification_version: Option<u64>,
     /// The timestamp when the tweet was submitted.
     pub tweet_submit_time: Option<DateTime<Utc>>,
-    /// A hash of the concatenated revealed `national_id_number` and `nationality` to prevent
-    /// claiming with different accounts for the same identity.
+    /// A hash of the concatenated revealed `national_id_number` and
+    /// `nationality` to prevent claiming with different accounts for the
+    /// same identity.
     pub uniqueness_hash: Option<UniquenessHash>,
-    /// A boolean specifying if the identity associated with the account is eligible for the reward (task 2).
-    /// An associated ZK proof was verified by this backend before this flag is set.
+    /// A boolean specifying if the identity associated with the account is
+    /// eligible for the reward (task 2). An associated ZK proof was
+    /// verified by this backend before this flag is set.
     pub zk_proof_valid: Option<bool>,
-    /// A version that specifies the setting of the ZK proof during the verification. This enables us
-    /// to update the ZK proof-verification logic in the future and invalidate older proofs.
+    /// A version that specifies the setting of the ZK proof during the
+    /// verification. This enables us to update the ZK proof-verification
+    /// logic in the future and invalidate older proofs.
     pub zk_proof_verification_version: Option<u64>,
     /// The timestamp when the ZK proof verification was submitted.
     pub zk_proof_verification_submit_time: Option<DateTime<Utc>>,
@@ -221,7 +229,8 @@ impl Database {
 
         let opt_row = self.client.query_opt(conflict_check_query, &[]).await?;
 
-        // If `settings` table already has one row, don't update it, otherwise set the initial settings.
+        // If `settings` table already has one row, don't update it, otherwise set the
+        // initial settings.
         if opt_row.is_none() {
             let init_settings = self
                 .client
@@ -248,11 +257,11 @@ impl Database {
         pending_approval: bool,
         current_zk_proof_verification_version: u16,
     ) -> DatabaseResult<()> {
-        // Create an `uniqueness_hash` to identify the identity associated with the account
-        // by hashing the concatenated string of `national_id` and `nationality`.
-        // Every identity should only be allowed to receive rewards once
-        // (with one of their accounts). The `nationality` is a two-letter country code
-        // (ISO 3166-1 alpha-2).
+        // Create an `uniqueness_hash` to identify the identity associated with the
+        // account by hashing the concatenated string of `national_id` and
+        // `nationality`. Every identity should only be allowed to receive
+        // rewards once (with one of their accounts). The `nationality` is a
+        // two-letter country code (ISO 3166-1 alpha-2).
         // Note: Concatenating a fixed-size string (`nationality`) with a non-fixed-size
         // string (`national_id`) is safe. Two non-fixed-size strings would be unsafe.
         // E.g. `format!("{}{}", "AA", "BB")` and `format!("{}{}", "A", "ABB")`
