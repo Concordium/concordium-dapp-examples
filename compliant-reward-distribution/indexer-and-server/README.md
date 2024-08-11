@@ -94,9 +94,52 @@ There are a few options to configure the server:
 
 ## API endpoints of the `server`
 
-The `/api/getZKProofStatements` and `/health` endpoints expect no JSON body.
+- The `/api/getZKProofStatements` endpoint expects no JSON body.
 
-The `/api/canClaim` endpoint expects a JSON body with the fields shown in the example below:
+An example response of this endpoint:
+``` json
+{
+    "data": [
+        {
+            "type": "RevealAttribute",
+            "attributeTag": "nationalIdNo"
+        },
+        {
+            "type": "RevealAttribute",
+            "attributeTag": "nationality"
+        },
+        {
+            "type": "AttributeInRange",
+            "attributeTag": "dob",
+            "lower": "18000101",
+            "upper": "20060802"
+        },
+        {
+            "type": "AttributeNotInSet",
+            "attributeTag": "countryOfResidence",
+            "set": [
+                "KP",
+                "US"
+            ]
+        }
+    ]
+}
+```
+
+This endpoint needs no authorization and should be queried by the front end to get the ZK statements for the request to the wallet to create a ZK proof.
+
+- The `/health` endpoint expects no JSON body.
+
+An example response of this endpoint:
+``` json
+{
+    "version":"0.1.0"
+}
+```
+
+This endpoint needs no authorization and can be queried for monitoring purposes and to check the version of the server.
+
+- The `/api/canClaim` endpoint expects a JSON body with the fields shown in the example below:
 
 ``` json
 {
@@ -104,7 +147,20 @@ The `/api/canClaim` endpoint expects a JSON body with the fields shown in the ex
 }
 ```
 
-The `/api/getPendingApprovals` endpoint expects a JSON body with the fields shown in the example below:
+An example response of this endpoint:
+``` json
+{
+    "data": {
+        "claimed": false,
+        "tweetValid": true,
+        "zkProofValid": false
+    }
+}
+```
+
+This endpoint needs no authorization and can be queried by the front end to display the missing steps that the user has to complete before the reward is paid out.
+
+- The `/api/getPendingApprovals` endpoint expects a JSON body with the fields shown in the example below:
 
 ``` json
 {
@@ -123,7 +179,32 @@ The `/api/getPendingApprovals` endpoint expects a JSON body with the fields show
 }
 ```
 
-The `/api/getAccountData` endpoint expects a JSON body with the fields shown in the example below:
+An example response of this endpoint:
+``` json
+{
+    "data": [
+        {
+            "id": 1,
+            "block_time": "2024-07-23T10:04:59.916Z",
+            "transaction_hash": "36491adcec0fb7cb1374e39e588c442890ded9b6443c35168fa5f9fe49be5941",
+            "claimed": false,
+            "pending_approval": true,
+            "tweet_id": "ABCDabcd123456789",
+            "tweet_valid": true,
+            "tweet_verification_version": 1,
+            "tweet_submit_time": "2024-08-11T08:24:46.679651Z",
+            "uniqueness_hash": "720ec3951259c2fcd2e901c7eecda5dc24e07afa94575c64f5b6bea35be9a0ee",
+            "zk_proof_valid": true,
+            "zk_proof_verification_version": 1,
+            "zk_proof_verification_submit_time": "2024-08-11T08:24:39.146501Z"
+        }
+    ]
+}
+```
+
+This endpoint needs authorization and can be queried by an admin account (providing a valid signature) to read account data from the database for manual verification and release of rewards. Account data with the `pending_approval==true` are returned by this endpoint.
+
+- The `/api/getAccountData` endpoint expects a JSON body with the fields shown in the example below:
 
 ``` json
 {
@@ -141,7 +222,75 @@ The `/api/getAccountData` endpoint expects a JSON body with the fields shown in 
 }
 ```
 
-The `/api/setClaimed` endpoint expects a JSON body with the fields shown in the example below:
+Some example responses of this endpoint:
+
+``` json
+{
+    "data": {
+        "id": 1,
+        "block_time": "2024-07-23T10:04:59.916Z",
+        "transaction_hash": "36491adcec0fb7cb1374e39e588c442890ded9b6443c35168fa5f9fe49be5941",
+        "claimed": false,
+        "pending_approval": false,
+        "tweet_id": "ABCDabcd123456789",
+        "tweet_valid": true,
+        "tweet_verification_version": 1,
+        "tweet_submit_time": "2024-08-08T07:48:16.476071Z",
+        "uniqueness_hash": null,
+        "zk_proof_valid": null,
+        "zk_proof_verification_version": null,
+        "zk_proof_verification_submit_time": null
+    }
+}
+```
+
+or
+
+``` json
+{
+    "data": {
+        "id": 1,
+        "block_time": "2024-07-23T10:04:59.916Z",
+        "transaction_hash": "36491adcec0fb7cb1374e39e588c442890ded9b6443c35168fa5f9fe49be5941",
+        "claimed": false,
+        "pending_approval": false,
+        "tweet_id": null,
+        "tweet_valid": null,
+        "tweet_verification_version": null,
+        "tweet_submit_time": null,
+        "uniqueness_hash": "720ec3951259c2fcd2e901c7eecda5dc24e07afa94575c64f5b6bea35be9a0ee",
+        "zk_proof_valid": true,
+        "zk_proof_verification_version": 1,
+        "zk_proof_verification_submit_time": "2024-08-11T08:15:41.542234Z"
+    }
+}
+```
+
+or
+
+``` json
+{
+    "data": {
+        "id": 1,
+        "block_time": "2024-07-23T10:04:59.916Z",
+        "transaction_hash": "36491adcec0fb7cb1374e39e588c442890ded9b6443c35168fa5f9fe49be5941",
+        "claimed": false,
+        "pending_approval": true,
+        "tweet_id": "ABCDabcd123456789",
+        "tweet_valid": true,
+        "tweet_verification_version": 1,
+        "tweet_submit_time": "2024-08-11T08:15:13.241390Z",
+        "uniqueness_hash": "720ec3951259c2fcd2e901c7eecda5dc24e07afa94575c64f5b6bea35be9a0ee",
+        "zk_proof_valid": true,
+        "zk_proof_verification_version": 1,
+        "zk_proof_verification_submit_time": "2024-08-11T08:15:41.542234Z"
+    }
+}
+```
+
+This endpoint needs authorization and can be queried by an admin account (providing a valid signature) to read account data from the database for a specific user. This endpoint can be invoked to investigate the state of a user in the database in case of complaints/problems/issues raised.
+
+- The `/api/setClaimed` endpoint expects a JSON body with the fields shown in the example below:
 
 ``` json
 {
@@ -162,7 +311,9 @@ The `/api/setClaimed` endpoint expects a JSON body with the fields shown in the 
 }
 ```
 
-The `/api/postZKProof` endpoint expects a JSON body with the fields shown in the example below:
+This endpoint needs authorization and can be invoked by an admin account (providing a valid signature) to set the `claimed` boolean in the database to true for a list of accounts. This endpoint should be invoked by an admin after the reward payouts have been completed on chain for the list of accounts.
+
+- The `/api/postZKProof` endpoint expects a JSON body with the fields shown in the example below:
 
 ``` json
 {
@@ -239,7 +390,9 @@ The `/api/postZKProof` endpoint expects a JSON body with the fields shown in the
 }
 ```
 
-The `/api/postTweet` endpoint expects a JSON body with the fields shown in the example below:
+This endpoint needs authorization and can be invoked by a user account (providing a valid ZK proof) to prove the legal requirements necessary to receive the reward payout.
+
+- The `/api/postTweet` endpoint expects a JSON body with the fields shown in the example below:
 
 ``` json
 {
@@ -257,10 +410,14 @@ The `/api/postTweet` endpoint expects a JSON body with the fields shown in the e
 }
 ```
 
+This endpoint needs authorization and can be invoked by a user account (providing a valid signature) to submit a tweet containing tags to promote Concordium. This is a necessary task to be completed by the user to receive the reward payout.
+
+### `Curl` command examples
+
 After running the server, you can invoke its endpoints with e.g. the following `curl` commands:
 
 ```
-curl -GET "http://localhost:8080/api/health" -H "Content-Type: application/json" -v
+curl -GET "http://localhost:8080/health" -H "Content-Type: application/json" -v
 ```
 
 ```
@@ -341,3 +498,18 @@ This verification relies on the front end (via the wallet) and back end being co
 top of the chain. The front end should look up some recent `block_hash` (not the most recent) to give the backend a small window of
 being delayed. The backend server should only be run in conjunction with a reliable node connection otherwise, the verification of
 expired signatures/proofs is not correct.
+
+## Replaying of signatures and proofs.
+
+Replaying a signature or ZK proof in this service is possible for a short window (until they expire based on the
+`SIGNATURE_AND_PROOF_EXPIRY_DURATION_BLOCKS` variable). Since resubmitting a signature or ZK proof is idempotent in this service,
+this is not an issue here. Replaying a signature or ZK proof across different Concordium services is not possible since Concordium
+uses a different `CONTEXT_STRING` (constant in the `server.rs` file) in each of its services. The `CONTEXT_STRING` is added as part of
+the message signed or as part of the ZK challenge. If a third-party service uses the same ZK statements or signature structure
+(with the same `CONTEXT_STRING`) for authentication then replaying of a signature or ZK proof could be possible across the services
+but none of the signatures or ZK proofs sent to this backend are made public/accessible or stored in the database.
+
+## Versioning
+
+The ZK proof verification logic and the tweet verification logic are versioned with the `CURRENT_ZK_PROOF_VERIFICATION_VERSION` and
+`CURRENT_TWEET_VERIFICATION_VERSION` (constants in the `server.rs` file), respectively.

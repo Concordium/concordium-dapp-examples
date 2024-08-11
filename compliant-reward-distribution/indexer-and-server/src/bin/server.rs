@@ -464,11 +464,12 @@ async fn check_zk_proof(
 
     // Check if the proof is not expired by checking if a recent block hash was
     // included in the challenge (also called presentation_context).
-    let block_info = state
+    let block_hash = state
         .node_client
         .get_block_info(challenge_block_height)
         .await
-        .map_err(ServerError::QueryError)?;
+        .map_err(ServerError::QueryError)?
+        .block_hash;
 
     // The presentation context (also called challenge) includes the `block_hash`
     // and a `CONTEXT_STRING`. The `block_hash` ensures that the proof is
@@ -476,8 +477,7 @@ async fn check_zk_proof(
     // SIGNATURE_AND_PROOF_EXPIRY_DURATION_BLOCKS. The `CONTEXT_STRING` ensures
     // that the proof is generated for this specific service. These checks are
     // done similarly in the `signature` verification flow in this service.
-    let challenge_hash =
-        sha2::Sha256::digest([block_info.block_hash.as_ref(), &CONTEXT_STRING].concat());
+    let challenge_hash = sha2::Sha256::digest([block_hash.as_ref(), &CONTEXT_STRING].concat());
     let challenge = Challenge::try_from(challenge_hash.as_slice())
         .map_err(|e| ServerError::TypeConversion("challenge".to_string(), e))?;
 
@@ -595,7 +595,7 @@ where
     // design >= 1) or sign a message (in that case the prepend is `account`
     // address and 8 zero bytes). Hence, the 8 zero bytes ensure that the user
     // does not accidentally sign a transaction. The account nonce is of type
-    // u64 (8 bytes). In addition, we prepend the recent `block_hash` (this
+    // u64 (8 bytes). In addition, we prepend a recent `block_hash` (this
     // ensures that the signature is generated on the spot and the signature
     // expires after SIGNATURE_AND_PROOF_EXPIRY_DURATION_BLOCKS), and a context
     // string (this ensures that an account can be re-used for signing in different
@@ -638,13 +638,14 @@ where
 
     // Check if the signature is not expired by checking if a recent block hash was
     // signed.
-    let block_info = state
+    let expected_block_hash = state
         .node_client
         .get_block_info(block.height)
         .await
-        .map_err(ServerError::QueryError)?;
+        .map_err(ServerError::QueryError)?
+        .block_hash;
 
-    if block_info.block_hash != block.hash {
+    if expected_block_hash != block.hash {
         return Err(ServerError::BlockSigningDataInvalid);
     }
 
