@@ -1,37 +1,35 @@
-use ::indexer::{
-    db::{DatabaseError, DatabasePool},
-    types::Server,
-};
+use ::indexer::{db::DatabasePool, types::Server};
 use anyhow::Context;
 use axum::{
-    extract::{rejection::JsonRejection, State},
-    http,
-    response::{IntoResponse, Response},
+    extract::State,
     routing::{get, post},
     Json, Router,
 };
 use chrono::Utc;
 use clap::Parser;
 use concordium_rust_sdk::{
-    base::hashes::IncorrectLength,
     common::types::{CredentialIndex, KeyIndex},
     id::{
         constants::ArCurve,
         id_proof_types::Statement,
         types::{AccountAddress, AccountCredentialWithoutProofs},
     },
-    types::AbsoluteBlockHeight,
-    v2::{AccountIdentifier, BlockIdentifier, Client, QueryError},
+    v2::{AccountIdentifier, BlockIdentifier, Client},
     web3id::{
         did::Network,
-        get_public_data, Challenge, CredentialLookupError, CredentialProof,
+        get_public_data, Challenge, CredentialProof,
         CredentialStatement::{Account, Web3Id},
-        PresentationVerificationError, Web3IdAttribute,
+        Web3IdAttribute,
     },
 };
-use http::StatusCode;
 use indexer::{
+    constants::{
+        CONTEXT_STRING, CURRENT_TWEET_VERIFICATION_VERSION, CURRENT_ZK_PROOF_VERIFICATION_VERSION,
+        MAX_REQUEST_LIMIT, SIGNATURE_AND_PROOF_EXPIRY_DURATION_BLOCKS, TESTNET_GENESIS_BLOCK_HASH,
+        ZK_STATEMENTS,
+    },
     db::StoredAccountData,
+    error::ServerError,
     types::{
         AccountDataReturn, CanClaimParam, CanClaimReturn, ClaimExpiryDurationDays,
         GetAccountDataParam, GetPendingApprovalsParam, HasSigningData, Health, PostTweetParam,
@@ -40,179 +38,6 @@ use indexer::{
     },
 };
 use sha2::Digest;
-
-/// The maximum number of rows allowed in a request to the database.
-const MAX_REQUEST_LIMIT: u32 = 40;
-
-/// The testnet genesis block hash.
-const TESTNET_GENESIS_BLOCK_HASH: [u8; 32] = [
-    66, 33, 51, 45, 52, 225, 105, 65, 104, 194, 160, 192, 179, 253, 15, 39, 56, 9, 97, 44, 177, 61,
-    0, 13, 92, 46, 0, 232, 95, 80, 247, 150,
-];
-
-/// The string "CONCORDIUM_COMPLIANT_REWARD_DISTRIBUTION_DAPP" in bytes is used
-/// as context for signing messages and generating ZK proofs. The same account
-/// can be used in different Concordium services without the risk of re-playing
-/// signatures/zk-proofs across the different services due to this context
-/// string.
-const CONTEXT_STRING: [u8; 45] = [
-    67, 79, 78, 67, 79, 82, 68, 73, 85, 77, 95, 67, 79, 77, 80, 76, 73, 65, 78, 84, 95, 82, 69, 87,
-    65, 82, 68, 95, 68, 73, 83, 84, 82, 73, 66, 85, 84, 73, 79, 78, 95, 68, 65, 80, 80,
-];
-
-/// The number of blocks after that a generated signature or ZK proof is
-/// considered expired.
-const SIGNATURE_AND_PROOF_EXPIRY_DURATION_BLOCKS: u64 = 200;
-
-/// Current version of the verification logic used when submitting a ZK proof.
-/// Update this version if you want to introduce a new ZK proof-verification logic.
-const CURRENT_ZK_PROOF_VERIFICATION_VERSION: u16 = 1;
-/// Current version of the verification logic used when submitting a tweet.
-/// Update this version if you want to introduce a new tweet verification logic.
-const CURRENT_TWEET_VERIFICATION_VERSION: u16 = 1;
-
-/// 1. Proof: Reveal attribute proof ("nationalIdNo" attribute).
-/// 2. Proof: Reveal attribute proof ("nationality" attribute).
-/// 3. Proof: Range proof ("dob=dateOfBirth" attribute). User is older than 18 years.
-/// 4. Proof: Not set membership proof ("countryOfResidence" attribute). User is not from the USA or North Korea.
-/// Countries are represented by 2 letters (ISO 3166-1 alpha-2).
-const ZK_STATEMENTS: &str = r#"[
-    {
-        "type": "RevealAttribute",
-        "attributeTag": "nationalIdNo"
-    },
-    {
-        "type": "RevealAttribute",
-        "attributeTag": "nationality"
-    },
-    {
-        "type": "AttributeInRange",
-        "attributeTag": "dob",
-        "lower": "18000101",
-        "upper": "20060802"
-    },
-    {
-        "type": "AttributeNotInSet",
-        "attributeTag": "countryOfResidence",
-        "set": [
-            "US", "KP"
-        ]
-    }
-]"#;
-
-/// Errors that this server can produce.
-#[derive(Debug, thiserror::Error)]
-pub enum ServerError {
-    #[error("Database error: {0}")]
-    DatabaseError(#[from] DatabaseError),
-    #[error("Failed to extract json object: {0}")]
-    JsonRejection(#[from] JsonRejection),
-    #[error("The requested rows returned by the database were above the limit {0}")]
-    MaxRequestLimit(u32),
-    #[error("The signer account address is not an admin")]
-    SignerNotAdmin,
-    #[error("The signature is not valid")]
-    InvalidSignature,
-    #[error("Unable to look up all credentials: {0}")]
-    CredentialLookup(#[from] CredentialLookupError),
-    #[error("One or more credentials are not active")]
-    InactiveCredentials,
-    #[error("Invalid proof: {0}")]
-    InvalidProof(#[from] PresentationVerificationError),
-    #[error("Wrong length of {actual_string}. Expect: {expected_length}. Got: {}", .actual_string.len())]
-    WrongLength {
-        actual_string: String,
-        expected_length: usize,
-    },
-    #[error("Wrong ZK statement proven")]
-    WrongStatement,
-    #[error("Expect account statement and not web3id statement")]
-    AccountStatement,
-    #[error("ZK proof was created for the wrong network. Expect: {expected}. Got: {actual}.")]
-    WrongNetwork { expected: Network, actual: Network },
-    #[error("Expect reveal attribute statement at position {0}")]
-    RevealAttribute(usize),
-    #[error("Network error: {0}")]
-    QueryError(#[from] QueryError),
-    #[error("Underflow error")]
-    UnderFlow,
-    #[error(
-        "The account was not captured by the indexer and is not in the database. Only accounts \
-         earlier than block height {0} are captured."
-    )]
-    AccountNotExist(AbsoluteBlockHeight),
-    #[error("Claim already expired. Your account creation has to be not older than {0}.")]
-    ClaimExpired(ClaimExpiryDurationDays),
-    #[error("Converting message to bytes caused an error: {0}")]
-    MessageConversion(#[from] bincode::Error),
-    #[error("The block hash and block height in the signing data are not from the same block.")]
-    BlockSigningDataInvalid,
-    #[error(
-        "The block hash used as challenge and block height passed as parameter are not from the \
-         same block."
-    )]
-    BlockProofDataInvalid,
-    #[error(
-        "Signature already expired. Your block hash signed has to be not older than the block \
-         hash from block {0}."
-    )]
-    SignatureExpired(u64),
-    #[error(
-        "Proof already expired. Your block hash included as challenge in the proof has to be not \
-         older than the block hash from block {0}."
-    )]
-    ProofExpired(u64),
-    #[error("Failed to convert type `{0}`: {1}")]
-    TypeConversion(String, IncorrectLength),
-}
-
-impl IntoResponse for ServerError {
-    fn into_response(self) -> Response {
-        let r = match self {
-            // Internal errors.
-            ServerError::DatabaseError(_)
-            | ServerError::QueryError(..)
-            | ServerError::UnderFlow => {
-                tracing::error!("Internal error: {self}");
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json("Internal error".to_string()),
-                )
-            }
-            // Unauthorized errors.
-            ServerError::SignerNotAdmin => {
-                let error_message = format!("Unauthorized: {self}");
-                tracing::info!(error_message);
-                (StatusCode::UNAUTHORIZED, error_message.into())
-            }
-            // Bad request errors.
-            ServerError::JsonRejection(_)
-            | ServerError::MaxRequestLimit(_)
-            | ServerError::InvalidSignature
-            | ServerError::CredentialLookup(_)
-            | ServerError::InactiveCredentials
-            | ServerError::InvalidProof(_)
-            | ServerError::WrongLength { .. }
-            | ServerError::AccountStatement
-            | ServerError::WrongStatement
-            | ServerError::WrongNetwork { .. }
-            | ServerError::RevealAttribute(_)
-            | ServerError::ClaimExpired(_)
-            | ServerError::MessageConversion(_)
-            | ServerError::AccountNotExist(..)
-            | ServerError::BlockSigningDataInvalid
-            | ServerError::BlockProofDataInvalid
-            | ServerError::SignatureExpired(_)
-            | ServerError::ProofExpired(_)
-            | ServerError::TypeConversion(..) => {
-                let error_message = format!("Bad request: {self}");
-                tracing::info!(error_message);
-                (StatusCode::BAD_REQUEST, error_message.into())
-            }
-        };
-        r.into_response()
-    }
-}
 
 /// Command line configuration of the application.
 #[derive(Debug, clap::Parser)]
@@ -301,7 +126,7 @@ async fn main() -> anyhow::Result<()> {
     {
         app.node_endpoint
             .tls_config(tonic::transport::channel::ClientTlsConfig::new())
-            .context("Unable to construct TLS configuration for the Concordium API.")?
+            .context("Unable to construct TLS configuration for the Concordium API")?
     } else {
         app.node_endpoint
     }
@@ -309,8 +134,13 @@ async fn main() -> anyhow::Result<()> {
     .timeout(std::time::Duration::from_secs(10));
 
     // Establish connection to the blockchain node.
-    let mut node_client = Client::new(endpoint).await?;
-    let consensus_info = node_client.get_consensus_info().await?;
+    let mut node_client = Client::new(endpoint)
+        .await
+        .context("Unable to construct the node client")?;
+    let consensus_info = node_client
+        .get_consensus_info()
+        .await
+        .context("Unable to query the consesnsus info from the chain")?;
     let genesis_hash = consensus_info.genesis_block.bytes;
 
     let network = if genesis_hash == TESTNET_GENESIS_BLOCK_HASH {
@@ -322,10 +152,11 @@ async fn main() -> anyhow::Result<()> {
     let cryptographic_params = node_client
         .get_cryptographic_parameters(BlockIdentifier::LastFinal)
         .await
-        .context("Unable to get cryptographic parameters.")?
+        .context("Unable to get cryptographic parameters")?
         .response;
 
-    let zk_statements: Statement<ArCurve, Web3IdAttribute> = serde_json::from_str(ZK_STATEMENTS)?;
+    let zk_statements: Statement<ArCurve, Web3IdAttribute> =
+        serde_json::from_str(ZK_STATEMENTS).context("Unable to construct the ZK statements")?;
 
     let state = Server {
         db_pool,
@@ -359,13 +190,14 @@ async fn main() -> anyhow::Result<()> {
 
     tracing::info!("Listening at {}", app.listen_address);
 
-    let shutdown_signal = set_shutdown()?;
+    let shutdown_signal = set_shutdown().context("Unable to construct shutdown signal")?;
 
     // Create the server.
     axum::Server::bind(&app.listen_address)
         .serve(router.into_make_service())
         .with_graceful_shutdown(shutdown_signal)
-        .await?;
+        .await
+        .context("Unable to create server")?;
 
     Ok(())
 }
@@ -668,9 +500,9 @@ where
 
 async fn post_tweet(
     State(mut state): State<Server>,
-    request: Result<Json<PostTweetParam>, JsonRejection>,
+    request: Json<PostTweetParam>,
 ) -> Result<(), ServerError> {
-    let Json(param) = request?;
+    let Json(param) = request;
 
     // Check that:
     // - the signature is valid.
@@ -705,9 +537,9 @@ async fn post_tweet(
 
 async fn post_zk_proof(
     State(mut state): State<Server>,
-    request: Result<Json<PostZKProofParam>, JsonRejection>,
+    request: Json<PostZKProofParam>,
 ) -> Result<(), ServerError> {
-    let Json(param) = request?;
+    let Json(param) = request;
 
     // Check that:
     // - the cryptographic proofs are valid.
@@ -752,9 +584,9 @@ async fn post_zk_proof(
 
 async fn set_claimed(
     State(mut state): State<Server>,
-    request: Result<Json<SetClaimedParam>, JsonRejection>,
+    request: Json<SetClaimedParam>,
 ) -> Result<(), ServerError> {
-    let Json(param) = request?;
+    let Json(param) = request;
 
     // Check that:
     // - the signature is valid.
@@ -777,9 +609,9 @@ async fn set_claimed(
 
 async fn get_account_data(
     State(mut state): State<Server>,
-    request: Result<Json<GetAccountDataParam>, JsonRejection>,
+    request: Json<GetAccountDataParam>,
 ) -> Result<Json<AccountDataReturn>, ServerError> {
-    let Json(param) = request?;
+    let Json(param) = request;
 
     let lookup_account_address = param.signing_data.message.account_address;
 
@@ -808,9 +640,9 @@ async fn get_account_data(
 /// implemented to avoid having to sign each request.
 async fn get_pending_approvals(
     State(mut state): State<Server>,
-    request: Result<Json<GetPendingApprovalsParam>, JsonRejection>,
+    request: Json<GetPendingApprovalsParam>,
 ) -> Result<Json<VecAccountDataReturn>, ServerError> {
-    let Json(param) = request?;
+    let Json(param) = request;
 
     let limit = param.signing_data.message.limit;
     let offset = param.signing_data.message.offset;
@@ -840,9 +672,9 @@ async fn get_pending_approvals(
 
 async fn can_claim(
     State(state): State<Server>,
-    request: Result<Json<CanClaimParam>, JsonRejection>,
+    request: Json<CanClaimParam>,
 ) -> Result<Json<Option<CanClaimReturn>>, ServerError> {
-    let Json(param) = request?;
+    let Json(param) = request;
 
     let db = state.db_pool.get().await?;
     let database_result = db.get_account_data(param.account_address).await?;

@@ -1,50 +1,14 @@
+use crate::error::{ConversionError, DatabaseError};
 use chrono::{DateTime, Utc};
 use concordium_rust_sdk::{
-    base::hashes::{IncorrectLength, TransactionHash},
+    base::hashes::TransactionHash,
     id::types::AccountAddress,
     types::{hashes::BlockHash, AbsoluteBlockHeight},
 };
-use deadpool_postgres::{GenericClient, Object, PoolError};
+use deadpool_postgres::{GenericClient, Object};
 use serde::Serialize;
 use sha2::Digest;
-use std::string::FromUtf8Error;
-use thiserror::Error;
 use tokio_postgres::{types::ToSql, NoTls};
-
-#[derive(Debug, Error)]
-pub enum ConversionError {
-    #[error("Incorrect length")]
-    IncorrectLength(#[from] IncorrectLength),
-    #[error("UTF-8 conversion error: {0}")]
-    FromUtf8Error(#[from] FromUtf8Error),
-}
-
-/// Represents possible errors returned from [`Database`] or [`DatabasePool`] functions
-#[derive(Error, Debug)]
-pub enum DatabaseError {
-    /// An error happened while interacting with the postgres DB.
-    #[error("{0}")]
-    Postgres(#[from] tokio_postgres::Error),
-    /// Failed to perform conversion from DB representation of type.
-    #[error("Failed to convert type `{0}`: {1}")]
-    TypeConversion(String, #[source] ConversionError),
-    /// Failed to configure database.
-    #[error("Could not configure database because of {0}: {1}")]
-    Configuration(String, anyhow::Error),
-    /// Failed to get pool.
-    #[error("Could not get pool: {0}")]
-    PoolError(#[from] PoolError),
-    /// Failed because identity was re-used.
-    #[error(
-        "You already submitted a ZK proof with your identity for the account {expected}. You can \
-         claim rewards only once with your identity. Use the account {expected} for claiming the \
-         reward instead of account {actual}."
-    )]
-    IdentityReUsed {
-        expected: AccountAddress,
-        actual: AccountAddress,
-    },
-}
 
 /// Alias for returning results with [`DatabaseError`]s as the `Err` variant.
 type DatabaseResult<T> = Result<T, DatabaseError>;
