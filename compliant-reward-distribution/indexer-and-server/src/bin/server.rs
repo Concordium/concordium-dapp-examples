@@ -28,13 +28,13 @@ use indexer::{
         MAX_REQUEST_LIMIT, SIGNATURE_AND_PROOF_EXPIRY_DURATION_BLOCKS, TESTNET_GENESIS_BLOCK_HASH,
         ZK_STATEMENTS,
     },
-    db::StoredAccountData,
+    db::{AccountData, Database, StoredAccountData},
     error::ServerError,
     types::{
-        AccountDataReturn, CanClaimParam, CanClaimReturn, ClaimExpiryDurationDays,
-        GetAccountDataParam, GetPendingApprovalsParam, HasSigningData, Health, PostTweetParam,
-        PostZKProofParam, SetClaimedParam, SigningData, UserData, VecAccountDataReturn,
-        ZKProofExtractedData, ZKProofStatementsReturn,
+        CanClaimParam, CanClaimReturn, ClaimExpiryDurationDays, GetAccountDataParam,
+        GetPendingApprovalsParam, HasSigningData, Health, PostTweetParam, PostZKProofParam,
+        SetClaimedParam, SigningData, UserData, VecAccountDataReturn, ZKProofExtractedData,
+        ZKProofStatementsReturn,
     },
 };
 use sha2::Digest;
@@ -207,11 +207,10 @@ async fn main() -> anyhow::Result<()> {
 /// - the account creation has not expired.
 /// Returns the account data stored in the database.
 pub async fn check_account_eligible(
+    db: &Database,
     state: &Server,
     account: AccountAddress,
-) -> Result<StoredAccountData, ServerError> {
-    let db = state.db_pool.get().await?;
-
+) -> Result<AccountData, ServerError> {
     let Some(database_result) = db.get_account_data(account).await? else {
         // Return an error if the account does not exist in the database.
         // The account has to be created at a time when the indexer was running.
@@ -314,7 +313,7 @@ async fn check_zk_proof(
         .map_err(|e| ServerError::TypeConversion("challenge".to_string(), e))?;
 
     if presentation.presentation_context != challenge {
-        return Err(ServerError::BlockProofDataInvalid);
+        return Err(ServerError::ChallengeInvalid);
     }
 
     let current_block_height = state
@@ -478,7 +477,7 @@ where
         .block_hash;
 
     if expected_block_hash != block.hash {
-        return Err(ServerError::BlockSigningDataInvalid);
+        return Err(ServerError::MismatchBlockHashAndHeight);
     }
 
     let current_block_height = state
@@ -489,6 +488,7 @@ where
 
     let lower_bound = current_block_height.height - SIGNATURE_AND_PROOF_EXPIRY_DURATION_BLOCKS;
 
+    // Check that the ZK proof is not expired.
     if block.height.height < lower_bound {
         return Err(ServerError::SignatureExpired(lower_bound));
     }
@@ -510,21 +510,22 @@ async fn post_tweet(
     // - the signature was intended for this service.
     let signer = check_signature(&mut state, &param).await?;
 
+    let db = state.db_pool.get().await?;
+
     // Check that:
     // - the account exists in the database.
     // - the account creation has not expired.
-    let StoredAccountData {
-        zk_proof_valid,
-        claimed,
-        ..
-    } = check_account_eligible(&state, signer).await?;
+    let AccountData { claimed, .. } = check_account_eligible(&db, &state, signer).await?;
 
     // Calculate the `new_pending_approval` flag`.
+    let zk_proof_valid = db
+        .get_zk_proof_data(signer)
+        .await?
+        .map(|x| x.zk_proof_valid);
     let new_pending_approval = zk_proof_valid.unwrap_or_default() && !claimed;
 
     // Update the database.
-    let db = state.db_pool.get().await?;
-    db.set_tweet(
+    db.upsert_tweet(
         param.signing_data.message.tweet,
         signer,
         new_pending_approval,
@@ -556,21 +557,19 @@ async fn post_zk_proof(
         prover,
     } = check_zk_proof(&mut state, param).await?;
 
+    let db = state.db_pool.get().await?;
+
     // Check that:
     // - the account exists in the database.
     // - the account creation has not expired.
-    let StoredAccountData {
-        tweet_valid,
-        claimed,
-        ..
-    } = check_account_eligible(&state, prover).await?;
+    let AccountData { claimed, .. } = check_account_eligible(&db, &state, prover).await?;
 
     // Calculate the `new_pending_approval` flag`.
+    let tweet_valid = db.get_tweet_data(prover).await?.map(|x| x.tweet_valid);
     let new_pending_approval = tweet_valid.unwrap_or_default() && !claimed;
 
     // Update the database.
-    let db = state.db_pool.get().await?;
-    db.set_zk_proof(
+    db.upsert_zk_proof(
         national_id,
         nationality,
         prover,
@@ -610,7 +609,7 @@ async fn set_claimed(
 async fn get_account_data(
     State(mut state): State<Server>,
     request: Json<GetAccountDataParam>,
-) -> Result<Json<AccountDataReturn>, ServerError> {
+) -> Result<Json<StoredAccountData>, ServerError> {
     let Json(param) = request;
 
     let lookup_account_address = param.signing_data.message.account_address;
@@ -627,10 +626,14 @@ async fn get_account_data(
     }
 
     let db = state.db_pool.get().await?;
-    let database_result = db.get_account_data(lookup_account_address).await?;
+    let account_data = db.get_account_data(lookup_account_address).await?;
+    let zk_proof_data = db.get_zk_proof_data(lookup_account_address).await?;
+    let tweet_data = db.get_tweet_data(lookup_account_address).await?;
 
-    Ok(Json(AccountDataReturn {
-        data: database_result,
+    Ok(Json(StoredAccountData {
+        account_data,
+        tweet_data,
+        zk_proof_data,
     }))
 }
 
@@ -673,25 +676,22 @@ async fn get_pending_approvals(
 async fn can_claim(
     State(state): State<Server>,
     request: Json<CanClaimParam>,
-) -> Result<Json<Option<CanClaimReturn>>, ServerError> {
+) -> Result<Json<CanClaimReturn>, ServerError> {
     let Json(param) = request;
 
     let db = state.db_pool.get().await?;
-    let database_result = db.get_account_data(param.account_address).await?;
+    let account_data = db.get_account_data(param.account_address).await?;
+    let zk_proof_data = db.get_zk_proof_data(param.account_address).await?;
+    let tweet_data = db.get_tweet_data(param.account_address).await?;
 
-    Ok(Json(database_result.map(|user_data| {
-        let claimed = user_data.claimed;
-        let tweet_valid = user_data.tweet_valid.unwrap_or(false);
-        let zk_proof_valid = user_data.zk_proof_valid.unwrap_or(false);
+    let user_data = UserData {
+        claimed: account_data.map(|x| x.claimed).unwrap_or_default(),
+        pending_approval: account_data.map(|x| x.pending_approval).unwrap_or_default(),
+        zk_proof_valid: zk_proof_data.map(|x| x.zk_proof_valid).unwrap_or_default(),
+        tweet_valid: tweet_data.map(|x| x.tweet_valid).unwrap_or_default(),
+    };
 
-        CanClaimReturn {
-            data: UserData {
-                claimed,
-                tweet_valid,
-                zk_proof_valid,
-            },
-        }
-    })))
+    Ok(Json(CanClaimReturn { data: user_data }))
 }
 
 /// Handle the `health` endpoint, returning the version of the backend.

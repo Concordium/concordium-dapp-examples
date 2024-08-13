@@ -1,7 +1,7 @@
 use crate::error::{ConversionError, DatabaseError};
 use chrono::{DateTime, Utc};
 use concordium_rust_sdk::{
-    base::hashes::TransactionHash,
+    base::{contracts_common::AccountAddressParseError, hashes::TransactionHash},
     id::types::AccountAddress,
     types::{hashes::BlockHash, AbsoluteBlockHeight},
 };
@@ -19,11 +19,11 @@ type DatabaseResult<T> = Result<T, DatabaseError>;
 /// well.
 type UniquenessHash = BlockHash;
 
-/// The database configuration stored in the database.
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct StoredAccountData {
-    /// The row in the database.
-    pub id: u64,
+/// The account data stored in the `accounts` table in the database.
+#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
+pub struct AccountData {
+    /// The account address that was indexed.
+    pub account_address: AccountAddress,
     /// The timestamp of the block the event was included in.
     pub block_time: DateTime<Utc>,
     /// The transaction hash that the event was recorded in.
@@ -36,73 +36,110 @@ pub struct StoredAccountData {
     /// A manual check of the completed tasks is required now before releasing
     /// the reward.
     pub pending_approval: bool,
+}
+
+/// The tweet data stored in the database.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct TweetData {
+    /// The account address that submitted the tweet.
+    pub account_address: AccountAddress,
     /// A tweet id submitted by the above account address (task 1).
     pub tweet_id: Option<String>,
     /// A boolean specifying if the text content of the tweet is eligible for
     /// the reward. The content of the text was verified by this backend
     /// before this flag is set (or will be verified manually).
-    pub tweet_valid: Option<bool>,
+    pub tweet_valid: bool,
     /// A version that specifies the setting of the tweet verification. This
     /// enables us to update the tweet verification logic in the future and
     /// invalidate older versions.
-    pub tweet_verification_version: Option<u64>,
+    pub tweet_verification_version: u64,
     /// The timestamp when the tweet was submitted.
-    pub tweet_submit_time: Option<DateTime<Utc>>,
+    pub tweet_submit_time: DateTime<Utc>,
+}
+
+/// The zk proof data stored in the database.
+#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
+pub struct ZkProofData {
+    /// The account address that submitted the zk proof.
+    pub account_address: AccountAddress,
     /// A hash of the concatenated revealed `national_id_number` and
     /// `nationality` to prevent claiming with different accounts for the
     /// same identity.
-    pub uniqueness_hash: Option<UniquenessHash>,
+    pub uniqueness_hash: UniquenessHash,
     /// A boolean specifying if the identity associated with the account is
     /// eligible for the reward (task 2). An associated ZK proof was
     /// verified by this backend before this flag is set.
-    pub zk_proof_valid: Option<bool>,
+    pub zk_proof_valid: bool,
     /// A version that specifies the setting of the ZK proof during the
     /// verification. This enables us to update the ZK proof-verification
     /// logic in the future and invalidate older proofs.
-    pub zk_proof_verification_version: Option<u64>,
+    pub zk_proof_verification_version: u64,
     /// The timestamp when the ZK proof verification was submitted.
-    pub zk_proof_verification_submit_time: Option<DateTime<Utc>>,
+    pub zk_proof_verification_submit_time: DateTime<Utc>,
 }
 
-impl TryFrom<tokio_postgres::Row> for StoredAccountData {
+/// The account data stored in the database across all tables.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct StoredAccountData {
+    /// Data from the `accounts` table.
+    pub account_data: Option<AccountData>,
+    /// Data from the `tweets` table.
+    pub tweet_data: Option<TweetData>,
+    /// Data from the `zkProofs` table.
+    pub zk_proof_data: Option<ZkProofData>,
+}
+
+impl TryFrom<tokio_postgres::Row> for AccountData {
     type Error = DatabaseError;
 
     fn try_from(value: tokio_postgres::Row) -> DatabaseResult<Self> {
-        let raw_id: i64 = value.try_get("id")?;
-        let raw_tweet_id: Option<&[u8]> = value.try_get("tweet_id")?;
-        let raw_uniqueness_hash: Option<&[u8]> = value.try_get("uniqueness_hash")?;
-        let raw_zk_proof_verification_version: Option<i64> =
-            value.try_get("zk_proof_verification_version")?;
-        let raw_tweet_verification_version: Option<i64> =
-            value.try_get("tweet_verification_version")?;
+        let raw_account_address: &[u8] = value.try_get("account_address")?;
         let raw_transaction_hash: &[u8] = value.try_get("transaction_hash")?;
 
-        let events = Self {
-            id: raw_id as u64,
+        let data = Self {
+            account_address: raw_account_address.try_into().map_err(
+                |e: AccountAddressParseError| {
+                    DatabaseError::TypeConversion(
+                        "account_address".to_string(),
+                        ConversionError::AccountAddressParse(e),
+                    )
+                },
+            )?,
             block_time: value.try_get("block_time")?,
             claimed: value.try_get("claimed")?,
             pending_approval: value.try_get("pending_approval")?,
-            zk_proof_valid: value.try_get("zk_proof_valid")?,
-            zk_proof_verification_version: raw_zk_proof_verification_version.map(|i| i as u64),
-            uniqueness_hash: raw_uniqueness_hash
-                .map(|hash| {
-                    UniquenessHash::try_from(hash).map_err(|e| {
-                        DatabaseError::TypeConversion(
-                            "uniqueness_hash".to_string(),
-                            ConversionError::IncorrectLength(e),
-                        )
-                    })
-                })
-                .transpose()?,
-            tweet_valid: value.try_get("tweet_valid")?,
-            tweet_verification_version: raw_tweet_verification_version.map(|i| i as u64),
-            tweet_submit_time: value.try_get("tweet_submit_time")?,
             transaction_hash: raw_transaction_hash.try_into().map_err(|e| {
                 DatabaseError::TypeConversion(
                     "transaction_hash".to_string(),
                     ConversionError::IncorrectLength(e),
                 )
             })?,
+        };
+
+        Ok(data)
+    }
+}
+
+impl TryFrom<tokio_postgres::Row> for TweetData {
+    type Error = DatabaseError;
+
+    fn try_from(value: tokio_postgres::Row) -> DatabaseResult<Self> {
+        let raw_account_address: &[u8] = value.try_get("account_address")?;
+        let raw_tweet_id: Option<&[u8]> = value.try_get("tweet_id")?;
+        let raw_tweet_verification_version: i64 = value.try_get("tweet_verification_version")?;
+
+        let data = Self {
+            account_address: raw_account_address.try_into().map_err(
+                |e: AccountAddressParseError| {
+                    DatabaseError::TypeConversion(
+                        "account_address".to_string(),
+                        ConversionError::AccountAddressParse(e),
+                    )
+                },
+            )?,
+            tweet_valid: value.try_get("tweet_valid")?,
+            tweet_verification_version: raw_tweet_verification_version as u64,
+            tweet_submit_time: value.try_get("tweet_submit_time")?,
             tweet_id: raw_tweet_id.and_then(|tweet| {
                 String::from_utf8(tweet.to_vec())
                     .map(Some)
@@ -114,11 +151,44 @@ impl TryFrom<tokio_postgres::Row> for StoredAccountData {
                     })
                     .ok()?
             }),
+        };
+
+        Ok(data)
+    }
+}
+
+impl TryFrom<tokio_postgres::Row> for ZkProofData {
+    type Error = DatabaseError;
+
+    fn try_from(value: tokio_postgres::Row) -> DatabaseResult<Self> {
+        let raw_uniqueness_hash: &[u8] = value.try_get("uniqueness_hash")?;
+        let raw_zk_proof_verification_version: i64 =
+            value.try_get("zk_proof_verification_version")?;
+        let raw_account_address: &[u8] = value.try_get("account_address")?;
+
+        let data = Self {
+            zk_proof_valid: value.try_get("zk_proof_valid")?,
+            zk_proof_verification_version: raw_zk_proof_verification_version as u64,
+            uniqueness_hash: UniquenessHash::try_from(raw_uniqueness_hash).map_err(|e| {
+                DatabaseError::TypeConversion(
+                    "uniqueness_hash".to_string(),
+                    ConversionError::IncorrectLength(e),
+                )
+            })?,
+
+            account_address: raw_account_address.try_into().map_err(
+                |e: AccountAddressParseError| {
+                    DatabaseError::TypeConversion(
+                        "account_address".to_string(),
+                        ConversionError::AccountAddressParse(e),
+                    )
+                },
+            )?,
             zk_proof_verification_submit_time: value
                 .try_get("zk_proof_verification_submit_time")?,
         };
 
-        Ok(events)
+        Ok(data)
     }
 }
 
@@ -213,7 +283,7 @@ impl Database {
         Ok(())
     }
 
-    pub async fn set_zk_proof(
+    pub async fn upsert_zk_proof(
         &self,
         national_id: String,
         nationality: String,
@@ -238,7 +308,7 @@ impl Database {
             .client
             .prepare_cached(
                 "SELECT account_address
-                FROM accounts
+                FROM zkProofs
                 WHERE uniqueness_hash = $1",
             )
             .await?;
@@ -247,9 +317,16 @@ impl Database {
 
         if let Some(row) = opt_row {
             let raw_old_account_address: &[u8] = row.try_get("account_address")?;
-            let mut array = [0u8; 32];
-            array.copy_from_slice(raw_old_account_address);
-            let old_account_address = AccountAddress(array);
+
+            let old_account_address =
+                raw_old_account_address
+                    .try_into()
+                    .map_err(|e: AccountAddressParseError| {
+                        DatabaseError::TypeConversion(
+                            "account_address".to_string(),
+                            ConversionError::AccountAddressParse(e),
+                        )
+                    })?;
 
             if old_account_address != account_address {
                 return Err(DatabaseError::IdentityReUsed {
@@ -259,50 +336,80 @@ impl Database {
             }
         }
 
+        // Update the `zkProofs` tabel with the new ZK proof.
         let set_zk_proof = self
             .client
             .prepare_cached(
-                "UPDATE accounts \
-                SET zk_proof_valid = $1, zk_proof_verification_version = $2, uniqueness_hash = $3, zk_proof_verification_submit_time = $4, pending_approval = $5 \
-                WHERE account_address = $6",
-            )
-            .await?;
-        let params: [&(dyn ToSql + Sync); 6] = [
+                "INSERT INTO zkProofs (zk_proof_valid, zk_proof_verification_version, uniqueness_hash, zk_proof_verification_submit_time, account_address) VALUES ($1, $2, $3, $4, $5)
+                ON CONFLICT (account_address) DO UPDATE
+                SET zk_proof_valid = EXCLUDED.zk_proof_valid,
+                    zk_proof_verification_version = EXCLUDED.zk_proof_verification_version,
+                    uniqueness_hash = EXCLUDED.uniqueness_hash,
+                    zk_proof_verification_submit_time = EXCLUDED.zk_proof_verification_submit_time",
+            ).await?;
+        let params: [&(dyn ToSql + Sync); 5] = [
             &true,
             &(current_zk_proof_verification_version as i64),
             &uniqueness_hash.as_slice(),
             &Utc::now(),
-            &pending_approval,
             &account_address.0.as_ref(),
         ];
         self.client.execute(&set_zk_proof, &params).await?;
+
+        // Update the `accounts` table with the new pending approval.
+        let set_pending_approval = self
+            .client
+            .prepare_cached(
+                "UPDATE accounts \
+                SET pending_approval = $1 \
+                WHERE account_address = $2",
+            )
+            .await?;
+        let params: [&(dyn ToSql + Sync); 2] = [&pending_approval, &account_address.0.as_ref()];
+        self.client.execute(&set_pending_approval, &params).await?;
+
         Ok(())
     }
 
-    pub async fn set_tweet(
+    pub async fn upsert_tweet(
         &self,
         tweet_id: String,
         account_address: AccountAddress,
         pending_approval: bool,
         current_tweet_verification_version: u16,
     ) -> DatabaseResult<()> {
+        // Update the `tweets` tabel with the new tweet.
         let set_tweet = self
             .client
             .prepare_cached(
-                "UPDATE accounts \
-                SET tweet_valid = $1, tweet_verification_version = $2, tweet_id = $3, tweet_submit_time = $4, pending_approval = $5 \
-                WHERE account_address = $6",
-            )
-            .await?;
-        let params: [&(dyn ToSql + Sync); 6] = [
+                "INSERT INTO tweets (tweet_valid, tweet_verification_version, tweet_id, tweet_submit_time, account_address)
+                VALUES ($1, $2, $3, $4, $5)
+                ON CONFLICT (account_address) DO UPDATE
+                SET tweet_valid = EXCLUDED.tweet_valid,
+                    tweet_verification_version = EXCLUDED.tweet_verification_version,
+                    tweet_id = EXCLUDED.tweet_id,
+                    tweet_submit_time = EXCLUDED.tweet_submit_time"
+                 ).await?;
+        let params: [&(dyn ToSql + Sync); 5] = [
             &true,
             &(current_tweet_verification_version as i64),
             &tweet_id.as_bytes(),
             &Utc::now(),
-            &pending_approval,
             &account_address.0.as_ref(),
         ];
         self.client.execute(&set_tweet, &params).await?;
+
+        // Update the `accounts` table with the new pending approval.
+        let set_pending_approval = self
+            .client
+            .prepare_cached(
+                "UPDATE accounts \
+                    SET pending_approval = $1 \
+                    WHERE account_address = $2",
+            )
+            .await?;
+        let params: [&(dyn ToSql + Sync); 2] = [&pending_approval, &account_address.0.as_ref()];
+        self.client.execute(&set_pending_approval, &params).await?;
 
         Ok(())
     }
@@ -337,46 +444,77 @@ impl Database {
     pub async fn get_account_data(
         &self,
         account_address: AccountAddress,
-    ) -> DatabaseResult<Option<StoredAccountData>> {
+    ) -> DatabaseResult<Option<AccountData>> {
         let get_account_data = self
             .client
             .prepare_cached(
-                "SELECT id, block_time, transaction_hash, claimed, pending_approval, tweet_id, tweet_valid, tweet_verification_version, tweet_submit_time, uniqueness_hash, zk_proof_valid, zk_proof_verification_version, zk_proof_verification_submit_time
+                "SELECT account_address, block_time, transaction_hash, claimed, pending_approval
                 FROM accounts
                 WHERE account_address = $1",
-            ).await?;
-
+            )
+            .await?;
         let params: [&(dyn ToSql + Sync); 1] = [&(account_address.0.as_ref())];
-
         let opt_row = self.client.query_opt(&get_account_data, &params).await?;
+        opt_row.map(AccountData::try_from).transpose()
+    }
 
-        opt_row.map(StoredAccountData::try_from).transpose()
+    pub async fn get_tweet_data(
+        &self,
+        account_address: AccountAddress,
+    ) -> DatabaseResult<Option<TweetData>> {
+        let get_account_data = self
+            .client
+            .prepare_cached(
+                "SELECT account_address, tweet_id, tweet_valid, tweet_verification_version, tweet_submit_time
+                FROM tweets
+                WHERE account_address = $1",
+            ).await?;
+        let params: [&(dyn ToSql + Sync); 1] = [&(account_address.0.as_ref())];
+        let opt_row = self.client.query_opt(&get_account_data, &params).await?;
+        opt_row.map(TweetData::try_from).transpose()
+    }
+
+    pub async fn get_zk_proof_data(
+        &self,
+        account_address: AccountAddress,
+    ) -> DatabaseResult<Option<ZkProofData>> {
+        let get_account_data: tokio_postgres::Statement = self
+            .client
+            .prepare_cached(
+                "SELECT account_address, uniqueness_hash, zk_proof_valid, zk_proof_verification_version, zk_proof_verification_submit_time
+                FROM zkProofs
+                WHERE account_address = $1",
+            ).await?;
+        let params: [&(dyn ToSql + Sync); 1] = [&(account_address.0.as_ref())];
+        let opt_row = self.client.query_opt(&get_account_data, &params).await?;
+        opt_row.map(ZkProofData::try_from).transpose()
     }
 
     pub async fn get_pending_approvals(
         &self,
         limit: u32,
         offset: u32,
-    ) -> DatabaseResult<Vec<StoredAccountData>> {
+    ) -> DatabaseResult<Vec<AccountData>> {
         let get_pending_approvals = self
             .client
             .prepare_cached(
-                "SELECT id, block_time, transaction_hash, claimed, pending_approval, tweet_id, tweet_valid, tweet_verification_version, tweet_submit_time, uniqueness_hash, zk_proof_valid, zk_proof_verification_version, zk_proof_verification_submit_time \
+                "SELECT account_address, block_time, transaction_hash, claimed, pending_approval \
                 FROM accounts \
                 WHERE pending_approval = true \
                 LIMIT $1 \
-                OFFSET $2"
-            ).await?;
+                OFFSET $2",
+            )
+            .await?;
         let params: [&(dyn ToSql + Sync); 2] = [&(limit as i64), &(offset as i64)];
 
         let rows = self.client.query(&get_pending_approvals, &params).await?;
 
-        let result: Vec<StoredAccountData> = rows
+        let account_data: Vec<AccountData> = rows
             .into_iter()
-            .map(StoredAccountData::try_from)
+            .map(AccountData::try_from)
             .collect::<Result<Vec<_>, _>>()?;
 
-        Ok(result)
+        Ok(account_data)
     }
 }
 

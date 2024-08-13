@@ -1,4 +1,7 @@
-use crate::{db::StoredAccountData, DatabasePool};
+use crate::{
+    db::{AccountData, StoredAccountData},
+    DatabasePool,
+};
 use chrono::Days;
 use concordium_rust_sdk::{
     base::hashes::BlockHash,
@@ -155,6 +158,8 @@ pub struct SetClaimedParam {
 pub struct UserData {
     /// True, if the user has not claimed the reward yet.
     pub claimed: bool,
+    /// True, if the user is marked for the manual check to be done by the admins.
+    pub pending_approval: bool,
     /// True, if the user has submitted a valid tweet and the verification
     /// version is still valid.
     pub tweet_valid: bool,
@@ -235,7 +240,7 @@ pub struct GetPendingApprovalsParam {
 #[derive(serde::Serialize)]
 pub struct VecAccountDataReturn {
     /// Vector of account data that have their pending approval set to `true`.
-    pub data: Vec<StoredAccountData>,
+    pub data: Vec<AccountData>,
 }
 
 /// Parameter struct for the `canClaim` endpoint.
