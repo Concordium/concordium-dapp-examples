@@ -31,8 +31,8 @@ export default function Connection({ verifier, account, authToken, setAccount, s
         const provider = await detectConcordiumProvider();
         const challenge = await getChallenge(verifier, account);
         const statement = await getStatement(verifier);
-        const proof = await provider.requestIdProof(account, statement, challenge);
-        const newAuthToken = await authorize(verifier, challenge, proof);
+        const presentation = await provider.requestVerifiablePresentation(challenge, [statement]);
+        const newAuthToken = await authorize(verifier, presentation);
         setAuthToken(newAuthToken);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [account]);

@@ -1,13 +1,12 @@
 use crate::crypto_common::base16_encode_string;
 use crate::types::*;
 use concordium_rust_sdk::{
-    common as crypto_common,
-    id::{
-        constants::{ArCurve, AttributeKind},
-        id_proof_types::{ProofVersion, Statement},
-        types::{AccountAddress, AccountCredentialWithoutProofs},
+    id::types::AccountAddress,
+    v2::{AccountIdentifier, BlockIdentifier},
+    web3id::{
+        get_public_data, CredentialProof,
+        CredentialStatement::{Account, Web3Id},
     },
-    v2::BlockIdentifier,
 };
 use log::warn;
 use rand::Rng;
@@ -38,13 +37,11 @@ pub async fn handle_get_challenge(
 pub async fn handle_provide_proof(
     client: concordium_rust_sdk::v2::Client,
     state: Server,
-    statement: Statement<ArCurve, AttributeKind>,
     request: ChallengedProof,
 ) -> Result<impl warp::Reply, Rejection> {
     let client = client.clone();
     let state = state.clone();
-    let statement = statement.clone();
-    match check_proof_worker(client, state, request, statement).await {
+    match check_proof_worker(client, state, request).await {
         Ok(r) => Ok(warp::reply::json(&r)),
         Err(e) => {
             warn!("Request is invalid {:#?}.", e);
@@ -78,9 +75,37 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl warp::Reply, Infall
         let code = StatusCode::BAD_REQUEST;
         let message = "Needs proof.";
         Ok(mk_reply(message.into(), code))
-    } else if let Some(InjectStatementError::InvalidProofs) = err.find() {
+    } else if let Some(InjectStatementError::AccountStatement) = err.find() {
         let code = StatusCode::BAD_REQUEST;
-        let message = "Invalid proofs.";
+        let message = "Expect account statement and not web3id statement.";
+        Ok(mk_reply(message.into(), code))
+    } else if let Some(InjectStatementError::WrongNetwork { expected, actual }) = err.find() {
+        let code = StatusCode::BAD_REQUEST;
+        let message = format!(
+            "ZK proof was created for the wrong network. Expect: {expected}. Got: {actual}."
+        );
+        Ok(mk_reply(message, code))
+    } else if let Some(InjectStatementError::WrongProver { expected, actual }) = err.find() {
+        let code = StatusCode::BAD_REQUEST;
+        let message = format!(
+            "Wrong prover for the given challenge. The given challenge was requested for account {expected} but the proof in the wallet was generated for account {actual}."
+        );
+        Ok(mk_reply(message, code))
+    } else if let Some(InjectStatementError::ExpectOneStatement) = err.find() {
+        let code = StatusCode::BAD_REQUEST;
+        let message = "One statement is expected.";
+        Ok(mk_reply(message.into(), code))
+    } else if let Some(InjectStatementError::CredentialLookup(e)) = err.find() {
+        let code = StatusCode::BAD_REQUEST;
+        let message = format!("Unable to look up the credentials: {}", e);
+        Ok(mk_reply(message, code))
+    } else if let Some(InjectStatementError::InvalidProof(e)) = err.find() {
+        let code = StatusCode::BAD_REQUEST;
+        let message = format!("Invalid proof: {}", e);
+        Ok(mk_reply(message, code))
+    } else if let Some(InjectStatementError::WrongStatement) = err.find() {
+        let code = StatusCode::BAD_REQUEST;
+        let message = "Wrong ZK statement proven";
         Ok(mk_reply(message.into(), code))
     } else if let Some(InjectStatementError::NodeAccess(e)) = err.find() {
         let code = StatusCode::INTERNAL_SERVER_ERROR;
@@ -171,8 +196,9 @@ async fn check_proof_worker(
     mut client: concordium_rust_sdk::v2::Client,
     state: Server,
     request: ChallengedProof,
-    statement: Statement<ArCurve, AttributeKind>,
 ) -> Result<Uuid, InjectStatementError> {
+    let presentation = request.presentation;
+
     let status = {
         let challenges = state
             .challenges
@@ -180,33 +206,83 @@ async fn check_proof_worker(
             .map_err(|_| InjectStatementError::LockingError)?;
 
         challenges
-            .get(&base16_encode_string(&request.challenge.0))
+            .get(&base16_encode_string(&presentation.presentation_context))
             .ok_or(InjectStatementError::UnknownSession)?
             .clone()
     };
 
-    let cred_id = request.proof.credential;
-    let acc_info = client
-        .get_account_info(&status.address.into(), BlockIdentifier::LastFinal)
-        .await?;
+    let public_data = get_public_data(
+        &mut client,
+        state.network,
+        &presentation,
+        BlockIdentifier::LastFinal,
+    )
+    .await?;
 
-    // TODO Check remaining credentials
-    let credential = acc_info
-        .response
-        .account_credentials
-        .get(&0.into())
-        .ok_or(InjectStatementError::Credential)?;
+    // Verify the cryptographic proofs.
+    let request = presentation.verify(
+        &state.global_context,
+        public_data.iter().map(|credential| &credential.inputs),
+    )?;
 
-    if crypto_common::to_bytes(credential.value.cred_id()) != crypto_common::to_bytes(&cred_id) {
-        return Err(InjectStatementError::Credential);
+    // Check that one statement is provided.
+    if request.credential_statements.len() != 1 {
+        return Err(InjectStatementError::ExpectOneStatement);
     }
 
-    let commitments = match &credential.value {
-        AccountCredentialWithoutProofs::Initial { icdv: _, .. } => {
-            return Err(InjectStatementError::NotAllowed);
+    // Accessing the index at 0 is save, because we checked that one statement is provided.
+    let account_statement = &request.credential_statements[0];
+
+    // Check the ZK proof has been generated as expected.
+    match account_statement {
+        Account {
+            network, statement, ..
+        } => {
+            // Check that the expected ZK statement has been proven.
+            if *statement != state.zk_statements.statements {
+                return Err(InjectStatementError::WrongStatement);
+            }
+
+            // Check that the proof has been generated for the correct network.
+            if *network != state.network {
+                return Err(InjectStatementError::WrongNetwork {
+                    expected: state.network,
+                    actual: *network,
+                });
+            }
         }
-        AccountCredentialWithoutProofs::Normal { commitments, .. } => commitments,
+        Web3Id { .. } => return Err(InjectStatementError::AccountStatement),
+    }
+
+    // Accessing the index at position `0` is safe because the
+    // `request.credential_statements.len()` has length 1 which was checked
+    // above. This means that one `verifiable_credential` exists.
+    let credential_proof = &presentation.verifiable_credential[0];
+
+    // Get the `prover` which is the `account_address` that created the proof.
+    let prover = match credential_proof {
+        CredentialProof::Account { cred_id, .. } => {
+            let account_info = client
+                .get_account_info(
+                    &AccountIdentifier::CredId(*cred_id),
+                    BlockIdentifier::LastFinal,
+                )
+                .await
+                .map_err(InjectStatementError::NodeAccess)?
+                .response;
+
+            account_info.account_address
+        }
+        _ => return Err(InjectStatementError::AccountStatement),
     };
+
+    if prover != status.address {
+        return Err(InjectStatementError::WrongProver {
+            expected: status.address,
+            actual: prover,
+        });
+    }
+
     let mut tokens = state
         .tokens
         .lock()
@@ -217,26 +293,15 @@ async fn check_proof_worker(
         .lock()
         .map_err(|_| InjectStatementError::LockingError)?;
 
-    if statement.verify(
-        ProofVersion::Version2,
-        &request.challenge.0,
-        &state.global_context,
-        cred_id.as_ref(),
-        commitments,
-        &request.proof.proof.value,
-    ) {
-        challenges.remove(&base16_encode_string(&request.challenge.0));
-        let token = Uuid::new_v4();
-        tokens.insert(
-            token.to_string(),
-            TokenStatus {
-                created_at: SystemTime::now(),
-            },
-        );
-        Ok(token)
-    } else {
-        Err(InjectStatementError::InvalidProofs)
-    }
+    challenges.remove(&base16_encode_string(&presentation.presentation_context));
+    let token = Uuid::new_v4();
+    tokens.insert(
+        token.to_string(),
+        TokenStatus {
+            created_at: SystemTime::now(),
+        },
+    );
+    Ok(token)
 }
 
 pub async fn handle_clean_state(state: Server) -> anyhow::Result<()> {

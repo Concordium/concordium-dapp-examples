@@ -3,14 +3,14 @@ mod types;
 use crate::handlers::*;
 use crate::types::*;
 
+use anyhow::Context;
 use clap::Parser;
 use concordium_rust_sdk::{
     common::{self as crypto_common},
-    id::{
-        constants::{ArCurve, AttributeKind},
-        id_proof_types::Statement,
-    },
+    id::{constants::ArCurve, id_proof_types::Statement},
     v2::BlockIdentifier,
+    v2::Scheme,
+    web3id::{did::Network, Web3IdAttribute},
 };
 use log::info;
 use std::{
@@ -18,6 +18,12 @@ use std::{
     sync::{Arc, Mutex},
 };
 use warp::Filter;
+
+/// The testnet genesis block hash.
+pub const TESTNET_GENESIS_BLOCK_HASH: [u8; 32] = [
+    66, 33, 51, 45, 52, 225, 105, 65, 104, 194, 160, 192, 179, 253, 15, 39, 56, 9, 97, 44, 177, 61,
+    0, 13, 92, 46, 0, 232, 95, 80, 247, 150,
+];
 
 /// Structure used to receive the correct command line arguments.
 #[derive(clap::Parser, Debug)]
@@ -29,7 +35,7 @@ struct IdVerifierConfig {
         help = "GRPC V2 interface of the node.",
         default_value = "http://localhost:20000"
     )]
-    endpoint: concordium_rust_sdk::v2::Endpoint,
+    node_endpoint: concordium_rust_sdk::v2::Endpoint,
     #[clap(
         long = "port",
         default_value = "8100",
@@ -67,17 +73,48 @@ async fn main() -> anyhow::Result<()> {
     // only log the current module (main).
     log_builder.filter_level(app.log_level); // filter filter_module(module_path!(), app.log_level);
     log_builder.init();
-    let statement: Statement<ArCurve, AttributeKind> = serde_json::from_str(&app.statement)?;
 
-    let mut client = concordium_rust_sdk::v2::Client::new(app.endpoint).await?;
+    // Set up endpoint to the node.
+    let endpoint = if app
+        .node_endpoint
+        .uri()
+        .scheme()
+        .map_or(false, |x| x == &Scheme::HTTPS)
+    {
+        app.node_endpoint
+            .tls_config(tonic::transport::channel::ClientTlsConfig::new())
+            .context("Unable to construct TLS configuration for the Concordium API.")?
+    } else {
+        app.node_endpoint
+    }
+    .connect_timeout(std::time::Duration::from_secs(5))
+    .timeout(std::time::Duration::from_secs(10));
+
+    // Establish connection to the blockchain node.
+    let mut client = concordium_rust_sdk::v2::Client::new(endpoint).await?;
     let global_context = client
         .get_cryptographic_parameters(BlockIdentifier::LastFinal)
         .await?
         .response;
+    let consensus_info = client
+        .get_consensus_info()
+        .await
+        .context("Unable to query the consesnsus info from the chain")?;
+    let genesis_hash = consensus_info.genesis_block.bytes;
+    let network = if genesis_hash == TESTNET_GENESIS_BLOCK_HASH {
+        Network::Testnet
+    } else {
+        Network::Mainnet
+    };
+
+    let zk_statements: Statement<ArCurve, Web3IdAttribute> =
+        serde_json::from_str(&app.statement).context("Unable to construct the ZK statements")?;
 
     log::debug!("Acquired data from the node.");
 
     let state = Server {
+        network,
+        zk_statements,
         challenges: Arc::new(Mutex::new(HashMap::new())),
         tokens: Arc::new(Mutex::new(HashMap::new())),
         global_context: Arc::new(global_context),
@@ -115,12 +152,7 @@ async fn main() -> anyhow::Result<()> {
         .and(warp::path!("api" / "prove"))
         .and(warp::body::json())
         .and_then(move |request: ChallengedProof| {
-            handle_provide_proof(
-                client.clone(),
-                prove_state.clone(),
-                statement.clone(),
-                request,
-            )
+            handle_provide_proof(client.clone(), prove_state.clone(), request)
         });
 
     // 3. Get Image (Ignores the name of the item, checks that the auth token is valid and then redirects to an image)
