@@ -4,7 +4,7 @@ use axum::{
     Json,
 };
 use concordium_rust_sdk::{
-    base::hashes::IncorrectLength,
+    base::{contracts_common::AccountAddressParseError, hashes::IncorrectLength},
     common::types::AccountAddress,
     types::AbsoluteBlockHeight,
     v2::QueryError,
@@ -21,6 +21,8 @@ pub enum ConversionError {
     IncorrectLength(#[from] IncorrectLength),
     #[error("UTF-8 conversion error: {0}")]
     FromUtf8Error(#[from] FromUtf8Error),
+    #[error("Account address parse error: {0}")]
+    AccountAddressParse(#[from] AccountAddressParseError),
 }
 
 /// Represents possible errors returned from [`Database`] or [`DatabasePool`] functions
@@ -94,12 +96,11 @@ pub enum ServerError {
     #[error("Converting message to bytes caused an error: {0}")]
     MessageConversion(#[from] bincode::Error),
     #[error("The block hash and block height in the signing data are not from the same block.")]
-    BlockSigningDataInvalid,
+    MismatchBlockHashAndHeight,
     #[error(
-        "The block hash used as challenge and block height passed as parameter are not from the \
-         same block."
+        "The block hash and/or the context string were not included in the challenge correctly."
     )]
-    BlockProofDataInvalid,
+    ChallengeInvalid,
     #[error(
         "Signature already expired. Your block hash signed has to be not older than the block \
          hash from block {0}."
@@ -147,8 +148,8 @@ impl IntoResponse for ServerError {
             | ServerError::ClaimExpired(_)
             | ServerError::MessageConversion(_)
             | ServerError::AccountNotExist(..)
-            | ServerError::BlockSigningDataInvalid
-            | ServerError::BlockProofDataInvalid
+            | ServerError::MismatchBlockHashAndHeight
+            | ServerError::ChallengeInvalid
             | ServerError::SignatureExpired(_)
             | ServerError::ProofExpired(_)
             | ServerError::TypeConversion(..) => {
