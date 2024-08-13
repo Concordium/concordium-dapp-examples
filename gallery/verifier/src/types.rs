@@ -1,13 +1,16 @@
 use concordium_rust_sdk::{
     base as concordium_base,
-    common::{SerdeBase16Serialize, Serial, Serialize, Versioned},
+    common::{SerdeBase16Serialize, Serial, Serialize},
     endpoints::{QueryError, RPCError},
     id::{
-        constants::{ArCurve, AttributeKind},
-        id_proof_types::Proof,
+        constants::ArCurve,
+        id_proof_types::Statement,
         types::{AccountAddress, GlobalContext},
     },
-    types::CredentialRegistrationID,
+    web3id::{
+        did::Network, CredentialLookupError, Presentation, PresentationVerificationError,
+        Web3IdAttribute,
+    },
 };
 use std::{
     collections::HashMap,
@@ -46,6 +49,8 @@ pub struct Server {
     pub challenges: Arc<Mutex<HashMap<String, ChallengeStatus>>>,
     pub tokens: Arc<Mutex<HashMap<String, TokenStatus>>>,
     pub global_context: Arc<GlobalContext<ArCurve>>,
+    pub network: Network,
+    pub zk_statements: Statement<ArCurve, Web3IdAttribute>,
 }
 
 #[derive(Debug)]
@@ -54,18 +59,31 @@ pub struct Server {
 pub enum InjectStatementError {
     #[error("Not allowed")]
     NotAllowed,
-    #[error("Invalid proof")]
-    InvalidProofs,
     #[error("Node access error: {0}")]
     NodeAccess(#[from] QueryError),
     #[error("Error acquiring internal lock.")]
     LockingError,
     #[error("Proof provided for an unknown session.")]
     UnknownSession,
-    #[error("Issue with credential.")]
-    Credential,
     #[error("Given token was expired.")]
     Expired,
+    #[error("One statement is expected.")]
+    ExpectOneStatement,
+    #[error("Unable to look up the credentials: {0}")]
+    CredentialLookup(#[from] CredentialLookupError),
+    #[error("Invalid proof: {0}")]
+    InvalidProof(#[from] PresentationVerificationError),
+    #[error("Wrong ZK statement proven")]
+    WrongStatement,
+    #[error("Expect account statement and not web3id statement")]
+    AccountStatement,
+    #[error("ZK proof was created for the wrong network. Expect: {expected}. Got: {actual}.")]
+    WrongNetwork { expected: Network, actual: Network },
+    #[error("Wrong prover for the given challenge. The given challenge was requested for account {expected} but the proof in the wallet was generated for account {actual}.")]
+    WrongProver {
+        expected: AccountAddress,
+        actual: AccountAddress,
+    },
 }
 
 impl From<RPCError> for InjectStatementError {
@@ -84,19 +102,14 @@ pub struct ErrorResponse {
     pub message: String,
 }
 
+#[repr(transparent)]
 #[derive(serde::Deserialize, serde::Serialize, Debug)]
 pub struct ChallengeResponse {
     pub challenge: Challenge,
 }
 
-#[derive(serde::Deserialize, serde::Serialize, Debug, Clone)]
+#[repr(transparent)]
+#[derive(serde::Deserialize, serde::Serialize)]
 pub struct ChallengedProof {
-    pub challenge: Challenge,
-    pub proof: ProofWithContext,
-}
-
-#[derive(serde::Deserialize, serde::Serialize, Debug, Clone)]
-pub struct ProofWithContext {
-    pub credential: CredentialRegistrationID,
-    pub proof: Versioned<Proof<ArCurve, AttributeKind>>,
+    pub presentation: Presentation<ArCurve, Web3IdAttribute>,
 }

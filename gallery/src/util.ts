@@ -1,4 +1,4 @@
-import { IdStatement, IdProofOutput } from '@concordium/web-sdk';
+import { CredentialStatement, AtomicStatementV2, VerifiablePresentation } from '@concordium/web-sdk';
 
 /**
  * Fetch the item names from the backend
@@ -21,23 +21,33 @@ export async function getChallenge(verifier: string, accountAddress: string): Pr
 /**
  * Fetch the statement to prove from the backend
  */
-export async function getStatement(verifier: string): Promise<IdStatement> {
+export async function getStatement(verifier: string): Promise<CredentialStatement> {
     const response = await fetch(`${verifier}/statement`, { method: 'get' });
     const body = (await response.json()) as string;
-    return JSON.parse(body) as IdStatement;
+
+    const credentialStatement: CredentialStatement = {
+        // We use the testnet identity provider 0 (run by Concordium).
+        idQualifier: {
+            type: 'cred',
+            issuers: [0],
+        },
+        statement: JSON.parse(body) as AtomicStatementV2[],
+    };
+
+    return credentialStatement;
 }
 
 /**
  *  Authorize with the backend, and get a auth token.
  */
-export async function authorize(verifier: string, challenge: string, proof: IdProofOutput): Promise<string> {
+export async function authorize(verifier: string, presentation: VerifiablePresentation): Promise<string> {
     const response = await fetch(`${verifier}/prove`, {
         method: 'post',
         headers: new Headers({ 'content-type': 'application/json' }),
-        body: JSON.stringify({ challenge, proof }),
+        body: JSON.stringify({ presentation }),
     });
     if (!response.ok) {
-        throw new Error('Unable to authorize');
+        throw new Error('Unable to authorize: ' + (await response.text()));
     }
     const body = (await response.json()) as string;
     if (body) {
