@@ -1,7 +1,7 @@
 use crate::crypto_common::base16_encode_string;
 use crate::types::*;
 use concordium_rust_sdk::{
-    id::types::AccountAddress,
+    id::types::{AccountAddress, AccountCredentialWithoutProofs},
     v2::{AccountIdentifier, BlockIdentifier},
     web3id::{
         get_public_data, CredentialProof,
@@ -106,6 +106,15 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl warp::Reply, Infall
     } else if let Some(InjectStatementError::WrongStatement) = err.find() {
         let code = StatusCode::BAD_REQUEST;
         let message = "Wrong ZK statement proven";
+        Ok(mk_reply(message.into(), code))
+    } else if let Some(InjectStatementError::NoCredentialCommitment) = err.find() {
+        let code = StatusCode::BAD_REQUEST;
+        let message = "No credential commitment on chain.";
+        Ok(mk_reply(message.into(), code))
+    } else if let Some(InjectStatementError::OnlyRegularAccounts) = err.find() {
+        let code = StatusCode::BAD_REQUEST;
+        let message =
+            "Only regular accounts are support by this backend. No support for multi-sig accounts.";
         Ok(mk_reply(message.into(), code))
     } else if let Some(InjectStatementError::NodeAccess(e)) = err.find() {
         let code = StatusCode::INTERNAL_SERVER_ERROR;
@@ -259,8 +268,8 @@ async fn check_proof_worker(
     // above. This means that one `verifiable_credential` exists.
     let credential_proof = &presentation.verifiable_credential[0];
 
-    // Get the `prover` which is the `account_address` that created the proof.
-    let prover = match credential_proof {
+    // Check account credential corresponding to the credential_proof.
+    match credential_proof {
         CredentialProof::Account { cred_id, .. } => {
             let account_info = client
                 .get_account_info(
@@ -271,17 +280,32 @@ async fn check_proof_worker(
                 .map_err(InjectStatementError::NodeAccess)?
                 .response;
 
-            account_info.account_address
+            // This backend only supports regular accounts with exactly one credential (no mulit-sig account support).
+            if account_info.account_credentials.len() != 1 {
+                return Err(InjectStatementError::OnlyRegularAccounts);
+            }
+
+            let credential = account_info
+                .account_credentials
+                .get(&0.into())
+                .ok_or(InjectStatementError::OnlyRegularAccounts)?;
+
+            // `Initial` accounts were created by identity providers in the past
+            // without a Pedersen commitment deployed on chain. As such we cannot verify proofs on them.
+            if let AccountCredentialWithoutProofs::Initial { .. } = &credential.value {
+                return Err(InjectStatementError::NoCredentialCommitment);
+            }
+
+            // Check that the `prover` is the same as the address that requested the challenge.
+            if account_info.account_address != status.address {
+                return Err(InjectStatementError::WrongProver {
+                    expected: status.address,
+                    actual: account_info.account_address,
+                });
+            }
         }
         _ => return Err(InjectStatementError::AccountStatement),
     };
-
-    if prover != status.address {
-        return Err(InjectStatementError::WrongProver {
-            expected: status.address,
-            actual: prover,
-        });
-    }
 
     let mut tokens = state
         .tokens

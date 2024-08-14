@@ -1,7 +1,7 @@
 use concordium_rust_sdk::{
     base as concordium_base,
     common::{SerdeBase16Serialize, Serial, Serialize},
-    endpoints::{QueryError, RPCError},
+    endpoints::QueryError,
     id::{
         constants::ArCurve,
         id_proof_types::Statement,
@@ -57,7 +57,7 @@ pub struct Server {
 /// An internal error type used by this server to manage error handling.
 #[derive(thiserror::Error)]
 pub enum InjectStatementError {
-    #[error("Not allowed")]
+    #[error("Not allowed.")]
     NotAllowed,
     #[error("Node access error: {0}")]
     NodeAccess(#[from] QueryError),
@@ -75,7 +75,7 @@ pub enum InjectStatementError {
     InvalidProof(#[from] PresentationVerificationError),
     #[error("Wrong ZK statement proven")]
     WrongStatement,
-    #[error("Expect account statement and not web3id statement")]
+    #[error("Expect account statement and not web3id statement.")]
     AccountStatement,
     #[error("ZK proof was created for the wrong network. Expect: {expected}. Got: {actual}.")]
     WrongNetwork { expected: Network, actual: Network },
@@ -84,12 +84,12 @@ pub enum InjectStatementError {
         expected: AccountAddress,
         actual: AccountAddress,
     },
-}
-
-impl From<RPCError> for InjectStatementError {
-    fn from(err: RPCError) -> Self {
-        Self::NodeAccess(err.into())
-    }
+    #[error("No credential commitment on chain.")]
+    NoCredentialCommitment,
+    #[error(
+        "Only regular accounts are support by this backend. No support for multi-sig accounts."
+    )]
+    OnlyRegularAccounts,
 }
 
 impl warp::reject::Reject for InjectStatementError {}
