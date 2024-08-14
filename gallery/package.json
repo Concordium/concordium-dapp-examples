@@ -1,7 +1,7 @@
 {
     "name": "gallery",
     "license": "Apache-2.0",
-    "version": "0.1.3",
+    "version": "0.2.0",
     "packageManager": "yarn@1.22.0",
     "dependencies": {
         "@concordium/browser-wallet-api-helpers": "^3.0.1",

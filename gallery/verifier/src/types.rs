@@ -73,7 +73,7 @@ pub enum InjectStatementError {
     CredentialLookup(#[from] CredentialLookupError),
     #[error("Invalid proof: {0}")]
     InvalidProof(#[from] PresentationVerificationError),
-    #[error("Wrong ZK statement proven")]
+    #[error("Wrong ZK statement proven.")]
     WrongStatement,
     #[error("Expect account statement and not web3id statement.")]
     AccountStatement,
@@ -87,7 +87,7 @@ pub enum InjectStatementError {
     #[error("No credential commitment on chain.")]
     NoCredentialCommitment,
     #[error(
-        "Only regular accounts are support by this backend. No support for multi-sig accounts."
+        "Only regular accounts are supported by this backend. No support for multi-sig accounts."
     )]
     OnlyRegularAccounts,
 }

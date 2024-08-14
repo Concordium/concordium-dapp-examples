@@ -105,7 +105,7 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl warp::Reply, Infall
         Ok(mk_reply(message, code))
     } else if let Some(InjectStatementError::WrongStatement) = err.find() {
         let code = StatusCode::BAD_REQUEST;
-        let message = "Wrong ZK statement proven";
+        let message = "Wrong ZK statement proven.";
         Ok(mk_reply(message.into(), code))
     } else if let Some(InjectStatementError::NoCredentialCommitment) = err.find() {
         let code = StatusCode::BAD_REQUEST;
@@ -114,7 +114,7 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl warp::Reply, Infall
     } else if let Some(InjectStatementError::OnlyRegularAccounts) = err.find() {
         let code = StatusCode::BAD_REQUEST;
         let message =
-            "Only regular accounts are support by this backend. No support for multi-sig accounts.";
+            "Only regular accounts are supported by this backend. No support for multi-sig accounts.";
         Ok(mk_reply(message.into(), code))
     } else if let Some(InjectStatementError::NodeAccess(e)) = err.find() {
         let code = StatusCode::INTERNAL_SERVER_ERROR;
