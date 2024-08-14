@@ -25,7 +25,7 @@ The backend for this demo can be found in the [verifier](./verifier/) folder:
 -   Run `yarn build` in a terminal
 -   Run `yarn build-verifier` (This builds the [backend](./verifier/) using cargo/rustc)
 
--   Run `yarn start --statement "$(<verifier/config/statement.json)" --names "$(<verifier/config/names.json)" --node http://node.testnet.concordium.com:20000` (This will run the backend, which also host the front-end, check its [README](./verifier/README.md) for more information)
+-   Run `yarn start --statement "$(<verifier/config/statement.json)" --names "$(<verifier/config/names.json)" --node https://grpc.testnet.concordium.com:20000` (This will run the backend, which also host the front-end, check its [README](./verifier/README.md) for more information)
 
 -   Open URL logged in console (on default http://127.0.0.1:8100)
 

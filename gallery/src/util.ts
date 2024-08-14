@@ -26,10 +26,13 @@ export async function getStatement(verifier: string): Promise<CredentialStatemen
     const body = (await response.json()) as string;
 
     const credentialStatement: CredentialStatement = {
-        // We use the testnet identity provider 0 (run by Concordium).
         idQualifier: {
             type: 'cred',
-            issuers: [0],
+            // We allow all identity providers on mainnet and on testnet.
+            // This list is longer than necessary to include all current/future
+            // identity providers on mainnet and testnet.
+            // This list should be updated to only include the identity providers that you trust.
+            issuers: [0, 1, 2, 3, 4, 5, 6, 7],
         },
         statement: JSON.parse(body) as AtomicStatementV2[],
     };
