@@ -270,7 +270,7 @@ async fn check_zk_proof(
     }
 
     // We support regular accounts with exactly one credential at index 0.
-    let account_statement = request.credential_statements[0].clone();
+    let account_statement = &request.credential_statements[0];
 
     // Check the ZK proof has been generated as expected.
     match account_statement {
@@ -278,15 +278,15 @@ async fn check_zk_proof(
             network, statement, ..
         } => {
             // Check that the expected ZK statement has been proven.
-            if statement != state.zk_statements.statements {
+            if *statement != state.zk_statements.statements {
                 return Err(ServerError::WrongStatement);
             }
 
             // Check that the proof has been generated for the correct network.
-            if network != state.network {
+            if *network != state.network {
                 return Err(ServerError::WrongNetwork {
                     expected: state.network,
-                    actual: network,
+                    actual: *network,
                 });
             }
         }
@@ -339,7 +339,6 @@ async fn check_zk_proof(
     let (national_id, nationality, prover) = match credential_proof {
         CredentialProof::Account {
             proofs,
-            network: _,
             cred_id,
             ..
         } => {
