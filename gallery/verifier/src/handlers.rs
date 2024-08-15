@@ -239,7 +239,7 @@ async fn check_proof_worker(
         return Err(InjectStatementError::ExpectOneStatement);
     }
 
-    // Accessing the index at 0 is save, because we checked that one statement is provided.
+    // Accessing the index at 0 is safe, because we checked that one statement is provided.
     let account_statement = &request.credential_statements[0];
 
     // Check the ZK proof has been generated as expected.
