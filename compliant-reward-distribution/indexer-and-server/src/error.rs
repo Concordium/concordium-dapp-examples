@@ -35,8 +35,8 @@ pub enum DatabaseError {
     #[error("Failed to convert type `{0}`: {1}")]
     TypeConversion(String, #[source] ConversionError),
     /// Failed to configure database.
-    #[error("Could not configure database because of {0}: {1}")]
-    Configuration(String, anyhow::Error),
+    #[error("Could not configure database: {0}")]
+    Configuration(anyhow::Error),
     /// Failed to get pool.
     #[error("Could not get pool: {0}")]
     PoolError(#[from] PoolError),
