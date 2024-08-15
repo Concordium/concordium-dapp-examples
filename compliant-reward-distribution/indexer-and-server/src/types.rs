@@ -4,7 +4,6 @@ use crate::{
 };
 use chrono::Days;
 use concordium_rust_sdk::{
-    base::hashes::BlockHash,
     common::types::Signature,
     id::{
         constants::ArCurve,
@@ -51,12 +50,10 @@ pub struct SigningData<T> {
     pub message: T,
     /// Signature.
     pub signature: Signature,
-    /// Contains the block height and the corresponding block hash around the
-    /// time when the message was signed. The block hash is signed as part
-    /// of the message. The block height is not signed but checked that it
-    /// corresponds to the block hash. The block height is used to ensure that
-    /// the signature expires after some time.
-    pub block: BlockMessage,
+    /// Contains the block height around the time when the message was signed.
+    /// The corresponding block hash is signed as part of the message. The block
+    /// height is used to ensure that the signature expires after some time.
+    pub block_height: AbsoluteBlockHeight,
 }
 
 /// Trait definition of `HasSigningData`. This trait is implemented for all
@@ -64,19 +61,6 @@ pub struct SigningData<T> {
 pub trait HasSigningData {
     type Message;
     fn signing_data(&self) -> &SigningData<Self::Message>;
-}
-
-/// Struct included in all parameters used by endpoints that require a signature
-/// check. It contains the block height and the corresponding block hash around
-/// the time when the message was signed. The block hash is signed as part of
-/// the message. The block height is not signed but checked that it corresponds
-/// to the block hash. The block height is used to ensure that the signature
-/// expires after some time.
-#[derive(serde::Deserialize, serde::Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct BlockMessage {
-    pub hash: BlockHash,
-    pub height: AbsoluteBlockHeight,
 }
 
 /// Parameter struct for the `postZKProof` endpoint.

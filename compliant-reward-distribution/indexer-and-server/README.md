@@ -61,6 +61,7 @@ There are a few options to configure the indexer:
 - `--node (env: CCD_INDEXER_NODE)` is the endpoint to the Concordium node grpc v2 API. If not specified, the default value `https://grpc.testnet.concordium.com:20000` is used.
 
 - `--db-connection (env: CCD_INDEXER_DB_CONNECTION)` should specify your postgreSQL database connection. If not specified, the default value `host=localhost dbname=indexer user=postgres password=password port=5432` is used.
+Note: In production, you should use the environment variable and not pass the database connection containing a password via a command-line argument since the value could be read by other processes.
 
 - `--log-level (env: CCD_INDEXER_LOG_LEVEL)` specifies the maximum log level. Possible values are: `trace`, `debug`, `info`, `warn`, and `error`. If not specified, the default value `info` is used.
 
@@ -69,6 +70,10 @@ You can open the help menu as follows:
 ```console
 cargo run --bin indexer -- --help
 ```
+
+# The `server` binary
+
+The server has several endpoints to read/write from/to the database. The authorization to write data to the database is either granted by verifying a signature from an admin/user or by verifying a ZK proof from the user.
 
 ## Run the `server`
 
@@ -83,6 +88,7 @@ There are a few options to configure the server:
 - `--listen-address (env: CCD_SERVER_LISTEN_ADDRESS)` is the listen address where the server will be listen on. If not specified, the default value `0.0.0.0:8080` is used.
 
 - `--db-connection (env: CCD_SERVER_DB_CONNECTION)` should specify your postgreSQL database connection. If not specified, the default value `host=localhost dbname=indexer user=postgres password=password port=5432` is used.
+Note: In production, you should use the environment variable and not pass the database connection containing a password via a command-line argument since the value could be read by other processes.
 
 - `--log-level (env: CCD_SERVER_LOG_LEVEL)` specifies the maximum log level. Possible values are: `trace`, `debug`, `info`, `warn`, and `error`. If not specified, the default value `info` is used.
 
@@ -91,6 +97,12 @@ There are a few options to configure the server:
 - `--admin_accounts (env: CCD_SERVER_ADMIN_ACCOUNTS)` are allowed to read all data from the database and set the `claimed` flag in the database. Admin accounts have elevated permission and the flag can be re-used to set several admin accounts.
 
 - `--claim_expiry_duration_days (env: CCD_SERVER_CLAIM_EXPIRY_DURATION_DAYS)` is the duration after creating a new account during which the account is eligible to claim the reward, the default value `60` is used.
+
+You can open the help menu as follows:
+
+```console
+cargo run --bin server -- --help
+```
 
 ## API endpoints of the `server`
 
@@ -152,6 +164,7 @@ An example response of this endpoint:
 {
     "data": {
         "claimed": false,
+        "pendingApproval": false,
         "tweetValid": true,
         "zkProofValid": false
     }
@@ -171,10 +184,7 @@ This endpoint needs no authorization and can be queried by the front end to disp
             "offset": 0
         },
         "signature": "4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab00694e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069",
-        "block": {
-            "hash": "4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069",
-            "height": 3
-        }
+        "blockHeight": 3
     }
 }
 ```
@@ -185,24 +195,16 @@ An example response of this endpoint:
     "data": [
         {
             "id": 1,
-            "block_time": "2024-07-23T10:04:59.916Z",
-            "transaction_hash": "36491adcec0fb7cb1374e39e588c442890ded9b6443c35168fa5f9fe49be5941",
+            "blockTime": "2024-07-23T10:04:59.916Z",
+            "transactionHash": "36491adcec0fb7cb1374e39e588c442890ded9b6443c35168fa5f9fe49be5941",
             "claimed": false,
-            "pending_approval": true,
-            "tweet_id": "ABCDabcd123456789",
-            "tweet_valid": true,
-            "tweet_verification_version": 1,
-            "tweet_submit_time": "2024-08-11T08:24:46.679651Z",
-            "uniqueness_hash": "720ec3951259c2fcd2e901c7eecda5dc24e07afa94575c64f5b6bea35be9a0ee",
-            "zk_proof_valid": true,
-            "zk_proof_verification_version": 1,
-            "zk_proof_verification_submit_time": "2024-08-11T08:24:39.146501Z"
+            "pendingApproval": true
         }
     ]
 }
 ```
 
-This endpoint needs authorization and can be queried by an admin account (providing a valid signature) to read account data from the database for manual verification and release of rewards. Account data with the `pending_approval==true` are returned by this endpoint.
+This endpoint needs authorization and can be queried by an admin account (providing a valid signature) to read the list of accounts from the database that need manual verification before releasing the rewards. Account data with the `pending_approval==true` are returned by this endpoint.
 
 - The `/api/getAccountData` endpoint expects a JSON body with the fields shown in the example below:
 
@@ -214,10 +216,7 @@ This endpoint needs authorization and can be queried by an admin account (provid
             "accountAddress": "3cGEB7tTdQBFxJ9sn5JyGPNay2MSmRSKm4133UVqmKoFg4MXJ1"
         },
         "signature": "4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab00694e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069",
-        "block": {
-            "hash": "4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069",
-            "height": 3
-        }
+        "blockHeight": 3
     }
 }
 ```
@@ -228,18 +227,18 @@ Some example responses of this endpoint:
 {
     "data": {
         "id": 1,
-        "block_time": "2024-07-23T10:04:59.916Z",
-        "transaction_hash": "36491adcec0fb7cb1374e39e588c442890ded9b6443c35168fa5f9fe49be5941",
+        "blockTime": "2024-07-23T10:04:59.916Z",
+        "transactionHash": "36491adcec0fb7cb1374e39e588c442890ded9b6443c35168fa5f9fe49be5941",
         "claimed": false,
-        "pending_approval": false,
-        "tweet_id": "ABCDabcd123456789",
-        "tweet_valid": true,
-        "tweet_verification_version": 1,
-        "tweet_submit_time": "2024-08-08T07:48:16.476071Z",
-        "uniqueness_hash": null,
-        "zk_proof_valid": null,
-        "zk_proof_verification_version": null,
-        "zk_proof_verification_submit_time": null
+        "pendingApproval": false,
+        "tweetId": "ABCDabcd123456789",
+        "tweetValid": true,
+        "tweetVerificationVersion": 1,
+        "tweetSubmitTime": "2024-08-08T07:48:16.476071Z",
+        "uniquenessHash": null,
+        "zkProofValid": null,
+        "zkProofVerificationVersion": null,
+        "zkProofVerificationSubmitTime": null
     }
 }
 ```
@@ -250,18 +249,18 @@ or
 {
     "data": {
         "id": 1,
-        "block_time": "2024-07-23T10:04:59.916Z",
-        "transaction_hash": "36491adcec0fb7cb1374e39e588c442890ded9b6443c35168fa5f9fe49be5941",
+        "blockTime": "2024-07-23T10:04:59.916Z",
+        "transactionHash": "36491adcec0fb7cb1374e39e588c442890ded9b6443c35168fa5f9fe49be5941",
         "claimed": false,
-        "pending_approval": false,
-        "tweet_id": null,
-        "tweet_valid": null,
-        "tweet_verification_version": null,
-        "tweet_submit_time": null,
-        "uniqueness_hash": "720ec3951259c2fcd2e901c7eecda5dc24e07afa94575c64f5b6bea35be9a0ee",
-        "zk_proof_valid": true,
-        "zk_proof_verification_version": 1,
-        "zk_proof_verification_submit_time": "2024-08-11T08:15:41.542234Z"
+        "pendingApproval": false,
+        "tweetId": null,
+        "tweetValid": null,
+        "tweetVerificationVersion": null,
+        "tweetSubmitTime": null,
+        "uniquenessHash": "720ec3951259c2fcd2e901c7eecda5dc24e07afa94575c64f5b6bea35be9a0ee",
+        "zkProofValid": true,
+        "zkProofVerificationVersion": 1,
+        "zkProofVerificationSubmitTime": "2024-08-11T08:15:41.542234Z"
     }
 }
 ```
@@ -272,23 +271,23 @@ or
 {
     "data": {
         "id": 1,
-        "block_time": "2024-07-23T10:04:59.916Z",
-        "transaction_hash": "36491adcec0fb7cb1374e39e588c442890ded9b6443c35168fa5f9fe49be5941",
+        "blockTime": "2024-07-23T10:04:59.916Z",
+        "transactionHash": "36491adcec0fb7cb1374e39e588c442890ded9b6443c35168fa5f9fe49be5941",
         "claimed": false,
-        "pending_approval": true,
-        "tweet_id": "ABCDabcd123456789",
-        "tweet_valid": true,
-        "tweet_verification_version": 1,
-        "tweet_submit_time": "2024-08-11T08:15:13.241390Z",
-        "uniqueness_hash": "720ec3951259c2fcd2e901c7eecda5dc24e07afa94575c64f5b6bea35be9a0ee",
-        "zk_proof_valid": true,
-        "zk_proof_verification_version": 1,
-        "zk_proof_verification_submit_time": "2024-08-11T08:15:41.542234Z"
+        "pendingApproval": true,
+        "tweetId": "ABCDabcd123456789",
+        "tweetValid": true,
+        "tweetVerificationVersion": 1,
+        "tweetSubmitTime": "2024-08-11T08:15:13.241390Z",
+        "uniquenessHash": "720ec3951259c2fcd2e901c7eecda5dc24e07afa94575c64f5b6bea35be9a0ee",
+        "zkProofValid": true,
+        "zkProofVerificationVersion": 1,
+        "zkProofVerificationSubmitTime": "2024-08-11T08:15:41.542234Z"
     }
 }
 ```
 
-This endpoint needs authorization and can be queried by an admin account (providing a valid signature) to read account data from the database for a specific user. This endpoint can be invoked to investigate the state of a user in the database in case of complaints/problems/issues raised.
+This endpoint needs authorization and can be queried by an admin account (providing a valid signature) to read account data from the database for a specific user. This endpoint can be invoked to investigate the state of a user in the database in case of complaints/problems/issues raised or before releasing the rewards to the user.
 
 - The `/api/setClaimed` endpoint expects a JSON body with the fields shown in the example below:
 
@@ -303,10 +302,7 @@ This endpoint needs authorization and can be queried by an admin account (provid
             ]
         },
         "signature": "4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab00694e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069",
-        "block": {
-            "hash": "4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069",
-            "height": 3
-        }
+        "blockHeight": 3
     }
 }
 ```
@@ -402,10 +398,7 @@ This endpoint needs authorization and can be invoked by a user account (providin
             "tweet": "ABCDabcd123456789"
         },
         "signature": "4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab00694e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069",
-        "block": {
-            "hash": "4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069",
-            "height": 3
-        }
+        "blockHeight": 3
     }
 }
 ```
@@ -429,19 +422,19 @@ curl -POST "http://localhost:8080/api/canClaim" -H "Content-Type: application/js
 ```
 
 ```
-curl -POST "http://localhost:8080/api/setClaimed" -H "Content-Type: application/json" --data '{"signingData":{"signer":"47b6Qe2XtZANHetanWKP1PbApLKtS3AyiCtcXaqLMbypKjCaRw","message":{"accountAddresses":["47b6Qe2XtZANHetanWKP1PbApLKtS3AyiCtcXaqLMbypKjCaRw","3cGEB7tTdQBFxJ9sn5JyGPNay2MSmRSKm4133UVqmKoFg4MXJ1"]},"signature":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab00694e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","block":{"hash":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","height":3}}}' -v
+curl -POST "http://localhost:8080/api/setClaimed" -H "Content-Type: application/json" --data '{"signingData":{"signer":"47b6Qe2XtZANHetanWKP1PbApLKtS3AyiCtcXaqLMbypKjCaRw","message":{"accountAddresses":["47b6Qe2XtZANHetanWKP1PbApLKtS3AyiCtcXaqLMbypKjCaRw","3cGEB7tTdQBFxJ9sn5JyGPNay2MSmRSKm4133UVqmKoFg4MXJ1"]},"signature":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab00694e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","blockHeight": 3}}' -v
 ```
 
 ```
-curl -POST "http://localhost:8080/api/getAccountData" -H "Content-Type: application/json" --data '{"signingData":{"signer":"47b6Qe2XtZANHetanWKP1PbApLKtS3AyiCtcXaqLMbypKjCaRw","message":{"accountAddress":"3cGEB7tTdQBFxJ9sn5JyGPNay2MSmRSKm4133UVqmKoFg4MXJ1"},"signature":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab00694e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","block":{"hash":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","height":3}}}' -v
+curl -POST "http://localhost:8080/api/getAccountData" -H "Content-Type: application/json" --data '{"signingData":{"signer":"47b6Qe2XtZANHetanWKP1PbApLKtS3AyiCtcXaqLMbypKjCaRw","message":{"accountAddress":"3cGEB7tTdQBFxJ9sn5JyGPNay2MSmRSKm4133UVqmKoFg4MXJ1"},"signature":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab00694e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","blockHeight": 3}}' -v
 ```
 
 ```
-curl -POST "http://localhost:8080/api/getPendingApprovals" -H "Content-Type: application/json" --data '{"signingData":{"signer":"47b6Qe2XtZANHetanWKP1PbApLKtS3AyiCtcXaqLMbypKjCaRw","message":{"limit":10,"offset":0},"signature":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab00694e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","block":{"hash":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","height":3}}}' -v
+curl -POST "http://localhost:8080/api/getPendingApprovals" -H "Content-Type: application/json" --data '{"signingData":{"signer":"47b6Qe2XtZANHetanWKP1PbApLKtS3AyiCtcXaqLMbypKjCaRw","message":{"limit":10,"offset":0},"signature":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab00694e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","blockHeight": 3}}' -v
 ```
 
 ```
-curl -POST "http://localhost:8080/api/postTweet" -H "Content-Type: application/json" --data '{"signingData":{"signer":"3cGEB7tTdQBFxJ9sn5JyGPNay2MSmRSKm4133UVqmKoFg4MXJ1","message":{"tweet":"ABCDabcd123456789"},"signature":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab00694e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","block":{"hash":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","height":3}}}' -v
+curl -POST "http://localhost:8080/api/postTweet" -H "Content-Type: application/json" --data '{"signingData":{"signer":"3cGEB7tTdQBFxJ9sn5JyGPNay2MSmRSKm4133UVqmKoFg4MXJ1","message":{"tweet":"ABCDabcd123456789"},"signature":"4e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab00694e68a9f9a671f4b62963cbade295c1b47b74838dabf78c451740c1e060ab0069","blockHeight": 3}}' -v
 ```
 
 ```
@@ -492,7 +485,7 @@ Proofs and signatures have to be generated including a recent `block_hash` (eith
 Since `block_hashes` cannot be predicted much in advance, this ensures that proofs and signatures are generated on the spot and
 expiry after `SIGNATURE_AND_PROOF_EXPIRY_DURATION_BLOCKS` (constant in the `server.rs` file). The corresponding `block_height`
 is passed to the backend (while not part of the proof or part of the message signed), the `block_height` eases the check for
-expiry and the backend checks that the `block_height` corresponds to the `block_hash` included in the proof/signature.
+expiry and the backend looks up the corresponding `block_hash` included in the proof/signature.
 
 This verification relies on the front end (via the wallet) and back end being connected to reliable nodes that are caught up to the
 top of the chain. The front end should look up some recent `block_hash` (not the most recent) to give the backend a small window of

@@ -235,11 +235,12 @@ pub async fn check_account_eligible(
 
 /// Check that the zk proof is valid by checking that:
 /// - the cryptographic proofs are valid.
-/// - exactly one credential statement is present in the proof.
+/// - exactly one credential statement is present in the proof (no multi-sig support).
 /// - the expected zk statements have been proven.
 /// - the proof has been generated for the correct network.
 /// - the proof is not expired.
 /// - the proof was intended for this service.
+/// - the proof is not from an `Initial` account (these accounts have no Pedersen commitment on chain).
 /// The function returns the revealed `national_id`, `nationality` and `prover`
 /// associated with the proof.
 async fn check_zk_proof(
@@ -265,10 +266,7 @@ async fn check_zk_proof(
 
     // We support regular accounts with exactly one credential at index 0.
     if request.credential_statements.len() != 1 {
-        return Err(ServerError::WrongLength {
-            actual_string: "credential_statements".to_string(),
-            expected_length: 1,
-        });
+        return Err(ServerError::OnlyRegularAccounts);
     }
 
     // We support regular accounts with exactly one credential at index 0.
@@ -326,6 +324,7 @@ async fn check_zk_proof(
 
     let lower_bound = current_block_height.height - SIGNATURE_AND_PROOF_EXPIRY_DURATION_BLOCKS;
 
+    // Check that the ZK proof is not expired.
     if challenge_block_height.height < lower_bound {
         return Err(ServerError::ProofExpired(lower_bound));
     }
@@ -336,7 +335,7 @@ async fn check_zk_proof(
     // above which means that one `verifiable_credential` exists.
     let credential_proof = &presentation.verifiable_credential[0];
 
-    // Get the revealed `national_id`, `nationality` and `cred_id` from the
+    // Get the revealed `national_id`, the revealed `nationality` and the `cred_id` from the
     // credential proof.
     let (national_id, nationality, cred_id) = match credential_proof {
         CredentialProof::Account {
@@ -387,7 +386,7 @@ async fn check_zk_proof(
 
     // Exclude `Initial` accounts from the proof verification.
 
-    // This backend only supports regular accounts with exactly one credential (no mulit-sig account support).
+    // This backend only supports regular accounts with exactly one credential (no multi-sig account support).
     if account_info.account_credentials.len() != 1 {
         return Err(ServerError::OnlyRegularAccounts);
     }
@@ -422,7 +421,7 @@ where
         signer,
         message,
         signature,
-        block,
+        block_height,
     } = param.signing_data();
 
     let signer_account_info = state
@@ -433,6 +432,13 @@ where
         )
         .await
         .map_err(ServerError::QueryError)?;
+
+    let block_hash = state
+        .node_client
+        .get_block_info(block_height)
+        .await
+        .map_err(ServerError::QueryError)?
+        .block_hash;
 
     // The message signed in the Concordium browser wallet is prepended with the
     // `account` address (signer) and 8 zero bytes. Accounts in the Concordium
@@ -452,7 +458,7 @@ where
         [
             &signer.as_ref() as &[u8],
             &[0u8; 8],
-            &block.hash,
+            &block_hash,
             &CONTEXT_STRING,
             &message_bytes,
         ]
@@ -466,16 +472,16 @@ where
     // reduce complexity we will communicate that multi-sig accounts are not
     // supported. Regular accounts have only one public-private key pair at
     // index 0 in the credential map.
-    let signer_account_credential = match signer_account_info
+    if signer_account_info.response.account_credentials.len() != 1 {
+        return Err(ServerError::OnlyRegularAccounts);
+    }
+    let signer_account_credential = signer_account_info
         .response
         .account_credentials
         .get(&0.into())
-    {
-        Some(credential) => &credential.value,
-        _ => return Err(ServerError::OnlyRegularAccounts),
-    };
+        .ok_or(ServerError::OnlyRegularAccounts)?;
 
-    let signer_public_key = match signer_account_credential {
+    let signer_public_key = match &signer_account_credential.value {
         // `Initial` accounts were created by identity providers in the past
         // without a Pedersen commitment deployed on chain. As such we should not verify ZK proofs
         // on them so that we exclude them from this service.
@@ -484,30 +490,22 @@ where
         }
         // We use/support regular accounts. Regular accounts have only one
         // public-private key pair at index 0 in the key map.
-        AccountCredentialWithoutProofs::Normal { cdv, .. } => cdv
-            .cred_key_info
-            .keys
-            .get(&0.into())
-            .ok_or(ServerError::OnlyRegularAccounts)?,
+        AccountCredentialWithoutProofs::Normal { cdv, .. } => {
+            if cdv.cred_key_info.keys.len() != 1 {
+                return Err(ServerError::OnlyRegularAccounts);
+            }
+
+            cdv.cred_key_info
+                .keys
+                .get(&0.into())
+                .ok_or(ServerError::OnlyRegularAccounts)?
+        }
     };
 
     // Verify the signature.
     let is_valid = signer_public_key.verify(message_hash, signature);
     if !is_valid {
         return Err(ServerError::InvalidSignature);
-    }
-
-    // Check if the signature is not expired by checking if a recent block hash was
-    // signed.
-    let expected_block_hash = state
-        .node_client
-        .get_block_info(block.height)
-        .await
-        .map_err(ServerError::QueryError)?
-        .block_hash;
-
-    if expected_block_hash != block.hash {
-        return Err(ServerError::MismatchBlockHashAndHeight);
     }
 
     let current_block_height = state
@@ -518,8 +516,8 @@ where
 
     let lower_bound = current_block_height.height - SIGNATURE_AND_PROOF_EXPIRY_DURATION_BLOCKS;
 
-    // Check that the ZK proof is not expired.
-    if block.height.height < lower_bound {
+    // Check that the signature is not expired.
+    if block_height.height < lower_bound {
         return Err(ServerError::SignatureExpired(lower_bound));
     }
 
@@ -574,11 +572,12 @@ async fn post_zk_proof(
 
     // Check that:
     // - the cryptographic proofs are valid.
-    // - exactly one credential statement is present in the proof.
+    // - exactly one credential statement is present in the proof (no multi-sig support).
     // - the expected zk statements have been proven.
     // - the proof has been generated for the correct network.
     // - the proof is not expired.
     // - the proof was intended for this service.
+    // - the proof is not from an `Initial` account (these accounts have no Pedersen commitment on chain).
     // Return the extracted `national_id`, `nationality` and `prover` associated
     // with the proof.
     let ZKProofExtractedData {

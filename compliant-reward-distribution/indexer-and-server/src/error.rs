@@ -95,8 +95,6 @@ pub enum ServerError {
     ClaimExpired(ClaimExpiryDurationDays),
     #[error("Converting message to bytes caused an error: {0}")]
     MessageConversion(#[from] bincode::Error),
-    #[error("The block hash and block height in the signing data are not from the same block.")]
-    MismatchBlockHashAndHeight,
     #[error(
         "The block hash and/or the context string were not included in the challenge correctly."
     )]
@@ -154,7 +152,6 @@ impl IntoResponse for ServerError {
             | ServerError::ClaimExpired(_)
             | ServerError::MessageConversion(_)
             | ServerError::AccountNotExist(..)
-            | ServerError::MismatchBlockHashAndHeight
             | ServerError::ChallengeInvalid
             | ServerError::SignatureExpired(_)
             | ServerError::ProofExpired(_)
