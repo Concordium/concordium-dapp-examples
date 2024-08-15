@@ -8,7 +8,6 @@ use axum::{
 use chrono::Utc;
 use clap::Parser;
 use concordium_rust_sdk::{
-    common::types::{CredentialIndex, KeyIndex},
     id::{
         constants::ArCurve,
         id_proof_types::Statement,
@@ -334,13 +333,11 @@ async fn check_zk_proof(
     // above which means that one `verifiable_credential` exists.
     let credential_proof = &presentation.verifiable_credential[0];
 
-    // Get the revealed `national_id`, `nationality` and `account_address` from the
+    // Get the revealed `national_id`, `nationality` and `cred_id` from the
     // credential proof.
-    let (national_id, nationality, prover) = match credential_proof {
+    let (national_id, nationality, cred_id) = match credential_proof {
         CredentialProof::Account {
-            proofs,
-            cred_id,
-            ..
+            proofs, cred_id, ..
         } => {
             // Get the revealed `national_id` from the proof.
             // Accessing the index at position `0` is safe because we checked that
@@ -368,21 +365,37 @@ async fn check_zk_proof(
                 _ => return Err(ServerError::RevealAttribute(index_1)),
             };
 
-            // Get the `prover` which is the `account_address` that created the proof.
-            let account_info = state
-                .node_client
-                .get_account_info(
-                    &AccountIdentifier::CredId(*cred_id),
-                    BlockIdentifier::LastFinal,
-                )
-                .await
-                .map_err(ServerError::QueryError)?
-                .response;
-            let prover = account_info.account_address;
-
-            (national_id, nationality, prover)
+            (national_id, nationality, cred_id)
         }
         _ => return Err(ServerError::AccountStatement),
+    };
+
+    // Get the `prover` which is the `account_address` that created the proof.
+    let account_info = state
+        .node_client
+        .get_account_info(
+            &AccountIdentifier::CredId(*cred_id),
+            BlockIdentifier::LastFinal,
+        )
+        .await
+        .map_err(ServerError::QueryError)?
+        .response;
+    let prover = account_info.account_address;
+
+    // Exclude `Initial` accounts from the proof verification.
+
+    // This backend only supports regular accounts with exactly one credential (no mulit-sig account support).
+    if account_info.account_credentials.len() != 1 {
+        return Err(ServerError::OnlyRegularAccounts);
+    }
+    let credential = account_info
+        .account_credentials
+        .get(&0.into())
+        .ok_or(ServerError::OnlyRegularAccounts)?;
+    // `Initial` accounts were created by identity providers in the past
+    // without a Pedersen commitment deployed on chain. As such we should not verify proofs on them.
+    if let AccountCredentialWithoutProofs::Initial { .. } = &credential.value {
+        return Err(ServerError::NoCredentialCommitment);
     };
 
     Ok(ZKProofExtractedData {
@@ -450,14 +463,29 @@ where
     // reduce complexity we will communicate that multi-sig accounts are not
     // supported. Regular accounts have only one public-private key pair at
     // index 0 in the credential map.
-    let signer_account_credential =
-        &signer_account_info.response.account_credentials[&CredentialIndex::from(0)].value;
+    let signer_account_credential = match signer_account_info
+        .response
+        .account_credentials
+        .get(&0.into())
+    {
+        Some(credential) => &credential.value,
+        _ => return Err(ServerError::OnlyRegularAccounts),
+    };
 
-    // We use/support regular accounts. Regular accounts have only one
-    // public-private key pair at index 0 in the key map.
     let signer_public_key = match signer_account_credential {
-        AccountCredentialWithoutProofs::Initial { icdv } => &icdv.cred_account.keys[&KeyIndex(0)],
-        AccountCredentialWithoutProofs::Normal { cdv, .. } => &cdv.cred_key_info.keys[&KeyIndex(0)],
+        // `Initial` accounts were created by identity providers in the past
+        // without a Pedersen commitment deployed on chain. As such we should not verify ZK proofs
+        // on them so that we exclude them from this service.
+        AccountCredentialWithoutProofs::Initial { .. } => {
+            return Err(ServerError::NoCredentialCommitment)
+        }
+        // We use/support regular accounts. Regular accounts have only one
+        // public-private key pair at index 0 in the key map.
+        AccountCredentialWithoutProofs::Normal { cdv, .. } => cdv
+            .cred_key_info
+            .keys
+            .get(&0.into())
+            .ok_or(ServerError::OnlyRegularAccounts)?,
     };
 
     // Verify the signature.
