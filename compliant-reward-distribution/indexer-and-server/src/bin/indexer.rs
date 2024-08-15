@@ -27,8 +27,11 @@ struct Args {
         env = "CCD_INDEXER_NODE"
     )]
     node_endpoint: concordium_rust_sdk::v2::Endpoint,
-    // A connection string detailing the connection to the database used by the
-    // application.
+    /// A connection string detailing the connection to the database used by the
+    /// application.
+    // Note: In production, you should use the environment variable and not pass
+    // the database connection containing a password via a command-line argument
+    // since the value could be read by other processes.
     #[arg(
         long = "db-connection",
         short = 'c',

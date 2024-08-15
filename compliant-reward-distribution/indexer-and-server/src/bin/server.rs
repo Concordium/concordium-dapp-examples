@@ -52,6 +52,9 @@ struct Args {
     listen_address: std::net::SocketAddr,
     /// A connection string detailing the connection to the database used by the \
     /// application.
+    // Note: In production, you should use the environment variable and not pass
+    // the database connection containing a password via a command-line argument
+    // since the value could be read by other processes.
     #[arg(
         long = "db-connection",
         short = 'd',
@@ -342,7 +345,7 @@ async fn check_zk_proof(
             // Get the revealed `national_id` from the proof.
             // Accessing the index at position `0` is safe because we checked that
             // `state.zk_statements.statements` were proven, which means we know
-            // that the first proof is a reveal `national_id` attribute proof.
+            // that the first proof is a revealed `national_id` attribute proof.
             let index_0 = 0;
             let national_id = match &proofs[index_0].1 {
                 concordium_rust_sdk::id::id_proof_types::AtomicProof::RevealAttribute {
@@ -355,7 +358,7 @@ async fn check_zk_proof(
             // Get the revealed `nationality` from the proof.
             // Accessing the index at position `1` is safe because we checked that
             // `state.zk_statements.statements` were proven, which means we know
-            // that the second proof is a reveal `nationality` attribute proof.
+            // that the second proof is a revealed `nationality` attribute proof.
             let index_1 = 1;
             let nationality = match &proofs[index_1].1 {
                 concordium_rust_sdk::id::id_proof_types::AtomicProof::RevealAttribute {
