@@ -551,21 +551,14 @@ impl DatabasePool {
             .max_size(pool_size)
             .runtime(deadpool_postgres::Runtime::Tokio1)
             .build()
-            .map_err(|e| {
-                DatabaseError::Configuration("Failed to build database pool".to_string(), e.into())
-            })?;
+            .map_err(|e| DatabaseError::Configuration(e.into()))?;
 
         if try_create_tables {
             let client = pool.get().await?;
             client
                 .batch_execute(include_str!("../resources/schema.sql"))
                 .await
-                .map_err(|e| {
-                    DatabaseError::Configuration(
-                        "Failed to execute create statements".to_string(),
-                        e.into(),
-                    )
-                })?;
+                .map_err(|e| DatabaseError::Configuration(e.into()))?;
         }
         Ok(Self { pool })
     }
