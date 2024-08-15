@@ -113,6 +113,12 @@ pub enum ServerError {
     ProofExpired(u64),
     #[error("Failed to convert type `{0}`: {1}")]
     TypeConversion(String, IncorrectLength),
+    #[error(
+        "Only regular accounts are supported by this backend. No support for multi-sig accounts."
+    )]
+    OnlyRegularAccounts,
+    #[error("No credential commitment on chain.")]
+    NoCredentialCommitment,
 }
 
 impl IntoResponse for ServerError {
@@ -152,7 +158,9 @@ impl IntoResponse for ServerError {
             | ServerError::ChallengeInvalid
             | ServerError::SignatureExpired(_)
             | ServerError::ProofExpired(_)
-            | ServerError::TypeConversion(..) => {
+            | ServerError::TypeConversion(..)
+            | ServerError::OnlyRegularAccounts
+            | ServerError::NoCredentialCommitment => {
                 let error_message = format!("Bad request: {self}");
                 tracing::info!(error_message);
                 (StatusCode::BAD_REQUEST, error_message.into())
