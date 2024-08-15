@@ -13,14 +13,15 @@ use tokio_postgres::{types::ToSql, NoTls};
 /// Alias for returning results with [`DatabaseError`]s as the `Err` variant.
 type DatabaseResult<T> = Result<T, DatabaseError>;
 
-/// Use the `BlockHash` as an alias for the `UniquenessHash`.
-/// The `BlockHash` implements helper functions (e.g. serde::Serialize,
+/// Use the [`BlockHash`] as an alias for the [`UniquenessHash`].
+/// The [`BlockHash`] implements helper functions (e.g. serde::Serialize,
 /// serde::Deserialize, and Display) that are needed for the `UniquenessHash` as
 /// well.
 type UniquenessHash = BlockHash;
 
 /// The account data stored in the `accounts` table in the database.
 #[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AccountData {
     /// The account address that was indexed.
     pub account_address: AccountAddress,
@@ -40,6 +41,7 @@ pub struct AccountData {
 
 /// The tweet data stored in the database.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TweetData {
     /// The account address that submitted the tweet.
     pub account_address: AccountAddress,
@@ -59,6 +61,7 @@ pub struct TweetData {
 
 /// The zk proof data stored in the database.
 #[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ZkProofData {
     /// The account address that submitted the zk proof.
     pub account_address: AccountAddress,
@@ -80,6 +83,7 @@ pub struct ZkProofData {
 
 /// The account data stored in the database across all tables.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct StoredAccountData {
     /// Data from the `accounts` table.
     pub account_data: Option<AccountData>,
@@ -194,6 +198,7 @@ impl TryFrom<tokio_postgres::Row> for ZkProofData {
 
 /// The database configuration stored in the database.
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct StoredConfiguration {
     /// The genesis block hash of the network monitored.
     pub genesis_block_hash: BlockHash,
