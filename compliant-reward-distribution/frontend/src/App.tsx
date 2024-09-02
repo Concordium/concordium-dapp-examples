@@ -1,27 +1,33 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import { Button } from 'react-bootstrap';
 
-import { WalletConnectionProps, useConnection, useConnect } from '@concordium/react-components';
-
-import './styles.scss';
-import { AdminCreateItem } from './components/AdminCreateItem';
-import { AdminChangeRoles } from './components/AdminChangeRoles';
-import { ChangeItemStatus } from './components/ChangeItemStatus';
-import { Explorer } from './components/Explorer';
-import { AddTransitionRule } from './components/AddTransitionRule';
-import * as constants from './constants';
+import { WalletProvider } from '../wallet-connection';
+import { ConnectWallet } from './components/ConnectWallet';
+import { ZkProofSubmission } from './components/ZkProofSubmission';
 import { version } from '../package.json';
+import './styles.scss';
 
-export const App = (props: WalletConnectionProps) => {
-    const { setActiveConnectorType, activeConnectorError, activeConnector, connectedAccounts, genesisHashes } = props;
-
-    const { connection, setConnection, account } = useConnection(connectedAccounts, genesisHashes);
-    const { connect } = useConnect(activeConnector, setConnection);
+export const App = () => {
+    const [provider, setProvider] = useState<WalletProvider>();
+    const [account, setAccount] = useState<string>();
 
     useEffect(() => {
-        setActiveConnectorType(constants.BROWSER_WALLET);
-    }, [setActiveConnectorType]);
+        if (provider !== undefined) {
+            return () => {
+                provider?.disconnect?.().then(() => provider.removeAllListeners());
+            };
+        }
+    }, [provider]);
+
+    const connectProvider = async (provider: WalletProvider) => {
+        const accounts = await provider.connect();
+        // TODO if no account or wrong network; report error.
+        if (accounts && accounts?.length != 0) {
+            setAccount(accounts[0]);
+        }
+        setProvider(provider);
+    };
 
     return (
         <Router>
@@ -35,14 +41,14 @@ export const App = (props: WalletConnectionProps) => {
                         Version {version}
                     </a>
                 </div>
-                <Link className="secondary" to="/explorer">
-                    Explorer
+                <Link className="secondary" to="/connectWallet">
+                    ConnectWallet
                 </Link>
-                <Link className="secondary" to="/changeItemStatus">
-                    Admin1
+                <Link className="secondary" to="/tweetSubmission">
+                    Tweet
                 </Link>
-                <Link className="secondary" to="/adminCreateItem">
-                    Admin2
+                <Link className="secondary" to="/zkProofSubmission">
+                    ZKProof
                 </Link>
                 <Link className="secondary" to="/adminChangeRoles">
                     Admin3
@@ -50,26 +56,25 @@ export const App = (props: WalletConnectionProps) => {
                 <Link className="secondary" to="/addTransitionRule">
                     Admin4
                 </Link>
-                <Button
-                    variant="primary"
-                    id="account"
-                    disabled={activeConnector && !account ? false : true}
-                    onClick={connect}
-                >
-                    {account
-                        ? account.slice(0, 5) + '...' + account.slice(-5)
-                        : activeConnector
-                          ? 'Connect Wallet'
-                          : 'Loading...'}
+
+                <Button id="accountAddress" disabled={true}>
+                    {account ? account.slice(0, 5) + '...' + account.slice(-5) : 'No Account Connected'}
                 </Button>
             </div>
 
             <Routes>
-                <Route path="/explorer" element={<Explorer />} />
                 <Route
-                    path="/adminCreateItem"
+                    path="/connectWallet"
+                    element={<ConnectWallet connectProvider={connectProvider} account={account} />}
+                />
+                <Route
+                    path="/zkProofSubmission"
+                    element={<ZkProofSubmission accountAddress={account} provider={provider} />}
+                />
+                {/* <Route
+                    path="/tweetSubmission"
                     element={
-                        <AdminCreateItem
+                        <TweetSubmission
                             activeConnectorError={activeConnectorError}
                             connection={connection}
                             accountAddress={account}
@@ -86,16 +91,7 @@ export const App = (props: WalletConnectionProps) => {
                         />
                     }
                 />
-                <Route
-                    path="/changeItemStatus"
-                    element={
-                        <ChangeItemStatus
-                            activeConnectorError={activeConnectorError}
-                            connection={connection}
-                            accountAddress={account}
-                        />
-                    }
-                />
+
                 <Route
                     path="/addTransitionRule"
                     element={
@@ -105,7 +101,7 @@ export const App = (props: WalletConnectionProps) => {
                             accountAddress={account}
                         />
                     }
-                />
+                /> */}
                 <Route path="/" element={<div></div>} />
             </Routes>
         </Router>

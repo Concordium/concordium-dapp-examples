@@ -10,7 +10,7 @@ import { useGrpcClient } from '@concordium/react-components';
 import { AccountAddress, Timestamp } from '@concordium/web-sdk';
 
 import { TxHashLink } from './CCDScanLinks';
-import * as constants from '.././constants';
+import * as constants from '../constants';
 import { nonceOf } from '../track_and_trace_contract';
 import * as TrackAndTraceContract from '../../generated/module_track_and_trace'; // Code generated from a smart contract module. The naming convention of the generated file is `moduleName_smartContractName`.
 import { ToTokenIdU64 } from '../utils';
@@ -72,7 +72,7 @@ function generateMessage(
     }
 }
 
-export function ChangeItemStatus(props: Props) {
+export function TweetSubmission(props: Props) {
     const { connection, accountAddress, activeConnectorError } = props;
 
     interface FormType {
