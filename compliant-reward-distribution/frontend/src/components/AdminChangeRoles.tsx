@@ -4,11 +4,6 @@ import { Alert, Button, Form } from 'react-bootstrap';
 import Switch from 'react-switch';
 
 import { WalletConnection } from '@concordium/wallet-connectors';
-import { AccountAddress } from '@concordium/web-sdk';
-
-import { TxHashLink } from './CCDScanLinks';
-import { addRole, removeRole } from '../track_and_trace_contract';
-import * as TrackAndTraceContract from '../../generated/module_track_and_trace';
 import { validateAccountAddress } from '../utils';
 
 interface Props {
@@ -18,7 +13,7 @@ interface Props {
 }
 
 export function AdminChangeRoles(props: Props) {
-    const { connection, accountAddress, activeConnectorError } = props;
+    const { activeConnectorError } = props;
 
     interface FormType {
         address: string | undefined;
@@ -32,7 +27,6 @@ export function AdminChangeRoles(props: Props) {
         defaultValue: { addAdmin: true },
     });
 
-    const [txHash, setTxHash] = useState<string | undefined>(undefined);
     const [error, setError] = useState<string | undefined>(undefined);
 
     function onSubmit() {
@@ -41,34 +35,6 @@ export function AdminChangeRoles(props: Props) {
         if (address === undefined) {
             setError(`'address' input field is undefined`);
             throw Error(`'address' input field is undefined`);
-        }
-
-        const parameter: TrackAndTraceContract.RevokeRoleParameter = {
-            address: { type: 'Account', content: AccountAddress.fromBase58(address) },
-            role: { type: 'Admin' },
-        };
-
-        if (accountAddress && connection) {
-            // Send transaction
-            if (addAdmin) {
-                addRole(connection, AccountAddress.fromBase58(accountAddress), parameter)
-                    .then((txHash: string) => {
-                        setTxHash(txHash);
-                    })
-                    .catch((e) => {
-                        setError((e as Error).message);
-                    });
-            } else {
-                removeRole(connection, AccountAddress.fromBase58(accountAddress), parameter)
-                    .then((txHash: string) => {
-                        setTxHash(txHash);
-                    })
-                    .catch((e) => {
-                        setError((e as Error).message);
-                    });
-            }
-        } else {
-            setError(`Wallet is not connected. Click 'Connect Wallet' button.`);
         }
     }
 
@@ -119,11 +85,6 @@ export function AdminChangeRoles(props: Props) {
                 {activeConnectorError && (
                     <Alert variant="danger">
                         Connect Error: {activeConnectorError}. Refresh page if you have the browser wallet installed.
-                    </Alert>
-                )}
-                {txHash && (
-                    <Alert variant="info">
-                        <TxHashLink txHash={txHash} />
                     </Alert>
                 )}
             </div>

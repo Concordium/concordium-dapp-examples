@@ -29,7 +29,7 @@ export function ZkProofSubmission(props: Props) {
         fetchStatement();
     }, []);
 
-    interface FormType { }
+    interface FormType {}
     const { handleSubmit } = useForm<FormType>({ mode: 'all' });
 
     async function onSubmit() {
@@ -65,7 +65,6 @@ export function ZkProofSubmission(props: Props) {
             setError(`'recentBlockHash' is undefined`);
             throw Error(`'recentBlockHash' is undefined`);
         }
-
         const hashDigest = [recentBlockHash, CONTEXT_STRING];
         const challenge = sha256(hashDigest.flatMap((item) => Array.from(item)));
 
@@ -80,7 +79,6 @@ export function ZkProofSubmission(props: Props) {
         }
 
         const presentation = await provider.requestVerifiablePresentation(challenge, [zkStatement]);
-
         try {
             await submitZkProof(presentation, recentBlockHeight);
         } catch (error) {
