@@ -31,6 +31,8 @@ The following examples are available.
 - [compliant-reward-distribution](./compliant-reward-distribution/) demonstrates an airdrop example with an indexer, a frontend, and a backend with signature and ZK proof verification at the backend. The ZK proof is used to ensure `Sybil-resistance/uniqueness` as each identity on the chain can interact with the service with only one of its accounts.
 
 - [testnet-faucet](./testnet-faucet/) implements the Concordium testnet faucet which requires the user to post on X (former Twitter) and complete a CAPTCHA task to claim testnet CCDs. The faucet allows claiming once within a specified timeframe.
+  
+- [cis5-smart-contract-dapp](./cis5-smart-contract-dapp/) implements a CIS-5 smart contract wallet dapp. This dapp allows users to create ed25519 keys on the contract, send and receive assets on the network within the smart contract.
 
 ## Setup
 
