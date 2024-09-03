@@ -5,11 +5,7 @@ import Select from 'react-select';
 import Switch from 'react-switch';
 
 import { WalletConnection } from '@concordium/wallet-connectors';
-import { AccountAddress } from '@concordium/web-sdk';
 
-import { TxHashLink } from './CCDScanLinks';
-import { updateStateMachine } from '../track_and_trace_contract';
-import * as TrackAndTraceContract from '../../generated/module_track_and_trace';
 import { validateAccountAddress } from '../utils';
 
 interface Props {
@@ -26,7 +22,7 @@ const STATE_OPTIONS = [
 ];
 
 export function AddTransitionRule(props: Props) {
-    const { connection, accountAddress, activeConnectorError } = props;
+    const { activeConnectorError } = props;
 
     interface FormType {
         address: string | undefined;
@@ -42,7 +38,6 @@ export function AddTransitionRule(props: Props) {
         defaultValue: { isUpdateAdd: true },
     });
 
-    const [txHash, setTxHash] = useState<string | undefined>(undefined);
     const [error, setError] = useState<string | undefined>(undefined);
 
     function onSubmit() {
@@ -61,26 +56,6 @@ export function AddTransitionRule(props: Props) {
         if (toStatus === undefined) {
             setError(`'to_status' input field is undefined`);
             throw Error(`'to_status' input field is undefined`);
-        }
-
-        const parameter: TrackAndTraceContract.UpdateStateMachineParameter = {
-            address: AccountAddress.fromBase58(address),
-            to_status: { type: toStatus },
-            from_status: { type: fromStatus },
-            update: { type: isUpdateAdd ? 'Add' : 'Remove' },
-        };
-
-        // Send transaction
-        if (accountAddress && connection) {
-            updateStateMachine(connection, AccountAddress.fromBase58(accountAddress), parameter)
-                .then((txHash: string) => {
-                    setTxHash(txHash);
-                })
-                .catch((e) => {
-                    setError((e as Error).message);
-                });
-        } else {
-            setError(`Wallet is not connected. Click 'Connect Wallet' button.`);
         }
     }
 
@@ -167,11 +142,6 @@ export function AddTransitionRule(props: Props) {
                 {activeConnectorError && (
                     <Alert variant="danger">
                         Connect Error: {activeConnectorError}. Refresh page if you have the browser wallet installed.
-                    </Alert>
-                )}
-                {txHash && (
-                    <Alert variant="info">
-                        <TxHashLink txHash={txHash} />
                     </Alert>
                 )}
             </div>
