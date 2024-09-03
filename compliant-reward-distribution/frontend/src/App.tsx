@@ -7,10 +7,13 @@ import { ConnectWallet } from './components/ConnectWallet';
 import { ZkProofSubmission } from './components/ZkProofSubmission';
 import { version } from '../package.json';
 import './styles.scss';
+import { TESTNET, useGrpcClient } from '@concordium/react-components';
 
 export const App = () => {
     const [provider, setProvider] = useState<WalletProvider>();
     const [account, setAccount] = useState<string>();
+
+    const grpcClient = useGrpcClient(TESTNET);
 
     useEffect(() => {
         if (provider !== undefined) {
@@ -69,7 +72,7 @@ export const App = () => {
                 />
                 <Route
                     path="/zkProofSubmission"
-                    element={<ZkProofSubmission accountAddress={account} provider={provider} />}
+                    element={<ZkProofSubmission accountAddress={account} provider={provider} grpcClient={grpcClient} />}
                 />
                 {/* <Route
                     path="/tweetSubmission"

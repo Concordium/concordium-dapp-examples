@@ -1,4 +1,56 @@
-import { AccountAddress } from '@concordium/web-sdk';
+import { AccountAddress, AtomicStatementV2, CredentialStatement, VerifiablePresentation } from '@concordium/web-sdk';
+import { BACKEDN_BASE_URL } from './constants';
+
+/**
+ * Fetch the statement to prove from the backend
+ */
+export async function getStatement(): Promise<CredentialStatement> {
+    const response = await fetch(`${BACKEDN_BASE_URL}api/getZKProofStatements`, { method: 'get' });
+
+    if (!response.ok) {
+        const error = (await response.json()) as Error;
+        throw new Error(`Unable to get the ZK statement from the backend: ${JSON.stringify(error)}`);
+    }
+
+    const body = (await response.json()).data as AtomicStatementV2[];
+
+    if (body) {
+        const credentialStatement: CredentialStatement = {
+            idQualifier: {
+                type: 'cred',
+                // We allow all identity providers on mainnet and on testnet.
+                // This list is longer than necessary to include all current/future
+                // identity providers on mainnet and testnet.
+                // This list should be updated to only include the identity providers that you trust.
+                issuers: [0, 1, 2, 3, 4, 5, 6, 7],
+            },
+            statement: body,
+        };
+
+        return credentialStatement;
+    } else {
+        throw new Error(`Unable to get the ZK statement from the backend`);
+    }
+}
+
+/**
+ * Submit ZK proof to the backend
+ */
+export async function submitZkProof(presentation: VerifiablePresentation, recentBlockHeight: bigint) {
+    const response = await fetch(`${BACKEDN_BASE_URL}api/postZKProof`, {
+        method: 'POST',
+        headers: new Headers({ 'content-type': 'application/json' }),
+        body: JSON.stringify({
+            blockHeight: Number(recentBlockHeight),
+            presentation: presentation,
+        }),
+    });
+
+    if (!response.ok) {
+        const error = (await response.json()) as Error;
+        throw new Error(`Unable to submit ZK proof to the backend: ${JSON.stringify(error)}`);
+    }
+}
 
 /**
  * This function validates if a string represents a valid accountAddress in base58 encoding.
