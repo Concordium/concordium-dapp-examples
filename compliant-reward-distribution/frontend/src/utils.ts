@@ -69,6 +69,31 @@ interface AccountData {
 /**
  * Fetch pending approvals from the backend
  */
+export async function setClaimed(signer: string, signature: string, recentBlockHeight: bigint, accountAddress: string) {
+    const response = await fetch(`${BACKEDN_BASE_URL}api/setClaimed`, {
+        method: 'POST',
+        headers: new Headers({ 'content-type': 'application/json' }),
+        body: JSON.stringify({
+            signingData: {
+                signer: signer,
+                message: {
+                    accountAddresses: [accountAddress],
+                },
+                signature: signature,
+                blockHeight: Number(recentBlockHeight),
+            },
+        }),
+    });
+
+    if (!response.ok) {
+        const error = (await response.json()) as Error;
+        throw new Error(`Unable to set claimed in the database: ${JSON.stringify(error)}`);
+    }
+}
+
+/**
+ * Fetch pending approvals from the backend
+ */
 export async function getPendingApprovals(
     signer: string,
     signature: string,
