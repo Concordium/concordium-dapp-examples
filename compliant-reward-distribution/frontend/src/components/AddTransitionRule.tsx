@@ -6,8 +6,6 @@ import Switch from 'react-switch';
 
 import { WalletConnection } from '@concordium/wallet-connectors';
 
-import { validateAccountAddress } from '../utils';
-
 interface Props {
     connection: WalletConnection | undefined;
     accountAddress: string | undefined;
@@ -30,7 +28,7 @@ export function AddTransitionRule(props: Props) {
         toStatus: 'Produced' | 'InTransit' | 'InStore' | 'Sold' | undefined;
         isUpdateAdd: boolean;
     }
-    const { control, register, formState, handleSubmit } = useForm<FormType>({ mode: 'all' });
+    const { control, handleSubmit } = useForm<FormType>({ mode: 'all' });
 
     const [isUpdateAdd, fromStatus, toStatus, address] = useWatch({
         control: control,
@@ -43,17 +41,17 @@ export function AddTransitionRule(props: Props) {
     function onSubmit() {
         setError(undefined);
 
-        if (address === undefined) {
+        if (!address) {
             setError(`'address' input field is undefined`);
             throw Error(`'address' input field is undefined`);
         }
 
-        if (fromStatus === undefined) {
+        if (!fromStatus) {
             setError(`'from_status' input field is undefined`);
             throw Error(`'from_status' input field is undefined`);
         }
 
-        if (toStatus === undefined) {
+        if (!toStatus) {
             setError(`'to_status' input field is undefined`);
             throw Error(`'to_status' input field is undefined`);
         }
@@ -122,17 +120,6 @@ export function AddTransitionRule(props: Props) {
                         />
                     </Form.Group>
 
-                    <Form.Group className="col mb-3">
-                        <Form.Label>Address</Form.Label>
-                        <Form.Control
-                            {...register('address', { required: true, validate: validateAccountAddress })}
-                            placeholder="4bbdAUCDK2D6cUvUeprGr4FaSaHXKuYmYVjyCa4bXSCu3NUXzA"
-                        />
-                        {formState.errors.address && (
-                            <Alert variant="info">Address is required. {formState.errors.address.message}</Alert>
-                        )}
-                        <Form.Text />
-                    </Form.Group>
                     <Button variant="secondary" type="submit">
                         {isUpdateAdd ? 'Add Transition Rule' : 'Remove Transition Rule'}
                     </Button>

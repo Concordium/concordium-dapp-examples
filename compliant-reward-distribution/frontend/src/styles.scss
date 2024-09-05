@@ -37,9 +37,12 @@
     background: grey;
 }
 
-.switch {
-    border-color: grey;
-    background: grey;
+.pre {
+    height: auto;
+    max-height: 100%;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
 }
 
 .btn {

@@ -1,11 +1,166 @@
-import { AccountAddress, AtomicStatementV2, CredentialStatement, VerifiablePresentation } from '@concordium/web-sdk';
+import {
+    AccountAddress,
+    AtomicStatementV2,
+    ConcordiumGRPCClient,
+    CredentialStatement,
+    VerifiablePresentation,
+} from '@concordium/web-sdk';
 import { BACKEDN_BASE_URL } from './constants';
+
+interface AccountData {
+    // The account address that was indexed.
+    accountAddress: AccountAddress.Type;
+    // The timestamp of the block the event was included in.
+    blockTime: string; // DateTime<Utc>,
+    // The transaction hash that the event was recorded in.
+    transactionHash: string; // TransactionHash,
+    // A boolean specifying if the account has already claimed its rewards (got
+    // a reward payout). Every account can only claim rewards once.
+    claimed: boolean;
+    // A boolean specifying if this account address has submitted all tasks
+    // and the regulatory conditions have been proven via a ZK proof.
+    // A manual check of the completed tasks is required now before releasing
+    // the reward.
+    pendingApproval: boolean;
+}
+
+interface TweetData {
+    // The account address that submitted the tweet.
+    accountAddress: AccountAddress.Type;
+    // A tweet id submitted by the above account address (task 1).
+    tweetId: string | undefined;
+    // A boolean specifying if the text content of the tweet is eligible for
+    // the reward. The content of the text was verified by this backend
+    // before this flag is set (or will be verified manually).
+    tweetValid: boolean;
+    // A version that specifies the setting of the tweet verification. This
+    // enables us to update the tweet verification logic in the future and
+    // invalidate older versions.
+    tweetVerificationVersion: number;
+    // The timestamp when the tweet was submitted.
+    tweetSubmitTime: string;
+}
+
+interface ZkProofData {
+    // The account address that submitted the zk proof.
+    accountAddress: AccountAddress.Type;
+    // A hash of the concatenated revealed `national_id_number` and
+    // `nationality` to prevent claiming with different accounts for the
+    // same identity.
+    uniquenessHash: string;
+    // A boolean specifying if the identity associated with the account is
+    // eligible for the reward (task 2). An associated ZK proof was
+    // verified by this backend before this flag is set.
+    zkProofValid: boolean;
+    // A version that specifies the setting of the ZK proof during the
+    // verification. This enables us to update the ZK proof-verification
+    // logic in the future and invalidate older proofs.
+    zkProofVerificationVersion: number;
+    // The timestamp when the ZK proof verification was submitted.
+    zkProofVerificationSubmitTime: string;
+}
+
+interface AccountData {
+    accountData: AccountData | undefined;
+    tweetData: TweetData | undefined;
+    zkProofData: ZkProofData | undefined;
+}
+
+/**
+ * Fetch pending approvals from the backend
+ */
+export async function getPendingApprovals(): Promise<CredentialStatement> {
+    const response = await fetch(`${BACKEDN_BASE_URL}api/getPendingApprovals`, { method: 'POST' });
+
+    if (!response.ok) {
+        const error = (await response.json()) as Error;
+        throw new Error(`Unable to get pending approvals from the backend: ${JSON.stringify(error)}`);
+    }
+
+    const body = (await response.json()).data;
+
+    if (!body) {
+        throw new Error(`Unable to get pending approvals from the backend`);
+    }
+    return body;
+}
+
+/**
+ * Fetch account data from the backend
+ */
+export async function getARecentBlockHash(grpcClient: ConcordiumGRPCClient | undefined): Promise<[Uint8Array, bigint]> {
+    if (!grpcClient) {
+        throw Error(`'grpcClient' is undefined`);
+    }
+
+    const bestBlockHeight = (await grpcClient.client.getConsensusInfo(''))?.response.bestBlockHeight;
+
+    if (!bestBlockHeight) {
+        throw Error(`Couldn't get 'bestBlockHeight' from chain`);
+    }
+
+    const recentBlockHeight = bestBlockHeight.value - 10n;
+
+    const recentBlockHash = (
+        await grpcClient.client.getBlocksAtHeight({
+            // TODO: Type in web-sdk needs to be fixed to do this ergonomically.
+            blocksAtHeight: {
+                oneofKind: 'absolute',
+                absolute: {
+                    height: { value: recentBlockHeight },
+                },
+            },
+        })
+    )?.response.blocks[0].value;
+
+    if (!recentBlockHash) {
+        throw Error(`Couldn't get 'recentBlockHash' from chain`);
+    }
+    return [recentBlockHash, recentBlockHeight];
+}
+
+/**
+ * Fetch account data from the backend
+ */
+export async function getAccountData(
+    signer: string,
+    accountAddress: string,
+    signature: string,
+    recentBlockHeight: bigint,
+): Promise<AccountData> {
+    const response = await fetch(`${BACKEDN_BASE_URL}api/getAccountData`, {
+        method: 'POST',
+        headers: new Headers({ 'content-type': 'application/json' }),
+        body: JSON.stringify({
+            signingData: {
+                signer: signer,
+                message: {
+                    accountAddress: accountAddress,
+                },
+                signature: signature,
+                blockHeight: Number(recentBlockHeight),
+            },
+        }),
+    });
+
+    if (!response.ok) {
+        const error = (await response.json()) as Error;
+        throw new Error(`Unable to get account data the backend: ${JSON.stringify(error)}`);
+    }
+
+    const body = (await response.json()) as AccountData;
+
+    if (!body) {
+        throw new Error(`Unable to get account data from the backend`);
+    }
+    return body;
+}
 
 /**
  * Fetch the statement to prove from the backend
  */
 export async function getStatement(): Promise<CredentialStatement> {
-    const response = await fetch(`${BACKEDN_BASE_URL}api/getZKProofStatements`, { method: 'get' });
+    const response = await fetch(`${BACKEDN_BASE_URL}api/getZKProofStatements`, { method: 'GET' });
 
     if (!response.ok) {
         const error = (await response.json()) as Error;
@@ -14,23 +169,23 @@ export async function getStatement(): Promise<CredentialStatement> {
 
     const body = (await response.json()).data as AtomicStatementV2[];
 
-    if (body) {
-        const credentialStatement: CredentialStatement = {
-            idQualifier: {
-                type: 'cred',
-                // We allow all identity providers on mainnet and on testnet.
-                // This list is longer than necessary to include all current/future
-                // identity providers on mainnet and testnet.
-                // This list should be updated to only include the identity providers that you trust.
-                issuers: [0, 1, 2, 3, 4, 5, 6, 7],
-            },
-            statement: body,
-        };
-
-        return credentialStatement;
-    } else {
+    if (!body) {
         throw new Error(`Unable to get the ZK statement from the backend`);
     }
+
+    const credentialStatement: CredentialStatement = {
+        idQualifier: {
+            type: 'cred',
+            // We allow all identity providers on mainnet and on testnet.
+            // This list is longer than necessary to include all current/future
+            // identity providers on mainnet and testnet.
+            // This list should be updated to only include the identity providers that you trust.
+            issuers: [0, 1, 2, 3, 4, 5, 6, 7],
+        },
+        statement: body,
+    };
+
+    return credentialStatement;
 }
 
 /**
@@ -69,40 +224,4 @@ export function validateAccountAddress(accountAddress: string | undefined) {
             }.`;
         }
     }
-}
-
-/**
- * This function converts a `number` into its `TokenIdU64` representation. The `TokenIdU64` type is
- * represented as an 8-byte little-endian hex string. E.g. the `TokenIdU64` representation of `1` is
- * the hex string `0100000000000000`. First, the function converts the `number` into a hex string and pads it with enough
- * zeros and then reverses the order of the bytes to get the little-endian representation.
- *
- * @param number - A number to be converted.
- * @returns The equivalent `TokenIdU64` representation of the number.
- *
- * @throws If the number is too large to be converted into the `TokenIdU64` representation.
- */
-export function ToTokenIdU64(number: number | bigint): string {
-    const maxU64: bigint = 2n ** 64n - 1n;
-
-    if (number > maxU64) {
-        throw new Error('Number too large to be converted into `TokenIdU64`.');
-    }
-
-    return BigInt(number).toString(16).padStart(16, '0').match(/.{2}/g)!.reverse().join('');
-}
-
-/**
- * This function converts the `TokenIdU64` string representation into its equivalent bigint type.
- * The `TokenIdU64` type is represented as an 8-byte little-endian hex string. E.g. the `TokenIdU64`
- * representation of `1` is the hex string `0100000000000000`.
- * First, the function reverses the order of the bytes to get the big-endian-hex-string representation
- * and then converts it into the bigint type.
- *
- * @param tokenIdU64 - A `TokenIdU64` representation to be converted.
- * @returns The equivalent `bigint` type of the `tokenIdU64`.
- */
-export function FromTokenIdU64(tokenIdU64: string): bigint {
-    const bigEndianHexString = tokenIdU64.match(/.{2}/g)?.reverse().join('');
-    return BigInt(`0x${bigEndianHexString} `);
 }
