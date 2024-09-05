@@ -69,15 +69,35 @@ interface AccountData {
 /**
  * Fetch pending approvals from the backend
  */
-export async function getPendingApprovals(): Promise<CredentialStatement> {
-    const response = await fetch(`${BACKEDN_BASE_URL}api/getPendingApprovals`, { method: 'POST' });
+export async function getPendingApprovals(
+    signer: string,
+    signature: string,
+    recentBlockHeight: bigint,
+    limit: number,
+    offset: number,
+): Promise<AccountData[] | undefined> {
+    const response = await fetch(`${BACKEDN_BASE_URL}api/getPendingApprovals`, {
+        method: 'POST',
+        headers: new Headers({ 'content-type': 'application/json' }),
+        body: JSON.stringify({
+            signingData: {
+                signer: signer,
+                message: {
+                    limit,
+                    offset,
+                },
+                signature: signature,
+                blockHeight: Number(recentBlockHeight),
+            },
+        }),
+    });
 
     if (!response.ok) {
         const error = (await response.json()) as Error;
         throw new Error(`Unable to get pending approvals from the backend: ${JSON.stringify(error)}`);
     }
 
-    const body = (await response.json()).data;
+    const body = (await response.json()) as AccountData[];
 
     if (!body) {
         throw new Error(`Unable to get pending approvals from the backend`);

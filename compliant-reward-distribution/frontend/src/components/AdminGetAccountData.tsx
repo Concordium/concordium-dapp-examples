@@ -31,17 +31,15 @@ export function AdminGetAccountData(props: Props) {
         setError(undefined);
         setAccountData(undefined);
 
-        if (!address) {
-            setError(`'address' input field is undefined`);
-            throw Error(`'address' input field is undefined`);
-        }
-
-        if (!signer) {
-            setError(`'signer' is undefined. Connect your wallet.`);
-            throw Error(`'signer' is undefined. Connect your wallet.`);
-        }
-
         try {
+            if (!address) {
+                throw Error(`'address' input field is undefined`);
+            }
+
+            if (!signer) {
+                throw Error(`'signer' is undefined. Connect your wallet.`);
+            }
+
             const [recentBlockHash, recentBlockHeight] = await getARecentBlockHash(grpcClient);
             console.log(recentBlockHash);
             // TODO: add signature generation

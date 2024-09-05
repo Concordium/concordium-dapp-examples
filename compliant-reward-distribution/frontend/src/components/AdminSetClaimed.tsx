@@ -3,13 +3,15 @@ import { useForm, useWatch } from 'react-hook-form';
 import { Alert, Button, Form } from 'react-bootstrap';
 
 import { validateAccountAddress } from '../utils';
+import { ConcordiumGRPCClient } from '@concordium/web-sdk';
 
 interface Props {
     signer: string | undefined;
+    grpcClient: ConcordiumGRPCClient | undefined;
 }
 
 export function AdminSetClaimed(props: Props) {
-    const { signer } = props;
+    const { signer, grpcClient } = props;
 
     interface FormType {
         address: string | undefined;
