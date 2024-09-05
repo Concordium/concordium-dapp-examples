@@ -43,6 +43,7 @@ pub struct Server {
 /// check. The generic type <T> can be customized for each endpoint to specify
 /// additional data to be part of the message signed.
 #[derive(serde::Deserialize, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SigningData<T> {
     /// Signer account.
     pub signer: AccountAddress,

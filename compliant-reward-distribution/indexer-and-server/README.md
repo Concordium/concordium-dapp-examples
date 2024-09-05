@@ -78,7 +78,7 @@ The server has several endpoints to read/write from/to the database. The authori
 ## Run the `server`
 
 ```console
-cargo run --bin server -- --admin_accounts "47b6Qe2XtZANHetanWKP1PbApLKtS3AyiCtcXaqLMbypKjCaRw" --admin_accounts "4KjE4rptF1o3QX6XuSaQzm6w9KLYYQTbKm2Zd4NooarH6YwfxS"
+cargo run --bin server -- --admin_accounts "47b6Qe2XtZANHetanWKP1PbApLKtS3AyiCtcXaqLMbypKjCaRw" --admin_accounts "4eDtVqZrkmcNEFziEMSs8S2anvkH5KnsYK4MhwedwGWK1pmjZe"
 ```
 
 ## Configure the `server`

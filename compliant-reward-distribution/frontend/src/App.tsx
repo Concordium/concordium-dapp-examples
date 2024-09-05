@@ -8,6 +8,7 @@ import { ZkProofSubmission } from './components/ZkProofSubmission';
 import { version } from '../package.json';
 import './styles.scss';
 import { TESTNET, useGrpcClient } from '@concordium/react-components';
+import { Admin } from './components/Admin';
 
 export const App = () => {
     const [provider, setProvider] = useState<WalletProvider>();
@@ -48,16 +49,13 @@ export const App = () => {
                     ConnectWallet
                 </Link>
                 <Link className="secondary" to="/tweetSubmission">
-                    Tweet
+                    SubmitTweet
                 </Link>
                 <Link className="secondary" to="/zkProofSubmission">
-                    ZKProof
+                    SubmitZKProof
                 </Link>
-                <Link className="secondary" to="/adminChangeRoles">
-                    Admin3
-                </Link>
-                <Link className="secondary" to="/addTransitionRule">
-                    Admin4
+                <Link className="secondary" to="/admin">
+                    Admin
                 </Link>
 
                 <Button id="accountAddress" disabled={true}>
@@ -84,27 +82,8 @@ export const App = () => {
                         />
                     }
                 />
-                <Route
-                    path="/adminChangeRoles"
-                    element={
-                        <AdminChangeRoles
-                            activeConnectorError={activeConnectorError}
-                            connection={connection}
-                            accountAddress={account}
-                        />
-                    }
-                />
-
-                <Route
-                    path="/addTransitionRule"
-                    element={
-                        <AddTransitionRule
-                            activeConnectorError={activeConnectorError}
-                            connection={connection}
-                            accountAddress={account}
-                        />
-                    }
-                /> */}
+                 */}
+                <Route path="/Admin" element={<Admin grpcClient={grpcClient} accountAddress={account} />} />
                 <Route path="/" element={<div></div>} />
             </Routes>
         </Router>
