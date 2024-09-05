@@ -13,11 +13,9 @@ export function Admin(props: Props) {
 
     return (
         <div className="centered">
-            <br />
-            <br />
-            <AdminGetPendingApprovals />
+            <AdminGetPendingApprovals signer={accountAddress} grpcClient={grpcClient} />
             <AdminGetAccountData signer={accountAddress} grpcClient={grpcClient} />
-            <AdminSetClaimed signer={accountAddress} />
+            <AdminSetClaimed signer={accountAddress} grpcClient={grpcClient} />
         </div>
     );
 }
