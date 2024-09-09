@@ -2,17 +2,19 @@ import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { Alert, Button, Form } from 'react-bootstrap';
 
-import { getAccountData, getARecentBlockHash, validateAccountAddress } from '../utils';
+import { getAccountData, getARecentBlockHash, requestSignature, validateAccountAddress } from '../utils';
 import { ConcordiumGRPCClient } from '@concordium/web-sdk';
 import JSONbig from 'json-bigint';
+import { WalletProvider } from '../../wallet-connection';
 
 interface Props {
     signer: string | undefined;
+    provider: WalletProvider | undefined;
     grpcClient: ConcordiumGRPCClient | undefined;
 }
 
 export function AdminGetAccountData(props: Props) {
-    const { signer, grpcClient } = props;
+    const { provider, signer, grpcClient } = props;
 
     interface FormType {
         address: string;
@@ -37,15 +39,10 @@ export function AdminGetAccountData(props: Props) {
             }
 
             const [recentBlockHash, recentBlockHeight] = await getARecentBlockHash(grpcClient);
-            console.log(recentBlockHash);
-            // TODO: add signature generation
+            const schema = 'FAADAAAADgAAAGNvbnRleHRfc3RyaW5nFgIHAAAAbWVzc2FnZQsKAAAAYmxvY2tfaGFzaBYC';
+            const signature = await requestSignature(recentBlockHash, schema, address, signer, provider);
 
-            const data = await getAccountData(
-                signer,
-                address,
-                'c4bb83e7d7a9e6fe7a1b5f527174f7e368db9385b25fce0f4e4b7190781e57b5de6ad65a7481f1038f859d4c4ba8c07ed649b84f9e3c17e2bbdb87cf527cd602',
-                recentBlockHeight,
-            );
+            const data = await getAccountData(signer, address, signature, recentBlockHeight);
             setAccountData(JSONbig.stringify(data));
         } catch (error) {
             setError((error as Error).message);

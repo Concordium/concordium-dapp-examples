@@ -3,6 +3,7 @@ use crate::{
     DatabasePool,
 };
 use chrono::Days;
+use concordium_rust_sdk::smart_contracts::common as concordium_std;
 use concordium_rust_sdk::{
     common::types::Signature,
     id::{
@@ -10,6 +11,7 @@ use concordium_rust_sdk::{
         id_proof_types::Statement,
         types::{AccountAddress, GlobalContext},
     },
+    smart_contracts::common::Serial,
     types::AbsoluteBlockHeight,
     v2::Client,
     web3id::{did::Network, Presentation, Web3IdAttribute},
@@ -44,7 +46,7 @@ pub struct Server {
 /// additional data to be part of the message signed.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct SigningData<T> {
+pub struct SigningData<T: Serial> {
     /// Signer account.
     pub signer: AccountAddress,
     /// Message signed.
@@ -60,7 +62,7 @@ pub struct SigningData<T> {
 /// Trait definition of `HasSigningData`. This trait is implemented for all
 /// input parameter structs used by endpoints that require a signature check.
 pub trait HasSigningData {
-    type Message;
+    type Message: Serial;
     fn signing_data(&self) -> &SigningData<Self::Message>;
 }
 
@@ -88,7 +90,7 @@ pub struct ZKProofExtractedData {
 
 /// Message struct for the `postTweet` endpoint.
 #[repr(transparent)]
-#[derive(serde::Deserialize, serde::Serialize)]
+#[derive(serde::Deserialize, serde::Serialize, Serial)]
 #[serde(rename_all = "camelCase")]
 pub struct TweetMessage {
     pub tweet: String,
@@ -113,7 +115,7 @@ pub struct PostTweetParam {
 
 /// Message struct for the `setClaimed` endpoint.
 #[repr(transparent)]
-#[derive(serde::Deserialize, serde::Serialize)]
+#[derive(serde::Deserialize, serde::Serialize, Serial)]
 #[serde(rename_all = "camelCase")]
 pub struct SetClaimedMessage {
     /// Vector of accounts that should be marked as `claimed` in the database.
@@ -171,7 +173,7 @@ impl HasSigningData for GetAccountDataParam {
 
 /// Message struct for the `getAccountData` endpoint.
 #[repr(transparent)]
-#[derive(serde::Deserialize, serde::Serialize)]
+#[derive(serde::Deserialize, serde::Serialize, Serial)]
 #[serde(rename_all = "camelCase")]
 pub struct GetAccountDataMessage {
     /// Account address for which the data should be retrieved.
@@ -194,7 +196,7 @@ pub struct AccountDataReturn {
 }
 
 /// Message struct for the `getPendingApprovals` endpoint.
-#[derive(serde::Deserialize, serde::Serialize)]
+#[derive(serde::Deserialize, serde::Serialize, Serial)]
 #[serde(rename_all = "camelCase")]
 pub struct GetPendingApprovalsMessage {
     /// Limit used in the query to the database.
@@ -271,4 +273,14 @@ impl std::fmt::Display for ClaimExpiryDurationDays {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", self.0)
     }
+}
+
+/// Final message signed in the wallet.
+/// It contains in addition the `context_string` (so that signatures cannot be replayed
+/// across Concordium services) and `block_hash` (so that signatures expire).
+#[derive(Debug, Serial)]
+pub struct MessageSigned<T: Serial> {
+    pub context_string: String,
+    pub message: T,
+    pub block_hash: String,
 }

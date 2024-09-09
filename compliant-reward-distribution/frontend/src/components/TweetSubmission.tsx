@@ -2,11 +2,8 @@ import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { Alert, Button, Form } from 'react-bootstrap';
 
-import sha256 from 'sha256';
-
-import { getARecentBlockHash, submitTweet } from '../utils';
+import { getARecentBlockHash, requestSignature, submitTweet } from '../utils';
 import { ConcordiumGRPCClient } from '@concordium/web-sdk';
-import { CONTEXT_STRING } from '../constants';
 import { WalletProvider } from '../../wallet-connection';
 
 interface Props {
@@ -40,24 +37,10 @@ export function TweetSubmission(props: Props) {
                 throw Error(`'signer' is undefined. Connect your wallet.`);
             }
 
-            if (!provider) {
-                throw Error(`'provider' is undefined`);
-            }
-
             const [recentBlockHash, recentBlockHeight] = await getARecentBlockHash(grpcClient);
+            const schema = 'FAADAAAADgAAAGNvbnRleHRfc3RyaW5nFgIHAAAAbWVzc2FnZRYCCgAAAGJsb2NrX2hhc2gWAg';
 
-            const encoder = new TextEncoder();
-            const tweetBytes = encoder.encode(tweet);
-
-            const digest = [recentBlockHash, CONTEXT_STRING, tweetBytes].flatMap((item) => Array.from(item));
-
-            const messageHash = sha256(digest);
-
-            const signatures = (await provider.signMessage(signer, messageHash))
-            if (Object.keys(signatures).length !== 1 || Object.keys(signatures[0]).length !== 1) {
-                throw Error(`Dapp only supports single singer accounts`);
-            }
-            const signature = signatures[0][0];
+            const signature = await requestSignature(recentBlockHash, schema, tweet, signer, provider);
 
             await submitTweet(signer, signature, recentBlockHeight, tweet);
         } catch (error) {

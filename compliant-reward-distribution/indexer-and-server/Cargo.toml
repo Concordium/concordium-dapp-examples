@@ -17,7 +17,7 @@ tower-http = { version = "0.4", features = [
   "limit",
   "fs",
   "compression-br",
-  "compression-zstd",
+  "compression-zstd"
 ] }
 http = "0.2"
 tonic = { version = "0.10", features = ["tls-roots", "tls"] }

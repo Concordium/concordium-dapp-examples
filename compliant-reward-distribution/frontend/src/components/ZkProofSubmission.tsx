@@ -7,6 +7,7 @@ import { ConcordiumGRPCClient, CredentialStatement } from '@concordium/web-sdk';
 import { getARecentBlockHash, getStatement, submitZkProof } from '../utils';
 import { CONTEXT_STRING } from '../constants';
 import sha256 from 'sha256';
+import { Buffer } from 'buffer';
 
 interface Props {
     accountAddress: string | undefined;
@@ -41,12 +42,12 @@ export function ZkProofSubmission(props: Props) {
             }
 
             if (!provider) {
-                throw Error(`'provider' is undefined`);
+                throw Error(`'provider' is undefined. Connect your wallet.`);
             }
 
             const [recentBlockHash, recentBlockHeight] = await getARecentBlockHash(grpcClient);
 
-            const digest = [recentBlockHash, CONTEXT_STRING];
+            const digest = [recentBlockHash, Buffer.from(CONTEXT_STRING)];
             const challenge = sha256(digest.flatMap((item) => Array.from(item)));
 
             const presentation = await provider.requestVerifiablePresentation(challenge, [zkStatement]);

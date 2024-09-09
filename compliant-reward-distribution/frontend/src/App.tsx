@@ -78,7 +78,10 @@ export const App = () => {
                     element={<TweetSubmission signer={account} provider={provider} grpcClient={grpcClient} />}
                 />
 
-                <Route path="/Admin" element={<Admin accountAddress={account} grpcClient={grpcClient} />} />
+                <Route
+                    path="/Admin"
+                    element={<Admin provider={provider} accountAddress={account} grpcClient={grpcClient} />}
+                />
                 <Route path="/" element={<div></div>} />
             </Routes>
         </Router>
