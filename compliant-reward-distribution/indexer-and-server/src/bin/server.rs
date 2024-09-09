@@ -440,30 +440,37 @@ where
         .map_err(ServerError::QueryError)?
         .block_hash;
 
-    // The message signed in the Concordium browser wallet is prepended with the
+    // Calculate the `message_hash` that was signed.
+    // The `message_hash` consists of the`block_hash` (this
+    // ensures that the signature is generated on the spot and the signature
+    // expires after SIGNATURE_AND_PROOF_EXPIRY_DURATION_BLOCKS), a context
+    // string (this ensures that an account can be re-used for signing in different
+    // Concordium services), and the message.
+    let message_bytes = bincode::serialize(message)?;
+    let message_hash = sha2::Sha256::digest(
+        [
+            &block_hash as &[u8],
+            &CONTEXT_STRING,
+            // Remove the lenght prefix (first 8 bytes).
+            &message_bytes[8..],
+        ]
+        .concat(),
+    );
+
+    // The Concordium wallets convert the message string into ASCII characters before singing.
+    let ascii_characters: Vec<u8> = hex::encode(message_hash).as_bytes().to_vec();
+
+    // The message signed in the Concordium wallet is prepended with the
     // `account` address (signer) and 8 zero bytes. Accounts in the Concordium
-    // browser wallet can either sign a regular transaction (in that case the
+    // wallet can either sign a regular transaction (in that case the
     // prepend is `account` address and the nonce of the account which is by
     // design >= 1) or sign a message (in that case the prepend is `account`
     // address and 8 zero bytes). Hence, the 8 zero bytes ensure that the user
     // does not accidentally sign a transaction. The account nonce is of type
-    // u64 (8 bytes). In addition, we prepend a recent `block_hash` (this
-    // ensures that the signature is generated on the spot and the signature
-    // expires after SIGNATURE_AND_PROOF_EXPIRY_DURATION_BLOCKS), and a context
-    // string (this ensures that an account can be re-used for signing in different
-    // Concordium services).
-    // Add the prepend to the message and calculate the message hash.
-    let message_bytes = bincode::serialize(&message)?;
-    let message_hash = sha2::Sha256::digest(
-        [
-            &signer.as_ref() as &[u8],
-            &[0u8; 8],
-            &block_hash,
-            &CONTEXT_STRING,
-            &message_bytes,
-        ]
-        .concat(),
-    );
+    // u64 (8 bytes).
+    // Add the prepend to the message and calculate the final message hash.
+    let final_message_hash =
+        sha2::Sha256::digest([&signer.as_ref() as &[u8], &[0u8; 8], &ascii_characters].concat());
 
     // Get the public key of the signer.
 
@@ -503,7 +510,7 @@ where
     };
 
     // Verify the signature.
-    let is_valid = signer_public_key.verify(message_hash, signature);
+    let is_valid = signer_public_key.verify(final_message_hash, signature);
     if !is_valid {
         return Err(ServerError::InvalidSignature);
     }

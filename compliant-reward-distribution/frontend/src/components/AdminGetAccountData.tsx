@@ -15,7 +15,7 @@ export function AdminGetAccountData(props: Props) {
     const { signer, grpcClient } = props;
 
     interface FormType {
-        address: string | undefined;
+        address: string;
     }
     const { control, register, formState, handleSubmit } = useForm<FormType>({ mode: 'all' });
 
@@ -32,10 +32,6 @@ export function AdminGetAccountData(props: Props) {
         setAccountData(undefined);
 
         try {
-            if (!address) {
-                throw Error(`'address' input field is undefined`);
-            }
-
             if (!signer) {
                 throw Error(`'signer' is undefined. Connect your wallet.`);
             }

@@ -9,6 +9,7 @@ import { version } from '../package.json';
 import './styles.scss';
 import { TESTNET, useGrpcClient } from '@concordium/react-components';
 import { Admin } from './components/Admin';
+import { TweetSubmission } from './components/TweetSubmission';
 
 export const App = () => {
     const [provider, setProvider] = useState<WalletProvider>();
@@ -72,18 +73,12 @@ export const App = () => {
                     path="/zkProofSubmission"
                     element={<ZkProofSubmission accountAddress={account} provider={provider} grpcClient={grpcClient} />}
                 />
-                {/* <Route
+                <Route
                     path="/tweetSubmission"
-                    element={
-                        <TweetSubmission
-                            activeConnectorError={activeConnectorError}
-                            connection={connection}
-                            accountAddress={account}
-                        />
-                    }
+                    element={<TweetSubmission signer={account} provider={provider} grpcClient={grpcClient} />}
                 />
-                 */}
-                <Route path="/Admin" element={<Admin grpcClient={grpcClient} accountAddress={account} />} />
+
+                <Route path="/Admin" element={<Admin accountAddress={account} grpcClient={grpcClient} />} />
                 <Route path="/" element={<div></div>} />
             </Routes>
         </Router>
