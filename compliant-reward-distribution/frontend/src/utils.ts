@@ -75,11 +75,11 @@ export async function setClaimed(signer: string, signature: string, recentBlockH
         headers: new Headers({ 'content-type': 'application/json' }),
         body: JSON.stringify({
             signingData: {
-                signer: signer,
+                signer,
                 message: {
                     accountAddresses: [accountAddress],
                 },
-                signature: signature,
+                signature,
                 blockHeight: Number(recentBlockHeight),
             },
         }),
@@ -87,7 +87,9 @@ export async function setClaimed(signer: string, signature: string, recentBlockH
 
     if (!response.ok) {
         const error = (await response.json()) as Error;
-        throw new Error(`Unable to set claimed in the database: ${JSON.stringify(error)}`);
+        throw new Error(
+            `Unable to set claimed in the database; StatusCode:${response.status}; StatusText:${response.statusText}; Error: ${JSON.stringify(error)}`,
+        );
     }
 }
 
@@ -106,12 +108,12 @@ export async function getPendingApprovals(
         headers: new Headers({ 'content-type': 'application/json' }),
         body: JSON.stringify({
             signingData: {
-                signer: signer,
+                signer,
                 message: {
                     limit,
                     offset,
                 },
-                signature: signature,
+                signature,
                 blockHeight: Number(recentBlockHeight),
             },
         }),
@@ -119,7 +121,9 @@ export async function getPendingApprovals(
 
     if (!response.ok) {
         const error = (await response.json()) as Error;
-        throw new Error(`Unable to get pending approvals from the backend: ${JSON.stringify(error)}`);
+        throw new Error(
+            `Unable to get pending approvals from the backend; StatusCode:${response.status}; StatusText:${response.statusText}; Error: ${JSON.stringify(error)}`,
+        );
     }
 
     const body = (await response.json()) as AccountData[];
@@ -178,11 +182,11 @@ export async function getAccountData(
         headers: new Headers({ 'content-type': 'application/json' }),
         body: JSON.stringify({
             signingData: {
-                signer: signer,
+                signer,
                 message: {
-                    accountAddress: accountAddress,
+                    accountAddress,
                 },
-                signature: signature,
+                signature,
                 blockHeight: Number(recentBlockHeight),
             },
         }),
@@ -190,7 +194,9 @@ export async function getAccountData(
 
     if (!response.ok) {
         const error = (await response.json()) as Error;
-        throw new Error(`Unable to get account data the backend: ${JSON.stringify(error)}`);
+        throw new Error(
+            `Unable to get account data the backend; StatusCode:${response.status}; StatusText:${response.statusText}; Error: ${JSON.stringify(error)}`,
+        );
     }
 
     const body = (await response.json()) as AccountData;
@@ -234,6 +240,40 @@ export async function getStatement(): Promise<CredentialStatement> {
 }
 
 /**
+ * Submit Tweet to the backend
+ */
+export async function submitTweet(signer: string, signature: string, recentBlockHeight: bigint, tweet: string) {
+    const response = await fetch(`${BACKEDN_BASE_URL}api/postTweet`, {
+        method: 'POST',
+        headers: new Headers({ 'content-type': 'application/json' }),
+        body: JSON.stringify({
+            signingData: {
+                signer,
+                message: {
+                    tweet,
+                },
+                signature,
+                blockHeight: Number(recentBlockHeight),
+            },
+        }),
+    });
+
+    if (!response.ok) {
+        let finalError;
+
+        try {
+            finalError = await response.json();
+        } catch (e) {
+            throw new Error(
+                `Unable to submit Tweet to the backend; StatusCode: ${response.status}; StatusText: ${response.statusText};`,
+            );
+        }
+
+        throw new Error(`Unable to submit Tweet to the backend; Error: ${JSON.stringify(finalError)}`);
+    }
+}
+
+/**
  * Submit ZK proof to the backend
  */
 export async function submitZkProof(presentation: VerifiablePresentation, recentBlockHeight: bigint) {
@@ -248,7 +288,9 @@ export async function submitZkProof(presentation: VerifiablePresentation, recent
 
     if (!response.ok) {
         const error = (await response.json()) as Error;
-        throw new Error(`Unable to submit ZK proof to the backend: ${JSON.stringify(error)}`);
+        throw new Error(
+            `Unable to submit ZK proof to the backend; StatusCode:${response.status}; StatusText:${response.statusText}; Error: ${JSON.stringify(error)}`,
+        );
     }
 }
 

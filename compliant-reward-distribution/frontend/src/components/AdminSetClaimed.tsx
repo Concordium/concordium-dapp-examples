@@ -14,7 +14,7 @@ export function AdminSetClaimed(props: Props) {
     const { signer, grpcClient } = props;
 
     interface FormType {
-        address: string | undefined;
+        address: string;
     }
     const { control, register, formState, handleSubmit } = useForm<FormType>({ mode: 'all' });
 
@@ -29,13 +29,7 @@ export function AdminSetClaimed(props: Props) {
         setError(undefined);
 
         try {
-            if (!address) {
-                setError(`'address' input field is undefined`);
-                throw Error(`'address' input field is undefined`);
-            }
-
             if (!signer) {
-                setError(`'signer' is undefined. Connect your wallet.`);
                 throw Error(`'signer' is undefined. Connect your wallet.`);
             }
 

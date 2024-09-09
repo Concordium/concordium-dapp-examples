@@ -1,10 +1,16 @@
 import { detectConcordiumProvider, WalletApi } from '@concordium/browser-wallet-api-helpers';
-import { CredentialStatements, HexString, VerifiablePresentation } from '@concordium/web-sdk';
+import {
+    AccountTransactionSignature,
+    CredentialStatements,
+    HexString,
+    VerifiablePresentation,
+} from '@concordium/web-sdk';
 import { SessionTypes } from '@walletconnect/types';
 import SignClient from '@walletconnect/sign-client';
 import QRCodeModal from '@walletconnect/qrcode-modal';
 import EventEmitter from 'events';
 import JSONBigInt from 'json-bigint';
+
 import { CHAIN_ID, ID_METHOD, WALLET_CONNECT_SESSION_NAMESPACE, walletConnectOpts } from './src/constants';
 
 export abstract class WalletProvider extends EventEmitter {
@@ -16,6 +22,8 @@ export abstract class WalletProvider extends EventEmitter {
     ): Promise<VerifiablePresentation>;
 
     disconnect?(): Promise<void>;
+
+    abstract signMessage(accountAddress: string, message: string): Promise<AccountTransactionSignature>;
 
     /**
      * @param account string when account is changed, undefined when disconnected
@@ -56,6 +64,10 @@ export class BrowserWalletProvider extends WalletProvider {
         }
 
         return browserWalletInstance;
+    }
+
+    async signMessage(accountAddress: string, message: string): Promise<AccountTransactionSignature> {
+        return this.provider.signMessage(accountAddress, message);
     }
 
     async connect(): Promise<string[] | undefined> {
@@ -141,6 +153,12 @@ export class WalletConnectProvider extends WalletProvider {
         } else {
             return [this.account];
         }
+    }
+
+    async signMessage(accountAddress: string, message: string): Promise<AccountTransactionSignature> {
+        console.log(accountAddress);
+        console.log(message);
+        throw new Error('Not yet implemented');
     }
 
     async requestVerifiablePresentation(

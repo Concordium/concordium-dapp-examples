@@ -36,11 +36,6 @@ export function ZkProofSubmission(props: Props) {
         setError(undefined);
 
         try {
-            const [recentBlockHash, recentBlockHeight] = await getARecentBlockHash(grpcClient);
-
-            const hashDigest = [recentBlockHash, CONTEXT_STRING];
-            const challenge = sha256(hashDigest.flatMap((item) => Array.from(item)));
-
             if (!zkStatement) {
                 throw Error(`'zkStatement' is undefined`);
             }
@@ -48,6 +43,11 @@ export function ZkProofSubmission(props: Props) {
             if (!provider) {
                 throw Error(`'provider' is undefined`);
             }
+
+            const [recentBlockHash, recentBlockHeight] = await getARecentBlockHash(grpcClient);
+
+            const digest = [recentBlockHash, CONTEXT_STRING];
+            const challenge = sha256(digest.flatMap((item) => Array.from(item)));
 
             const presentation = await provider.requestVerifiablePresentation(challenge, [zkStatement]);
 

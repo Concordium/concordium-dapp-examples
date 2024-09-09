@@ -1502,6 +1502,7 @@ dependencies = [
  "concordium-rust-sdk",
  "deadpool-postgres",
  "futures",
+ "hex",
  "http",
  "serde",
  "serde_json",
