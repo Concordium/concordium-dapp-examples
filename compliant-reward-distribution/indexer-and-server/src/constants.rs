@@ -16,6 +16,7 @@ pub const CONTEXT_STRING: [u8; 45] = [
     67, 79, 78, 67, 79, 82, 68, 73, 85, 77, 95, 67, 79, 77, 80, 76, 73, 65, 78, 84, 95, 82, 69, 87,
     65, 82, 68, 95, 68, 73, 83, 84, 82, 73, 66, 85, 84, 73, 79, 78, 95, 68, 65, 80, 80,
 ];
+pub const CONTEXT_STRING_2: &str = "CONCORDIUM_COMPLIANT_REWARD_DISTRIBUTION_DAPP";
 
 /// The number of blocks after that a generated signature or ZK proof is
 /// considered expired.

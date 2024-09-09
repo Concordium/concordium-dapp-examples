@@ -7,6 +7,7 @@ use axum::{
 };
 use chrono::Utc;
 use clap::Parser;
+use concordium_rust_sdk::smart_contracts::common::to_bytes;
 use concordium_rust_sdk::{
     id::{
         constants::ArCurve,
@@ -23,17 +24,17 @@ use concordium_rust_sdk::{
 };
 use indexer::{
     constants::{
-        CONTEXT_STRING, CURRENT_TWEET_VERIFICATION_VERSION, CURRENT_ZK_PROOF_VERIFICATION_VERSION,
-        MAX_REQUEST_LIMIT, SIGNATURE_AND_PROOF_EXPIRY_DURATION_BLOCKS, TESTNET_GENESIS_BLOCK_HASH,
-        ZK_STATEMENTS,
+        CONTEXT_STRING, CONTEXT_STRING_2, CURRENT_TWEET_VERIFICATION_VERSION,
+        CURRENT_ZK_PROOF_VERIFICATION_VERSION, MAX_REQUEST_LIMIT,
+        SIGNATURE_AND_PROOF_EXPIRY_DURATION_BLOCKS, TESTNET_GENESIS_BLOCK_HASH, ZK_STATEMENTS,
     },
     db::{AccountData, Database, StoredAccountData},
     error::ServerError,
     types::{
         CanClaimParam, CanClaimReturn, ClaimExpiryDurationDays, GetAccountDataParam,
-        GetPendingApprovalsParam, HasSigningData, Health, PostTweetParam, PostZKProofParam,
-        SetClaimedParam, SigningData, UserData, VecAccountDataReturn, ZKProofExtractedData,
-        ZKProofStatementsReturn,
+        GetPendingApprovalsParam, HasSigningData, Health, MessageSigned, PostTweetParam,
+        PostZKProofParam, SetClaimedParam, SigningData, UserData, VecAccountDataReturn,
+        ZKProofExtractedData, ZKProofStatementsReturn,
     },
 };
 use sha2::Digest;
@@ -440,25 +441,17 @@ where
         .map_err(ServerError::QueryError)?
         .block_hash;
 
-    // Calculate the `message_hash` that was signed.
-    // The `message_hash` consists of the`block_hash` (this
+    // Calculate the `message` that was signed.
+    // The `message` consists of the`block_hash` (this
     // ensures that the signature is generated on the spot and the signature
     // expires after SIGNATURE_AND_PROOF_EXPIRY_DURATION_BLOCKS), a context
     // string (this ensures that an account can be re-used for signing in different
     // Concordium services), and the message.
-    let message_bytes = bincode::serialize(message)?;
-    let message_hash = sha2::Sha256::digest(
-        [
-            &block_hash as &[u8],
-            &CONTEXT_STRING,
-            // Remove the lenght prefix (first 8 bytes).
-            &message_bytes[8..],
-        ]
-        .concat(),
-    );
-
-    // The Concordium wallets convert the message string into ASCII characters before singing.
-    let ascii_characters: Vec<u8> = hex::encode(message_hash).as_bytes().to_vec();
+    let message_signed_in_wallet = MessageSigned {
+        block_hash: hex::encode(block_hash),
+        context_string: CONTEXT_STRING_2.to_string(),
+        message,
+    };
 
     // The message signed in the Concordium wallet is prepended with the
     // `account` address (signer) and 8 zero bytes. Accounts in the Concordium
@@ -469,8 +462,14 @@ where
     // does not accidentally sign a transaction. The account nonce is of type
     // u64 (8 bytes).
     // Add the prepend to the message and calculate the final message hash.
-    let final_message_hash =
-        sha2::Sha256::digest([&signer.as_ref() as &[u8], &[0u8; 8], &ascii_characters].concat());
+    let final_message_hash = sha2::Sha256::digest(
+        [
+            &signer.as_ref() as &[u8],
+            &[0u8; 8],
+            to_bytes(&message_signed_in_wallet).as_slice(),
+        ]
+        .concat(),
+    );
 
     // Get the public key of the signer.
 

@@ -2,16 +2,18 @@ import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { Alert, Button, Form } from 'react-bootstrap';
 
-import { getARecentBlockHash, setClaimed, validateAccountAddress } from '../utils';
+import { getARecentBlockHash, requestSignature, setClaimed, validateAccountAddress } from '../utils';
 import { ConcordiumGRPCClient } from '@concordium/web-sdk';
+import { WalletProvider } from '../../wallet-connection';
 
 interface Props {
+    provider: WalletProvider | undefined;
     signer: string | undefined;
     grpcClient: ConcordiumGRPCClient | undefined;
 }
 
 export function AdminSetClaimed(props: Props) {
-    const { signer, grpcClient } = props;
+    const { provider, signer, grpcClient } = props;
 
     interface FormType {
         address: string;
@@ -34,15 +36,11 @@ export function AdminSetClaimed(props: Props) {
             }
 
             const [recentBlockHash, recentBlockHeight] = await getARecentBlockHash(grpcClient);
-            console.log(recentBlockHash);
-            // TODO: add signature generation
 
-            await setClaimed(
-                signer,
-                'c4bb83e7d7a9e6fe7a1b5f527174f7e368db9385b25fce0f4e4b7190781e57b5de6ad65a7481f1038f859d4c4ba8c07ed649b84f9e3c17e2bbdb87cf527cd602',
-                recentBlockHeight,
-                address,
-            );
+            const schema = 'FAADAAAADgAAAGNvbnRleHRfc3RyaW5nFgIHAAAAbWVzc2FnZRACCwoAAABibG9ja19oYXNoFgI';
+            const signature = await requestSignature(recentBlockHash, schema, [address], signer, provider);
+
+            await setClaimed(signer, signature, recentBlockHeight, address);
         } catch (error) {
             setError((error as Error).message);
         }

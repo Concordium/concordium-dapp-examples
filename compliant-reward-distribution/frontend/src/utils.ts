@@ -7,6 +7,8 @@ import {
 } from '@concordium/web-sdk';
 import { BACKEDN_BASE_URL } from './constants';
 
+import { WalletProvider } from '../wallet-connection';
+
 interface AccountData {
     // The account address that was indexed.
     accountAddress: AccountAddress.Type;
@@ -205,6 +207,27 @@ export async function getAccountData(
         throw new Error(`Unable to get account data from the backend`);
     }
     return body;
+}
+
+/**
+ * Request signature from wallet.
+ */
+export async function requestSignature(
+    recentBlockHash: Uint8Array,
+    schema: string,
+    message: string | string[] | object,
+    signer: string,
+    provider: WalletProvider | undefined,
+): Promise<string> {
+    if (!provider) {
+        throw Error(`'provider' is undefined. Connect your wallet.`);
+    }
+
+    const signatures = await provider.signMessage(signer, message, recentBlockHash, schema);
+    if (Object.keys(signatures).length !== 1 || Object.keys(signatures[0]).length !== 1) {
+        throw Error(`Dapp only supports single singer accounts`);
+    }
+    return signatures[0][0];
 }
 
 /**

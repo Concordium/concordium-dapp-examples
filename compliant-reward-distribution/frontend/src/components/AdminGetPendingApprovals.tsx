@@ -3,16 +3,18 @@ import { useForm } from 'react-hook-form';
 import { Alert, Button, Form } from 'react-bootstrap';
 
 import { ConcordiumGRPCClient } from '@concordium/web-sdk';
-import { getARecentBlockHash, getPendingApprovals } from '../utils';
+import { getARecentBlockHash, getPendingApprovals, requestSignature } from '../utils';
 import JSONbig from 'json-bigint';
+import { WalletProvider } from '../../wallet-connection';
 
 interface Props {
+    provider: WalletProvider | undefined;
     signer: string | undefined;
     grpcClient: ConcordiumGRPCClient | undefined;
 }
 
 export function AdminGetPendingApprovals(props: Props) {
-    const { signer, grpcClient } = props;
+    const { provider, signer, grpcClient } = props;
 
     const { handleSubmit } = useForm<[]>({ mode: 'all' });
 
@@ -29,18 +31,14 @@ export function AdminGetPendingApprovals(props: Props) {
             }
 
             const [recentBlockHash, recentBlockHeight] = await getARecentBlockHash(grpcClient);
-            console.log(recentBlockHash);
             const limit = 5;
             const offset = 0;
-            // TODO: add signature generation
 
-            const data = await getPendingApprovals(
-                signer,
-                'c4bb83e7d7a9e6fe7a1b5f527174f7e368db9385b25fce0f4e4b7190781e57b5de6ad65a7481f1038f859d4c4ba8c07ed649b84f9e3c17e2bbdb87cf527cd602',
-                recentBlockHeight,
-                limit,
-                offset,
-            );
+            const schema =
+                'FAADAAAADgAAAGNvbnRleHRfc3RyaW5nFgIHAAAAbWVzc2FnZRQAAgAAAAUAAABsaW1pdAQGAAAAb2Zmc2V0BAoAAABibG9ja19oYXNoFgI';
+            const signature = await requestSignature(recentBlockHash, schema, { limit, offset }, signer, provider);
+
+            const data = await getPendingApprovals(signer, signature, recentBlockHeight, limit, offset);
             setPendingApprovals(JSONbig.stringify(data));
         } catch (error) {
             setError((error as Error).message);

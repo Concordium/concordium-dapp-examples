@@ -3,6 +3,8 @@ import {
     AccountTransactionSignature,
     CredentialStatements,
     HexString,
+    serializeTypeValue,
+    toBuffer,
     VerifiablePresentation,
 } from '@concordium/web-sdk';
 import { SessionTypes } from '@walletconnect/types';
@@ -10,8 +12,15 @@ import SignClient from '@walletconnect/sign-client';
 import QRCodeModal from '@walletconnect/qrcode-modal';
 import EventEmitter from 'events';
 import JSONBigInt from 'json-bigint';
+import { Buffer } from 'buffer';
 
-import { CHAIN_ID, ID_METHOD, WALLET_CONNECT_SESSION_NAMESPACE, walletConnectOpts } from './src/constants';
+import {
+    CHAIN_ID,
+    CONTEXT_STRING,
+    ID_METHOD,
+    WALLET_CONNECT_SESSION_NAMESPACE,
+    walletConnectOpts,
+} from './src/constants';
 
 export abstract class WalletProvider extends EventEmitter {
     abstract connect(): Promise<string[] | undefined>;
@@ -23,7 +32,12 @@ export abstract class WalletProvider extends EventEmitter {
 
     disconnect?(): Promise<void>;
 
-    abstract signMessage(accountAddress: string, message: string): Promise<AccountTransactionSignature>;
+    abstract signMessage(
+        accountAddress: string,
+        message: string | string[] | object,
+        recentBlockHash: Uint8Array,
+        schema: string,
+    ): Promise<AccountTransactionSignature>;
 
     /**
      * @param account string when account is changed, undefined when disconnected
@@ -66,8 +80,25 @@ export class BrowserWalletProvider extends WalletProvider {
         return browserWalletInstance;
     }
 
-    async signMessage(accountAddress: string, message: string): Promise<AccountTransactionSignature> {
-        return this.provider.signMessage(accountAddress, message);
+    async signMessage(
+        accountAddress: string,
+        message: string | string[] | object,
+        recentBlockHash: Uint8Array,
+        schema: string,
+    ): Promise<AccountTransactionSignature> {
+        const payload = Buffer.from(
+            serializeTypeValue(
+                { block_hash: Buffer.from(recentBlockHash).toString('hex'), context_string: CONTEXT_STRING, message },
+                toBuffer(schema, 'base64'),
+            ).buffer,
+        ).toString('hex');
+
+        const messageToSign = {
+            data: payload,
+            schema,
+        };
+
+        return this.provider.signMessage(accountAddress, messageToSign);
     }
 
     async connect(): Promise<string[] | undefined> {
@@ -155,9 +186,16 @@ export class WalletConnectProvider extends WalletProvider {
         }
     }
 
-    async signMessage(accountAddress: string, message: string): Promise<AccountTransactionSignature> {
+    async signMessage(
+        accountAddress: string,
+        message: string | string[] | object,
+        recentBlockHash: Uint8Array,
+        schema: string,
+    ): Promise<AccountTransactionSignature> {
         console.log(accountAddress);
         console.log(message);
+        console.log(recentBlockHash);
+        console.log(schema);
         throw new Error('Not yet implemented');
     }
 
