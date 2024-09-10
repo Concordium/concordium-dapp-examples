@@ -16,8 +16,9 @@ export const CONTEXT_STRING = 'CONCORDIUM_COMPLIANT_REWARD_DISTRIBUTION_DAPP';
 
 export const WALLET_CONNECT_PROJECT_ID = '76324905a70fe5c388bab46d3e0564dc';
 export const WALLET_CONNECT_SESSION_NAMESPACE = 'ccd';
-export const CHAIN_ID = `${WALLET_CONNECT_SESSION_NAMESPACE}:testnet`;
-export const ID_METHOD = 'request_verifiable_presentation';
+export const CHAIN_ID = `${WALLET_CONNECT_SESSION_NAMESPACE}:${CONFIG.network === 'testnet' ? `testnet` : `mainnet`}`;
+export const METHOD_ID = 'request_verifiable_presentation';
+export const METHOD_SIGN = 'sign_message';
 
 export const walletConnectOpts: SignClientTypes.Options = {
     projectId: WALLET_CONNECT_PROJECT_ID,

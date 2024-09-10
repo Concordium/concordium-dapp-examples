@@ -35,7 +35,7 @@ export function AdminGetPendingApprovals(props: Props) {
             const offset = 0;
 
             const schema =
-                'FAADAAAADgAAAGNvbnRleHRfc3RyaW5nFgIHAAAAbWVzc2FnZRQAAgAAAAUAAABsaW1pdAQGAAAAb2Zmc2V0BAoAAABibG9ja19oYXNoFgI';
+                'FAADAAAADgAAAGNvbnRleHRfc3RyaW5nFgIHAAAAbWVzc2FnZRQAAgAAAAUAAABsaW1pdAQGAAAAb2Zmc2V0BAoAAABibG9ja19oYXNoFgI=';
             const signature = await requestSignature(recentBlockHash, schema, { limit, offset }, signer, provider);
 
             const data = await getPendingApprovals(signer, signature, recentBlockHeight, limit, offset);
