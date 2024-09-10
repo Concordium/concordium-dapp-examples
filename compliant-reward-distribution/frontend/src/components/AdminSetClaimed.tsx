@@ -37,7 +37,7 @@ export function AdminSetClaimed(props: Props) {
 
             const [recentBlockHash, recentBlockHeight] = await getARecentBlockHash(grpcClient);
 
-            const schema = 'FAADAAAADgAAAGNvbnRleHRfc3RyaW5nFgIHAAAAbWVzc2FnZRACCwoAAABibG9ja19oYXNoFgI';
+            const schema = 'FAADAAAADgAAAGNvbnRleHRfc3RyaW5nFgIHAAAAbWVzc2FnZRACCwoAAABibG9ja19oYXNoFgI=';
             const signature = await requestSignature(recentBlockHash, schema, [address], signer, provider);
 
             await setClaimed(signer, signature, recentBlockHeight, address);

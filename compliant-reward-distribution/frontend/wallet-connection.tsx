@@ -17,7 +17,8 @@ import { Buffer } from 'buffer';
 import {
     CHAIN_ID,
     CONTEXT_STRING,
-    ID_METHOD,
+    METHOD_ID,
+    METHOD_SIGN,
     WALLET_CONNECT_SESSION_NAMESPACE,
     walletConnectOpts,
 } from './src/constants';
@@ -151,7 +152,7 @@ export class WalletConnectProvider extends WalletProvider {
         const { uri, approval } = await this.client.connect({
             requiredNamespaces: {
                 [WALLET_CONNECT_SESSION_NAMESPACE]: {
-                    methods: [ID_METHOD],
+                    methods: [METHOD_SIGN, METHOD_ID],
                     chains: [CHAIN_ID],
                     events: ['accounts_changed'],
                 },
@@ -192,11 +193,42 @@ export class WalletConnectProvider extends WalletProvider {
         recentBlockHash: Uint8Array,
         schema: string,
     ): Promise<AccountTransactionSignature> {
-        console.log(accountAddress);
-        console.log(message);
-        console.log(recentBlockHash);
-        console.log(schema);
-        throw new Error('Not yet implemented');
+        if (!this.topic) {
+            throw new Error('No connection');
+        }
+
+        const payload = Buffer.from(
+            serializeTypeValue(
+                { block_hash: Buffer.from(recentBlockHash).toString('hex'), context_string: CONTEXT_STRING, message },
+                toBuffer(schema, 'base64'),
+            ).buffer,
+        ).toString('hex');
+
+        const params = {
+            message: {
+                schema: schema,
+                data: payload,
+            },
+        };
+
+        try {
+            const signature = await this.client.request({
+                topic: this.topic,
+                request: {
+                    method: METHOD_SIGN,
+                    params,
+                },
+                chainId: CHAIN_ID,
+            });
+
+            return signature as AccountTransactionSignature;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (e: any) {
+            if (isWalletConnectError(e)) {
+                throw new Error('Signing request rejected in wallet: ' + JSON.stringify(e));
+            }
+            throw e;
+        }
     }
 
     async requestVerifiablePresentation(
@@ -218,7 +250,7 @@ export class WalletConnectProvider extends WalletProvider {
             const result = await this.client.request<{ verifiablePresentationJson: string }>({
                 topic: this.topic,
                 request: {
-                    method: ID_METHOD,
+                    method: METHOD_ID,
                     params: { paramsJson: serializedParams },
                 },
                 chainId: CHAIN_ID,
@@ -227,7 +259,7 @@ export class WalletConnectProvider extends WalletProvider {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (e: any) {
             if (isWalletConnectError(e)) {
-                throw new Error('Proof request rejected in wallet');
+                throw new Error('Proof request rejected in wallet: ' + JSON.stringify(e));
             }
             throw e;
         }
