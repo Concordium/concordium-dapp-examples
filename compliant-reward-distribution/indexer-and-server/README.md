@@ -77,8 +77,10 @@ The server has several endpoints to read/write from/to the database. The authori
 
 ## Run the `server`
 
+You have to build the front end in the folder `../frontend` before running this command.
+
 ```console
-cargo run --bin server -- --admin_accounts "47b6Qe2XtZANHetanWKP1PbApLKtS3AyiCtcXaqLMbypKjCaRw" --admin_accounts "4eDtVqZrkmcNEFziEMSs8S2anvkH5KnsYK4MhwedwGWK1pmjZe"
+cargo run --bin server -- --admin_accounts "4eDtVqZrkmcNEFziEMSs8S2anvkH5KnsYK4MhwedwGWK1pmjZe" --admin_accounts "4dT5vPrnnpwVrXZgmYLtHrDLvBYhtzheaK4fDWbJewqRCGQKWz"
 ```
 
 ## Configure the `server`
@@ -97,6 +99,8 @@ Note: In production, you should use the environment variable and not pass the da
 - `--admin_accounts (env: CCD_SERVER_ADMIN_ACCOUNTS)` are allowed to read all data from the database and set the `claimed` flag in the database. Admin accounts have elevated permission and the flag can be re-used to set several admin accounts.
 
 - `--claim_expiry_duration_days (env: CCD_SERVER_CLAIM_EXPIRY_DURATION_DAYS)` is the duration after creating a new account during which the account is eligible to claim the reward, the default value `60` is used.
+
+- `--frontend (env: CCD_SERVER_FRONTEND)` is the path to the directory where the frontend assets are located. If not specified, the default value `../frontend/dist` is used.
 
 You can open the help menu as follows:
 
