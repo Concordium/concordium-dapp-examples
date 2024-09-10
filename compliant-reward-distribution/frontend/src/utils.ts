@@ -5,7 +5,6 @@ import {
     CredentialStatement,
     VerifiablePresentation,
 } from '@concordium/web-sdk';
-import { BACKEDN_BASE_URL } from './constants';
 
 import { WalletProvider } from '../wallet-connection';
 
@@ -72,7 +71,7 @@ interface AccountData {
  * Fetch pending approvals from the backend
  */
 export async function setClaimed(signer: string, signature: string, recentBlockHeight: bigint, accountAddress: string) {
-    const response = await fetch(`${BACKEDN_BASE_URL}api/setClaimed`, {
+    const response = await fetch(`api/setClaimed`, {
         method: 'POST',
         headers: new Headers({ 'content-type': 'application/json' }),
         body: JSON.stringify({
@@ -105,7 +104,7 @@ export async function getPendingApprovals(
     limit: number,
     offset: number,
 ): Promise<AccountData[] | undefined> {
-    const response = await fetch(`${BACKEDN_BASE_URL}api/getPendingApprovals`, {
+    const response = await fetch(`api/getPendingApprovals`, {
         method: 'POST',
         headers: new Headers({ 'content-type': 'application/json' }),
         body: JSON.stringify({
@@ -179,7 +178,7 @@ export async function getAccountData(
     signature: string,
     recentBlockHeight: bigint,
 ): Promise<AccountData> {
-    const response = await fetch(`${BACKEDN_BASE_URL}api/getAccountData`, {
+    const response = await fetch(`api/getAccountData`, {
         method: 'POST',
         headers: new Headers({ 'content-type': 'application/json' }),
         body: JSON.stringify({
@@ -234,7 +233,7 @@ export async function requestSignature(
  * Fetch the statement to prove from the backend
  */
 export async function getStatement(): Promise<CredentialStatement> {
-    const response = await fetch(`${BACKEDN_BASE_URL}api/getZKProofStatements`, { method: 'GET' });
+    const response = await fetch(`api/getZKProofStatements`, { method: 'GET' });
 
     if (!response.ok) {
         const error = (await response.json()) as Error;
@@ -266,7 +265,7 @@ export async function getStatement(): Promise<CredentialStatement> {
  * Submit Tweet to the backend
  */
 export async function submitTweet(signer: string, signature: string, recentBlockHeight: bigint, tweet: string) {
-    const response = await fetch(`${BACKEDN_BASE_URL}api/postTweet`, {
+    const response = await fetch(`api/postTweet`, {
         method: 'POST',
         headers: new Headers({ 'content-type': 'application/json' }),
         body: JSON.stringify({
@@ -300,7 +299,7 @@ export async function submitTweet(signer: string, signature: string, recentBlock
  * Submit ZK proof to the backend
  */
 export async function submitZkProof(presentation: VerifiablePresentation, recentBlockHeight: bigint) {
-    const response = await fetch(`${BACKEDN_BASE_URL}api/postZKProof`, {
+    const response = await fetch(`api/postZKProof`, {
         method: 'POST',
         headers: new Headers({ 'content-type': 'application/json' }),
         body: JSON.stringify({

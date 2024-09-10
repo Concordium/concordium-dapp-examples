@@ -2,6 +2,7 @@ use ::indexer::{db::DatabasePool, types::Server};
 use anyhow::Context;
 use axum::{
     extract::State,
+    response::Html,
     routing::{get, post},
     Json, Router,
 };
@@ -22,6 +23,7 @@ use concordium_rust_sdk::{
         Web3IdAttribute,
     },
 };
+use handlebars::{no_escape, Handlebars};
 use indexer::{
     constants::{
         CONTEXT_STRING, CONTEXT_STRING_2, CURRENT_TWEET_VERIFICATION_VERSION,
@@ -38,6 +40,9 @@ use indexer::{
     },
 };
 use sha2::Digest;
+use std::{fs, path::PathBuf};
+use tonic::transport::Endpoint;
+use tower_http::services::ServeDir;
 
 /// Command line configuration of the application.
 #[derive(Debug, clap::Parser)]
@@ -79,7 +84,7 @@ struct Args {
         default_value = "https://grpc.testnet.concordium.com:20000",
         env = "CCD_SERVER_NODE"
     )]
-    node_endpoint: concordium_rust_sdk::v2::Endpoint,
+    node_endpoint: Endpoint,
     /// The admin accounts that are allowed to read the database and set the `claimed`
     /// flag in the database after having manually transferred the funds to an account.
     #[arg(
@@ -96,6 +101,29 @@ struct Args {
         default_value = "60"
     )]
     claim_expiry_duration_days: ClaimExpiryDurationDays,
+    #[clap(
+        long = "frontend",
+        default_value = "../frontend/dist",
+        help = "Path to the directory where frontend assets are located.",
+        env = "CCD_SERVER_FRONTEND"
+    )]
+    frontend_assets: PathBuf,
+}
+
+/// Creates the JSON object required by the frontend.
+fn create_frontend_config(network: Network, node_endpoint: Endpoint) -> serde_json::Value {
+    let network: &str = if network == Network::Testnet {
+        "testnet"
+    } else {
+        "mainnet"
+    };
+
+    let config = serde_json::json!({
+        "node": node_endpoint.uri().to_string(),
+        "network": network,
+    });
+    let config_string = serde_json::to_string(&config).expect("JSON serialization always succeeds");
+    serde_json::json!({ "config": config_string })
 }
 
 /// The main function.
@@ -137,7 +165,7 @@ async fn main() -> anyhow::Result<()> {
     .timeout(std::time::Duration::from_secs(10));
 
     // Establish connection to the blockchain node.
-    let mut node_client = Client::new(endpoint)
+    let mut node_client = Client::new(endpoint.clone())
         .await
         .context("Unable to construct the node client")?;
     let consensus_info = node_client
@@ -173,6 +201,20 @@ async fn main() -> anyhow::Result<()> {
 
     tracing::info!("Starting server...");
 
+    // Setting up the front end files.
+    let serve_dir_service = ServeDir::new(app.frontend_assets.join("assets"));
+
+    // Insert the frontend config into `index.html` using the handlebars
+    // placeholder. Then render the `index.html` and assets.
+    let index_template = fs::read_to_string(app.frontend_assets.join("index.html"))
+        .context("Frontend was not built or wrong path to the frontend files.")?;
+    let mut reg = Handlebars::new();
+    // Prevent handlebars from escaping inserted objects.
+    reg.register_escape_fn(no_escape);
+
+    let index_html =
+        reg.render_template(&index_template, &create_frontend_config(network, endpoint))?;
+
     let router = Router::new()
         .route("/api/postTweet", post(post_tweet))
         .route("/api/postZKProof", post(post_zk_proof))
@@ -182,6 +224,8 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/canClaim", post(can_claim))
         .route("/api/getZKProofStatements", get(get_zk_proof_statements))
         .route("/health", get(health))
+        .nest_service("/assets", serve_dir_service)
+        .fallback(get(|| async { Html(index_html) }))
         .with_state(state)
         .layer(
             tower_http::trace::TraceLayer::new_for_http()

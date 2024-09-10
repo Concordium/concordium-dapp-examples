@@ -9,7 +9,6 @@ import 'dotenv/config';
 
 const DEFAULT_NETWORK = 'testnet';
 const DEFAULT_NODE = 'https://grpc.testnet.concordium.com:20000';
-const DEFAULT_SPONSORED_API = 'http://localhost:8000/';
 
 /**
  * Validates environment variable present at `envField` as a URL.
@@ -35,31 +34,18 @@ function validateURL(envField: string, allowUnset = true): void {
 
 function getConfig() {
     // Validate network
-    if (![undefined, 'mainnet', 'testnet'].includes(process.env.TRACK_AND_TRACE_NETWORK)) {
+    if (![undefined, 'mainnet', 'testnet'].includes(process.env.NETWORK)) {
         throw new Error(
-            `Unexpected value for environment variable "TRACK_AND_TRACE_NETWORK": ${process.env.TRACK_AND_TRACE_NETWORK} (should be either "testnet" or "mainnet")`,
+            `Unexpected value for environment variable "NETWORK": ${process.env.NETWORK} (should be either "testnet" or "mainnet")`,
         );
     }
 
-    const [, index, subindex] =
-        process.env.TRACK_AND_TRACE_CONTRACT_ADDRESS?.match(/<(\d*),(\d*)>/) ??
-        (() => {
-            throw new Error(
-                'Environment variable "TRACK_AND_TRACE_CONTRACT_ADDRESS" must be specified in the format "<1234,0>"',
-            );
-        })();
-
     // Validate node URL.
-    validateURL('TRACK_AND_TRACE_NODE');
-
-    // Validate the sponsored transaction backend URL.
-    validateURL('TRACK_AND_TRACE_SPONSORED_BACKEND_API');
+    validateURL('CONCORDIUM_NODE');
 
     return {
-        node: process.env.TRACK_AND_TRACE_NODE ?? DEFAULT_NODE,
-        contractAddress: { index, subindex },
-        network: process.env.TRACK_AND_TRACE_NETWORK ?? DEFAULT_NETWORK,
-        sponsoredTransactionBackend: process.env.TRACK_AND_TRACE_SPONSORED_BACKEND_API ?? DEFAULT_SPONSORED_API,
+        node: process.env.CONCORDIUM_NODE ?? DEFAULT_NODE,
+        network: process.env.NETWORK ?? DEFAULT_NETWORK,
     };
 }
 
@@ -87,10 +73,8 @@ const viteConfig: UserConfig = {
     define: {
         global: 'globalThis',
         'process.env': {
-            TRACK_AND_TRACE_NETWORK: process.env.TRACK_AND_TRACE_NETWORK,
-            TRACK_AND_TRACE_SPONSORED_BACKEND_API: process.env.TRACK_AND_TRACE_SPONSORED_BACKEND_API,
-            TRACK_AND_TRACE_NODE: process.env.TRACK_AND_TRACE_NODE,
-            TRACK_AND_TRACE_CONTRACT_ADDRESS: process.env.TRACK_AND_TRACE_CONTRACT_ADDRESS,
+            NETWORK: process.env.NETWORK,
+            CONCORDIUM_NODE: process.env.CONCORDIUM_NODE,
         },
     },
 };
