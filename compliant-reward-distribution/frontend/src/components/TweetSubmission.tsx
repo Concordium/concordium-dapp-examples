@@ -4,7 +4,7 @@ import { Alert, Button, Form } from 'react-bootstrap';
 
 import { getARecentBlockHash, requestSignature, submitTweet } from '../utils';
 import { ConcordiumGRPCClient } from '@concordium/web-sdk';
-import { WalletProvider } from '../../wallet-connection';
+import { WalletProvider } from '../wallet-connection';
 
 interface Props {
     signer: string | undefined;

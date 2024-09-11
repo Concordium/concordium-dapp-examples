@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Alert, Button, Form } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
 
-import { WalletProvider } from '../../wallet-connection';
+import { WalletProvider } from '../wallet-connection';
 import { ConcordiumGRPCClient, CredentialStatement } from '@concordium/web-sdk';
 import { getARecentBlockHash, getStatement, submitZkProof } from '../utils';
 import { CONTEXT_STRING } from '../constants';

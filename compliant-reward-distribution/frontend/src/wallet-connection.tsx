@@ -21,7 +21,7 @@ import {
     METHOD_SIGN,
     WALLET_CONNECT_SESSION_NAMESPACE,
     walletConnectOpts,
-} from './src/constants';
+} from './constants';
 
 export abstract class WalletProvider extends EventEmitter {
     abstract connect(): Promise<string[] | undefined>;
