@@ -12,6 +12,14 @@ interface Props {
     grpcClient: ConcordiumGRPCClient | undefined;
 }
 
+const checkTweetdFromUrl = (url: string) => {
+    // eslint-disable-next-line no-useless-escape
+    const regex = /^https:\/\/(x\.com|twitter\.com)\/[^\/]+\/status\/(\d+)$/;
+    if (!url.match(regex)) {
+        throw Error(`Not a valid tweet URL (expected format: https://x.com/MaxMustermann/status/1818198789817077916)`);
+    }
+};
+
 export function TweetSubmission(props: Props) {
     const { signer, grpcClient, provider } = props;
 
@@ -30,9 +38,9 @@ export function TweetSubmission(props: Props) {
     async function onSubmit() {
         setError(undefined);
 
-        // TODO: verify the tweet syntax and that it contains `Concordium` or `ConcordiumNetwork` in the tweet message.
-
         try {
+            checkTweetdFromUrl(tweet);
+
             if (!signer) {
                 throw Error(`'signer' is undefined. Connect your wallet.`);
             }
