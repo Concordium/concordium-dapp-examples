@@ -6,7 +6,7 @@ import {
     VerifiablePresentation,
 } from '@concordium/web-sdk';
 
-import { WalletProvider } from '../wallet-connection';
+import { WalletProvider } from './wallet-connection';
 
 interface AccountData {
     // The account address that was indexed.

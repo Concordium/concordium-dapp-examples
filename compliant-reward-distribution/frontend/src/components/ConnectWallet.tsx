@@ -1,5 +1,5 @@
 import { Button } from 'react-bootstrap';
-import { BrowserWalletProvider, WalletConnectProvider, WalletProvider } from '../../wallet-connection';
+import { BrowserWalletProvider, WalletConnectProvider, WalletProvider } from '../wallet-connection';
 
 interface Props {
     account: string | undefined;

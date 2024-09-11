@@ -2,18 +2,17 @@ import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { Alert, Button, Form } from 'react-bootstrap';
 
-import { getAccountData, getARecentBlockHash, requestSignature, validateAccountAddress } from '../utils';
+import { getARecentBlockHash, requestSignature, setClaimed, validateAccountAddress } from '../../utils';
 import { ConcordiumGRPCClient } from '@concordium/web-sdk';
-import JSONbig from 'json-bigint';
 import { WalletProvider } from '../../wallet-connection';
 
 interface Props {
-    signer: string | undefined;
     provider: WalletProvider | undefined;
+    signer: string | undefined;
     grpcClient: ConcordiumGRPCClient | undefined;
 }
 
-export function AdminGetAccountData(props: Props) {
+export function AdminSetClaimed(props: Props) {
     const { provider, signer, grpcClient } = props;
 
     interface FormType {
@@ -27,11 +26,9 @@ export function AdminGetAccountData(props: Props) {
     });
 
     const [error, setError] = useState<string | undefined>(undefined);
-    const [accountData, setAccountData] = useState<string | undefined>(undefined);
 
     async function onSubmit() {
         setError(undefined);
-        setAccountData(undefined);
 
         try {
             if (!signer) {
@@ -39,11 +36,11 @@ export function AdminGetAccountData(props: Props) {
             }
 
             const [recentBlockHash, recentBlockHeight] = await getARecentBlockHash(grpcClient);
-            const schema = 'FAADAAAADgAAAGNvbnRleHRfc3RyaW5nFgIHAAAAbWVzc2FnZQsKAAAAYmxvY2tfaGFzaBYC';
-            const signature = await requestSignature(recentBlockHash, schema, address, signer, provider);
 
-            const data = await getAccountData(signer, address, signature, recentBlockHeight);
-            setAccountData(JSONbig.stringify(data));
+            const schema = 'FAADAAAADgAAAGNvbnRleHRfc3RyaW5nFgIHAAAAbWVzc2FnZRACCwoAAABibG9ja19oYXNoFgI=';
+            const signature = await requestSignature(recentBlockHash, schema, [address], signer, provider);
+
+            await setClaimed(signer, signature, recentBlockHeight, address);
         } catch (error) {
             setError((error as Error).message);
         }
@@ -52,7 +49,7 @@ export function AdminGetAccountData(props: Props) {
     return (
         <div className="centered">
             <div className="card">
-                <h2 className="centered">Get Account Data</h2>
+                <h2 className="centered">Set Claimed</h2>
                 <br />
                 <Form onSubmit={handleSubmit(onSubmit)}>
                     <Form.Group className="col mb-3">
@@ -67,18 +64,12 @@ export function AdminGetAccountData(props: Props) {
                         <Form.Text />
                     </Form.Group>
                     <Button variant="secondary" type="submit">
-                        Get Account Data
+                        Set Claimed
                     </Button>
                 </Form>
-                <br />
+
                 {error && <Alert variant="danger">{error}</Alert>}
             </div>
-
-            {accountData && (
-                <div className="card">
-                    <pre className="pre">{JSON.stringify(JSON.parse(accountData), undefined, 2)}</pre>
-                </div>
-            )}
         </div>
     );
 }

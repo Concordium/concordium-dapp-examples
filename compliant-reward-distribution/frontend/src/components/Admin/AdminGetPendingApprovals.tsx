@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { Alert, Button, Form } from 'react-bootstrap';
 
 import { ConcordiumGRPCClient } from '@concordium/web-sdk';
-import { getARecentBlockHash, getPendingApprovals, requestSignature } from '../utils';
+import { getARecentBlockHash, getPendingApprovals, requestSignature } from '../../utils';
 import JSONbig from 'json-bigint';
 import { WalletProvider } from '../../wallet-connection';
 
