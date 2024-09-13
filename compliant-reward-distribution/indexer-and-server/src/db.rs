@@ -1,13 +1,14 @@
 use crate::error::{ConversionError, DatabaseError};
 use chrono::{DateTime, Utc};
 use concordium_rust_sdk::{
-    base::{contracts_common::AccountAddressParseError, hashes::TransactionHash},
-    id::types::AccountAddress,
+    base::{
+        contracts_common::{AccountAddress, AccountAddressParseError},
+        hashes::TransactionHash,
+    },
     types::{hashes::BlockHash, AbsoluteBlockHeight},
 };
 use deadpool_postgres::{GenericClient, Object};
 use serde::Serialize;
-use sha2::Digest;
 use tokio_postgres::{types::ToSql, NoTls};
 
 /// Alias for returning results with [`DatabaseError`]s as the `Err` variant.
@@ -290,57 +291,11 @@ impl Database {
 
     pub async fn upsert_zk_proof(
         &self,
-        national_id: String,
-        nationality: String,
+        uniqueness_hash: &[u8],
         account_address: AccountAddress,
         pending_approval: bool,
         current_zk_proof_verification_version: u16,
     ) -> DatabaseResult<()> {
-        // Create an `uniqueness_hash` to identify the identity associated with the
-        // account by hashing the concatenated string of `national_id` and
-        // `nationality`. Every identity should only be allowed to receive
-        // rewards once (with one of their accounts). The `nationality` is a
-        // two-letter country code (ISO 3166-1 alpha-2).
-        // Note: Concatenating a fixed-size string (`nationality`) with a non-fixed-size
-        // string (`national_id`) is safe. Two non-fixed-size strings would be unsafe.
-        // E.g. `format!("{}{}", "AA", "BB")` and `format!("{}{}", "A", "ABB")`
-        // would produce the same hash even if the strings are different.
-        let concatenated = format!("{}{}", national_id, nationality);
-        let uniqueness_hash = sha2::Sha256::digest(concatenated.as_bytes());
-
-        // Check if `uniqueness_hash` has been used for another account before.
-        let get_account_data = self
-            .client
-            .prepare_cached(
-                "SELECT account_address
-                FROM zkProofs
-                WHERE uniqueness_hash = $1",
-            )
-            .await?;
-        let params: [&(dyn ToSql + Sync); 1] = [&(uniqueness_hash.as_slice())];
-        let opt_row = self.client.query_opt(&get_account_data, &params).await?;
-
-        if let Some(row) = opt_row {
-            let raw_old_account_address: &[u8] = row.try_get("account_address")?;
-
-            let old_account_address =
-                raw_old_account_address
-                    .try_into()
-                    .map_err(|e: AccountAddressParseError| {
-                        DatabaseError::TypeConversion(
-                            "account_address".to_string(),
-                            ConversionError::AccountAddressParse(e),
-                        )
-                    })?;
-
-            if old_account_address != account_address {
-                return Err(DatabaseError::IdentityReUsed {
-                    expected: old_account_address,
-                    actual: account_address,
-                });
-            }
-        }
-
         // Update the `zkProofs` tabel with the new ZK proof.
         let set_zk_proof = self
             .client
@@ -355,7 +310,7 @@ impl Database {
         let params: [&(dyn ToSql + Sync); 5] = [
             &true,
             &(current_zk_proof_verification_version as i64),
-            &uniqueness_hash.as_slice(),
+            &uniqueness_hash,
             &Utc::now(),
             &account_address.0.as_ref(),
         ];
@@ -479,7 +434,26 @@ impl Database {
         opt_row.map(TweetData::try_from).transpose()
     }
 
-    pub async fn get_zk_proof_data(
+    pub async fn get_zk_proof_data_by_unquiness_hash(
+        &self,
+        uniqueness_hash: &[u8],
+    ) -> DatabaseResult<Option<ZkProofData>> {
+        // Check if `uniqueness_hash` has been used for another account before.
+        let get_account_data = self
+            .client
+            .prepare_cached(
+            "SELECT account_address, uniqueness_hash, zk_proof_valid, zk_proof_verification_version, zk_proof_verification_submit_time
+            FROM zkProofs
+           WHERE uniqueness_hash = $1",
+
+            )
+            .await?;
+        let params: [&(dyn ToSql + Sync); 1] = [&(uniqueness_hash)];
+        let opt_row = self.client.query_opt(&get_account_data, &params).await?;
+        opt_row.map(ZkProofData::try_from).transpose()
+    }
+
+    pub async fn get_zk_proof_data_by_account(
         &self,
         account_address: AccountAddress,
     ) -> DatabaseResult<Option<ZkProofData>> {

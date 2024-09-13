@@ -76,7 +76,7 @@ export function ZkProofSubmission(props: Props) {
                 )
             ) {
                 throw Error(
-                    `Select the account connected to this dApp (${accountAddress}) when generating the ZK proof in the wallet. `,
+                    `When approving the ZK proof in the wallet, select your connected account from the drop-down menu in the wallet (expect proof for ${accountAddress}).`,
                 );
             }
 
