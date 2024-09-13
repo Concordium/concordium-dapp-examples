@@ -5,9 +5,10 @@ import JSONbig from 'json-bigint';
 
 import { ConcordiumGRPCClient } from '@concordium/web-sdk';
 
-import { getAccountData, getARecentBlockHash, requestSignature, validateAccountAddress } from '../../utils';
+import { getRecentBlock, requestSignature, validateAccountAddress } from '../../utils';
 import { WalletProvider } from '../../wallet-connection';
 import { SCHEMA_GET_ACCOUNT_DATA_MESSAGE } from '../../constants';
+import { getAccountData } from '../../apiReqeuests';
 
 interface Props {
     signer: string | undefined;
@@ -40,8 +41,14 @@ export function AdminGetAccountData(props: Props) {
                 throw Error(`'signer' is undefined. Connect your wallet.`);
             }
 
-            const [recentBlockHash, recentBlockHeight] = await getARecentBlockHash(grpcClient);
-            const signature = await requestSignature(recentBlockHash, SCHEMA_GET_ACCOUNT_DATA_MESSAGE, address, signer, provider);
+            const { blockHash: recentBlockHash, blockHeight: recentBlockHeight } = await getRecentBlock(grpcClient);
+            const signature = await requestSignature(
+                recentBlockHash,
+                SCHEMA_GET_ACCOUNT_DATA_MESSAGE,
+                address,
+                signer,
+                provider,
+            );
 
             const data = await getAccountData(signer, address, signature, recentBlockHeight);
             setAccountData(JSONbig.stringify(data));
@@ -72,14 +79,9 @@ export function AdminGetAccountData(props: Props) {
                     </Button>
 
                     <br />
-                    {accountData && (
-                        <div className="card">
-                            <pre className="pre">{JSON.stringify(JSON.parse(accountData), undefined, 2)}</pre>
-                        </div>
-                    )}
+                    {accountData && <pre className="pre">{JSON.stringify(JSON.parse(accountData), undefined, 2)}</pre>}
 
                     {error && <Alert variant="danger">{error}</Alert>}
-
                 </Form>
             </div>
         </div>

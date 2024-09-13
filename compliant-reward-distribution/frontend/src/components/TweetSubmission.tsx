@@ -4,9 +4,10 @@ import { Alert, Button, Form } from 'react-bootstrap';
 
 import { ConcordiumGRPCClient } from '@concordium/web-sdk';
 
-import { getARecentBlockHash, requestSignature, submitTweet } from '../utils';
+import { getRecentBlock, requestSignature } from '../utils';
 import { WalletProvider } from '../wallet-connection';
 import { SCHEMA_TWEET_MESSAGE } from '../constants';
+import { submitTweet } from '../apiReqeuests';
 
 interface Props {
     signer: string | undefined;
@@ -36,11 +37,11 @@ export function TweetSubmission(props: Props) {
     });
 
     const [error, setError] = useState<string | undefined>(undefined);
-    const [successfulSubmission, setSuccessfulSubmission] = useState<string | undefined>(undefined);
+    const [successfulSubmission, setSuccessfulSubmission] = useState<boolean | undefined>(undefined);
 
     async function onSubmit() {
         setError(undefined);
-        setSuccessfulSubmission(undefined)
+        setSuccessfulSubmission(undefined);
 
         try {
             checkTweetdFromUrl(tweet);
@@ -49,13 +50,13 @@ export function TweetSubmission(props: Props) {
                 throw Error(`'signer' is undefined. Connect your wallet.`);
             }
 
-            const [recentBlockHash, recentBlockHeight] = await getARecentBlockHash(grpcClient);
+            const { blockHash: recentBlockHash, blockHeight: recentBlockHeight } = await getRecentBlock(grpcClient);
 
             const signature = await requestSignature(recentBlockHash, SCHEMA_TWEET_MESSAGE, tweet, signer, provider);
 
             await submitTweet(signer, signature, recentBlockHeight, tweet);
 
-            setSuccessfulSubmission(undefined)
+            setSuccessfulSubmission(true);
         } catch (error) {
             setError((error as Error).message);
         }
@@ -80,7 +81,13 @@ export function TweetSubmission(props: Props) {
 
                     {error && <Alert variant="danger">{error}</Alert>}
 
-                    <Button variant="info" id="accountAddress" disabled={true} hidden={successfulSubmission === undefined}>
+                    <br />
+                    <Button
+                        variant="info"
+                        id="accountAddress"
+                        disabled={true}
+                        hidden={successfulSubmission === undefined}
+                    >
                         Success
                     </Button>
                 </Form>

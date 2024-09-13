@@ -5,9 +5,10 @@ import JSONbig from 'json-bigint';
 
 import { ConcordiumGRPCClient } from '@concordium/web-sdk';
 
-import { getARecentBlockHash, getPendingApprovals, requestSignature } from '../../utils';
+import { getRecentBlock, requestSignature } from '../../utils';
 import { WalletProvider } from '../../wallet-connection';
-import { SCHEMA_GET_PENDING_APPROVALS_MESSAGE } from '../../constants';
+import { LIMIT, OFFSET, SCHEMA_GET_PENDING_APPROVALS_MESSAGE } from '../../constants';
+import { getPendingApprovals } from '../../apiReqeuests';
 
 interface Props {
     provider: WalletProvider | undefined;
@@ -32,13 +33,17 @@ export function AdminGetPendingApprovals(props: Props) {
                 throw Error(`'signer' is undefined. Connect your wallet.`);
             }
 
-            const [recentBlockHash, recentBlockHeight] = await getARecentBlockHash(grpcClient);
-            const limit = 5;
-            const offset = 0;
+            const { blockHash: recentBlockHash, blockHeight: recentBlockHeight } = await getRecentBlock(grpcClient);
 
-            const signature = await requestSignature(recentBlockHash, SCHEMA_GET_PENDING_APPROVALS_MESSAGE, { limit, offset }, signer, provider);
+            const signature = await requestSignature(
+                recentBlockHash,
+                SCHEMA_GET_PENDING_APPROVALS_MESSAGE,
+                { limit: LIMIT, offset: OFFSET },
+                signer,
+                provider,
+            );
 
-            const data = await getPendingApprovals(signer, signature, recentBlockHeight, limit, offset);
+            const data = await getPendingApprovals(signer, signature, recentBlockHeight, LIMIT, OFFSET);
             setPendingApprovals(JSONbig.stringify(data));
         } catch (error) {
             setError((error as Error).message);
@@ -58,9 +63,7 @@ export function AdminGetPendingApprovals(props: Props) {
                     {error && <Alert variant="danger">{error}</Alert>}
 
                     {pendingApprovals && (
-                        <div className="card">
-                            <pre className="pre">{JSON.stringify(JSON.parse(pendingApprovals), undefined, 2)}</pre>
-                        </div>
+                        <pre className="pre">{JSON.stringify(JSON.parse(pendingApprovals), undefined, 2)}</pre>
                     )}
                 </Form>
             </div>
