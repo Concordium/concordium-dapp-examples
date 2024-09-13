@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Alert, Button, Form } from 'react-bootstrap';
+import JSONbig from 'json-bigint';
 
 import { ConcordiumGRPCClient } from '@concordium/web-sdk';
+
 import { getARecentBlockHash, getPendingApprovals, requestSignature } from '../../utils';
-import JSONbig from 'json-bigint';
 import { WalletProvider } from '../../wallet-connection';
+import { SCHEMA_GET_PENDING_APPROVALS_MESSAGE } from '../../constants';
 
 interface Props {
     provider: WalletProvider | undefined;
@@ -34,9 +36,7 @@ export function AdminGetPendingApprovals(props: Props) {
             const limit = 5;
             const offset = 0;
 
-            const schema =
-                'FAADAAAADgAAAGNvbnRleHRfc3RyaW5nFgIHAAAAbWVzc2FnZRQAAgAAAAUAAABsaW1pdAQGAAAAb2Zmc2V0BAoAAABibG9ja19oYXNoFgI=';
-            const signature = await requestSignature(recentBlockHash, schema, { limit, offset }, signer, provider);
+            const signature = await requestSignature(recentBlockHash, SCHEMA_GET_PENDING_APPROVALS_MESSAGE, { limit, offset }, signer, provider);
 
             const data = await getPendingApprovals(signer, signature, recentBlockHeight, limit, offset);
             setPendingApprovals(JSONbig.stringify(data));
@@ -51,18 +51,19 @@ export function AdminGetPendingApprovals(props: Props) {
                 <h2 className="centered">Get Pending Approvals</h2>
                 <br />
                 <Form onSubmit={handleSubmit(onSubmit)}>
-                    <Button variant="secondary" type="submit">
+                    <Button variant="primary" type="submit">
                         Get Pending Approvals
                     </Button>
-                </Form>
-                {error && <Alert variant="danger">{error}</Alert>}
-            </div>
 
-            {pendingApprovals && (
-                <div className="card">
-                    <pre className="pre">{JSON.stringify(JSON.parse(pendingApprovals), undefined, 2)}</pre>
-                </div>
-            )}
+                    {error && <Alert variant="danger">{error}</Alert>}
+
+                    {pendingApprovals && (
+                        <div className="card">
+                            <pre className="pre">{JSON.stringify(JSON.parse(pendingApprovals), undefined, 2)}</pre>
+                        </div>
+                    )}
+                </Form>
+            </div>
         </div>
     );
 }

@@ -1,4 +1,5 @@
 import { ConcordiumGRPCClient } from '@concordium/web-sdk';
+
 import { AdminGetAccountData } from './AdminGetAccountData';
 import { AdminGetPendingApprovals } from './AdminGetPendingApprovals';
 import { AdminSetClaimed } from './AdminSetClaimed';

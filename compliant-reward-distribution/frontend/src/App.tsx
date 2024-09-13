@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import { Button } from 'react-bootstrap';
 
+import { TESTNET, useGrpcClient } from '@concordium/react-components';
+
 import { WalletProvider } from './wallet-connection';
-import { ConnectWallet } from './components/ConnectWallet';
-import { ZkProofSubmission } from './components/ZkProofSubmission';
 import { version } from '../package.json';
 import './styles.scss';
-import { TESTNET, useGrpcClient } from '@concordium/react-components';
+
+import { ConnectWallet } from './components/ConnectWallet';
+import { ZkProofSubmission } from './components/ZkProofSubmission';
 import { Admin } from './components/Admin/Admin';
 import { TweetSubmission } from './components/TweetSubmission';
 

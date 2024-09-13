@@ -1,5 +1,5 @@
-import { TESTNET, MAINNET } from '@concordium/wallet-connectors';
 import { SignClientTypes } from '@walletconnect/types';
+import { TESTNET, MAINNET } from '@concordium/wallet-connectors';
 
 const { protocol, hostname, port } = new URL(CONFIG.node);
 export const NODE_HOST = `${protocol}//${hostname}`;
@@ -29,3 +29,39 @@ export const walletConnectOpts: SignClientTypes.Options = {
         icons: ['https://walletconnect.com/walletconnect-logo.png'],
     },
 };
+
+// To create the schemas:
+
+// 1. Step: Use expected Rust type from the backend as an input parameter to a smart contract function e.g.:
+//
+// #[derive(SchemaType)]
+// pub struct TweetParam {
+//     context_string: String,
+//     message: TweetMessage,
+//     block_hash: String,
+// }
+// #[derive(SchemaType)]
+// pub struct TweetMessage {
+//     limit: u32,
+//     offset: u32,
+// }
+//
+// #[receive(
+//     contract = "dummyContract",
+//     name = "Tweet",
+//     parameter = "TweetParam",
+//     mutable,
+//     error = "ContractError"
+// )]
+// fn tweet(_ctx: &ReceiveContext, _host: &mut Host<State>) -> ContractResult<()> {
+//     Ok(())
+// }
+//
+// 2. Step: Get the type parameter schema for the above function with the command:
+// cargo concordium build --schema-json-out ./
+export const SCHEMA_TWEET_MESSAGE = 'FAADAAAADgAAAGNvbnRleHRfc3RyaW5nFgIHAAAAbWVzc2FnZRYCCgAAAGJsb2NrX2hhc2gWAg==';
+export const SCHEMA_GET_ACCOUNT_DATA_MESSAGE = 'FAADAAAADgAAAGNvbnRleHRfc3RyaW5nFgIHAAAAbWVzc2FnZQsKAAAAYmxvY2tfaGFzaBYC';
+export const SCHEMA_GET_PENDING_APPROVALS_MESSAGE =
+    'FAADAAAADgAAAGNvbnRleHRfc3RyaW5nFgIHAAAAbWVzc2FnZRQAAgAAAAUAAABsaW1pdAQGAAAAb2Zmc2V0BAoAAABibG9ja19oYXNoFgI=';
+export const SCHEMA_SET_CLAIMED_MESSAGE = 'FAADAAAADgAAAGNvbnRleHRfc3RyaW5nFgIHAAAAbWVzc2FnZRACCwoAAABibG9ja19oYXNoFgI=';
+

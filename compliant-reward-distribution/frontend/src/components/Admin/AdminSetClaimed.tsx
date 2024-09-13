@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { Alert, Button, Form } from 'react-bootstrap';
 
-import { getARecentBlockHash, requestSignature, setClaimed, validateAccountAddress } from '../../utils';
 import { ConcordiumGRPCClient } from '@concordium/web-sdk';
+
+import { getARecentBlockHash, requestSignature, setClaimed, validateAccountAddress } from '../../utils';
 import { WalletProvider } from '../../wallet-connection';
+import { SCHEMA_SET_CLAIMED_MESSAGE } from '../../constants';
 
 interface Props {
     provider: WalletProvider | undefined;
@@ -37,8 +39,7 @@ export function AdminSetClaimed(props: Props) {
 
             const [recentBlockHash, recentBlockHeight] = await getARecentBlockHash(grpcClient);
 
-            const schema = 'FAADAAAADgAAAGNvbnRleHRfc3RyaW5nFgIHAAAAbWVzc2FnZRACCwoAAABibG9ja19oYXNoFgI=';
-            const signature = await requestSignature(recentBlockHash, schema, [address], signer, provider);
+            const signature = await requestSignature(recentBlockHash, SCHEMA_SET_CLAIMED_MESSAGE, [address], signer, provider);
 
             await setClaimed(signer, signature, recentBlockHeight, address);
         } catch (error) {
@@ -63,12 +64,13 @@ export function AdminSetClaimed(props: Props) {
                         )}
                         <Form.Text />
                     </Form.Group>
-                    <Button variant="secondary" type="submit">
+
+                    <Button variant="primary" type="submit">
                         Set Claimed
                     </Button>
-                </Form>
 
-                {error && <Alert variant="danger">{error}</Alert>}
+                    {error && <Alert variant="danger">{error}</Alert>}
+                </Form>
             </div>
         </div>
     );

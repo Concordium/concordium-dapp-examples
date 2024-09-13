@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { Alert, Button, Form } from 'react-bootstrap';
 
-import { getARecentBlockHash, requestSignature, submitTweet } from '../utils';
 import { ConcordiumGRPCClient } from '@concordium/web-sdk';
+
+import { getARecentBlockHash, requestSignature, submitTweet } from '../utils';
 import { WalletProvider } from '../wallet-connection';
+import { SCHEMA_TWEET_MESSAGE } from '../constants';
 
 interface Props {
     signer: string | undefined;
@@ -34,9 +36,11 @@ export function TweetSubmission(props: Props) {
     });
 
     const [error, setError] = useState<string | undefined>(undefined);
+    const [successfulSubmission, setSuccessfulSubmission] = useState<string | undefined>(undefined);
 
     async function onSubmit() {
         setError(undefined);
+        setSuccessfulSubmission(undefined)
 
         try {
             checkTweetdFromUrl(tweet);
@@ -46,11 +50,12 @@ export function TweetSubmission(props: Props) {
             }
 
             const [recentBlockHash, recentBlockHeight] = await getARecentBlockHash(grpcClient);
-            const schema = 'FAADAAAADgAAAGNvbnRleHRfc3RyaW5nFgIHAAAAbWVzc2FnZRYCCgAAAGJsb2NrX2hhc2gWAg==';
 
-            const signature = await requestSignature(recentBlockHash, schema, tweet, signer, provider);
+            const signature = await requestSignature(recentBlockHash, SCHEMA_TWEET_MESSAGE, tweet, signer, provider);
 
             await submitTweet(signer, signature, recentBlockHeight, tweet);
+
+            setSuccessfulSubmission(undefined)
         } catch (error) {
             setError((error as Error).message);
         }
@@ -69,12 +74,16 @@ export function TweetSubmission(props: Props) {
                         <Form.Text />
                     </Form.Group>
 
-                    <Button variant="secondary" type="submit">
+                    <Button variant="primary" type="submit">
                         Submit
                     </Button>
-                </Form>
 
-                {error && <Alert variant="danger">{error}</Alert>}
+                    {error && <Alert variant="danger">{error}</Alert>}
+
+                    <Button variant="info" id="accountAddress" disabled={true} hidden={successfulSubmission === undefined}>
+                        Success
+                    </Button>
+                </Form>
             </div>
         </div>
     );

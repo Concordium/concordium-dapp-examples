@@ -1,3 +1,11 @@
+import EventEmitter from 'events';
+import JSONBigInt from 'json-bigint';
+import { Buffer } from 'buffer';
+
+import { SessionTypes } from '@walletconnect/types';
+import SignClient from '@walletconnect/sign-client';
+import QRCodeModal from '@walletconnect/qrcode-modal';
+
 import { detectConcordiumProvider, WalletApi } from '@concordium/browser-wallet-api-helpers';
 import {
     AccountTransactionSignature,
@@ -7,12 +15,6 @@ import {
     toBuffer,
     VerifiablePresentation,
 } from '@concordium/web-sdk';
-import { SessionTypes } from '@walletconnect/types';
-import SignClient from '@walletconnect/sign-client';
-import QRCodeModal from '@walletconnect/qrcode-modal';
-import EventEmitter from 'events';
-import JSONBigInt from 'json-bigint';
-import { Buffer } from 'buffer';
 
 import {
     CHAIN_ID,
