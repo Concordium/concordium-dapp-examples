@@ -597,7 +597,7 @@ async fn post_tweet(
 
     // Calculate the `new_pending_approval` flag`.
     let zk_proof_valid = db
-        .get_zk_proof_data(signer)
+        .get_zk_proof_data_by_account(signer)
         .await?
         .map(|x| x.zk_proof_valid);
     let new_pending_approval = zk_proof_valid.unwrap_or_default() && !claimed;
@@ -647,10 +647,40 @@ async fn post_zk_proof(
     let tweet_valid = db.get_tweet_data(prover).await?.map(|x| x.tweet_valid);
     let new_pending_approval = tweet_valid.unwrap_or_default() && !claimed;
 
+    // Create an `uniqueness_hash` to identify the identity associated with the
+    // account by hashing the concatenated string of `national_id` and
+    // `nationality`. Every identity should only be allowed to receive
+    // rewards once (with one of their accounts). The `nationality` is a
+    // two-letter country code (ISO 3166-1 alpha-2).
+    // Note: Concatenating a fixed-size string (`nationality`) with a non-fixed-size
+    // string (`national_id`) is safe. Two non-fixed-size strings would be unsafe.
+    // E.g. `format!("{}{}", "AA", "BB")` and `format!("{}{}", "A", "ABB")`
+    // would produce the same hash even if the strings are different.
+    let concatenated = format!("{}{}", national_id, nationality);
+    let uniqueness_hash = sha2::Sha256::digest(concatenated.as_bytes());
+
+    let zk_proof_data = db
+        .get_zk_proof_data_by_unquiness_hash(uniqueness_hash.as_slice())
+        .await?;
+
+    if let Some(zk_proof_data) = zk_proof_data {
+        let raw_old_account_address: &[u8] = zk_proof_data.account_address.as_ref();
+
+        let old_account_address: AccountAddress = raw_old_account_address
+            .try_into()
+            .map_err(ServerError::AccountAddressParse)?;
+
+        if old_account_address != prover {
+            return Err(ServerError::IdentityReUsed {
+                expected: old_account_address,
+                actual: prover,
+            });
+        }
+    }
+
     // Update the database.
     db.upsert_zk_proof(
-        national_id,
-        nationality,
+        uniqueness_hash.as_slice(),
         prover,
         new_pending_approval,
         CURRENT_ZK_PROOF_VERIFICATION_VERSION,
@@ -706,7 +736,9 @@ async fn get_account_data(
 
     let db = state.db_pool.get().await?;
     let account_data = db.get_account_data(lookup_account_address).await?;
-    let zk_proof_data = db.get_zk_proof_data(lookup_account_address).await?;
+    let zk_proof_data = db
+        .get_zk_proof_data_by_account(lookup_account_address)
+        .await?;
     let tweet_data = db.get_tweet_data(lookup_account_address).await?;
 
     Ok(Json(StoredAccountData {
@@ -760,7 +792,9 @@ async fn can_claim(
 
     let db = state.db_pool.get().await?;
     let account_data = db.get_account_data(param.account_address).await?;
-    let zk_proof_data = db.get_zk_proof_data(param.account_address).await?;
+    let zk_proof_data = db
+        .get_zk_proof_data_by_account(param.account_address)
+        .await?;
     let tweet_data = db.get_tweet_data(param.account_address).await?;
 
     let user_data = UserData {

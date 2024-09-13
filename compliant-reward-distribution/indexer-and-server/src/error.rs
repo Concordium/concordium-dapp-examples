@@ -40,16 +40,6 @@ pub enum DatabaseError {
     /// Failed to get pool.
     #[error("Could not get pool: {0}")]
     PoolError(#[from] PoolError),
-    /// Failed because identity was re-used.
-    #[error(
-        "You already submitted a ZK proof with your identity for the account {expected}. You can \
-         claim rewards only once with your identity. Use the account {expected} for claiming the \
-         reward instead of account {actual}."
-    )]
-    IdentityReUsed {
-        expected: AccountAddress,
-        actual: AccountAddress,
-    },
 }
 
 /// Errors that this server can produce.
@@ -117,6 +107,17 @@ pub enum ServerError {
     OnlyRegularAccounts,
     #[error("No credential commitment on chain.")]
     NoCredentialCommitment,
+    #[error(
+            "You already submitted a ZK proof with your identity for the account {expected}. You can \
+             claim rewards only once with your identity. Use the account {expected} for claiming the \
+             reward instead of account {actual}."
+        )]
+    IdentityReUsed {
+        expected: AccountAddress,
+        actual: AccountAddress,
+    },
+    #[error("Account address parse error: {0}")]
+    AccountAddressParse(#[from] AccountAddressParseError),
 }
 
 impl IntoResponse for ServerError {
@@ -157,7 +158,9 @@ impl IntoResponse for ServerError {
             | ServerError::ProofExpired(_)
             | ServerError::TypeConversion(..)
             | ServerError::OnlyRegularAccounts
-            | ServerError::NoCredentialCommitment => {
+            | ServerError::NoCredentialCommitment
+            | ServerError::IdentityReUsed { .. }
+            | ServerError::AccountAddressParse(_) => {
                 let error_message = format!("Bad request: {self}");
                 tracing::info!(error_message);
                 (StatusCode::BAD_REQUEST, error_message.into())
