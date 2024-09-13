@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { Alert, Button, Form } from 'react-bootstrap';
+import JSONbig from 'json-bigint';
+
+import { ConcordiumGRPCClient } from '@concordium/web-sdk';
 
 import { getAccountData, getARecentBlockHash, requestSignature, validateAccountAddress } from '../../utils';
-import { ConcordiumGRPCClient } from '@concordium/web-sdk';
-import JSONbig from 'json-bigint';
 import { WalletProvider } from '../../wallet-connection';
+import { SCHEMA_GET_ACCOUNT_DATA_MESSAGE } from '../../constants';
 
 interface Props {
     signer: string | undefined;
@@ -39,8 +41,7 @@ export function AdminGetAccountData(props: Props) {
             }
 
             const [recentBlockHash, recentBlockHeight] = await getARecentBlockHash(grpcClient);
-            const schema = 'FAADAAAADgAAAGNvbnRleHRfc3RyaW5nFgIHAAAAbWVzc2FnZQsKAAAAYmxvY2tfaGFzaBYC';
-            const signature = await requestSignature(recentBlockHash, schema, address, signer, provider);
+            const signature = await requestSignature(recentBlockHash, SCHEMA_GET_ACCOUNT_DATA_MESSAGE, address, signer, provider);
 
             const data = await getAccountData(signer, address, signature, recentBlockHeight);
             setAccountData(JSONbig.stringify(data));
@@ -66,19 +67,21 @@ export function AdminGetAccountData(props: Props) {
                         )}
                         <Form.Text />
                     </Form.Group>
-                    <Button variant="secondary" type="submit">
+                    <Button variant="primary" type="submit">
                         Get Account Data
                     </Button>
-                </Form>
-                <br />
-                {error && <Alert variant="danger">{error}</Alert>}
-            </div>
 
-            {accountData && (
-                <div className="card">
-                    <pre className="pre">{JSON.stringify(JSON.parse(accountData), undefined, 2)}</pre>
-                </div>
-            )}
+                    <br />
+                    {accountData && (
+                        <div className="card">
+                            <pre className="pre">{JSON.stringify(JSON.parse(accountData), undefined, 2)}</pre>
+                        </div>
+                    )}
+
+                    {error && <Alert variant="danger">{error}</Alert>}
+
+                </Form>
+            </div>
         </div>
     );
 }

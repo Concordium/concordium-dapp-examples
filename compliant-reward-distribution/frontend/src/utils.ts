@@ -12,9 +12,9 @@ interface AccountData {
     // The account address that was indexed.
     accountAddress: AccountAddress.Type;
     // The timestamp of the block the event was included in.
-    blockTime: string; // DateTime<Utc>,
+    blockTime: string;
     // The transaction hash that the event was recorded in.
-    transactionHash: string; // TransactionHash,
+    transactionHash: string;
     // A boolean specifying if the account has already claimed its rewards (got
     // a reward payout). Every account can only claim rewards once.
     claimed: boolean;

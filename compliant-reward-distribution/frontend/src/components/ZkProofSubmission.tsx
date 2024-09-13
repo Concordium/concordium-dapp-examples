@@ -1,18 +1,19 @@
 import { useEffect, useState } from 'react';
 import { Alert, Button, Form } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
+import sha256 from 'sha256';
+import { Buffer } from 'buffer';
 
-import { WalletProvider } from '../wallet-connection';
 import {
     AccountAddress,
     ConcordiumGRPCClient,
     CredentialDeploymentValues,
     CredentialStatement,
 } from '@concordium/web-sdk';
+
+import { WalletProvider } from '../wallet-connection';
 import { getARecentBlockHash, getStatement, submitZkProof } from '../utils';
 import { CONTEXT_STRING } from '../constants';
-import sha256 from 'sha256';
-import { Buffer } from 'buffer';
 
 interface Props {
     accountAddress: string | undefined;
@@ -24,6 +25,7 @@ export function ZkProofSubmission(props: Props) {
     const { provider, grpcClient, accountAddress } = props;
 
     const [error, setError] = useState<string | undefined>(undefined);
+    const [successfulSubmission, setSuccessfulSubmission] = useState<string | undefined>(undefined);
     const [zkStatement, setZkStatement] = useState<CredentialStatement | undefined>(undefined);
 
     useEffect(() => {
@@ -35,11 +37,12 @@ export function ZkProofSubmission(props: Props) {
         fetchStatement();
     }, []);
 
-    interface FormType {}
+    interface FormType { }
     const { handleSubmit } = useForm<FormType>({ mode: 'all' });
 
     async function onSubmit() {
         setError(undefined);
+        setSuccessfulSubmission(undefined)
 
         try {
             if (!zkStatement) {
@@ -77,6 +80,8 @@ export function ZkProofSubmission(props: Props) {
             }
 
             await submitZkProof(presentation, recentBlockHeight);
+
+            setSuccessfulSubmission('Success');
         } catch (error) {
             setError((error as Error).message);
         }
@@ -88,12 +93,15 @@ export function ZkProofSubmission(props: Props) {
                 <h2 className="centered"> Submit ZK Proof</h2>
                 <br />
                 <Form onSubmit={handleSubmit(onSubmit)}>
-                    <Button variant="secondary" type="submit">
+                    <Button variant="primary" type="submit">
                         Submit
                     </Button>
-                </Form>
+                    {error && <Alert variant="danger">{error}</Alert>}
 
-                {error && <Alert variant="danger">{error}</Alert>}
+                    <Button variant="info" id="accountAddress" disabled={true} hidden={successfulSubmission === undefined}>
+                        Success
+                    </Button>
+                </Form>
             </div>
         </div>
     );

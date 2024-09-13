@@ -1,22 +1,28 @@
 @import 'bootstrap/scss/bootstrap';
-
-// Bootstrap functions must be defined first, as they are used in project config.
-@import 'bootstrap/scss/functions';
-
-// Bootstrap config
-@import 'bootstrap/scss/variables';
-@import 'bootstrap/scss/variables-dark';
-@import 'bootstrap/scss/maps';
-@import 'bootstrap/scss/mixins';
-@import 'bootstrap/scss/utilities';
 @import 'bootstrap/scss/type';
 @import 'bootstrap/scss/forms';
 @import 'bootstrap/scss/buttons';
 @import 'bootstrap/scss/alert';
 
-// Bootstrap helpers
-@import 'bootstrap/scss/helpers';
-@import 'bootstrap/scss/utilities/api';
+html,
+body,
+#root {
+    margin: 0;
+    padding: 0;
+    margin: 50px 0px 0px 0px;
+    height: auto;
+    width: 100%;
+    display: flex;
+}
+
+.centered {
+    height: auto;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
 
 .card {
     color: rgb(0, 0, 0);
@@ -27,10 +33,6 @@
     padding: 20px 20px;
     border: 1px solid rgb(85, 85, 85);
     background: #ddd;
-}
-
-.flex-1 {
-    flex: 1;
 }
 
 .btn:hover {
@@ -49,21 +51,7 @@
 .btn {
     padding: 10px 20px;
     gap: 10px;
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
-    background: black;
-    border-radius: 8px;
-    border-color: black;
-    color: white;
-    cursor: pointer;
-}
-
-.btn-secondary {
     width: 100%;
-    padding: 10px 20px;
-    gap: 10px;
     display: flex;
     flex-direction: row;
     justify-content: center;
@@ -73,18 +61,6 @@
     border-color: black;
     color: white;
     cursor: pointer;
-}
-
-input {
-    padding: 10px 20px;
-    gap: 10px;
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
-    border: 1px solid #ededed;
-    border-radius: 8px;
-    color: black;
 }
 
 .navbar {
@@ -123,24 +99,4 @@ input {
 .navbar a.secondary:hover {
     background-color: #ddd;
     color: black;
-}
-
-html,
-body,
-#root {
-    margin: 0;
-    padding: 0;
-    margin: 50px 0px 0px 0px;
-    height: auto;
-    width: 100%;
-    display: flex;
-}
-
-.centered {
-    height: auto;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
 }
