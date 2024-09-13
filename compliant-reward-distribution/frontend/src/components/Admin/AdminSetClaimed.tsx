@@ -4,9 +4,10 @@ import { Alert, Button, Form } from 'react-bootstrap';
 
 import { ConcordiumGRPCClient } from '@concordium/web-sdk';
 
-import { getARecentBlockHash, requestSignature, setClaimed, validateAccountAddress } from '../../utils';
+import { getRecentBlock, requestSignature, validateAccountAddress } from '../../utils';
 import { WalletProvider } from '../../wallet-connection';
 import { SCHEMA_SET_CLAIMED_MESSAGE } from '../../constants';
+import { setClaimed } from '../../apiReqeuests';
 
 interface Props {
     provider: WalletProvider | undefined;
@@ -28,20 +29,29 @@ export function AdminSetClaimed(props: Props) {
     });
 
     const [error, setError] = useState<string | undefined>(undefined);
+    const [successfulSubmission, setSuccessfulSubmission] = useState<boolean | undefined>(undefined);
 
     async function onSubmit() {
         setError(undefined);
+        setSuccessfulSubmission(undefined);
 
         try {
             if (!signer) {
                 throw Error(`'signer' is undefined. Connect your wallet.`);
             }
 
-            const [recentBlockHash, recentBlockHeight] = await getARecentBlockHash(grpcClient);
+            const { blockHash: recentBlockHash, blockHeight: recentBlockHeight } = await getRecentBlock(grpcClient);
 
-            const signature = await requestSignature(recentBlockHash, SCHEMA_SET_CLAIMED_MESSAGE, [address], signer, provider);
+            const signature = await requestSignature(
+                recentBlockHash,
+                SCHEMA_SET_CLAIMED_MESSAGE,
+                [address],
+                signer,
+                provider,
+            );
 
             await setClaimed(signer, signature, recentBlockHeight, address);
+            setSuccessfulSubmission(true);
         } catch (error) {
             setError((error as Error).message);
         }
@@ -70,6 +80,16 @@ export function AdminSetClaimed(props: Props) {
                     </Button>
 
                     {error && <Alert variant="danger">{error}</Alert>}
+
+                    <br />
+                    <Button
+                        variant="info"
+                        id="accountAddress"
+                        disabled={true}
+                        hidden={successfulSubmission === undefined}
+                    >
+                        Success
+                    </Button>
                 </Form>
             </div>
         </div>

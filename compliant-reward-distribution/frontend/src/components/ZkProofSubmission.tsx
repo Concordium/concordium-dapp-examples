@@ -12,8 +12,9 @@ import {
 } from '@concordium/web-sdk';
 
 import { WalletProvider } from '../wallet-connection';
-import { getARecentBlockHash, getStatement, submitZkProof } from '../utils';
+import { getRecentBlock } from '../utils';
 import { CONTEXT_STRING } from '../constants';
+import { getStatement, submitZkProof } from '../apiReqeuests';
 
 interface Props {
     accountAddress: string | undefined;
@@ -25,7 +26,7 @@ export function ZkProofSubmission(props: Props) {
     const { provider, grpcClient, accountAddress } = props;
 
     const [error, setError] = useState<string | undefined>(undefined);
-    const [successfulSubmission, setSuccessfulSubmission] = useState<string | undefined>(undefined);
+    const [successfulSubmission, setSuccessfulSubmission] = useState<boolean | undefined>(undefined);
     const [zkStatement, setZkStatement] = useState<CredentialStatement | undefined>(undefined);
 
     useEffect(() => {
@@ -37,12 +38,12 @@ export function ZkProofSubmission(props: Props) {
         fetchStatement();
     }, []);
 
-    interface FormType { }
+    interface FormType {}
     const { handleSubmit } = useForm<FormType>({ mode: 'all' });
 
     async function onSubmit() {
         setError(undefined);
-        setSuccessfulSubmission(undefined)
+        setSuccessfulSubmission(undefined);
 
         try {
             if (!zkStatement) {
@@ -55,7 +56,7 @@ export function ZkProofSubmission(props: Props) {
                 );
             }
 
-            const [recentBlockHash, recentBlockHeight] = await getARecentBlockHash(grpcClient);
+            const { blockHash: recentBlockHash, blockHeight: recentBlockHeight } = await getRecentBlock(grpcClient);
 
             const digest = [recentBlockHash, Buffer.from(CONTEXT_STRING)];
             const challenge = sha256(digest.flatMap((item) => Array.from(item)));
@@ -81,7 +82,7 @@ export function ZkProofSubmission(props: Props) {
 
             await submitZkProof(presentation, recentBlockHeight);
 
-            setSuccessfulSubmission('Success');
+            setSuccessfulSubmission(true);
         } catch (error) {
             setError((error as Error).message);
         }
@@ -98,7 +99,13 @@ export function ZkProofSubmission(props: Props) {
                     </Button>
                     {error && <Alert variant="danger">{error}</Alert>}
 
-                    <Button variant="info" id="accountAddress" disabled={true} hidden={successfulSubmission === undefined}>
+                    <br />
+                    <Button
+                        variant="info"
+                        id="accountAddress"
+                        disabled={true}
+                        hidden={successfulSubmission === undefined}
+                    >
                         Success
                     </Button>
                 </Form>

@@ -60,8 +60,17 @@ export const walletConnectOpts: SignClientTypes.Options = {
 // 2. Step: Get the type parameter schema for the above function with the command:
 // cargo concordium build --schema-json-out ./
 export const SCHEMA_TWEET_MESSAGE = 'FAADAAAADgAAAGNvbnRleHRfc3RyaW5nFgIHAAAAbWVzc2FnZRYCCgAAAGJsb2NrX2hhc2gWAg==';
-export const SCHEMA_GET_ACCOUNT_DATA_MESSAGE = 'FAADAAAADgAAAGNvbnRleHRfc3RyaW5nFgIHAAAAbWVzc2FnZQsKAAAAYmxvY2tfaGFzaBYC';
+export const SCHEMA_GET_ACCOUNT_DATA_MESSAGE =
+    'FAADAAAADgAAAGNvbnRleHRfc3RyaW5nFgIHAAAAbWVzc2FnZQsKAAAAYmxvY2tfaGFzaBYC';
 export const SCHEMA_GET_PENDING_APPROVALS_MESSAGE =
     'FAADAAAADgAAAGNvbnRleHRfc3RyaW5nFgIHAAAAbWVzc2FnZRQAAgAAAAUAAABsaW1pdAQGAAAAb2Zmc2V0BAoAAABibG9ja19oYXNoFgI=';
-export const SCHEMA_SET_CLAIMED_MESSAGE = 'FAADAAAADgAAAGNvbnRleHRfc3RyaW5nFgIHAAAAbWVzc2FnZRACCwoAAABibG9ja19oYXNoFgI=';
+export const SCHEMA_SET_CLAIMED_MESSAGE =
+    'FAADAAAADgAAAGNvbnRleHRfc3RyaW5nFgIHAAAAbWVzc2FnZRACCwoAAABibG9ja19oYXNoFgI=';
 
+// Limit and offset for fetching pending approvals from the backend.
+export const LIMIT = 40;
+export const OFFSET = 0;
+
+// The number of blocks after the `best block` (top of chain), where the `recent block` is located.
+// The `recent block hash` is included in signatures and ZK proofs to ensure they expire.
+export const RECENT_BLOCK_DURATION = 10n;
