@@ -17,20 +17,19 @@ interface Props {
 }
 
 export function AdminGetAccountData(props: Props) {
-    const { provider, signer, grpcClient } = props;
+    const { signer, provider, grpcClient } = props;
+
+    const [error, setError] = useState<string | undefined>(undefined);
+    const [accountData, setAccountData] = useState<string | undefined>(undefined);
 
     interface FormType {
         address: string;
     }
     const { control, register, formState, handleSubmit } = useForm<FormType>({ mode: 'all' });
-
     const [address] = useWatch({
         control: control,
         name: ['address'],
     });
-
-    const [error, setError] = useState<string | undefined>(undefined);
-    const [accountData, setAccountData] = useState<string | undefined>(undefined);
 
     async function onSubmit() {
         setError(undefined);
@@ -38,7 +37,7 @@ export function AdminGetAccountData(props: Props) {
 
         try {
             if (!signer) {
-                throw Error(`'signer' is undefined. Connect your wallet.`);
+                throw Error(`'signer' is undefined. Connect your wallet. Have an account in your wallet.`);
             }
 
             const { blockHash: recentBlockHash, blockHeight: recentBlockHeight } = await getRecentBlock(grpcClient);

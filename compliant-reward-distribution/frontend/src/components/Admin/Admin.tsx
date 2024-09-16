@@ -6,19 +6,19 @@ import { AdminSetClaimed } from './AdminSetClaimed';
 import { WalletProvider } from '../../wallet-connection';
 
 interface Props {
-    accountAddress: string | undefined;
+    signer: string | undefined;
     grpcClient: ConcordiumGRPCClient | undefined;
     provider: WalletProvider | undefined;
 }
 
 export function Admin(props: Props) {
-    const { accountAddress, grpcClient, provider } = props;
+    const { signer, grpcClient, provider } = props;
 
     return (
         <div className="centered">
-            <AdminGetPendingApprovals provider={provider} signer={accountAddress} grpcClient={grpcClient} />
-            <AdminGetAccountData provider={provider} signer={accountAddress} grpcClient={grpcClient} />
-            <AdminSetClaimed provider={provider} signer={accountAddress} grpcClient={grpcClient} />
+            <AdminGetPendingApprovals provider={provider} signer={signer} grpcClient={grpcClient} />
+            <AdminGetAccountData provider={provider} signer={signer} grpcClient={grpcClient} />
+            <AdminSetClaimed provider={provider} signer={signer} grpcClient={grpcClient} />
         </div>
     );
 }

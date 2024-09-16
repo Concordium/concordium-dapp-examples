@@ -10,26 +10,25 @@ import { SCHEMA_SET_CLAIMED_MESSAGE } from '../../constants';
 import { setClaimed } from '../../apiReqeuests';
 
 interface Props {
-    provider: WalletProvider | undefined;
     signer: string | undefined;
     grpcClient: ConcordiumGRPCClient | undefined;
+    provider: WalletProvider | undefined;
 }
 
 export function AdminSetClaimed(props: Props) {
-    const { provider, signer, grpcClient } = props;
+    const { signer, grpcClient, provider } = props;
+
+    const [error, setError] = useState<string | undefined>(undefined);
+    const [successfulSubmission, setSuccessfulSubmission] = useState<boolean | undefined>(undefined);
 
     interface FormType {
         address: string;
     }
     const { control, register, formState, handleSubmit } = useForm<FormType>({ mode: 'all' });
-
     const [address] = useWatch({
         control: control,
         name: ['address'],
     });
-
-    const [error, setError] = useState<string | undefined>(undefined);
-    const [successfulSubmission, setSuccessfulSubmission] = useState<boolean | undefined>(undefined);
 
     async function onSubmit() {
         setError(undefined);
@@ -37,7 +36,7 @@ export function AdminSetClaimed(props: Props) {
 
         try {
             if (!signer) {
-                throw Error(`'signer' is undefined. Connect your wallet.`);
+                throw Error(`'signer' is undefined. Connect your wallet. Have an account in your wallet.`);
             }
 
             const { blockHash: recentBlockHash, blockHeight: recentBlockHeight } = await getRecentBlock(grpcClient);

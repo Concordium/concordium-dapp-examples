@@ -17,13 +17,13 @@ import { CONTEXT_STRING } from '../constants';
 import { getStatement, submitZkProof } from '../apiReqeuests';
 
 interface Props {
-    accountAddress: string | undefined;
-    provider: WalletProvider | undefined;
+    prover: string | undefined;
     grpcClient: ConcordiumGRPCClient | undefined;
+    provider: WalletProvider | undefined;
 }
 
 export function ZkProofSubmission(props: Props) {
-    const { provider, grpcClient, accountAddress } = props;
+    const { prover, provider, grpcClient } = props;
 
     const [error, setError] = useState<string | undefined>(undefined);
     const [successfulSubmission, setSuccessfulSubmission] = useState<boolean | undefined>(undefined);
@@ -47,12 +47,12 @@ export function ZkProofSubmission(props: Props) {
 
         try {
             if (!zkStatement) {
-                throw Error(`'zkStatement' is undefined`);
+                throw Error(`'zkStatement' is undefined.`);
             }
 
-            if (!provider || !accountAddress) {
+            if (!provider || !prover) {
                 throw Error(
-                    `'provider' or 'accountAddress' are undefined. Connect your wallet and have an account created in it.`,
+                    `'provider' or 'prover' are undefined. Connect your wallet. Have an account in your wallet.`,
                 );
             }
 
@@ -61,9 +61,9 @@ export function ZkProofSubmission(props: Props) {
             const digest = [recentBlockHash, Buffer.from(CONTEXT_STRING)];
             const challenge = sha256(digest.flatMap((item) => Array.from(item)));
 
-            const accountInfo = await grpcClient?.getAccountInfo(AccountAddress.fromBase58(accountAddress));
+            const accountInfoProver = await grpcClient?.getAccountInfo(AccountAddress.fromBase58(prover));
             const credIdConnectedAccount = (
-                accountInfo?.accountCredentials[0].value.contents as CredentialDeploymentValues
+                accountInfoProver?.accountCredentials[0].value.contents as CredentialDeploymentValues
             ).credId;
 
             const presentation = await provider.requestVerifiablePresentation(challenge, [zkStatement]);
@@ -76,7 +76,7 @@ export function ZkProofSubmission(props: Props) {
                 )
             ) {
                 throw Error(
-                    `When approving the ZK proof in the wallet, select your connected account from the drop-down menu in the wallet (expect proof for account: ${accountAddress}).`,
+                    `When approving the ZK proof in the wallet, select your connected account from the drop-down menu in the wallet (expect proof for account: ${prover}).`,
                 );
             }
 
