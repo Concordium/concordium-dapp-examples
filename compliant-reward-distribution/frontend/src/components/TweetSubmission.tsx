@@ -28,18 +28,17 @@ const checkTweetUrlFormat = (url: string) => {
 export function TweetSubmission(props: Props) {
     const { signer, grpcClient, provider } = props;
 
+    const [error, setError] = useState<string | undefined>(undefined);
+    const [successfulSubmission, setSuccessfulSubmission] = useState<boolean | undefined>(undefined);
+
     interface FormType {
         tweet: string;
     }
     const { control, register, formState, handleSubmit } = useForm<FormType>({ mode: 'all' });
-
     const [tweet] = useWatch({
         control: control,
         name: ['tweet'],
     });
-
-    const [error, setError] = useState<string | undefined>(undefined);
-    const [successfulSubmission, setSuccessfulSubmission] = useState<boolean | undefined>(undefined);
 
     async function onSubmit() {
         setError(undefined);
@@ -49,7 +48,7 @@ export function TweetSubmission(props: Props) {
             checkTweetUrlFormat(tweet);
 
             if (!signer) {
-                throw Error(`'signer' is undefined. Connect your wallet.`);
+                throw Error(`'signer' is undefined. Connect your wallet. Have an account in your wallet.`);
             }
 
             const { blockHash: recentBlockHash, blockHeight: recentBlockHeight } = await getRecentBlock(grpcClient);

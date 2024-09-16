@@ -26,9 +26,9 @@ use concordium_rust_sdk::{
 use handlebars::{no_escape, Handlebars};
 use indexer::{
     constants::{
-        CONTEXT_STRING, CONTEXT_STRING_2, CURRENT_TWEET_VERIFICATION_VERSION,
-        CURRENT_ZK_PROOF_VERIFICATION_VERSION, MAX_REQUEST_LIMIT,
-        SIGNATURE_AND_PROOF_EXPIRY_DURATION_BLOCKS, TESTNET_GENESIS_BLOCK_HASH, ZK_STATEMENTS,
+        CONTEXT_STRING, CURRENT_TWEET_VERIFICATION_VERSION, CURRENT_ZK_PROOF_VERIFICATION_VERSION,
+        MAX_REQUEST_LIMIT, SIGNATURE_AND_PROOF_EXPIRY_DURATION_BLOCKS, TESTNET_GENESIS_BLOCK_HASH,
+        ZK_STATEMENTS,
     },
     db::{AccountData, Database, StoredAccountData},
     error::ServerError,
@@ -364,7 +364,8 @@ async fn check_zk_proof(
     // SIGNATURE_AND_PROOF_EXPIRY_DURATION_BLOCKS. The `CONTEXT_STRING` ensures
     // that the proof is generated for this specific service. These checks are
     // done similarly in the `signature` verification flow in this service.
-    let challenge_hash = sha2::Sha256::digest([block_hash.as_ref(), &CONTEXT_STRING].concat());
+    let challenge_hash =
+        sha2::Sha256::digest([block_hash.as_ref(), &CONTEXT_STRING.as_bytes()].concat());
     let challenge = Challenge::try_from(challenge_hash.as_slice())
         .map_err(|e| ServerError::TypeConversion("challenge".to_string(), e))?;
 
@@ -504,7 +505,7 @@ where
     // Concordium services), and the message.
     let message_signed_in_wallet = MessageSigned {
         block_hash: hex::encode(block_hash),
-        context_string: CONTEXT_STRING_2.to_string(),
+        context_string: CONTEXT_STRING.to_string(),
         message,
     };
 

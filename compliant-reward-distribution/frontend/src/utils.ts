@@ -68,7 +68,7 @@ export async function requestSignature(
     provider: WalletProvider | undefined,
 ): Promise<string> {
     if (!provider) {
-        throw Error(`'provider' is undefined. Connect your wallet.`);
+        throw Error(`'provider' is undefined. Connect your wallet. Have an account in your wallet.`);
     }
 
     const signatures = await provider.signMessage(signer, message, recentBlockHash, schema);

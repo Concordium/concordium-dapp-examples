@@ -11,18 +11,18 @@ import { LIMIT, OFFSET, SCHEMA_GET_PENDING_APPROVALS_MESSAGE } from '../../const
 import { getPendingApprovals } from '../../apiReqeuests';
 
 interface Props {
-    provider: WalletProvider | undefined;
     signer: string | undefined;
     grpcClient: ConcordiumGRPCClient | undefined;
+    provider: WalletProvider | undefined;
 }
 
 export function AdminGetPendingApprovals(props: Props) {
-    const { provider, signer, grpcClient } = props;
-
-    const { handleSubmit } = useForm<[]>({ mode: 'all' });
+    const { signer, grpcClient, provider } = props;
 
     const [error, setError] = useState<string | undefined>(undefined);
     const [pendingApprovals, setPendingApprovals] = useState<string | undefined>(undefined);
+
+    const { handleSubmit } = useForm<[]>({ mode: 'all' });
 
     async function onSubmit() {
         setError(undefined);
@@ -30,7 +30,7 @@ export function AdminGetPendingApprovals(props: Props) {
 
         try {
             if (!signer) {
-                throw Error(`'signer' is undefined. Connect your wallet.`);
+                throw Error(`'signer' is undefined. Connect your wallet. Have an account in your wallet.`);
             }
 
             const { blockHash: recentBlockHash, blockHeight: recentBlockHeight } = await getRecentBlock(grpcClient);
