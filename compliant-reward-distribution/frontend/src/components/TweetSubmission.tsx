@@ -15,11 +15,13 @@ interface Props {
     grpcClient: ConcordiumGRPCClient | undefined;
 }
 
-const checkTweetdFromUrl = (url: string) => {
+const checkTweetUrlFormat = (url: string) => {
     // eslint-disable-next-line no-useless-escape
     const regex = /^https:\/\/(x\.com|twitter\.com)\/[^\/]+\/status\/(\d+)$/;
     if (!url.match(regex)) {
-        throw Error(`Not a valid tweet URL (expected format: https://x.com/MaxMustermann/status/1818198789817077916)`);
+        throw Error(
+            `Not a valid tweet URL (expected format: https://x.com/MaxMustermann/status/1818198789817077916 or https://twitter.com/JohnDoe/status/1818198789817077916)`,
+        );
     }
 };
 
@@ -44,7 +46,7 @@ export function TweetSubmission(props: Props) {
         setSuccessfulSubmission(undefined);
 
         try {
-            checkTweetdFromUrl(tweet);
+            checkTweetUrlFormat(tweet);
 
             if (!signer) {
                 throw Error(`'signer' is undefined. Connect your wallet.`);
@@ -70,7 +72,11 @@ export function TweetSubmission(props: Props) {
                 <Form onSubmit={handleSubmit(onSubmit)}>
                     <Form.Group className="col mb-3">
                         <Form.Label>Tweet</Form.Label>
-                        <Form.Control {...register('tweet', { required: true })} type="text" placeholder="12345" />
+                        <Form.Control
+                            {...register('tweet', { required: true })}
+                            type="text"
+                            placeholder="https://x.com/JohnDoe/status/1818198789817077916"
+                        />
                         {formState.errors.tweet && <Alert variant="info">Tweet is required </Alert>}
                         <Form.Text />
                     </Form.Group>

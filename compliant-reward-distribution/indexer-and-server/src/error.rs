@@ -118,6 +118,8 @@ pub enum ServerError {
     },
     #[error("Account address parse error: {0}")]
     AccountAddressParse(#[from] AccountAddressParseError),
+    #[error("Not a valid tweet URL (expected format: https://x.com/JohnDoe/status/1818198789817077916 or https://twitter.com/JohnDoe/status/1818198789817077916)")]
+    NotValidTweetURL,
 }
 
 impl IntoResponse for ServerError {
@@ -160,7 +162,8 @@ impl IntoResponse for ServerError {
             | ServerError::OnlyRegularAccounts
             | ServerError::NoCredentialCommitment
             | ServerError::IdentityReUsed { .. }
-            | ServerError::AccountAddressParse(_) => {
+            | ServerError::AccountAddressParse(_)
+            | ServerError::NotValidTweetURL => {
                 let error_message = format!("Bad request: {self}");
                 tracing::info!(error_message);
                 (StatusCode::BAD_REQUEST, error_message.into())
