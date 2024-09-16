@@ -1,8 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import { Button } from 'react-bootstrap';
-
-import { TESTNET, useGrpcClient } from '@concordium/react-components';
 
 import { WalletProvider } from './wallet-connection';
 import { version } from '../package.json';
@@ -12,12 +10,15 @@ import { ConnectWallet } from './components/ConnectWallet';
 import { ZkProofSubmission } from './components/ZkProofSubmission';
 import { Admin } from './components/Admin/Admin';
 import { TweetSubmission } from './components/TweetSubmission';
+import { ConcordiumGRPCClient } from '@concordium/web-sdk';
+import { GrpcWebFetchTransport } from '@protobuf-ts/grpcweb-transport';
+import { GRPC_NODE_URL } from './constants';
 
 export const App = () => {
     const [provider, setProvider] = useState<WalletProvider>();
     const [account, setAccount] = useState<string>();
 
-    const grpcClient = useGrpcClient(TESTNET);
+    const grpcClient = useRef(new ConcordiumGRPCClient(new GrpcWebFetchTransport(GRPC_NODE_URL))).current;
 
     useEffect(() => {
         if (provider !== undefined) {

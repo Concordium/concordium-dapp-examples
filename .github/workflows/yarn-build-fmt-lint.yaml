@@ -6,7 +6,7 @@ on:
 
   pull_request:
     branches: main
-  
+
 env:
   NODE_VERSION: "lts/*"
 
@@ -29,6 +29,7 @@ jobs:
           - sponsoredTransactionsAuction/frontend
           - trackAndTrace/frontend
           - testnet-faucet
+          - compliant-reward-distribution/frontend
 
     steps:
       - name: Checkout
@@ -71,6 +72,7 @@ jobs:
           - sponsoredTransactionsAuction/frontend
           - trackAndTrace/frontend
           - testnet-faucet
+          - compliant-reward-distribution/frontend
 
     steps:
       - name: Checkout
@@ -93,7 +95,7 @@ jobs:
       - name: Run Prettier
         working-directory: ${{ matrix.packages }}
         run: yarn prettier -c .
-  
+
   build:
     name: Building Frontend
     # Don't run on draft pull requests
@@ -115,6 +117,7 @@ jobs:
           - sponsoredTransactionsAuction/frontend
           - trackAndTrace/frontend
           - testnet-faucet
+          - compliant-reward-distribution/frontend
 
     steps:
       - name: Checkout

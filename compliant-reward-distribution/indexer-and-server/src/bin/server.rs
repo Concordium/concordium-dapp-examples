@@ -39,10 +39,21 @@ use indexer::{
         ZKProofExtractedData, ZKProofStatementsReturn,
     },
 };
+use regex::Regex;
 use sha2::Digest;
 use std::{fs, path::PathBuf};
 use tonic::transport::Endpoint;
 use tower_http::services::ServeDir;
+
+pub fn check_tweet_url_format(url: &str) -> Result<(), ServerError> {
+    let regex = Regex::new(r"^https://(x\.com|twitter\.com)/[^/]+/status/(\d+)$").unwrap();
+
+    if !regex.is_match(url) {
+        return Err(ServerError::NotValidTweetURL);
+    }
+
+    Ok(())
+}
 
 /// Command line configuration of the application.
 #[derive(Debug, clap::Parser)]
@@ -581,6 +592,8 @@ async fn post_tweet(
     request: Json<PostTweetParam>,
 ) -> Result<(), ServerError> {
     let Json(param) = request;
+
+    check_tweet_url_format(&param.signing_data.message.tweet)?;
 
     // Check that:
     // - the signature is valid.

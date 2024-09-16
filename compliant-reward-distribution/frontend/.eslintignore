@@ -2,4 +2,3 @@
 .yarn/
 node_modules/
 dist/
-generated/
