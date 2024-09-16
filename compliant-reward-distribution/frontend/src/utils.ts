@@ -58,7 +58,8 @@ export async function getRecentBlock(grpcClient: ConcordiumGRPCClient | undefine
  * @param provider - The wallet provider.
  * @returns The signature.
  *
- * @throws An error if the wallet responses with one, it the message can not be serialized/deserialized with the given schema, if the `provider` is undefined, or if a multi-sig account is used as signer.s
+ * @throws An error if the wallet responses with one, it the message can not be serialized/deserialized
+ * with the given schema, if the `provider` is undefined, or if a multi-sig account is used as signer.
  */
 export async function requestSignature(
     recentBlockHash: Uint8Array,

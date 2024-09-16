@@ -8,7 +8,6 @@ import { ConcordiumGRPCClient } from '@concordium/web-sdk';
 import './styles.scss';
 import { WalletProvider } from './wallet-connection';
 import { version } from '../package.json';
-import { GRPC_NODE_URL } from './constants';
 import { ConnectWallet } from './components/ConnectWallet';
 import { ZkProofSubmission } from './components/ZkProofSubmission';
 import { Admin } from './components/Admin/Admin';
@@ -18,7 +17,7 @@ export const App = () => {
     const [provider, setProvider] = useState<WalletProvider>();
     const [account, setAccount] = useState<string>();
 
-    const grpcClient = useRef(new ConcordiumGRPCClient(new GrpcWebFetchTransport(GRPC_NODE_URL))).current;
+    const grpcClient = useRef(new ConcordiumGRPCClient(new GrpcWebFetchTransport({ baseUrl: CONFIG.node }))).current;
 
     useEffect(() => {
         if (provider !== undefined) {
