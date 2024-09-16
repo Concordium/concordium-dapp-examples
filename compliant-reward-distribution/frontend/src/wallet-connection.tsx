@@ -19,7 +19,7 @@ import {
 import {
     CHAIN_ID,
     CONTEXT_STRING,
-    METHOD_ID,
+    METHOD_GENERATE_ZK_PROOF,
     METHOD_SIGN,
     WALLET_CONNECT_SESSION_NAMESPACE,
     walletConnectOpts,
@@ -154,7 +154,7 @@ export class WalletConnectProvider extends WalletProvider {
         const { uri, approval } = await this.client.connect({
             requiredNamespaces: {
                 [WALLET_CONNECT_SESSION_NAMESPACE]: {
-                    methods: [METHOD_SIGN, METHOD_ID],
+                    methods: [METHOD_SIGN, METHOD_GENERATE_ZK_PROOF],
                     chains: [CHAIN_ID],
                     events: ['accounts_changed'],
                 },
@@ -252,7 +252,7 @@ export class WalletConnectProvider extends WalletProvider {
             const result = await this.client.request<{ verifiablePresentationJson: string }>({
                 topic: this.topic,
                 request: {
-                    method: METHOD_ID,
+                    method: METHOD_GENERATE_ZK_PROOF,
                     params: { paramsJson: serializedParams },
                 },
                 chainId: CHAIN_ID,

@@ -677,6 +677,7 @@ async fn post_zk_proof(
         .get_zk_proof_data_by_unquiness_hash(uniqueness_hash.as_slice())
         .await?;
 
+    // Check if `uniqueness_hash` has been used for another account before.
     if let Some(zk_proof_data) = zk_proof_data {
         let raw_old_account_address: &[u8] = zk_proof_data.account_address.as_ref();
 

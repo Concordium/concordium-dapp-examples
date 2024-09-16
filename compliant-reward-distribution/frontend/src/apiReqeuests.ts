@@ -129,8 +129,7 @@ async function sendBackendRequest<T = undefined>(
     if (parseReturnValue) {
         // Parse the response as type `T`
         try {
-            const returnValue = (await response.json()) as T;
-            return returnValue;
+            return (await response.json()) as T;
         } catch (e) {
             throw new Error(`Failed to parse the response from the backend into expected type.`);
         }

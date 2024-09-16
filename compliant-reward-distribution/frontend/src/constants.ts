@@ -1,14 +1,5 @@
 import { SignClientTypes } from '@walletconnect/types';
 
-const { protocol, hostname, port } = new URL(CONFIG.node);
-export const NODE_HOST = `${protocol}//${hostname}`;
-export const NODE_PORT = Number(port);
-
-// The Concordium node url used for the application.
-export const GRPC_NODE_URL = {
-    baseUrl: `${CONFIG.network === 'testnet' ? `https://grpc.testnet.concordium.com:20000` : `https://grpc.mainnet.concordium.software:20000`}`,
-};
-
 // The string "CONCORDIUM_COMPLIANT_REWARD_DISTRIBUTION_DAPP" is used
 // as context for signing messages and generating ZK proofs. The same account
 // can be used in different Concordium services without the risk of re-playing
@@ -18,7 +9,7 @@ export const CONTEXT_STRING = 'CONCORDIUM_COMPLIANT_REWARD_DISTRIBUTION_DAPP';
 export const WALLET_CONNECT_PROJECT_ID = '76324905a70fe5c388bab46d3e0564dc';
 export const WALLET_CONNECT_SESSION_NAMESPACE = 'ccd';
 export const CHAIN_ID = `${WALLET_CONNECT_SESSION_NAMESPACE}:${CONFIG.network === 'testnet' ? `testnet` : `mainnet`}`;
-export const METHOD_ID = 'request_verifiable_presentation';
+export const METHOD_GENERATE_ZK_PROOF = 'request_verifiable_presentation';
 export const METHOD_SIGN = 'sign_message';
 
 export const walletConnectOpts: SignClientTypes.Options = {
@@ -32,7 +23,7 @@ export const walletConnectOpts: SignClientTypes.Options = {
 };
 
 // To create the schemas:
-
+//
 // 1. Step: Use the expected Rust type from the backend as an input parameter to a smart contract function e.g.:
 //
 // #[derive(SchemaType)]

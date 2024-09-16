@@ -438,7 +438,6 @@ impl Database {
         &self,
         uniqueness_hash: &[u8],
     ) -> DatabaseResult<Option<ZkProofData>> {
-        // Check if `uniqueness_hash` has been used for another account before.
         let get_account_data = self
             .client
             .prepare_cached(
