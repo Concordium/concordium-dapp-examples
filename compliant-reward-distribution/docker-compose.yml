@@ -1,0 +1,48 @@
+version: '3.8'
+
+# The following optional environment variables can be set:
+#  - `ADMIN_ACCOUNT`: An admin account that can read and write to the database.
+#  - `CONCORDIUM_NODE`: The gRPC interface of a node on the correct network. (Defaults to 'https://grpc.testnet.concordium.com')
+
+services:
+  postgres:
+    image: postgres:latest
+    ports:
+      - 5432:5432
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: indexer
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+
+  indexer:
+    build:
+      context: ../
+      dockerfile: ./compliant-reward-distribution/dockerfiles/indexer.Dockerfile
+    restart: always
+    environment:
+      CCD_INDEXER_DB_CONNECTION: "host=postgres dbname=indexer user=postgres password=password port=5432"
+      CCD_INDEXER_NODE: ${CONCORDIUM_NODE:-https://grpc.testnet.concordium.com:20000}
+
+    depends_on:
+      - postgres
+
+  server:
+    build:
+      context: ../
+      dockerfile: ./compliant-reward-distribution/dockerfiles/server.Dockerfile
+    restart: always
+    environment:
+      CCD_SERVER_DB_CONNECTION: "host=postgres dbname=indexer user=postgres password=password port=5432"
+      CCD_SERVER_NODE: ${CONCORDIUM_NODE:-https://grpc.testnet.concordium.com:20000}
+      CCD_SERVER_ADMIN_ACCOUNTS: ${ADMIN_ACCOUNT}
+    ports:
+      - 8080:8080
+    depends_on:
+      - postgres
+      - indexer
+
+volumes:
+  postgres_data:
