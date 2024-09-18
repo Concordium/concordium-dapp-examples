@@ -226,7 +226,8 @@ async fn main() -> anyhow::Result<()> {
     let index_html =
         reg.render_template(&index_template, &create_frontend_config(network, endpoint))?;
 
-    let router = Router::new()
+    let router: Router = Router::new()
+        // Backend routes.
         .route("/api/postTweet", post(post_tweet))
         .route("/api/postZKProof", post(post_zk_proof))
         .route("/api/setClaimed", post(set_claimed))
@@ -235,8 +236,43 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/canClaim", post(can_claim))
         .route("/api/getZKProofStatements", get(get_zk_proof_statements))
         .route("/health", get(health))
-        .nest_service("/assets", serve_dir_service)
-        .fallback(get(|| async { Html(index_html) }))
+        // Frontend routes.
+        .route(
+            "/connectWallet",
+            get({
+                let index_html = index_html.clone();
+                move || async { Html(index_html) }
+            }),
+        )
+        .route(
+            "/tweetSubmission",
+            get({
+                let index_html = index_html.clone();
+                move || async { Html(index_html) }
+            }),
+        )
+        .route(
+            "/zkProofSubmission",
+            get({
+                let index_html = index_html.clone();
+                move || async { Html(index_html) }
+            }),
+        )
+        .route(
+            "/admin",
+            get({
+                let index_html = index_html.clone();
+                move || async { Html(index_html) }
+            }),
+        )
+        .route(
+            "/",
+            get({
+                let index_html = index_html.clone();
+                move || async { Html(index_html) }
+            }),
+        )
+        .nest_service("/assets", serve_dir_service.clone())
         .with_state(state)
         .layer(
             tower_http::trace::TraceLayer::new_for_http()
