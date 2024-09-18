@@ -133,6 +133,7 @@ fn create_frontend_config(network: Network, node_endpoint: Endpoint) -> serde_js
         "node": node_endpoint.uri().to_string(),
         "network": network,
     });
+    // The config_string is injected as a handlebar to the frontend.
     let config_string = serde_json::to_string(&config).expect("JSON serialization always succeeds");
     serde_json::json!({ "config": config_string })
 }
