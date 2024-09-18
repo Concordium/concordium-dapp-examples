@@ -40,10 +40,10 @@ e.g.
 TRACK_AND_TRACE_CONTRACT_ADDRESS="<8901,0>" TRACK_AND_TRACE_PRIVATE_KEY_FILE="./private-keys/4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export" docker-compose up
 ```
 
-You might need to run above command twice, if the postgres database container is too slow to be set up
-for the first time and as a result the `indexer/server` throwing an error because they are
-already trying to connect. Stopping the command and re-running the command will
-load the already setup postgres database container.
+You might need to run the above command twice, if the postgres database container is too slow
+to be set up for the first time and as a result the indexer or server throw an error because
+they are already trying to connect. Stopping the command and re-running the command will load
+the already setup postgres database container.
 
 5. Access the frontend at `http://localhost:8080`
    - The sponsored transaction service runs on port `8000` by default, and the postgres database runs on `5432`. Both are configurable in the `./docker-compose.yml` file.

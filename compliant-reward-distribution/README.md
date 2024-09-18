@@ -37,8 +37,8 @@ e.g.
 ADMIN_ACCOUNT="4dT5vPrnnpwVrXZgmYLtHrDLvBYhtzheaK4fDWbJewqRCGQKWz" CONCORDIUM_NODE="https://grpc.mainnet.concordium.software:20000" docker-compose up
 ```
 
-You might need to run above command twice, if the postgres database container is too slow
-to be set up for the first time and as a result the `indexer/server` throwing an error because
+You might need to run the above command twice, if the postgres database container is too slow
+to be set up for the first time and as a result the indexer or server throw an error because
 they are already trying to connect. Stopping the command and re-running the command will load
 the already setup postgres database container.
 
@@ -47,7 +47,8 @@ the already setup postgres database container.
 
 ### Restarting
 
-Restaring the services with the `docker-compose up` command will load the old `compliant-reward-distribution_postgres_data`. If you want to restart from scratch with an empty database, stop and remove all containers, and delete the PostgreSQL database before running the `docker-compose up` command again.
+Restaring the services with the `docker-compose up` command will load the old `compliant-reward-distribution_postgres_data`.
+If you want to restart the containers with an empty database, stop and remove all containers, and delete the PostgreSQL database before running the `docker-compose up` command again.
 
 To delete the volume, run the following command:
 
