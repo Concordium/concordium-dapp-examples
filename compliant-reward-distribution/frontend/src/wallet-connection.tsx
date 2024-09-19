@@ -9,6 +9,7 @@ import QRCodeModal from '@walletconnect/qrcode-modal';
 import { detectConcordiumProvider, WalletApi } from '@concordium/browser-wallet-api-helpers';
 import {
     AccountTransactionSignature,
+    BlockHash,
     CredentialStatements,
     HexString,
     serializeTypeValue,
@@ -38,7 +39,7 @@ export abstract class WalletProvider extends EventEmitter {
     abstract signMessage(
         accountAddress: string,
         message: string | string[] | object,
-        recentBlockHash: Uint8Array,
+        recentBlockHash: BlockHash.Type,
         schema: string,
     ): Promise<AccountTransactionSignature>;
 
@@ -86,12 +87,16 @@ export class BrowserWalletProvider extends WalletProvider {
     async signMessage(
         accountAddress: string,
         message: string | string[] | object,
-        recentBlockHash: Uint8Array,
+        recentBlockHash: BlockHash.Type,
         schema: string,
     ): Promise<AccountTransactionSignature> {
         const payload = Buffer.from(
             serializeTypeValue(
-                { block_hash: Buffer.from(recentBlockHash).toString('hex'), context_string: CONTEXT_STRING, message },
+                {
+                    block_hash: Buffer.from(recentBlockHash.buffer).toString('hex'),
+                    context_string: CONTEXT_STRING,
+                    message,
+                },
                 toBuffer(schema, 'base64'),
             ).buffer,
         ).toString('hex');
@@ -192,7 +197,7 @@ export class WalletConnectProvider extends WalletProvider {
     async signMessage(
         accountAddress: string,
         message: string | string[] | object,
-        recentBlockHash: Uint8Array,
+        recentBlockHash: BlockHash.Type,
         schema: string,
     ): Promise<AccountTransactionSignature> {
         if (!this.topic) {
@@ -201,7 +206,11 @@ export class WalletConnectProvider extends WalletProvider {
 
         const payload = Buffer.from(
             serializeTypeValue(
-                { block_hash: Buffer.from(recentBlockHash).toString('hex'), context_string: CONTEXT_STRING, message },
+                {
+                    block_hash: Buffer.from(recentBlockHash.buffer).toString('hex'),
+                    context_string: CONTEXT_STRING,
+                    message,
+                },
                 toBuffer(schema, 'base64'),
             ).buffer,
         ).toString('hex');
