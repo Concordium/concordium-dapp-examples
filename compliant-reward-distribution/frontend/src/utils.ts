@@ -1,11 +1,11 @@
-import { AccountAddress, ConcordiumGRPCClient } from '@concordium/web-sdk';
+import { AccountAddress, BlockHash, ConcordiumGRPCClient } from '@concordium/web-sdk';
 
 import { WalletProvider } from './wallet-connection';
 import { RECENT_BLOCK_DURATION } from './constants';
 
 interface RecentBlock {
     blockHeight: bigint;
-    blockHash: Uint8Array;
+    blockHash: BlockHash.Type;
 }
 
 /**
@@ -31,16 +31,7 @@ export async function getRecentBlock(grpcClient: ConcordiumGRPCClient | undefine
 
     const recentBlockHeight = bestBlockHeight.value - RECENT_BLOCK_DURATION;
 
-    const recentBlockHash = (
-        await grpcClient.client.getBlocksAtHeight({
-            blocksAtHeight: {
-                oneofKind: 'absolute',
-                absolute: {
-                    height: { value: recentBlockHeight },
-                },
-            },
-        })
-    )?.response.blocks[0].value;
+    const recentBlockHash = ((await grpcClient.getBlocksAtHeight(recentBlockHeight)) as BlockHash.Type[])[0];
 
     if (!recentBlockHash) {
         throw Error(`Couldn't get 'recentBlockHash' from chain`);
@@ -62,7 +53,7 @@ export async function getRecentBlock(grpcClient: ConcordiumGRPCClient | undefine
  * with the given schema, if the `provider` is undefined, or if a multi-sig account is used as signer.
  */
 export async function requestSignature(
-    recentBlockHash: Uint8Array,
+    recentBlockHash: BlockHash.Type,
     schema: string,
     message: string | string[] | object,
     signer: string,
@@ -95,5 +86,19 @@ export function validateAccountAddress(accountAddress: string | undefined) {
                 (e as Error).message
             }.`;
         }
+    }
+}
+
+/**
+ * Validates if a string represents a valid tweet URL.
+ *
+ * @param url - An url string of a tweet posted on Twitter.
+ * @returns An error message if validation fails.
+ */
+export function validateTweetUrl(url: string) {
+    // eslint-disable-next-line no-useless-escape
+    const regex = /^https:\/\/(x\.com|twitter\.com)\/[^\/]+\/status\/(\d+)$/;
+    if (!url.match(regex)) {
+        return `Not a valid tweet URL (expected format: https://x.com/MaxMustermann/status/1818198789817077916 or https://twitter.com/JohnDoe/status/1818198789817077916)`;
     }
 }

@@ -155,9 +155,13 @@ async fn main() -> anyhow::Result<()> {
     }
 
     // Establish connection to the postgres database.
-    let db_pool = DatabasePool::create(app.db_connection, 1, true)
+    let db_pool = DatabasePool::create(app.db_connection, 2, true)
         .await
         .context("Could not create database pool")?;
+    let db = db_pool
+        .get()
+        .await
+        .context("Could not get database connection from pool")?;
 
     // Set up endpoint to the node.
     let endpoint = if app
@@ -184,6 +188,21 @@ async fn main() -> anyhow::Result<()> {
         .await
         .context("Unable to query the consesnsus info from the chain")?;
     let genesis_hash = consensus_info.genesis_block.bytes;
+
+    let settings = db
+        .get_settings()
+        .await
+        .context("Could not get settings from database")?;
+
+    // This check prevents that the server is started with a node connection
+    // to mainnet while the database has indexed data from testnet or vice versa.
+    anyhow::ensure!(
+        settings.genesis_block_hash == consensus_info.genesis_block,
+        "Genesis hash from the connected node {} does not match the genesis hash {} found in the \
+         database",
+        consensus_info.genesis_block,
+        settings.genesis_block_hash
+    );
 
     let network = if genesis_hash == TESTNET_GENESIS_BLOCK_HASH {
         Network::Testnet

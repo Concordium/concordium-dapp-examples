@@ -4,7 +4,7 @@ import { Alert, Button, Form } from 'react-bootstrap';
 
 import { ConcordiumGRPCClient } from '@concordium/web-sdk';
 
-import { getRecentBlock, requestSignature } from '../utils';
+import { getRecentBlock, requestSignature, validateTweetUrl } from '../utils';
 import { WalletProvider } from '../wallet-connection';
 import { SCHEMA_TWEET_MESSAGE } from '../constants';
 import { submitTweet } from '../apiReqeuests';
@@ -14,16 +14,6 @@ interface Props {
     provider: WalletProvider | undefined;
     grpcClient: ConcordiumGRPCClient | undefined;
 }
-
-const checkTweetUrlFormat = (url: string) => {
-    // eslint-disable-next-line no-useless-escape
-    const regex = /^https:\/\/(x\.com|twitter\.com)\/[^\/]+\/status\/(\d+)$/;
-    if (!url.match(regex)) {
-        throw Error(
-            `Not a valid tweet URL (expected format: https://x.com/MaxMustermann/status/1818198789817077916 or https://twitter.com/JohnDoe/status/1818198789817077916)`,
-        );
-    }
-};
 
 export function TweetSubmission(props: Props) {
     const { signer, grpcClient, provider } = props;
@@ -45,8 +35,6 @@ export function TweetSubmission(props: Props) {
         setSuccessfulSubmission(undefined);
 
         try {
-            checkTweetUrlFormat(tweet);
-
             if (!signer) {
                 throw Error(`'signer' is undefined. Connect your wallet. Have an account in your wallet.`);
             }
@@ -72,11 +60,13 @@ export function TweetSubmission(props: Props) {
                     <Form.Group className="col mb-3">
                         <Form.Label>Tweet</Form.Label>
                         <Form.Control
-                            {...register('tweet', { required: true })}
+                            {...register('tweet', { required: true, validate: validateTweetUrl })}
                             type="text"
                             placeholder="https://x.com/JohnDoe/status/1818198789817077916"
                         />
-                        {formState.errors.tweet && <Alert variant="info">Tweet is required </Alert>}
+                        {formState.errors.tweet && (
+                            <Alert variant="info">Tweet is required. {formState.errors.tweet.message}</Alert>
+                        )}
                         <Form.Text />
                     </Form.Group>
 
@@ -87,14 +77,7 @@ export function TweetSubmission(props: Props) {
                     {error && <Alert variant="danger">{error}</Alert>}
 
                     <br />
-                    <Button
-                        variant="info"
-                        id="accountAddress"
-                        disabled={true}
-                        hidden={successfulSubmission === undefined}
-                    >
-                        Success
-                    </Button>
+                    {successfulSubmission && <Alert variant="info">Success</Alert>}
                 </Form>
             </div>
         </div>

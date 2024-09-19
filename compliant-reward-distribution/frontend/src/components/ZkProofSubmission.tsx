@@ -58,7 +58,7 @@ export function ZkProofSubmission(props: Props) {
 
             const { blockHash: recentBlockHash, blockHeight: recentBlockHeight } = await getRecentBlock(grpcClient);
 
-            const digest = [recentBlockHash, Buffer.from(CONTEXT_STRING)];
+            const digest = [recentBlockHash.buffer, Buffer.from(CONTEXT_STRING)];
             // The zk proof request here is non-interactive (we don't request the challenge from the backend).
             // Instead the challenge consists of a recent block hash (so that the proof expires)
             // and a context string (to ensure the ZK proof cannot be replayed on different Concordium services).
@@ -105,14 +105,7 @@ export function ZkProofSubmission(props: Props) {
                     {error && <Alert variant="danger">{error}</Alert>}
 
                     <br />
-                    <Button
-                        variant="info"
-                        id="accountAddress"
-                        disabled={true}
-                        hidden={successfulSubmission === undefined}
-                    >
-                        Success
-                    </Button>
+                    {successfulSubmission && <Alert variant="info">Success</Alert>}
                 </Form>
             </div>
         </div>
