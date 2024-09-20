@@ -100,24 +100,17 @@ function createRequestOptions(method: string, body?: string): RequestInit {
 }
 
 /**
- * Sends a `GET`/`POST` request to the backend and optionally parses the response into a given type `T`.
+ * Sends a `GET`/`POST` request to the backend.
  *
- * @param T - Optional return value type `T`.
  * @param endpoint - The API endpoint.
  * @param method - The HTTP method (`'POST'` or `'GET'`).
- * @param parseReturnValue - Optional request to parse the return value into provided type `T`.
  * @param body - Optional request body (required for `POST`, ignored for `GET`).
- * @returns A promise that can be resolved into the parsed return value of type `T`.
+ * @returns A promise that can be resolved into the response.
  *
  * @throws An error if the method is invalid, if the body is incorrectly provided for the method,
- * if the parsing of the return value fails, or if the backend responses with an error.
+ * or if the backend responses with an error.
  */
-async function sendBackendRequest<T = undefined>(
-    endpoint: string,
-    method: string,
-    parseReturnValue: boolean,
-    body?: string,
-): Promise<T> {
+async function sendBackendRequest(endpoint: string, method: string, body?: string): Promise<Response> {
     const api = `api/${endpoint}`;
 
     const requestOption = createRequestOptions(method, body);
@@ -137,17 +130,25 @@ async function sendBackendRequest<T = undefined>(
 
         throw new Error(`Unable to send request to the backend '${api}'; Error: ${JSON.stringify(parsedError)}`);
     }
+    return response;
+}
 
-    if (parseReturnValue) {
+/**
+ * Parses the `GET`/`POST` response from the backend into a given type `T`.
+ *
+ * @param T - Return value type `T`.
+ * @param response - The response to be parsed.
+ * @returns A promise that can be resolved into the parsed return value of type `T`.
+ *
+ * @throws An error if the parsing of the return value fails.
+ */
+async function parseResponse<T = undefined>(response: Response): Promise<T> {
+    try {
         // Parse the response as type `T`
-        try {
-            return (await response.json()) as T;
-        } catch (e) {
-            throw new Error(`Failed to parse the response from the backend into expected type.`);
-        }
+        return (await response.json()) as T;
+    } catch (e) {
+        throw new Error(`Failed to parse the response from the backend into expected type.`);
     }
-
-    return undefined as unknown as T;
 }
 
 /**
@@ -172,7 +173,7 @@ export async function setClaimed(signer: string, signature: string, recentBlockH
         },
     });
 
-    return await sendBackendRequest('setClaimed', 'POST', false, body);
+    return await sendBackendRequest('setClaimed', 'POST', body);
 }
 
 /**
@@ -205,7 +206,8 @@ export async function getPendingApprovals(
         },
     });
 
-    return await sendBackendRequest<AccountData[]>('getPendingApprovals', 'POST', true, body);
+    const response = await sendBackendRequest('getPendingApprovals', 'POST', body);
+    return await parseResponse<AccountData[]>(response);
 }
 
 /**
@@ -234,7 +236,8 @@ export async function getAccountData(
         },
     });
 
-    return await sendBackendRequest<AccountData>('getAccountData', 'POST', true, body);
+    const response = await sendBackendRequest('getAccountData', 'POST', body);
+    return await parseResponse<AccountData>(response);
 }
 
 /**
@@ -243,7 +246,8 @@ export async function getAccountData(
  * @throws An error if the backend responses with an error, or parsing of the return value fails.
  */
 export async function getStatement(): Promise<CredentialStatement> {
-    const statement = await sendBackendRequest<{ data: AtomicStatementV2[] }>('getZKProofStatements', 'GET', true);
+    const response = await sendBackendRequest('getZKProofStatements', 'GET');
+    const statement = await parseResponse<{ data: AtomicStatementV2[] }>(response);
 
     const credentialStatement: CredentialStatement = {
         idQualifier: {
@@ -281,7 +285,7 @@ export async function submitTweet(signer: string, signature: string, recentBlock
         },
     });
 
-    return await sendBackendRequest('postTweet', 'POST', false, body);
+    return await sendBackendRequest('postTweet', 'POST', body);
 }
 
 /**
@@ -298,5 +302,5 @@ export async function submitZkProof(presentation: VerifiablePresentation, recent
         presentation: presentation,
     });
 
-    return await sendBackendRequest('postZKProof', 'POST', false, body);
+    return await sendBackendRequest('postZKProof', 'POST', body);
 }
