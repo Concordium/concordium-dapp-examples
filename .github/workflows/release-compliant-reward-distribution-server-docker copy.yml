@@ -1,0 +1,59 @@
+# This job builds and publishes the docker image for the compliant-reward-distribution server to
+# the dockerhub image repository.
+name: Create and publish the docker image for the compliant-reward-distribution server.
+
+on:
+  workflow_dispatch: # allows manual trigger
+
+  push:
+    tags:
+      # The `server` uses the versioning convention: `frontend_version-backend_version`.
+      - 'compliant-reward-distribution/server/*.*.*-*.*.*'
+
+env:
+  REGISTRY: docker.io
+  IMAGE_NAME: dapp-compliant-reward-distribution-server
+
+jobs:
+  build-and-push-image:
+    runs-on: ubuntu-latest
+    environment: compliant-reward-distribution
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      # Uses the `docker/login-action` action to log in to the Container registry.
+      - name: Log in to the Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Extract version tag from package.json/Cargo.toml
+        id: meta
+        run: |
+          export FRONTEND_VERSION=$(jq -r .version compliant-reward-distribution/frontend/package.json)
+          export BACKEND_VERSION=$(yq .package.version compliant-reward-distribution/indexer-and-server/Cargo.toml)
+          export VERSION=$FRONTEND_VERSION-$BACKEND_VERSION
+          export FULL_IMAGE_TAG="${{ env.REGISTRY }}/concordium/$IMAGE_NAME:$VERSION"
+          echo "::notice FULL_IMAGE_TAG=${FULL_IMAGE_TAG}"
+          # Make sure the image does not exist. Abort if we can retrieve any metadata.
+          if docker manifest inspect ${FULL_IMAGE_TAG} > /dev/null; then
+             echo "::error ${FULL_IMAGE_TAG} already exists"
+             exit 1
+          elif [ ! "${{ github.ref_name }}" = "compliant-reward-distribution/server/${VERSION}" ]; then
+             echo "::error Expected tag ${{ github.ref_name }} does not match the version ${VERSION}."
+             exit 1
+          else
+             # Store the full image tag into a tag variable for the following step
+             echo "tag=${FULL_IMAGE_TAG}" > "$GITHUB_OUTPUT"
+          fi
+      - name: Build and push Docker image
+        uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
+        with:
+          context: .
+          file: ./compliant-reward-distribution/dockerfiles/server.Dockerfile
+          push: true
+          platforms: linux/amd64
+          tags: ${{ steps.meta.outputs.tag }}
