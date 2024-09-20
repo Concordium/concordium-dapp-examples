@@ -18,6 +18,7 @@ export const App = () => {
     const [account, setAccount] = useState<string>();
 
     const grpcClient = useRef(new ConcordiumGRPCClient(new GrpcWebFetchTransport({ baseUrl: CONFIG.node }))).current;
+    const capitalizedNetwork = CONFIG.network[0].toUpperCase() + CONFIG.network.substring(1);
 
     useEffect(() => {
         if (provider !== undefined) {
@@ -44,7 +45,7 @@ export const App = () => {
                         rel="noreferrer"
                         href={`https://github.com/Concordium/concordium-dapp-examples/tree/main/compliant-reward-distribution`}
                     >
-                        Version {version}
+                        Version {version} ({capitalizedNetwork})
                     </a>
                 </div>
                 <Link className="secondary" to="/connectWallet">

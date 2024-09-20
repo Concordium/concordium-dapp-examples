@@ -7,7 +7,7 @@ pub const TESTNET_GENESIS_BLOCK_HASH: [u8; 32] = [
     0, 13, 92, 46, 0, 232, 95, 80, 247, 150,
 ];
 
-/// The string "CONCORDIUM_COMPLIANT_REWARD_DISTRIBUTION_DAPP" in bytes is used
+/// The string "CONCORDIUM_COMPLIANT_REWARD_DISTRIBUTION_DAPP" is used
 /// as context for signing messages and generating ZK proofs. The same account
 /// can be used in different Concordium services without the risk of re-playing
 /// signatures/zk-proofs across the different services due to this context
