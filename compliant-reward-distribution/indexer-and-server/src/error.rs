@@ -78,7 +78,7 @@ pub enum ServerError {
     UnderFlow,
     #[error(
         "The account was not captured by the indexer and is not in the database. Only accounts \
-         earlier than block height {0} are captured."
+         later than block height {0} are captured."
     )]
     AccountNotExist(AbsoluteBlockHeight),
     #[error("Claim already expired. Your account creation has to be not older than {0}.")]

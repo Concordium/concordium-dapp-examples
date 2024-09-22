@@ -8,7 +8,7 @@ import { ConcordiumGRPCClient } from '@concordium/web-sdk';
 import { getRecentBlock, requestSignature, validateAccountAddress } from '../../utils';
 import { WalletProvider } from '../../wallet-connection';
 import { SCHEMA_GET_ACCOUNT_DATA_MESSAGE } from '../../constants';
-import { getAccountData } from '../../apiReqeuests';
+import { AccountData, getAccountData } from '../../apiReqeuests';
 
 interface Props {
     signer: string | undefined;
@@ -20,7 +20,7 @@ export function AdminGetAccountData(props: Props) {
     const { signer, provider, grpcClient } = props;
 
     const [error, setError] = useState<string | undefined>(undefined);
-    const [accountData, setAccountData] = useState<string | undefined>(undefined);
+    const [accountData, setAccountData] = useState<AccountData | undefined>(undefined);
 
     interface FormType {
         address: string;
@@ -50,7 +50,7 @@ export function AdminGetAccountData(props: Props) {
             );
 
             const data = await getAccountData(signer, address, signature, recentBlockHeight);
-            setAccountData(JSONbig.stringify(data));
+            setAccountData(data);
         } catch (error) {
             setError((error as Error).message);
         }
@@ -78,7 +78,7 @@ export function AdminGetAccountData(props: Props) {
                     </Button>
 
                     <br />
-                    {accountData && <pre className="pre">{JSON.stringify(JSON.parse(accountData), undefined, 2)}</pre>}
+                    {accountData && <pre className="pre">{JSONbig.stringify(accountData, undefined, 2)}</pre>}
 
                     {error && <Alert variant="danger">{error}</Alert>}
                 </Form>

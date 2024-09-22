@@ -93,7 +93,7 @@ export class BrowserWalletProvider extends WalletProvider {
         const payload = Buffer.from(
             serializeTypeValue(
                 {
-                    block_hash: Buffer.from(recentBlockHash.buffer).toString('hex'),
+                    block_hash: BlockHash.toHexString(recentBlockHash),
                     context_string: CONTEXT_STRING,
                     message,
                 },
@@ -207,7 +207,7 @@ export class WalletConnectProvider extends WalletProvider {
         const payload = Buffer.from(
             serializeTypeValue(
                 {
-                    block_hash: Buffer.from(recentBlockHash.buffer).toString('hex'),
+                    block_hash: BlockHash.toHexString(recentBlockHash),
                     context_string: CONTEXT_STRING,
                     message,
                 },
@@ -270,7 +270,7 @@ export class WalletConnectProvider extends WalletProvider {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (e: any) {
             if (isWalletConnectError(e)) {
-                throw new Error('Proof request rejected in wallet: ' + JSON.stringify(e));
+                throw new Error('Generating proof request rejected in wallet: ' + JSON.stringify(e));
             }
             throw e;
         }

@@ -8,7 +8,7 @@ import { ConcordiumGRPCClient } from '@concordium/web-sdk';
 import { getRecentBlock, requestSignature } from '../../utils';
 import { WalletProvider } from '../../wallet-connection';
 import { LIMIT, OFFSET, SCHEMA_GET_PENDING_APPROVALS_MESSAGE } from '../../constants';
-import { getPendingApprovals } from '../../apiReqeuests';
+import { AccountData, getPendingApprovals } from '../../apiReqeuests';
 
 interface Props {
     signer: string | undefined;
@@ -20,7 +20,7 @@ export function AdminGetPendingApprovals(props: Props) {
     const { signer, grpcClient, provider } = props;
 
     const [error, setError] = useState<string | undefined>(undefined);
-    const [pendingApprovals, setPendingApprovals] = useState<string | undefined>(undefined);
+    const [pendingApprovals, setPendingApprovals] = useState<AccountData[] | undefined>(undefined);
 
     const { handleSubmit } = useForm<[]>({ mode: 'all' });
 
@@ -44,7 +44,7 @@ export function AdminGetPendingApprovals(props: Props) {
             );
 
             const data = await getPendingApprovals(signer, signature, recentBlockHeight, LIMIT, OFFSET);
-            setPendingApprovals(JSONbig.stringify(data));
+            setPendingApprovals(data);
         } catch (error) {
             setError((error as Error).message);
         }
@@ -62,9 +62,7 @@ export function AdminGetPendingApprovals(props: Props) {
 
                     {error && <Alert variant="danger">{error}</Alert>}
 
-                    {pendingApprovals && (
-                        <pre className="pre">{JSON.stringify(JSON.parse(pendingApprovals), undefined, 2)}</pre>
-                    )}
+                    {pendingApprovals && <pre className="pre">{JSONbig.stringify(pendingApprovals, undefined, 2)}</pre>}
                 </Form>
             </div>
         </div>

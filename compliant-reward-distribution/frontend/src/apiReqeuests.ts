@@ -1,4 +1,5 @@
-import { AccountAddress, AtomicStatementV2, CredentialStatement, VerifiablePresentation } from '@concordium/web-sdk';
+import JSONBig from 'json-bigint';
+import { AtomicStatementV2, CredentialStatement, VerifiablePresentation } from '@concordium/web-sdk';
 
 /**
  * Represents the stored data in the database of an indexed account (excluding tweet/zkProof data).
@@ -11,7 +12,7 @@ import { AccountAddress, AtomicStatementV2, CredentialStatement, VerifiablePrese
  * conditions via a ZK proof. A manual check of the completed tasks is required before releasing the reward.
  */
 interface StateData {
-    accountAddress: AccountAddress.Type;
+    accountAddress: string;
     blockTime: string;
     transactionHash: string;
     claimed: boolean;
@@ -31,7 +32,7 @@ interface StateData {
  * @property tweetSubmitTime - The timestamp when the tweet was submitted.
  */
 interface TweetData {
-    accountAddress: AccountAddress.Type;
+    accountAddress: string;
     tweetId: string | undefined;
     tweetValid: boolean;
     tweetVerificationVersion: number;
@@ -51,7 +52,7 @@ interface TweetData {
  * @property zkProofVerificationSubmitTime - The timestamp when the ZK proof was submitted.
  */
 interface ZkProofData {
-    accountAddress: AccountAddress.Type;
+    accountAddress: string;
     uniquenessHash: string;
     zkProofValid: boolean;
     zkProofVerificationVersion: number;
@@ -65,7 +66,7 @@ interface ZkProofData {
  * @property tweetData - Stored data of a submitted tweet if present.
  * @property zkProofData - Stored data of a submitted ZK proof if present.
  */
-interface AccountData {
+export interface AccountData {
     stateData: StateData | undefined;
     tweetData: TweetData | undefined;
     zkProofData: ZkProofData | undefined;
@@ -79,7 +80,7 @@ interface AccountData {
  * @returns The request options for the specified method.
  * @throws An error if the method is invalid or if the body is incorrectly provided for the method.
  */
-function createRequestOptions(method: string, body?: string): RequestInit {
+function createRequestOptions(method: string, body?: object): RequestInit {
     switch (method) {
         case 'GET':
             return {
@@ -92,7 +93,7 @@ function createRequestOptions(method: string, body?: string): RequestInit {
             return {
                 method: 'POST',
                 headers: new Headers({ 'content-type': 'application/json' }),
-                body: body,
+                body: JSONBig.stringify(body),
             };
         default:
             throw new Error(`Invalid method: ${method}`);
@@ -110,7 +111,7 @@ function createRequestOptions(method: string, body?: string): RequestInit {
  * @throws An error if the method is invalid, if the body is incorrectly provided for the method,
  * or if the backend responses with an error.
  */
-async function sendBackendRequest(endpoint: string, method: string, body?: string): Promise<Response> {
+async function sendBackendRequest(endpoint: string, method: string, body?: object): Promise<Response> {
     const api = `api/${endpoint}`;
 
     const requestOption = createRequestOptions(method, body);
@@ -145,7 +146,7 @@ async function sendBackendRequest(endpoint: string, method: string, body?: strin
 async function parseResponse<T = undefined>(response: Response): Promise<T> {
     try {
         // Parse the response as type `T`
-        return (await response.json()) as T;
+        return JSONBig.parse(await response.text()) as T;
     } catch (e) {
         throw new Error(`Failed to parse the response from the backend into expected type.`);
     }
@@ -162,16 +163,16 @@ async function parseResponse<T = undefined>(response: Response): Promise<T> {
  * @throws An error if the backend responses with an error.
  */
 export async function setClaimed(signer: string, signature: string, recentBlockHeight: bigint, accountAddress: string) {
-    const body = JSON.stringify({
+    const body = {
         signingData: {
             signer,
             message: {
                 accountAddresses: [accountAddress],
             },
             signature,
-            blockHeight: Number(recentBlockHeight),
+            blockHeight: recentBlockHeight,
         },
-    });
+    };
 
     return await sendBackendRequest('setClaimed', 'POST', body);
 }
@@ -194,7 +195,7 @@ export async function getPendingApprovals(
     limit: number,
     offset: number,
 ): Promise<AccountData[] | undefined> {
-    const body = JSON.stringify({
+    const body = {
         signingData: {
             signer,
             message: {
@@ -202,9 +203,9 @@ export async function getPendingApprovals(
                 offset,
             },
             signature,
-            blockHeight: Number(recentBlockHeight),
+            blockHeight: recentBlockHeight,
         },
-    });
+    };
 
     const response = await sendBackendRequest('getPendingApprovals', 'POST', body);
     return await parseResponse<AccountData[]>(response);
@@ -225,16 +226,16 @@ export async function getAccountData(
     signature: string,
     recentBlockHeight: bigint,
 ): Promise<AccountData> {
-    const body = JSON.stringify({
+    const body = {
         signingData: {
             signer,
             message: {
                 accountAddress,
             },
             signature,
-            blockHeight: Number(recentBlockHeight),
+            blockHeight: recentBlockHeight,
         },
-    });
+    };
 
     const response = await sendBackendRequest('getAccountData', 'POST', body);
     return await parseResponse<AccountData>(response);
@@ -274,16 +275,16 @@ export async function getStatement(): Promise<CredentialStatement> {
  * @throws An error if the backend responses with an error.
  */
 export async function submitTweet(signer: string, signature: string, recentBlockHeight: bigint, tweet: string) {
-    const body = JSON.stringify({
+    const body = {
         signingData: {
             signer,
             message: {
                 tweet,
             },
             signature,
-            blockHeight: Number(recentBlockHeight),
+            blockHeight: recentBlockHeight,
         },
-    });
+    };
 
     return await sendBackendRequest('postTweet', 'POST', body);
 }
@@ -297,10 +298,10 @@ export async function submitTweet(signer: string, signature: string, recentBlock
  * @throws An error if the backend responses with an error.
  */
 export async function submitZkProof(presentation: VerifiablePresentation, recentBlockHeight: bigint) {
-    const body = JSON.stringify({
-        blockHeight: Number(recentBlockHeight),
+    const body = {
+        blockHeight: recentBlockHeight,
         presentation: presentation,
-    });
+    };
 
     return await sendBackendRequest('postZKProof', 'POST', body);
 }
