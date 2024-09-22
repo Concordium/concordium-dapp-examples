@@ -31,7 +31,7 @@ export async function getRecentBlock(grpcClient: ConcordiumGRPCClient | undefine
 
     const recentBlockHeight = bestBlockHeight.value - RECENT_BLOCK_DURATION;
 
-    const recentBlockHash = ((await grpcClient.getBlocksAtHeight(recentBlockHeight)) as BlockHash.Type[])[0];
+    const recentBlockHash = (await grpcClient.getBlocksAtHeight(recentBlockHeight))[0];
 
     if (!recentBlockHash) {
         throw Error(`Couldn't get 'recentBlockHash' from chain`);
