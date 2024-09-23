@@ -27,7 +27,8 @@ import {
 } from './constants';
 
 export abstract class WalletProvider extends EventEmitter {
-    abstract connect(): Promise<string[] | undefined>;
+    connectedAccount: string | undefined;
+    abstract connect(): Promise<string | undefined>;
 
     abstract requestVerifiablePresentation(
         challenge: HexString,
@@ -46,8 +47,9 @@ export abstract class WalletProvider extends EventEmitter {
     /**
      * @param account string when account is changed, undefined when disconnected
      */
-    protected onAccountChanged(account: string | undefined) {
-        this.emit('accountChanged', account);
+    protected onAccountChanged(new_account: string | undefined) {
+        this.connectedAccount = new_account;
+        this.emit('accountChanged', new_account);
     }
 }
 
@@ -109,8 +111,10 @@ export class BrowserWalletProvider extends WalletProvider {
         return this.provider.signMessage(accountAddress, messageToSign);
     }
 
-    async connect(): Promise<string[] | undefined> {
-        return this.provider.requestAccounts();
+    async connect(): Promise<string | undefined> {
+        const new_connected_account = (await this.provider.requestAccounts())[0];
+        super.onAccountChanged(new_connected_account ?? undefined);
+        return new_connected_account;
     }
 
     async requestVerifiablePresentation(
@@ -124,22 +128,21 @@ export class BrowserWalletProvider extends WalletProvider {
 let walletConnectInstance: WalletConnectProvider | undefined;
 
 export class WalletConnectProvider extends WalletProvider {
-    private account: string | undefined;
     private topic: string | undefined;
 
     constructor(private client: SignClient) {
         super();
 
         this.client.on('session_update', ({ params }) => {
-            this.account = this.getAccount(params.namespaces);
-            super.onAccountChanged(this.account);
+            this.connectedAccount = this.getAccount(params.namespaces);
+            super.onAccountChanged(this.connectedAccount);
         });
 
         this.client.on('session_delete', () => {
-            this.account = undefined;
+            this.connectedAccount = undefined;
             this.topic = undefined;
 
-            super.onAccountChanged(this.account);
+            super.onAccountChanged(this.connectedAccount);
         });
     }
 
@@ -155,7 +158,7 @@ export class WalletConnectProvider extends WalletProvider {
         return walletConnectInstance;
     }
 
-    async connect(): Promise<string[] | undefined> {
+    async connect(): Promise<string | undefined> {
         const { uri, approval } = await this.client.connect({
             requiredNamespaces: {
                 [WALLET_CONNECT_SESSION_NAMESPACE]: {
@@ -168,10 +171,10 @@ export class WalletConnectProvider extends WalletProvider {
 
         // Connecting to an existing pairing; it can be assumed that the account is already available.
         if (!uri) {
-            if (this.account == undefined) {
+            if (this.connectedAccount == undefined) {
                 return undefined;
             } else {
-                return [this.account];
+                return this.connectedAccount;
             }
         }
 
@@ -181,16 +184,16 @@ export class WalletConnectProvider extends WalletProvider {
         // Await session approval from the wallet.
         const session = await approval();
 
-        this.account = this.getAccount(session.namespaces);
+        this.connectedAccount = this.getAccount(session.namespaces);
         this.topic = session.topic;
 
         // Close the QRCode modal in case it was open.
         QRCodeModal.close();
 
-        if (this.account == undefined) {
+        if (this.connectedAccount == undefined) {
             return undefined;
         } else {
-            return [this.account];
+            return this.connectedAccount;
         }
     }
 
@@ -289,10 +292,10 @@ export class WalletConnectProvider extends WalletProvider {
             },
         });
 
-        this.account = undefined;
+        this.connectedAccount = undefined;
         this.topic = undefined;
 
-        super.onAccountChanged(this.account);
+        super.onAccountChanged(this.connectedAccount);
     }
 
     private getAccount(ns: SessionTypes.Namespaces): string | undefined {

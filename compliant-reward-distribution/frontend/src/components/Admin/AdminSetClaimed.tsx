@@ -81,14 +81,8 @@ export function AdminSetClaimed(props: Props) {
                     {error && <Alert variant="danger">{error}</Alert>}
 
                     <br />
-                    <Button
-                        variant="info"
-                        id="accountAddress"
-                        disabled={true}
-                        hidden={successfulSubmission === undefined}
-                    >
-                        Success
-                    </Button>
+
+                    {successfulSubmission && <Alert variant="info">Success</Alert>}
                 </Form>
             </div>
         </div>
