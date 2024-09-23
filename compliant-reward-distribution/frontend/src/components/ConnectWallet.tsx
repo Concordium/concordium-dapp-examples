@@ -2,12 +2,12 @@ import { Button } from 'react-bootstrap';
 import { BrowserWalletProvider, WalletConnectProvider, WalletProvider } from '../wallet-connection';
 
 interface Props {
-    account: string | undefined;
+    connectedAccount: string | undefined;
     connectProvider: (provider: WalletProvider) => void;
 }
 
 export function ConnectWallet(props: Props) {
-    const { account, connectProvider } = props;
+    const { connectedAccount, connectProvider } = props;
 
     return (
         <div className="centered">
@@ -35,11 +35,16 @@ export function ConnectWallet(props: Props) {
                     iOS CryptoX Wallet [Coming Soon]
                 </Button>
                 <br />
-                {account && (
+                {connectedAccount && (
                     <>
                         <div className="centered">Connected Account:</div>
-                        <Button variant="info" id="accountAddress" disabled={true} hidden={account === undefined}>
-                            {account ? account : 'No Account Connected'}
+                        <Button
+                            variant="info"
+                            id="accountAddress"
+                            disabled={true}
+                            hidden={connectedAccount === undefined}
+                        >
+                            {connectedAccount ? connectedAccount : 'No Account Connected'}
                         </Button>
                     </>
                 )}

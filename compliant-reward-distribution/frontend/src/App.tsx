@@ -15,23 +15,35 @@ import { TweetSubmission } from './components/TweetSubmission';
 
 export const App = () => {
     const [provider, setProvider] = useState<WalletProvider>();
-    const [account, setAccount] = useState<string>();
+    const [connectedAccount, setConnectedAccount] = useState<string>();
 
     const grpcClient = useRef(new ConcordiumGRPCClient(new GrpcWebFetchTransport({ baseUrl: CONFIG.node }))).current;
     const capitalizedNetwork = CONFIG.network[0].toUpperCase() + CONFIG.network.substring(1);
 
     useEffect(() => {
-        if (provider !== undefined) {
+        if (provider) {
             return () => {
                 provider?.disconnect?.().then(() => provider.removeAllListeners());
             };
         }
     }, [provider]);
 
+    useEffect(() => {
+        const handleAccountChange = (newAccount: string | undefined) => {
+            setConnectedAccount(newAccount);
+        };
+
+        provider?.on('accountChanged', handleAccountChange);
+
+        return () => {
+            provider?.off('accountChanged', handleAccountChange);
+        };
+    }, [provider]);
+
     const connectProvider = async (provider: WalletProvider) => {
-        const accounts = await provider.connect();
-        if (accounts && accounts?.length != 0) {
-            setAccount(accounts[0]);
+        const account = await provider.connect();
+        if (account) {
+            setConnectedAccount(account);
         }
         setProvider(provider);
     };
@@ -62,25 +74,32 @@ export const App = () => {
                 </Link>
 
                 <Button id="accountAddress" disabled={true}>
-                    {account ? account.slice(0, 5) + '...' + account.slice(-5) : 'No Account Connected'}
+                    {connectedAccount
+                        ? connectedAccount.slice(0, 5) + '...' + connectedAccount.slice(-5)
+                        : 'No Account Connected'}
                 </Button>
             </div>
 
             <Routes>
                 <Route
                     path="/connectWallet"
-                    element={<ConnectWallet connectProvider={connectProvider} account={account} />}
+                    element={<ConnectWallet connectProvider={connectProvider} connectedAccount={connectedAccount} />}
                 />
                 <Route
                     path="/zkProofSubmission"
-                    element={<ZkProofSubmission prover={account} provider={provider} grpcClient={grpcClient} />}
+                    element={
+                        <ZkProofSubmission prover={connectedAccount} provider={provider} grpcClient={grpcClient} />
+                    }
                 />
                 <Route
                     path="/tweetSubmission"
-                    element={<TweetSubmission signer={account} provider={provider} grpcClient={grpcClient} />}
+                    element={<TweetSubmission signer={connectedAccount} provider={provider} grpcClient={grpcClient} />}
                 />
 
-                <Route path="/Admin" element={<Admin signer={account} provider={provider} grpcClient={grpcClient} />} />
+                <Route
+                    path="/Admin"
+                    element={<Admin signer={connectedAccount} provider={provider} grpcClient={grpcClient} />}
+                />
                 <Route path="/" element={<div></div>} />
             </Routes>
         </Router>
