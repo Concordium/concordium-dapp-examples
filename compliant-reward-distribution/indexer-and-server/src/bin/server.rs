@@ -534,7 +534,7 @@ where
     let SigningData {
         signer,
         message,
-       signature,
+        signature,
         block_height,
     } = param.signing_data();
 
