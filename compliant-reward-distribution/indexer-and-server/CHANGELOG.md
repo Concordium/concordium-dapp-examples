@@ -2,7 +2,8 @@
 
 ## 0.1.1
 
-- Change to use the new `verify_single_account_signature` function from the SDK.
+-   Change to use the new `verify_single_account_signature` function from the SDK.
+-   Update submodule link.
 
 ## 0.1.0
 

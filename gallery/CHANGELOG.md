@@ -1,5 +1,7 @@
 ## Unreleased changes
 
+-   Update submodule link.
+
 ## 0.2.0
 
 -   Bump `@concordium/web-sdk` to version `7.5.1`.

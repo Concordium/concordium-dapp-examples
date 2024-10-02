@@ -2,6 +2,7 @@
 
 - Change to use the `contract-client` from the Rust SDK.
 - Add reject reason decoding of reverted transactions during the dry-run.
+- Update submodule link.
 
 ## 2.0.0
 
