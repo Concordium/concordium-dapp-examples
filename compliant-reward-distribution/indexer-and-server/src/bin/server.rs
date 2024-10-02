@@ -8,13 +8,14 @@ use axum::{
 };
 use chrono::Utc;
 use clap::Parser;
-use concordium_rust_sdk::smart_contracts::common::to_bytes;
 use concordium_rust_sdk::{
     id::{
         constants::ArCurve,
         id_proof_types::Statement,
         types::{AccountAddress, AccountCredentialWithoutProofs},
     },
+    signatures::verify_single_account_signature,
+    smart_contracts::common::to_bytes,
     v2::{AccountIdentifier, BlockIdentifier, Client},
     web3id::{
         did::Network,
@@ -533,18 +534,9 @@ where
     let SigningData {
         signer,
         message,
-        signature,
+       signature,
         block_height,
     } = param.signing_data();
-
-    let signer_account_info = state
-        .node_client
-        .get_account_info(
-            &AccountIdentifier::Address(*signer),
-            BlockIdentifier::LastFinal,
-        )
-        .await
-        .map_err(ServerError::QueryError)?;
 
     let block_hash = state
         .node_client
@@ -565,63 +557,18 @@ where
         message,
     };
 
-    // The message signed in the Concordium wallet is prepended with the
-    // `account` address (signer) and 8 zero bytes. Accounts in the Concordium
-    // wallet can either sign a regular transaction (in that case the
-    // prepend is `account` address and the nonce of the account which is by
-    // design >= 1) or sign a message (in that case the prepend is `account`
-    // address and 8 zero bytes). Hence, the 8 zero bytes ensure that the user
-    // does not accidentally sign a transaction. The account nonce is of type
-    // u64 (8 bytes).
-    // Add the prepend to the message and calculate the final message hash.
-    let final_message_hash = sha2::Sha256::digest(
-        [
-            &signer.as_ref() as &[u8],
-            &[0u8; 8],
-            to_bytes(&message_signed_in_wallet).as_slice(),
-        ]
-        .concat(),
-    );
+    let message_bytes = to_bytes(&message_signed_in_wallet);
 
-    // Get the public key of the signer.
+    //   Verify the signature.
+    let is_valid = verify_single_account_signature(
+        state.node_client.clone(),
+        *signer,
+        signature.clone(),
+        message_bytes,
+        BlockIdentifier::Best,
+    )
+    .await?;
 
-    // The intention is to only use/support regular accounts (no multi-sig
-    // accounts). While it works for some (but not all) multi-sig accounts, to
-    // reduce complexity we will communicate that multi-sig accounts are not
-    // supported. Regular accounts have only one public-private key pair at
-    // index 0 in the credential map.
-    if signer_account_info.response.account_credentials.len() != 1 {
-        return Err(ServerError::OnlyRegularAccounts);
-    }
-    let signer_account_credential = signer_account_info
-        .response
-        .account_credentials
-        .get(&0.into())
-        .ok_or(ServerError::OnlyRegularAccounts)?;
-
-    let signer_public_key = match &signer_account_credential.value {
-        // `Initial` accounts were created by identity providers in the past
-        // without a Pedersen commitment deployed on chain. As such we should not verify ZK proofs
-        // on them so that we exclude them from this service.
-        AccountCredentialWithoutProofs::Initial { .. } => {
-            return Err(ServerError::NoCredentialCommitment)
-        }
-        // We use/support regular accounts. Regular accounts have only one
-        // public-private key pair at index 0 in the key map.
-        AccountCredentialWithoutProofs::Normal { cdv, .. } => {
-            if cdv.cred_key_info.keys.len() != 1 {
-                return Err(ServerError::OnlyRegularAccounts);
-            }
-
-            cdv.cred_key_info
-                .keys
-                .get(&0.into())
-                .ok_or(ServerError::OnlyRegularAccounts)?
-        }
-    };
-
-    // Verify the signature.
-    let is_valid = signer_public_key.verify(final_message_hash, signature);
     if !is_valid {
         return Err(ServerError::InvalidSignature);
     }

@@ -1,5 +1,9 @@
 ## Unreleased changes
 
+## 0.1.1
+
+- Change to use the new `verify_single_account_signature` function from the SDK.
+
 ## 0.1.0
 
 -   Add initial `server`.
