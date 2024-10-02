@@ -6,6 +6,7 @@ use axum::{
 use concordium_rust_sdk::{
     base::{contracts_common::AccountAddressParseError, hashes::IncorrectLength},
     common::types::AccountAddress,
+    signatures::SignatureError,
     types::AbsoluteBlockHeight,
     v2::QueryError,
     web3id::{did::Network, CredentialLookupError, PresentationVerificationError},
@@ -120,6 +121,8 @@ pub enum ServerError {
     AccountAddressParse(#[from] AccountAddressParseError),
     #[error("Not a valid tweet URL (expected format: https://x.com/JohnDoe/status/1818198789817077916 or https://twitter.com/JohnDoe/status/1818198789817077916)")]
     NotValidTweetURL,
+    #[error("Signature verification error: {0}")]
+    SignatureVerificationError(#[from] SignatureError),
 }
 
 impl IntoResponse for ServerError {
@@ -163,7 +166,8 @@ impl IntoResponse for ServerError {
             | ServerError::NoCredentialCommitment
             | ServerError::IdentityReUsed { .. }
             | ServerError::AccountAddressParse(_)
-            | ServerError::NotValidTweetURL => {
+            | ServerError::NotValidTweetURL
+            | ServerError::SignatureVerificationError(..) => {
                 let error_message = format!("Bad request: {self}");
                 tracing::info!(error_message);
                 (StatusCode::BAD_REQUEST, error_message.into())

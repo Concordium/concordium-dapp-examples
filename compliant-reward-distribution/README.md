@@ -6,7 +6,7 @@
 
 ## Hosted front end
 
-[Soon](https://github.com/Concordium/concordium-dapp-examples)
+[here](https://compliant-reward-distribution.testnet.concordium.com/)
 
 ## Overview
 
