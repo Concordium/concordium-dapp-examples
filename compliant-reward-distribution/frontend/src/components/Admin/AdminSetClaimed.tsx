@@ -59,11 +59,11 @@ export function AdminSetClaimed(props: Props) {
     return (
         <div className="centered">
             <div className="card">
-                <h2 className="centered">Set Claimed</h2>
+                <h2 className="centered white">Set Claimed</h2>
                 <br />
                 <Form onSubmit={handleSubmit(onSubmit)}>
                     <Form.Group className="col mb-3">
-                        <Form.Label>Address</Form.Label>
+                        <Form.Label className="white">Address</Form.Label>
                         <Form.Control
                             {...register('address', { required: true, validate: validateAccountAddress })}
                             placeholder="4bbdAUCDK2D6cUvUeprGr4FaSaHXKuYmYVjyCa4bXSCu3NUXzA"

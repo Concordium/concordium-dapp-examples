@@ -53,7 +53,7 @@ export function AdminGetPendingApprovals(props: Props) {
     return (
         <div className="centered">
             <div className="card">
-                <h2 className="centered">Get Pending Approvals</h2>
+                <h2 className="centered white">Get Pending Approvals</h2>
                 <br />
                 <Form onSubmit={handleSubmit(onSubmit)}>
                     <Button variant="primary" type="submit">
@@ -62,7 +62,9 @@ export function AdminGetPendingApprovals(props: Props) {
 
                     {error && <Alert variant="danger">{error}</Alert>}
 
-                    {pendingApprovals && <pre className="pre">{JSONbig.stringify(pendingApprovals, undefined, 2)}</pre>}
+                    {pendingApprovals && (
+                        <pre className="pre white">{JSONbig.stringify(pendingApprovals, undefined, 2)}</pre>
+                    )}
                 </Form>
             </div>
         </div>

@@ -3,6 +3,7 @@ import { Alert, Button, Form } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
 import sha256 from 'sha256';
 import { Buffer } from 'buffer';
+import { useNavigate } from 'react-router-dom';
 
 import {
     AccountAddress,
@@ -25,8 +26,9 @@ interface Props {
 export function ZkProofSubmission(props: Props) {
     const { prover, provider, grpcClient } = props;
 
+    const navigate = useNavigate();
+
     const [error, setError] = useState<string | undefined>(undefined);
-    const [successfulSubmission, setSuccessfulSubmission] = useState<boolean | undefined>(undefined);
     const [zkStatement, setZkStatement] = useState<CredentialStatement | undefined>(undefined);
 
     useEffect(() => {
@@ -43,7 +45,6 @@ export function ZkProofSubmission(props: Props) {
 
     async function onSubmit() {
         setError(undefined);
-        setSuccessfulSubmission(undefined);
 
         try {
             if (!zkStatement) {
@@ -87,7 +88,7 @@ export function ZkProofSubmission(props: Props) {
 
             await submitZkProof(presentation, recentBlockHeight);
 
-            setSuccessfulSubmission(true);
+            navigate('/finalPage');
         } catch (error) {
             setError((error as Error).message);
         }
@@ -96,16 +97,27 @@ export function ZkProofSubmission(props: Props) {
     return (
         <div className="centered">
             <div className="card">
-                <h2 className="centered"> Submit ZK Proof</h2>
+                <h2 className="centered white">Proof Of Eligibility</h2>
                 <br />
                 <Form onSubmit={handleSubmit(onSubmit)}>
-                    <Button variant="primary" type="submit">
-                        Submit
-                    </Button>
-                    {error && <Alert variant="danger">{error}</Alert>}
+                    <div className="white">
+                        To collect your reward, you must verify the below data using your Concordium ID.
+                    </div>
+                    <br />
+
+                    <ul className="white">
+                        <li>Your full name</li>
+                        <li>Your ID number</li>
+                        <li>That you are over 18 years old</li>
+                        <li>That your nationality is eligible*</li>
+                    </ul>
+                    <div className="white">* Not eligible nationalitites are: USA, and North Korea</div>
 
                     <br />
-                    {successfulSubmission && <Alert variant="info">Success</Alert>}
+                    <Button variant="primary" type="submit">
+                        Verify
+                    </Button>
+                    {error && <Alert variant="danger">{error}</Alert>}
                 </Form>
             </div>
         </div>

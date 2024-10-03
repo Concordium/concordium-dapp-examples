@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 
 import { GrpcWebFetchTransport } from '@protobuf-ts/grpcweb-transport';
 import { ConcordiumGRPCClient } from '@concordium/web-sdk';
@@ -13,6 +13,7 @@ import { ZkProofSubmission } from './components/ZkProofSubmission';
 import { Admin } from './components/Admin/Admin';
 import { TweetSubmission } from './components/TweetSubmission';
 import { Alert } from 'react-bootstrap';
+import { FinalPage } from './components/FinalPage';
 
 export const App = () => {
     const [provider, setProvider] = useState<WalletProvider>();
@@ -72,7 +73,6 @@ export const App = () => {
                     {error && <Alert variant="error">{error}</Alert>}
 
                     {connectedAccount && (
-
                         <a
                             className="customGreen"
                             target="_blank"
@@ -93,19 +93,26 @@ export const App = () => {
                     element={<ConnectWallet connectProvider={connectProvider} connectedAccount={connectedAccount} />}
                 />
                 <Route
+                    path="/tweetSubmission"
+                    element={<TweetSubmission signer={connectedAccount} provider={provider} grpcClient={grpcClient} />}
+                />
+                <Route
                     path="/zkProofSubmission"
                     element={
                         <ZkProofSubmission prover={connectedAccount} provider={provider} grpcClient={grpcClient} />
                     }
                 />
-                <Route
-                    path="/tweetSubmission"
-                    element={<TweetSubmission signer={connectedAccount} provider={provider} grpcClient={grpcClient} />}
-                />
-
+                <Route path="/finalPage" element={<FinalPage />} />
                 <Route
                     path="/Admin"
-                    element={<Admin signer={connectedAccount} provider={provider} grpcClient={grpcClient} />}
+                    element={
+                        <Admin
+                            signer={connectedAccount}
+                            provider={provider}
+                            grpcClient={grpcClient}
+                            connectProvider={connectProvider}
+                        />
+                    }
                 />
                 <Route path="/" element={<div></div>} />
             </Routes>

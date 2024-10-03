@@ -259,6 +259,13 @@ async fn main() -> anyhow::Result<()> {
         .route("/health", get(health))
         // Frontend routes.
         .route(
+            "/landingPage",
+            get({
+                let index_html = index_html.clone();
+                move || async { Html(index_html) }
+            }),
+        )
+        .route(
             "/connectWallet",
             get({
                 let index_html = index_html.clone();
@@ -274,6 +281,13 @@ async fn main() -> anyhow::Result<()> {
         )
         .route(
             "/zkProofSubmission",
+            get({
+                let index_html = index_html.clone();
+                move || async { Html(index_html) }
+            }),
+        )
+        .route(
+            "/finalPage",
             get({
                 let index_html = index_html.clone();
                 move || async { Html(index_html) }

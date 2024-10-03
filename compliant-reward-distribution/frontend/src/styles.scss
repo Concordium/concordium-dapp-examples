@@ -25,9 +25,13 @@ body,
     color: white;
 }
 
-.list {
+.gray {
+    background: gray !important;
+    border: gray !important;
+}
+
+.noBullets {
     list-style-type: none;
-    color: white;
 }
 
 .centered {
@@ -93,4 +97,3 @@ body,
     z-index: 999;
     border-radius: 8px;
 }
-

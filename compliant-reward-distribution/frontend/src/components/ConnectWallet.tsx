@@ -16,7 +16,7 @@ export function ConnectWallet(props: Props) {
     // When account is connected, continue to the next page.
     useEffect(() => {
         if (connectedAccount) navigate('/tweetSubmission');
-    }, [connectedAccount]);
+    }, [connectedAccount, navigate]);
 
     // We need the user to agree to our terms and conditions before they can connect their wallet.
     const [userAgreededToTAndC, setUserAgreededToTAndC] = useState<boolean>(false);
@@ -27,7 +27,7 @@ export function ConnectWallet(props: Props) {
                 <div className="card">
                     {!userAgreededToTAndC && (
                         <>
-                            <h2 className="centered h1 white">Terms And Conditions</h2>
+                            <h2 className="centered white">Terms And Conditions</h2>
                             <br />
                             <div className="white">
                                 By continuing, you agree to{' '}
@@ -50,7 +50,7 @@ export function ConnectWallet(props: Props) {
                     )}
                     {userAgreededToTAndC && (
                         <>
-                            <h2 className="centered h1 white">Connect your wallet</h2>
+                            <h2 className="centered white">Connect your wallet</h2>
                             <br />
                             <Button
                                 variant="primary"
@@ -69,7 +69,7 @@ export function ConnectWallet(props: Props) {
                             </Button>
                             <br />
                             <Button
-                                variant="primary"
+                                className="gray"
                                 disabled={true}
                                 onClick={async () => connectProvider(await WalletConnectProvider.getInstance())}
                             >

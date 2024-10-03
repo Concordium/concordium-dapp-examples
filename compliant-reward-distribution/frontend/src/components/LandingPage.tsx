@@ -1,6 +1,9 @@
 import { Button, Image } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 
 export function LandingPage() {
+    const navigate = useNavigate();
+
     return (
         <div className="centered">
             <div className="card">
@@ -9,7 +12,7 @@ export function LandingPage() {
                 <br />
 
                 <div className="centered">
-                    <Image src="./src/pictures/LandingPage.png" alt="Concordium Logo" fluid />
+                    <Image src="/assets/LandingPage.png" alt="Concordium Logo" fluid />
                 </div>
 
                 <br />
@@ -19,7 +22,7 @@ export function LandingPage() {
                 <br />
                 <br />
 
-                <ul className="list">
+                <ul className="noBullets white">
                     <li>1. Connect your wallet</li>
                     <li>2. Post about Concordium on X (Twitter) with the #Concordium hashtag</li>
                     <li>3. Confirm that you are of eligible age and nationality.</li>
@@ -27,7 +30,7 @@ export function LandingPage() {
 
                 <br />
 
-                <Button variant="primary" type="submit" onClick={async () => (window.location.href = 'connectWallet')}>
+                <Button variant="primary" type="submit" onClick={async () => navigate('/connectWallet')}>
                     Get Started
                 </Button>
 
