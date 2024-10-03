@@ -4,7 +4,7 @@ export function LandingPage() {
     return (
         <div className="centered">
             <div className="card">
-                <h1 className="centered h1">Concordium Rewards</h1>
+                <h1 className="centered customGreen">Concordium Rewards</h1>
 
                 <br />
 
@@ -14,7 +14,7 @@ export function LandingPage() {
 
                 <br />
 
-                <h2 className="centered h2">Create post on X and get 1000 CCD rewards:</h2>
+                <h2 className="centered customGreen">Create post on X and get 1000 CCD rewards:</h2>
 
                 <br />
                 <br />

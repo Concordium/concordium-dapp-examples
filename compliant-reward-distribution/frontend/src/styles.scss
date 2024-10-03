@@ -17,12 +17,12 @@ body,
     color: white;
 }
 
-.h1 {
+.customGreen {
     color: #a2cac1;
 }
 
-.h2 {
-    color: #a2cac1;
+.white {
+    color: white;
 }
 
 .list {
@@ -40,7 +40,8 @@ body,
 }
 
 .card {
-    width: 825px;
+    width: 100%;
+    max-width: 825px;
     height: auto;
     border-radius: 10;
     margin: 10px 0px;
@@ -78,7 +79,7 @@ body,
 }
 
 .navbar {
-    background-color: #a2cac1;
+    background-color: black;
     display: flex;
     justify-content: center;
     overflow: hidden;
@@ -88,29 +89,8 @@ body,
     top: 0;
     left: 0;
     right: 0;
+    flex-direction: row;
     z-index: 999;
     border-radius: 8px;
 }
 
-.navbar a.secondary {
-    color: black;
-    text-align: center;
-    padding: 10px 20px;
-    text-decoration: none;
-}
-
-.navbar button {
-    margin-left: auto;
-    margin-right: 30px;
-    width: 250px;
-}
-
-.navbar div {
-    margin-right: auto;
-    padding: 10px 20px;
-}
-
-.navbar a.secondary:hover {
-    background-color: white;
-    color: black;
-}
