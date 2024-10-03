@@ -8,6 +8,7 @@ import { ConcordiumGRPCClient } from '@concordium/web-sdk';
 import './styles.scss';
 import { WalletProvider } from './wallet-connection';
 import { version } from '../package.json';
+import { LandingPage } from './components/LandingPage';
 import { ConnectWallet } from './components/ConnectWallet';
 import { ZkProofSubmission } from './components/ZkProofSubmission';
 import { Admin } from './components/Admin/Admin';
@@ -60,6 +61,9 @@ export const App = () => {
                         Version {version} ({capitalizedNetwork})
                     </a>
                 </div>
+                <Link className="secondary" to="/landingPage">
+                    LandingPage
+                </Link>
                 <Link className="secondary" to="/connectWallet">
                     ConnectWallet
                 </Link>
@@ -81,6 +85,7 @@ export const App = () => {
             </div>
 
             <Routes>
+                <Route path="/landingPage" element={<LandingPage />} />
                 <Route
                     path="/connectWallet"
                     element={<ConnectWallet connectProvider={connectProvider} connectedAccount={connectedAccount} />}

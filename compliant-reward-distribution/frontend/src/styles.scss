@@ -13,6 +13,21 @@ body,
     height: auto;
     width: 100%;
     display: flex;
+    background: black;
+    color: white;
+}
+
+.h1 {
+    color: #a2cac1;
+}
+
+.h2 {
+    color: #a2cac1;
+}
+
+.list {
+    list-style-type: none;
+    color: white;
 }
 
 .centered {
@@ -25,19 +40,18 @@ body,
 }
 
 .card {
-    color: rgb(0, 0, 0);
     width: 825px;
     height: auto;
     border-radius: 10;
     margin: 10px 0px;
     padding: 20px 20px;
     border: 1px solid rgb(85, 85, 85);
-    background: #ddd;
+    background: black;
 }
 
 .btn:hover {
     border-color: grey;
-    background: grey;
+    background: #a2cac1;
 }
 
 .pre {
@@ -56,15 +70,15 @@ body,
     flex-direction: row;
     justify-content: center;
     align-items: center;
-    background: black;
+    background: #a2cac1;
     border-radius: 8px;
-    border-color: black;
-    color: white;
+    border-color: #a2cac1;
+    color: black;
     cursor: pointer;
 }
 
 .navbar {
-    background-color: rgba(0, 0, 0, 0.05);
+    background-color: #a2cac1;
     display: flex;
     justify-content: center;
     overflow: hidden;
@@ -97,6 +111,6 @@ body,
 }
 
 .navbar a.secondary:hover {
-    background-color: #ddd;
+    background-color: white;
     color: black;
 }
