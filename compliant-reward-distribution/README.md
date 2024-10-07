@@ -26,10 +26,14 @@ However, the easiest option is to use [docker-compose](https://docs.docker.com/c
 
 For this to work, you should do the following:
 
-1. Set the following environment variables:
+1. Initialize local dependencies:
+```
+git submodule update --init --recursive
+```
+2. Set the following environment variables:
    - (Optional) Set the `ADMIN_ACCOUNT` variable to an account address. This account can read and write to the database.
    - (Optional) Set the `CONCORDIUM_NODE` to the gRPC endpoint of the node you want to use. Defaults to `https://grpc.testnet.concordium.com:20000`.
-2. Run `docker-compose up` to build and start all the services.
+3. Run `docker-compose up` to build and start all the services.
 
 e.g.
 

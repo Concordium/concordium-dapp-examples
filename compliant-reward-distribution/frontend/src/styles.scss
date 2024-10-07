@@ -13,6 +13,25 @@ body,
     height: auto;
     width: 100%;
     display: flex;
+    background: black;
+    color: white;
+}
+
+.customGreen {
+    color: #a2cac1;
+}
+
+.white {
+    color: white;
+}
+
+.gray {
+    background: gray !important;
+    border: gray !important;
+}
+
+.noBullets {
+    list-style-type: none;
 }
 
 .centered {
@@ -25,19 +44,19 @@ body,
 }
 
 .card {
-    color: rgb(0, 0, 0);
-    width: 825px;
+    width: 100%;
+    max-width: 825px;
     height: auto;
     border-radius: 10;
     margin: 10px 0px;
     padding: 20px 20px;
     border: 1px solid rgb(85, 85, 85);
-    background: #ddd;
+    background: black;
 }
 
 .btn:hover {
     border-color: grey;
-    background: grey;
+    background: #a2cac1;
 }
 
 .pre {
@@ -56,15 +75,15 @@ body,
     flex-direction: row;
     justify-content: center;
     align-items: center;
-    background: black;
+    background: #a2cac1;
     border-radius: 8px;
-    border-color: black;
-    color: white;
+    border-color: #a2cac1;
+    color: black;
     cursor: pointer;
 }
 
 .navbar {
-    background-color: rgba(0, 0, 0, 0.05);
+    background-color: black;
     display: flex;
     justify-content: center;
     overflow: hidden;
@@ -74,29 +93,7 @@ body,
     top: 0;
     left: 0;
     right: 0;
+    flex-direction: row;
     z-index: 999;
     border-radius: 8px;
-}
-
-.navbar a.secondary {
-    color: black;
-    text-align: center;
-    padding: 10px 20px;
-    text-decoration: none;
-}
-
-.navbar button {
-    margin-left: auto;
-    margin-right: 30px;
-    width: 250px;
-}
-
-.navbar div {
-    margin-right: auto;
-    padding: 10px 20px;
-}
-
-.navbar a.secondary:hover {
-    background-color: #ddd;
-    color: black;
 }

@@ -59,11 +59,11 @@ export function AdminGetAccountData(props: Props) {
     return (
         <div className="centered">
             <div className="card">
-                <h2 className="centered">Get Account Data</h2>
+                <h2 className="centered white">Get Account Data</h2>
                 <br />
                 <Form onSubmit={handleSubmit(onSubmit)}>
                     <Form.Group className="col mb-3">
-                        <Form.Label>Address</Form.Label>
+                        <Form.Label className="white">Address</Form.Label>
                         <Form.Control
                             {...register('address', { required: true, validate: validateAccountAddress })}
                             placeholder="4bbdAUCDK2D6cUvUeprGr4FaSaHXKuYmYVjyCa4bXSCu3NUXzA"
@@ -78,7 +78,7 @@ export function AdminGetAccountData(props: Props) {
                     </Button>
 
                     <br />
-                    {accountData && <pre className="pre">{JSONbig.stringify(accountData, undefined, 2)}</pre>}
+                    {accountData && <pre className="pre white">{JSONbig.stringify(accountData, undefined, 2)}</pre>}
 
                     {error && <Alert variant="danger">{error}</Alert>}
                 </Form>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
-import { Alert, Button, Form } from 'react-bootstrap';
+import { Alert, Button, Image, Form } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 
 import { ConcordiumGRPCClient } from '@concordium/web-sdk';
 
@@ -18,8 +19,9 @@ interface Props {
 export function TweetSubmission(props: Props) {
     const { signer, grpcClient, provider } = props;
 
+    const navigate = useNavigate();
+
     const [error, setError] = useState<string | undefined>(undefined);
-    const [successfulSubmission, setSuccessfulSubmission] = useState<boolean | undefined>(undefined);
 
     interface FormType {
         tweet: string;
@@ -32,7 +34,6 @@ export function TweetSubmission(props: Props) {
 
     async function onSubmit() {
         setError(undefined);
-        setSuccessfulSubmission(undefined);
 
         try {
             if (!signer) {
@@ -45,7 +46,7 @@ export function TweetSubmission(props: Props) {
 
             await submitTweet(signer, signature, recentBlockHeight, tweet);
 
-            setSuccessfulSubmission(true);
+            navigate('/zkProofSubmission');
         } catch (error) {
             setError((error as Error).message);
         }
@@ -54,11 +55,12 @@ export function TweetSubmission(props: Props) {
     return (
         <div className="centered">
             <div className="card">
-                <h2 className="centered">Submit Tweet</h2>
+                <h2 className="centered white">Submit Tweet</h2>
                 <br />
                 <Form onSubmit={handleSubmit(onSubmit)}>
                     <Form.Group className="col mb-3">
-                        <Form.Label>Tweet</Form.Label>
+                        <Form.Label className="white">Tweet</Form.Label>
+
                         <Form.Control
                             {...register('tweet', { required: true, validate: validateTweetUrl })}
                             type="text"
@@ -70,14 +72,25 @@ export function TweetSubmission(props: Props) {
                         <Form.Text />
                     </Form.Group>
 
+                    <h3 className="white">Details</h3>
+
+                    <ul className="white">
+                        <li>Your post should contain the #Concordium hashtag and mention @ConcordiumNet</li>
+                        <li>The text can be anything you want</li>
+                        <li>Use the template below or write your own</li>
+                    </ul>
+
+                    <br />
+                    <div className="centered">
+                        <Image src="/assets/Tweet.png" alt="Tweet Example" fluid />
+                    </div>
+                    <br />
+                    <br />
                     <Button variant="primary" type="submit">
                         Submit
                     </Button>
 
                     {error && <Alert variant="danger">{error}</Alert>}
-
-                    <br />
-                    {successfulSubmission && <Alert variant="info">Success</Alert>}
                 </Form>
             </div>
         </div>
