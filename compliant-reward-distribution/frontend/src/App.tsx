@@ -87,7 +87,7 @@ export const App = () => {
             </div>
 
             <Routes>
-                <Route path="/landingPage" element={<LandingPage />} />
+                <Route path="/" element={<LandingPage />} />
                 <Route
                     path="/connectWallet"
                     element={<ConnectWallet connectProvider={connectProvider} connectedAccount={connectedAccount} />}

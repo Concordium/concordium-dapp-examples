@@ -50,7 +50,7 @@ export function ConnectWallet(props: Props) {
                     )}
                     {userAgreededToTAndC && (
                         <>
-                            <h2 className="centered white">Connect your wallet</h2>
+                            <h2 className="centered white">Connect Your Wallet</h2>
                             <br />
                             <Button
                                 variant="primary"

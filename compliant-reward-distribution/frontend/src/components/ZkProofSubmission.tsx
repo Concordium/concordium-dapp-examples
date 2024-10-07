@@ -106,8 +106,8 @@ export function ZkProofSubmission(props: Props) {
                     <br />
 
                     <ul className="white">
-                        <li>Your full name</li>
                         <li>Your ID number</li>
+                        <li>Your nationality</li>
                         <li>That you are over 18 years old</li>
                         <li>That your nationality is eligible*</li>
                     </ul>

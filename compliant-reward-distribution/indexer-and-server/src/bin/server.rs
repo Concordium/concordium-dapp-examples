@@ -259,7 +259,8 @@ async fn main() -> anyhow::Result<()> {
         .route("/health", get(health))
         // Frontend routes.
         .route(
-            "/landingPage",
+            // Landing page.
+            "/",
             get({
                 let index_html = index_html.clone();
                 move || async { Html(index_html) }
@@ -295,13 +296,6 @@ async fn main() -> anyhow::Result<()> {
         )
         .route(
             "/admin",
-            get({
-                let index_html = index_html.clone();
-                move || async { Html(index_html) }
-            }),
-        )
-        .route(
-            "/",
             get({
                 let index_html = index_html.clone();
                 move || async { Html(index_html) }
