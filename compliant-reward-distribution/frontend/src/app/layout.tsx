@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import { WalletProviderWrapper } from "@/context/WalletContext";
 const satoshi = localFont({
   src: "./fonts/Satoshi-Regular.otf",
   variable: "--font-satoshi-sans",
@@ -20,7 +21,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${satoshi.variable}  antialiased`}>
-        {children}
+        <WalletProviderWrapper>
+          {children}
+        </WalletProviderWrapper>
       </body>
     </html>
   );

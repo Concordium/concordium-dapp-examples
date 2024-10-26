@@ -133,7 +133,7 @@ export class WalletConnectProvider extends WalletProvider {
     constructor(private client: SignClient) {
         super();
 
-        this.client.on('session_update', ({ params }) => {
+        this.client.on('session_update', ({ params }: { params: any }) => {
             this.connectedAccount = this.getAccount(params.namespaces);
             super.onAccountChanged(this.connectedAccount);
         });

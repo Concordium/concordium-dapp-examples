@@ -1,68 +1,36 @@
-# Front end
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-## Setup
+## Getting Started
 
-Make sure to have the following installed:
-
--   [NodeJs](https://nodejs.org).
--   [yarn](https://yarnpkg.com/getting-started/install) or a similar package manager.
--   Rust and cargo (Recommended to install using [rustup](https://rustup.rs)).
-
-## Frontend
-
-To setup and install dependencies for the frontend navigate to the `frontend` directory and run:
+First, run the development server:
 
 ```bash
-yarn install
-```
-
-### Development
-
-Set the environment variable `NETWORK` and `CONCORDIUM_NODE`, or prefix it before the `yarn dev` call.
-Not setting the environment variables will run the frontend with the default `testnet` configuration.
-
-```bash
+npm run dev
+# or
 yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
 
-or
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-```bash
-NETWORK="mainnet" CONCORDIUM_NODE="https://grpc.mainnet.concordium.software:20000" yarn dev
-```
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-This will launch a development server with hot module replacement enabled.
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-_Please note that calls to the backend server do not work in the development setup._
+## Learn More
 
-If you want to set up the whole project together with running the backend services so that the endpoints work. Follow the instructions in the project's [README.md](../indexer-and-server/README.md).
+To learn more about Next.js, take a look at the following resources:
 
-This frontend calls following backend endpoints:
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
--   `api/setClaimed`
--   `api/getPendingApprovals`
--   `api/getAccountData`
--   `api/getZKProofStatements`
--   `api/postTweet`
--   `api/postZKProof`
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-from the [backend server](../indexer-and-server)
+## Deploy on Vercel
 
-### Environment variables
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-These environment variables are available in the frontend.
-
-When hosting the frontend via the [backend server](../indexer-and-server), the values of the environment variables are passed in via the server.
-
-```bash
-NETWORK=testnet # The network to use mainnet/testnet (defaults to 'testnet')
-CONCORDIUM_NODE=https://grpc.testnet.concordium.com:20000 # The gRPC endpoint of a node in the chosen network (defaults to 'https://grpc.testnet.concordium.com:20000')
-```
-
-### Build
-
-```bash
-yarn build
-```
-
-This will bundle the project into `frontend/dist` directory which should be hosted by the [backend server](../indexer-and-server).
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
