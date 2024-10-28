@@ -113,7 +113,7 @@ export default function ProofOfEligibility() {
             </p>
           </div>
 
-          <Link href={"/final"}>
+          <Link href={"/submission"}>
                 <button className="bg-white mt-5 text-gray-900 font-semibold py-3 px-6 rounded-full hover:bg-gray-200 transition-colors w-full max-w-xs ">
                   Finish
                 </button>

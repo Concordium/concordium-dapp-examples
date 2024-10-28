@@ -2,7 +2,7 @@ import React from "react";
 import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 
-export default function Final() {
+export default function Submission() {
   return (
     <div className="relative w-screen h-screen">
       <Image
