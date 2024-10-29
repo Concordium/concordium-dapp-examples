@@ -1,0 +1,97 @@
+.icon {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .qr-code {
+    border-radius: 8px;
+    width: 200px; // Adjust based on your design
+    height: 200px; // Adjust based on your design
+  }
+  
+  .circle {
+    width: 14px;
+    height: 14px;
+    margin: 2px;
+    border-radius: 50%;
+  }
+  
+  .bg-secondary {
+    background-color: #1B2323 !important;
+  }
+  
+  .text-muted {
+    color: #CCD5D5 !important;
+  }
+  
+  .bg-dark {
+    background-color: #14181D !important;
+  }
+  
+  .min-vh-100 {
+    min-height: 100vh !important;
+  }
+  
+  .connect-wallet-container {
+    max-width: 389px;
+    margin: 0 auto;
+  }
+  
+  .connect-wallet-title {
+    font-size: 24px; /* Equivalent to Tailwind's text-2xl */
+    font-weight: 500; /* Equivalent to font-medium */
+    margin-bottom: 2rem; /* Equivalent to Tailwind's mb-8 */
+    line-height: 28px;
+  }
+  
+  .wallet-option {
+    background-color: #1B2323;
+    border-radius: 8px;
+    cursor: pointer;
+    &:hover {
+      background-color: #6B7280; // Hover background color
+    }
+  }
+  
+  .wallet-text {
+    font-size: 16px;
+    font-weight: 500;
+    font-family: var(--font-satoshi-sans);
+    color: #ffffff;
+  }
+
+  .wallet-icon {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .wallet-border {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border: 1px solid transparent;
+    border-radius: 50%;
+    border-color: white;
+  
+    &.selected {
+      border-color: white;
+    }
+  
+    .wallet-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+  
+      &.filled {
+        background-color: white;
+      }
+    }
+  }
+  
+  
+  
+  
+  
+  
