@@ -1,0 +1,34 @@
+/* src/styles/checkbox.scss */
+
+.checkbox-container {
+  max-width: 389px;
+  display: flex;
+  align-items: start;
+  font-size: 16px;
+  margin-top: 1rem; // Equivalent to mt-4
+  padding-right: 0.5rem; // Equivalent to pr-2
+}
+
+.checkbox-input {
+  cursor: pointer;
+  margin-right: 0.5rem; // Equivalent to mr-2
+  margin-top: 0.25rem; // Equivalent to mt-1
+  width: 20px; // Equivalent to w-8
+  height: 20px; // Equivalent to h-8
+
+  a {
+    color: #A2CAC1;
+  }
+}
+
+.checkbox-label {
+  // font-size: 0.875rem; // Equivalent to text-sm
+  color: #fff; // Equivalent to text-gray-600
+  cursor: pointer; // Equivalent to cursor-pointer
+  margin-top: 2px;
+
+  a {
+    color: #A2CACC; // Set the color for the anchor tag specifically
+    text-decoration: underline; // Optional for a typical link style
+  }
+}

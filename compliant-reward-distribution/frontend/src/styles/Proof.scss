@@ -1,0 +1,119 @@
+.verification-container {
+  margin-top: 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  .text-gray-300 {
+    color: #d1d5db; // Tailwind gray-300 equivalent
+  }
+
+  .border-white {
+    border-color: white;
+  }
+
+  .font-satoshi-sans {
+    font-family: var(--font-satoshi-sans), sans-serif; // Use your desired font family
+  }
+
+  p,
+  ul {
+    text-align: left; // Ensure all text is left-aligned
+    padding-left: 0; // Remove any left padding from the unordered list
+    margin-left: 0; // Remove any left margin from the unordered list
+  }
+
+  // Style for list items
+  .verification-list-item {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #9ca3af; // Equivalent to Tailwind border-gray-400
+    padding: 4px 0; // Equivalent to py-[4px]
+    font-size: 12px;
+    font-weight: 400;
+    font-family: var(--font-satoshi-sans), sans-serif;
+
+    // Style for bullet span
+    .bullet {
+      width: 4px; // Equivalent to w-1 (1px)
+      height: 4px; // Equivalent to h-1 (1px)
+      background-color: #9ca3af; // Equivalent to Tailwind border-gray-400
+      border-radius: 50%; // Equivalent to rounded-full
+      margin-right: 4px; // Equivalent to mr-[4px]
+    }
+  }
+}
+
+.note-text{
+  color: #CCD5D5;
+  font-size: 12px;
+  font-weight: 500;
+    font-family: var(--font-satoshi-sans), sans-serif;
+}
+
+// Skeleton Loading
+
+
+.skeleton-loading-container {
+  min-height: 100vh; // Equivalent to min-h-screen
+  background-color: #14181d; // Equivalent to bg-[#14181D]
+  color: #f3f4f6; // Equivalent to text-gray-100
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px; // Optional for extra spacing
+
+  .loading-text {
+    color: #9ca3af; // Text color similar to gray-400
+    margin-bottom: 32px; // Spacing below the text
+  }
+
+  .loading-image {
+    width: 100%; // Responsive width
+    max-width: 300px; // Limit image width
+    height: auto; // Maintain aspect ratio
+  }
+}
+
+
+// 
+
+.user-info-container {
+  width: 339px;
+  .label-text {
+    font-size: 12px;
+    font-family: var(--font-satoshi-sans);
+    font-weight: 500;
+    color: #999999; // Adjusted gray tone as per your example
+    margin-bottom: 4px;
+  }
+
+  .info-text {
+    font-size: 16px;
+    font-family: var(--font-satoshi-sans);
+    font-weight: 500;
+    color: #ffffff;
+  }
+
+  .border-bottom {
+    border-bottom: 1px solid #ffffff;
+  }
+
+  .text-green {
+    color: #32cd32; // Light green for the check mark
+  }
+
+  .d-flex {
+    display: flex;
+    align-items: center;
+  }
+
+  .mr-2 {
+    margin-right: 8px;
+  }
+
+  .space-y-2 > * + * {
+    margin-top: 8px;
+  }
+}

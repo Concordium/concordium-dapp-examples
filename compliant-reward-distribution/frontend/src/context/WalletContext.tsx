@@ -1,7 +1,7 @@
 // src/context/WalletContext.tsx
 "use client"
-import { WalletProvider } from '@/utils/wallet-connection';
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { WalletProvider } from '../wallet-connection';
 
 
 interface WalletContextType {
