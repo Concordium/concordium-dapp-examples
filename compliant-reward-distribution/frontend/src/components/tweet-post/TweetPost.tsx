@@ -91,7 +91,9 @@ const TweetPost = () => {
         <Container fluid className="d-flex flex-column min-vh-100 text-light bg-dark" style={{ position: 'relative' }}>
             <div className="d-flex align-items-center">
                 <BackButton redirectURL={'/connectWallet'} />
-                <Button onClick={(e) => {
+                <Button onClick={async (e) => {
+                    const account:any = connectedAccount
+                    await navigator.clipboard.writeText(account);
                     if (CONFIG.network === "testnet") {
                         window.open(`https://testnet.ccdscan.io/?dcount=1&dentity=account&daddress=${connectedAccount}`, "_blank")
                     } else {
