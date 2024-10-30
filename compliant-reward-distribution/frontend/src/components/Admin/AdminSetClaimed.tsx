@@ -59,7 +59,7 @@ export function AdminSetClaimed(props: Props) {
     return (
         <div className="centered">
             <div className="card">
-                <h2 className="centered">Set Claimed</h2>
+                <h2 className="centered text-white">Set Claimed</h2>
                 <br />
                 <Form onSubmit={handleSubmit(onSubmit)}>
                     <Form.Group className="col mb-3">
@@ -74,7 +74,7 @@ export function AdminSetClaimed(props: Props) {
                         <Form.Text />
                     </Form.Group>
 
-                    <Button variant="primary" type="submit">
+                    <Button className='bg-theme text-black' type="submit">
                         Set Claimed
                     </Button>
 

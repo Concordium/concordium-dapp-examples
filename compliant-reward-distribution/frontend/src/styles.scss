@@ -50,7 +50,7 @@ body,
     margin: 10px 0px;
     padding: 20px 20px;
     border: 1px solid rgb(85, 85, 85);
-    background: #ddd;
+    background: transparent;
 }
 
 .btn:hover {
@@ -121,6 +121,10 @@ body,
 
 .text-theme{
     color: #A2CAC1;
+}
+
+.bg-theme{
+    background-color: #A2CAC1;
 }
 
 .text-white{
