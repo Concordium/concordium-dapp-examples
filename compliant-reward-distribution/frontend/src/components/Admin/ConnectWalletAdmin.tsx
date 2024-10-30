@@ -92,7 +92,9 @@ const ConnectWalletAdmin = () => {
         <Container fluid className="d-flex flex-column text-light bg-dark" style={{ position: 'relative' }}>
             <div className="d-flex align-items-center">
                 <BackButton redirectURL={'/'} />
-                <Button onClick={(e) => {
+                <Button onClick={async (e) => {
+                    const account:any = connectedAccount
+                    await navigator.clipboard.writeText(account);
                     if (CONFIG.network === "testnet") {
                         window.open(`https://testnet.ccdscan.io/?dcount=1&dentity=account&daddress=${connectedAccount}`, "_blank")
                     } else {
