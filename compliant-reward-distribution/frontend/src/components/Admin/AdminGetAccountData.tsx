@@ -59,7 +59,7 @@ export function AdminGetAccountData(props: Props) {
     return (
         <div className="centered">
             <div className="card">
-                <h2 className="centered">Get Account Data</h2>
+                <h2 className="centered text-white">Get Account Data</h2>
                 <br />
                 <Form onSubmit={handleSubmit(onSubmit)}>
                     <Form.Group className="col mb-3">
@@ -73,7 +73,7 @@ export function AdminGetAccountData(props: Props) {
                         )}
                         <Form.Text />
                     </Form.Group>
-                    <Button variant="primary" type="submit">
+                    <Button className='bg-theme text-black' type="submit">
                         Get Account Data
                     </Button>
 

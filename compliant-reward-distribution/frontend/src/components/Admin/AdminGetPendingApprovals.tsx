@@ -53,10 +53,10 @@ export function AdminGetPendingApprovals(props: Props) {
     return (
         <div className="centered">
             <div className="card">
-                <h2 className="centered">Get Pending Approvals</h2>
+                <h2 className="centered text-white">Get Pending Approvals</h2>
                 <br />
                 <Form onSubmit={handleSubmit(onSubmit)}>
-                    <Button variant="primary" type="submit">
+                    <Button className='bg-theme text-black' type="submit">
                         Get Pending Approvals
                     </Button>
 
