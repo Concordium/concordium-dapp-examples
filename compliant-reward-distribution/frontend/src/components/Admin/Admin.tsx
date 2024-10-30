@@ -21,7 +21,7 @@ export function Admin(props: Props) {
     const grpcClient = useRef(new ConcordiumGRPCClient(new GrpcWebFetchTransport({ baseUrl: CONFIG.node }))).current;
     const capitalizedNetwork = CONFIG.network[0].toUpperCase() + CONFIG.network.substring(1);
     return (
-        <div className="centered bg-dark">
+        <div className="centered bg-dark min-vh-100">
             {connectedAccount ?
                 <>
                     <div className="d-flex justify-content-center mb-3">
