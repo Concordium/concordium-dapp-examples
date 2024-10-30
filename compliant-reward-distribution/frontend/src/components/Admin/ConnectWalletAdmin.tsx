@@ -90,7 +90,20 @@ const ConnectWalletAdmin = () => {
 
     return (
         <Container fluid className="d-flex flex-column text-light bg-dark" style={{ position: 'relative' }}>
-            <BackButton redirectURL={'/'} />
+            <div className="d-flex align-items-center">
+                <BackButton redirectURL={'/'} />
+                <Button onClick={(e) => {
+                    if (CONFIG.network === "testnet") {
+                        window.open(`https://testnet.ccdscan.io/?dcount=1&dentity=account&daddress=${connectedAccount}`, "_blank")
+                    } else {
+                        window.open(`https://ccdscan.io/?dcount=1&dentity=account&daddress=${connectedAccount}`, "_blank")
+                    }
+                }} variant="primary" className="ms-auto mt-2 account-button text-black bg-theme">
+                    {connectedAccount
+                        ? connectedAccount.slice(0, 5) + '...' + connectedAccount.slice(-5)
+                        : 'No Account Connected'}
+                </Button>
+            </div>
             <div className="d-flex justify-content-center mb-3">
                 <a
                     target="_blank"
@@ -100,55 +113,46 @@ const ConnectWalletAdmin = () => {
                     Version {version} ({capitalizedNetwork})
                 </a>
             </div>
-            <div className="d-flex justify-content-center mb-3">
-                <a
-                    target="_blank"
-                    rel="noreferrer"
-                    href={`#`}
-                >
-                    {connectedAccount
-                        ? connectedAccount.slice(0, 5) + '...' + connectedAccount.slice(-5)
-                        : 'No Account Connected'}
-                </a>
-            </div>
-            <Container className="connect-wallet-container text-center pt-2">
-                <h1 className="connect-wallet-title">Connect your wallet</h1>
-                {/* Browser Wallet */}
-                <Container onClick={async (e) => {
-                    connectProvider(await BrowserWalletProvider.getInstance())
-                }} className="wallet-option p-4 rounded-lg">
-                    <Row className="align-items-center justify-content-between">
-                        <Col xs="auto" className="d-flex align-items-center">
-                            <img src={icon} alt="Browser Wallet" className="wallet-icon me-2" />
-                            <span className="wallet-text">Browser Wallet</span>
-                        </Col>
-                    </Row>
-                </Container>
+            {connectedAccount ? null :
+                <Container className="connect-wallet-container text-center pt-2">
+                    <h1 className="connect-wallet-title">Connect your wallet</h1>
+                    {/* Browser Wallet */}
+                    <Container onClick={async (e) => {
+                        connectProvider(await BrowserWalletProvider.getInstance())
+                    }} className="wallet-option cursor-pointer p-4 rounded-lg">
+                        <Row className="align-items-center justify-content-between">
+                            <Col xs="auto" className="d-flex align-items-center">
+                                <img src={icon} alt="Browser Wallet" className="wallet-icon me-2" />
+                                <span className="wallet-text">Browser Wallet</span>
+                            </Col>
+                        </Row>
+                    </Container>
 
-                {/* Android Wallet */}
-                <Container onClick={async (e) => {
-                    connectProvider(await WalletConnectProvider.getInstance())
-                }} className="wallet-option p-4 rounded-lg cursor-pointer mt-2">
-                    <Row className="align-items-center justify-content-between">
-                        <Col xs="auto" className="d-flex align-items-center">
-                            <img src={icon2} alt="Android CryptoX Wallet" className="wallet-icon me-2" />
-                            <span className="wallet-text">Android CryptoX Wallet</span>
-                        </Col>
-                    </Row>
-                </Container>
+                    {/* Android Wallet */}
+                    <Container onClick={async (e) => {
+                        connectProvider(await WalletConnectProvider.getInstance())
+                    }} className="wallet-option p-4 rounded-lg cursor-pointer mt-2">
+                        <Row className="align-items-center justify-content-between">
+                            <Col xs="auto" className="d-flex align-items-center">
+                                <img src={icon2} alt="Android CryptoX Wallet" className="wallet-icon me-2" />
+                                <span className="wallet-text">Android CryptoX Wallet</span>
+                            </Col>
+                        </Row>
+                    </Container>
 
-                {/* iOS Wallet */}
-                <Container onClick={async (e) => {
-                    connectProvider(await WalletConnectProvider.getInstance())
-                }} className="wallet-option p-4 rounded-lg cursor-pointer mt-2">
-                    <Row className="align-items-center justify-content-between">
-                        <Col xs="auto" className="d-flex align-items-center">
-                            <img src={icon2} alt="iOS CryptoX Wallet" className="wallet-icon me-2" />
-                            <span className="wallet-text">iOS CryptoX Wallet</span>
-                        </Col>
-                    </Row>
+                    {/* iOS Wallet */}
+                    <Container onClick={async (e) => {
+                        connectProvider(await WalletConnectProvider.getInstance())
+                    }} className="wallet-option p-4 rounded-lg cursor-pointer mt-2">
+                        <Row className="align-items-center justify-content-between">
+                            <Col xs="auto" className="d-flex align-items-center">
+                                <img src={icon2} alt="iOS CryptoX Wallet" className="wallet-icon me-2" />
+                                <span className="wallet-text">iOS CryptoX Wallet</span>
+                            </Col>
+                        </Row>
+                    </Container>
                 </Container>
-            </Container>
+            }
         </Container>
     );
 };

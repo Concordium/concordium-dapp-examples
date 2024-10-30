@@ -118,6 +118,13 @@ body,
     background-color: #ddd;
     color: black;
 }
+.border-theme{
+    border: 1px solid #1B2323
+}
+
+.cursor-pointer{
+    cursor: pointer !important;
+}
 
 .text-theme{
     color: #A2CAC1;
@@ -125,6 +132,9 @@ body,
 
 .bg-theme{
     background-color: #A2CAC1;
+}
+.bg-transparent{
+    background-color: transparent !important;
 }
 
 .text-white{

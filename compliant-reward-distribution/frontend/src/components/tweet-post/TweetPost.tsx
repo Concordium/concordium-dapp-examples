@@ -6,6 +6,7 @@ import verifyImage from "/images/Verified.svg";
 import '../../styles/ConnectWallet.scss';
 import '../../styles/ProgressStep.scss';
 import '../../styles/TweetPost.scss';
+import '../../styles.scss';
 import { useNavigate } from 'react-router-dom';
 import { useForm, useWatch } from 'react-hook-form';
 import { Container, Form, FormGroup, FormLabel, FormControl, Button } from 'react-bootstrap';
@@ -88,7 +89,20 @@ const TweetPost = () => {
     }
     return (
         <Container fluid className="d-flex flex-column min-vh-100 text-light bg-dark" style={{ position: 'relative' }}>
-            <BackButton redirectURL={'/connectWallet'} />
+            <div className="d-flex align-items-center">
+                <BackButton redirectURL={'/connectWallet'} />
+                <Button onClick={(e) => {
+                    if (CONFIG.network === "testnet") {
+                        window.open(`https://testnet.ccdscan.io/?dcount=1&dentity=account&daddress=${connectedAccount}`, "_blank")
+                    } else {
+                        window.open(`https://ccdscan.io/?dcount=1&dentity=account&daddress=${connectedAccount}`, "_blank")
+                    }
+                }} variant="primary" className="ms-auto mt-2 account-button text-black bg-theme">
+                    {connectedAccount
+                        ? connectedAccount.slice(0, 5) + '...' + connectedAccount.slice(-5)
+                        : 'No Account Connected'}
+                </Button>
+            </div>
             <div className="d-flex justify-content-center mb-3">
                 <a
                     target="_blank"

@@ -132,7 +132,7 @@ const ConnectWallet = () => {
                 {/* Browser Wallet */}
                 <Container onClick={async (e) => {
                     connectProvider(await BrowserWalletProvider.getInstance())
-                }} className="wallet-option p-4 rounded-lg">
+                }} className="wallet-option p-4 cursor-pointer rounded-lg">
                     <Row className="align-items-center justify-content-between">
                         <Col xs="auto" className="d-flex align-items-center">
                             <img src={icon} alt="Browser Wallet" className="wallet-icon me-2" />
@@ -169,12 +169,15 @@ const ConnectWallet = () => {
 
                 {/* iOS Wallet */}
                 <Container onClick={async (e) => {
-                    connectProvider(await WalletConnectProvider.getInstance())
-                }} className="wallet-option p-4 rounded-lg cursor-pointer mt-2">
-                    <Row className="align-items-center justify-content-between">
+                    // connectProvider(await WalletConnectProvider.getInstance())
+                }} className="wallet-option p-4 rounded-lg mt-2 bg-transparent border-theme">
+                    <Row className="align-items-center justify-content-between ">
                         <Col xs="auto" className="d-flex align-items-center">
                             <img src={icon2} alt="iOS CryptoX Wallet" className="wallet-icon me-2" />
-                            <span className="wallet-text">iOS CryptoX Wallet</span>
+                            <div className="d-flex flex-column text-start">
+                                <span className="wallet-text wallet-title">iOS CryptoX Wallet</span>
+                                <span className="wallet-text wallet-subtitle">{'['}Coming Soon{']'}</span>
+                            </div>
                         </Col>
                         {/* <Col xs="auto" className="d-flex justify-content-end">
                             <div

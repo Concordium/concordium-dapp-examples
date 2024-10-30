@@ -57,7 +57,21 @@ const Proof = () => {
                 <SkeletonLoading />
             ) : (
                 <>
-                    <BackButton redirectURL={'/tweetPost'} />
+                    {/* <BackButton redirectURL={'/tweetPost'} /> */}
+                    <div className="d-flex align-items-center">
+                        <BackButton redirectURL={'/tweetPost'} />
+                        <Button onClick={(e) => {
+                            if (CONFIG.network === "testnet") {
+                                window.open(`https://testnet.ccdscan.io/?dcount=1&dentity=account&daddress=${connectedAccount}`, "_blank")
+                            } else {
+                                window.open(`https://ccdscan.io/?dcount=1&dentity=account&daddress=${connectedAccount}`, "_blank")
+                            }
+                        }} variant="primary" className="ms-auto mt-2 account-button text-black bg-theme">
+                            {connectedAccount
+                                ? connectedAccount.slice(0, 5) + '...' + connectedAccount.slice(-5)
+                                : 'No Account Connected'}
+                        </Button>
+                    </div>
                     <div className="d-flex justify-content-center mb-3">
                         <a
                             target="_blank"
@@ -65,17 +79,6 @@ const Proof = () => {
                             href={`https://github.com/Concordium/concordium-dapp-examples/tree/main/compliant-reward-distribution`}
                         >
                             Version {version} ({capitalizedNetwork})
-                        </a>
-                    </div>
-                    <div className="d-flex justify-content-center mb-3">
-                        <a
-                            target="_blank"
-                            rel="noreferrer"
-                            href={`#`}
-                        >
-                            {connectedAccount
-                                ? connectedAccount.slice(0, 5) + '...' + connectedAccount.slice(-5)
-                                : 'No Account Connected'}
                         </a>
                     </div>
                     <div className="d-flex justify-content-center mb-3">
