@@ -92,7 +92,7 @@ const TweetPost = () => {
             <div className="d-flex align-items-center">
                 <BackButton redirectURL={'/connectWallet'} />
                 <Button onClick={async (e) => {
-                    const account:any = connectedAccount
+                    const account: any = connectedAccount
                     await navigator.clipboard.writeText(account);
                     if (CONFIG.network === "testnet") {
                         window.open(`https://testnet.ccdscan.io/?dcount=1&dentity=account&daddress=${connectedAccount}`, "_blank")
@@ -164,7 +164,13 @@ const TweetPost = () => {
                             </ul>
 
                             <div className="post-container">
-                                <button className="copy-button">
+                                <button onClick={async (e) => {
+                                    const tweetToCopy = `Just created my @ConcordiumNet account and received 1000 $CCD reward!  Go to concordium.com/wallet to get yours! 
+                                    
+#Concordium`;
+                                await navigator.clipboard.writeText(tweetToCopy);
+
+                                }} className="copy-button">
                                     <Copy size={16} />
                                     <div>Copy</div>
                                 </button>
