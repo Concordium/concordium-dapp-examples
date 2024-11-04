@@ -1,112 +1,110 @@
 .icon {
-  width: 28px;
-  height: 28px;
+    width: 28px;
+    height: 28px;
 }
 
 .qr-code {
-  border-radius: 8px;
-  width: 200px; // Adjust based on your design
-  height: 200px; // Adjust based on your design
+    border-radius: 8px;
+    width: 200px; // Adjust based on your design
+    height: 200px; // Adjust based on your design
 }
 
 .circle {
-  width: 14px;
-  height: 14px;
-  margin: 2px;
-  border-radius: 50%;
+    width: 14px;
+    height: 14px;
+    margin: 2px;
+    border-radius: 50%;
 }
 
 .bg-secondary {
-  background-color: #1B2323 !important;
+    background-color: #1b2323 !important;
 }
 
 .text-muted {
-  color: #CCD5D5 !important;
+    color: #ccd5d5 !important;
 }
 
 .bg-dark {
-  background-color: #14181D !important;
+    background-color: #14181d !important;
 }
 
 .min-vh-100 {
-  min-height: 100vh !important;
+    min-height: 100vh !important;
 }
 
 .connect-wallet-container {
-  max-width: 389px;
-  margin: 0 auto;
+    max-width: 389px;
+    margin: 0 auto;
 }
 
 .connect-wallet-title {
-  font-size: 24px;
-  /* Equivalent to Tailwind's text-2xl */
-  font-weight: 500;
-  /* Equivalent to font-medium */
-  margin-bottom: 2rem;
-  /* Equivalent to Tailwind's mb-8 */
-  line-height: 28px;
+    font-size: 24px;
+    /* Equivalent to Tailwind's text-2xl */
+    font-weight: 500;
+    /* Equivalent to font-medium */
+    margin-bottom: 2rem;
+    /* Equivalent to Tailwind's mb-8 */
+    line-height: 28px;
 }
 
 .wallet-option {
-  background-color: #1B2323;
-  border-radius: 8px;
+    background-color: #1b2323;
+    border-radius: 8px;
 
-  &:hover {
-    background-color: #6B7280; // Hover background color
-  }
+    &:hover {
+        background-color: #6b7280; // Hover background color
+    }
 }
 
 .wallet-text {
-  font-size: 16px;
-  font-weight: 500;
-  font-family: var(--font-satoshi-sans);
-  color: #ffffff;
+    font-size: 16px;
+    font-weight: 500;
+    font-family: var(--font-satoshi-sans);
+    color: #ffffff;
 }
 
 .wallet-icon {
-  width: 32px;
-  height: 32px;
+    width: 32px;
+    height: 32px;
 }
 
 .wallet-title {
-  font-weight: bold;
-  font-size: 1.1rem;
+    font-weight: bold;
+    font-size: 1.1rem;
 }
 
 .wallet-subtitle {
-  font-size: 0.9rem;
-  color: #adb5bd; // Optional: lighter color for "Coming Soon"
+    font-size: 0.9rem;
+    color: #adb5bd; // Optional: lighter color for "Coming Soon"
 }
 
-
 .wallet-border {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border: 1px solid transparent;
-  border-radius: 50%;
-  border-color: white;
-
-  &.selected {
-    border-color: white;
-  }
-
-  .wallet-dot {
-    width: 10px;
-    height: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border: 1px solid transparent;
     border-radius: 50%;
+    border-color: white;
 
-    &.filled {
-      background-color: white;
+    &.selected {
+        border-color: white;
     }
-  }
+
+    .wallet-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+
+        &.filled {
+            background-color: white;
+        }
+    }
 }
 
 .account-button {
-  width: 180px;
-  border: none;
-  border-radius: 30px;
-  
+    width: 180px;
+    border: none;
+    border-radius: 30px;
 }

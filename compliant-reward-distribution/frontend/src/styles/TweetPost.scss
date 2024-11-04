@@ -1,181 +1,178 @@
 .form-container {
-  max-width: 389px;
-  width: 100%;
+    max-width: 389px;
+    width: 100%;
 }
 
 .form-group {
-  background-color: transparent;
-  padding: 8px 14px 12px;
+    background-color: transparent;
+    padding: 8px 14px 12px;
 }
-.input-container{
-  padding: 8px 14px 12px;
-  border: 1px solid #71797E; // Border color
-  border-radius: 12px; // Rounded corners
+.input-container {
+    padding: 8px 14px 12px;
+    border: 1px solid #71797e; // Border color
+    border-radius: 12px; // Rounded corners
 }
 
 .form-label {
-  display: block;
-  font-size: 12px;
-  font-weight: normal;
-  color: #A0AEC0; // Text color (gray-400)
-  text-align: left; // Align text to the left
-  margin-bottom: 4px; // Optional: Space between label and input
+    display: block;
+    font-size: 12px;
+    font-weight: normal;
+    color: #a0aec0; // Text color (gray-400)
+    text-align: left; // Align text to the left
+    margin-bottom: 4px; // Optional: Space between label and input
 }
 
 .form-input {
-  background-color: transparent; // Keep background transparent
-  color: white; // Keep text color white
-  outline: none; // Remove outline on focus
-  font-size: 14px; // Font size
-  font-weight: 500; // Font medium
-  font-family: var(--font-satoshi-sans); // Your custom font
-  border: none; // Remove default border
-  padding: 0; // Optional: Remove default padding to fit design
-
-  &::placeholder {
-    color: #ffffff; // Placeholder color
-  }
-
-  &:focus {
     background-color: transparent; // Keep background transparent
     color: white; // Keep text color white
-    box-shadow: none; // Remove any shadow Bootstrap applies
-    border: none; // Ensure border remains removed
-  }
+    outline: none; // Remove outline on focus
+    font-size: 14px; // Font size
+    font-weight: 500; // Font medium
+    font-family: var(--font-satoshi-sans); // Your custom font
+    border: none; // Remove default border
+    padding: 0; // Optional: Remove default padding to fit design
+
+    &::placeholder {
+        color: #ffffff; // Placeholder color
+    }
+
+    &:focus {
+        background-color: transparent; // Keep background transparent
+        color: white; // Keep text color white
+        box-shadow: none; // Remove any shadow Bootstrap applies
+        border: none; // Ensure border remains removed
+    }
 }
 
 .error-message {
-  color: red; // Error text color
-  font-size: 14px; // Error text size
+    color: red; // Error text color
+    font-size: 14px; // Error text size
 }
-
 
 // Details Component
 
-
 .details-container {
-  background-color: transparent;
-  // width: 339px;
-  border: 1px solid #71797E; // Border color
-  border-radius: 14px; // Rounded corners
-  padding: 12px;
+    background-color: transparent;
+    // width: 339px;
+    border: 1px solid #71797e; // Border color
+    border-radius: 14px; // Rounded corners
+    padding: 12px;
 
-  h2 {
-    font-size: 16px;
-    font-weight: 500;
-    font-family: var(--font-satoshi-sans); // Custom font
-    text-align: left; // Left align heading
-  }
-
-  .details-list {
-    list-style-type: disc;
-    padding-left: 1.5em; // Adjust for list indentation
-    margin: 0; // Reset margin
-    space-y: 3px; // Space between list items
-    color: #BFBFBF; // Default text color
-    font-size: 14px;
-    font-family: var(--font-satoshi-sans); // Custom font
-    text-align: left; // Left align list items
-
-    li {
-      color: #BFBFBF; // Default text color
-
-      .hashtag {
-        color: #1DA3F2; // Hashtag color
-      }
-    }
-  }
-
-  .post-container {
-    background-color: #1A1F21; // Post background
-    padding: 16px;
-    margin-top: 12px;
-    border-radius: 8px; // Rounded corners
-    position: relative; // To position the button inside
-
-    .copy-button {
-      position: absolute;
-      top: 2px;
-      right: 2px;
-      background-color: #383E40; // Button background
-      color: white;
-      padding: 8px;
-      font-size: 12px;
-      font-weight: 500;
-      border-radius: 8px;
-      border: 0px;
-      margin-right: 5px;
-      margin-top: 5px;
-      display: flex;
-      align-items: center;
-      gap: 4px; // Gap between icon and text
-      transition: background-color 0.2s;
-
-      &:hover {
-        background-color: #6B7280; // Hover background color
-      }
+    h2 {
+        font-size: 16px;
+        font-weight: 500;
+        font-family: var(--font-satoshi-sans); // Custom font
+        text-align: left; // Left align heading
     }
 
-    .profile {
-      display: flex;
-      align-items: flex-start; // Align items at the start (top) to match the profile image
-      margin-bottom: 8px; // Space below the profile section
-    
-      img {
-        border-radius: 50%; // Round profile picture
-        margin-right: 8px; // Space to the right of the image
-      }
-    
-      .username {
-        font-weight: bold; // Bold for username
-        font-size: 11px; // Font size for username
-        text-align: left; // Left align username
-        display: flex; // Use flex to align icon with username
-        align-items: center; // Vertically center the icon with the text
-        margin-bottom: 0; // Remove any bottom margin
-    
-        .verified-icon {
-          margin-left: 4px; // Space between name and verified icon
-          vertical-align: middle; // Align with text
+    .details-list {
+        list-style-type: disc;
+        padding-left: 1.5em; // Adjust for list indentation
+        margin: 0; // Reset margin
+        space-y: 3px; // Space between list items
+        color: #bfbfbf; // Default text color
+        font-size: 14px;
+        font-family: var(--font-satoshi-sans); // Custom font
+        text-align: left; // Left align list items
+
+        li {
+            color: #bfbfbf; // Default text color
+
+            .hashtag {
+                color: #1da3f2; // Hashtag color
+            }
         }
-      }
-    
-      .nickname {
-        color: #A0AEC0; // Gray color for nickname
-        font-size: 11px; // Font size for nickname
-        // margin-left: 4px; // Small margin to create a space directly after username
-        line-height: 1; // Ensure no extra space is added to the line height
-      }
-    }
-    
-
-    .content {
-      font-size: 12px; // Font size
-      color: white; // Text color
-      font-weight: normal;
-      text-align: left; // Left align content
-
-      a {
-        color: #1DA3F2; // Link color
-      }
     }
 
-    .timestamp {
-      color: #8E8E8E; // Timestamp color
-      font-size: 10px; // Font size
-      text-align: left; // Left align timestamp
+    .post-container {
+        background-color: #1a1f21; // Post background
+        padding: 16px;
+        margin-top: 12px;
+        border-radius: 8px; // Rounded corners
+        position: relative; // To position the button inside
+
+        .copy-button {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background-color: #383e40; // Button background
+            color: white;
+            padding: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            border-radius: 8px;
+            border: 0px;
+            margin-right: 5px;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            gap: 4px; // Gap between icon and text
+            transition: background-color 0.2s;
+
+            &:hover {
+                background-color: #6b7280; // Hover background color
+            }
+        }
+
+        .profile {
+            display: flex;
+            align-items: flex-start; // Align items at the start (top) to match the profile image
+            margin-bottom: 8px; // Space below the profile section
+
+            img {
+                border-radius: 50%; // Round profile picture
+                margin-right: 8px; // Space to the right of the image
+            }
+
+            .username {
+                font-weight: bold; // Bold for username
+                font-size: 11px; // Font size for username
+                text-align: left; // Left align username
+                display: flex; // Use flex to align icon with username
+                align-items: center; // Vertically center the icon with the text
+                margin-bottom: 0; // Remove any bottom margin
+
+                .verified-icon {
+                    margin-left: 4px; // Space between name and verified icon
+                    vertical-align: middle; // Align with text
+                }
+            }
+
+            .nickname {
+                color: #a0aec0; // Gray color for nickname
+                font-size: 11px; // Font size for nickname
+                // margin-left: 4px; // Small margin to create a space directly after username
+                line-height: 1; // Ensure no extra space is added to the line height
+            }
+        }
+
+        .content {
+            font-size: 12px; // Font size
+            color: white; // Text color
+            font-weight: normal;
+            text-align: left; // Left align content
+
+            a {
+                color: #1da3f2; // Link color
+            }
+        }
+
+        .timestamp {
+            color: #8e8e8e; // Timestamp color
+            font-size: 10px; // Font size
+            text-align: left; // Left align timestamp
+        }
     }
-  }
 }
 
 .text-red-500 {
-  color: #f56565; // Change to your desired red color
+    color: #f56565; // Change to your desired red color
 }
 
 .text-green-500 {
-  color: #48bb78; // Change to your desired green color
+    color: #48bb78; // Change to your desired green color
 }
 
 .text-center {
-  text-align: center;
+    text-align: center;
 }

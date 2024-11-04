@@ -11,8 +11,8 @@ import { SCHEMA_GET_ACCOUNT_DATA_MESSAGE } from '../../constants';
 import { AccountData, getAccountData } from '../../apiReqeuests';
 
 interface Props {
-    signer: any;
-    provider: WalletProvider | undefined;
+    signer: string | null;
+    provider: WalletProvider | null;
     grpcClient: ConcordiumGRPCClient | undefined;
 }
 
@@ -41,6 +41,9 @@ export function AdminGetAccountData(props: Props) {
             }
 
             const { blockHash: recentBlockHash, blockHeight: recentBlockHeight } = await getRecentBlock(grpcClient);
+            if (!provider) {
+                throw new Error('Provider is not available.');
+            }
             const signature = await requestSignature(
                 recentBlockHash,
                 SCHEMA_GET_ACCOUNT_DATA_MESSAGE,
@@ -73,7 +76,7 @@ export function AdminGetAccountData(props: Props) {
                         )}
                         <Form.Text />
                     </Form.Group>
-                    <Button className='bg-theme text-black' type="submit">
+                    <Button className="bg-theme text-black" type="submit">
                         Get Account Data
                     </Button>
 

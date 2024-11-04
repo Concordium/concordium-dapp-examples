@@ -15,10 +15,7 @@ export function ConnectWallet(props: Props) {
         <div className="centered">
             <div className="card">
                 <h2 className="centered"> Connect your wallet</h2>
-                <Button
-                    variant="primary"
-                    onClick={async () => navigate('/zkProofSubmission')}
-                >
+                <Button variant="primary" onClick={async () => navigate('/zkProofSubmission')}>
                     zkProofSubmission
                 </Button>
                 <Button

@@ -11,5 +11,5 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <WalletProviderWrapper>
             <App />
         </WalletProviderWrapper>
-    </React.StrictMode>
+    </React.StrictMode>,
 );

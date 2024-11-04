@@ -11,9 +11,9 @@ import { LIMIT, OFFSET, SCHEMA_GET_PENDING_APPROVALS_MESSAGE } from '../../const
 import { AccountData, getPendingApprovals } from '../../apiReqeuests';
 
 interface Props {
-    signer: any;
+    signer: string | null;
     grpcClient: ConcordiumGRPCClient | undefined;
-    provider: WalletProvider | undefined;
+    provider: WalletProvider | null;
 }
 
 export function AdminGetPendingApprovals(props: Props) {
@@ -34,7 +34,9 @@ export function AdminGetPendingApprovals(props: Props) {
             }
 
             const { blockHash: recentBlockHash, blockHeight: recentBlockHeight } = await getRecentBlock(grpcClient);
-
+            if (!provider) {
+                throw new Error('Provider is not available.');
+            }
             const signature = await requestSignature(
                 recentBlockHash,
                 SCHEMA_GET_PENDING_APPROVALS_MESSAGE,
@@ -56,7 +58,7 @@ export function AdminGetPendingApprovals(props: Props) {
                 <h2 className="centered text-white">Get Pending Approvals</h2>
                 <br />
                 <Form onSubmit={handleSubmit(onSubmit)}>
-                    <Button className='bg-theme text-black' type="submit">
+                    <Button className="bg-theme text-black" type="submit">
                         Get Pending Approvals
                     </Button>
 

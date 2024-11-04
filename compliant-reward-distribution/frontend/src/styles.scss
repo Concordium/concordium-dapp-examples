@@ -6,14 +6,14 @@
 
 // fonts.scss
 @font-face {
-    font-family: "Satoshi";
-    src: url("./fonts/Satoshi-Regular.otf") format("opentype");
+    font-family: 'Satoshi';
+    src: url('./fonts/Satoshi-Regular.otf') format('opentype');
     font-weight: 100 900;
     font-display: swap;
 }
 
 :root {
-    --font-satoshi-sans: "Satoshi", sans-serif;
+    --font-satoshi-sans: 'Satoshi', sans-serif;
 }
 
 // Optionally, set a global font if desired
@@ -21,13 +21,11 @@ body {
     font-family: var(--font-satoshi-sans);
 }
 
-
 html,
 body,
 #root {
     margin: 0;
     padding: 0;
-    // margin: 50px 0px 0px 0px;
     height: auto;
     width: 100%;
     display: flex;
@@ -118,33 +116,33 @@ body,
     background-color: #ddd;
     color: black;
 }
-.border-theme{
-    border: 1px solid #1B2323
+.border-theme {
+    border: 1px solid #1b2323;
 }
 
-.cursor-pointer{
+.cursor-pointer {
     cursor: pointer !important;
 }
 
-.text-theme{
-    color: #A2CAC1;
+.text-theme {
+    color: #a2cac1;
 }
 
-.bg-theme{
-    background-color: #A2CAC1;
+.bg-theme {
+    background-color: #a2cac1;
 }
-.bg-transparent{
+.bg-transparent {
     background-color: transparent !important;
 }
 
-.text-white{
+.text-white {
     color: #fff;
 }
 
-.text-black{
+.text-black {
     color: #fff;
 }
 
-.bg-white{
+.bg-white {
     background-color: #fff;
 }
