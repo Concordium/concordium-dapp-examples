@@ -10,9 +10,9 @@ import { SCHEMA_SET_CLAIMED_MESSAGE } from '../../constants';
 import { setClaimed } from '../../apiReqeuests';
 
 interface Props {
-    signer: any;
+    signer: string | null;
     grpcClient: ConcordiumGRPCClient | undefined;
-    provider: WalletProvider | undefined;
+    provider: WalletProvider | null;
 }
 
 export function AdminSetClaimed(props: Props) {
@@ -40,7 +40,9 @@ export function AdminSetClaimed(props: Props) {
             }
 
             const { blockHash: recentBlockHash, blockHeight: recentBlockHeight } = await getRecentBlock(grpcClient);
-
+            if (!provider) {
+                throw new Error('Provider is not available.');
+            }
             const signature = await requestSignature(
                 recentBlockHash,
                 SCHEMA_SET_CLAIMED_MESSAGE,
@@ -74,7 +76,7 @@ export function AdminSetClaimed(props: Props) {
                         <Form.Text />
                     </Form.Group>
 
-                    <Button className='bg-theme text-black' type="submit">
+                    <Button className="bg-theme text-black" type="submit">
                         Set Claimed
                     </Button>
 
