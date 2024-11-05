@@ -1,7 +1,7 @@
 import { Button } from 'react-bootstrap';
 import '../../styles/Submission.scss';
-import backgroundImage from '/images/Slide 16_9 - 13.svg';
-import linkImage from '/images/link.svg';
+import backgroundImage from '../../../public/images/Slide 16_9 - 13.svg';
+import linkImage from '../../../public/images/link.svg';
 
 export default function Submission() {
     return (

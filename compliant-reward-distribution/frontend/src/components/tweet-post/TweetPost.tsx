@@ -2,8 +2,8 @@ import { useRef, useState } from 'react';
 import { version } from '../../../package.json';
 
 import BackButton from '../elements/BackButton';
-import profileImage from '/images/Ellipse 1.svg';
-import verifyImage from '/images/Verified.svg';
+import profileImage from '../../../public/images/Ellipse 1.svg';
+import verifyImage from '../../../public/images/Verified.svg';
 import '../../styles/ConnectWallet.scss';
 import '../../styles/ProgressStep.scss';
 import '../../styles/TweetPost.scss';

@@ -31,7 +31,6 @@ const Proof = () => {
     const grpcClient = useRef(new ConcordiumGRPCClient(new GrpcWebFetchTransport({ baseUrl: CONFIG.node }))).current;
     const capitalizedNetwork = CONFIG.network[0].toUpperCase() + CONFIG.network.substring(1);
 
-    const [error, setError] = useState<string | undefined>(undefined);
     const [zkStatement, setZkStatement] = useState<CredentialStatement | undefined>(undefined);
 
     useEffect(() => {
@@ -45,7 +44,6 @@ const Proof = () => {
 
     const handleVerify = async () => {
         setIsLoading(true);
-        setError(undefined);
         try {
             if (!zkStatement) {
                 throw Error(`'zkStatement' is undefined.`);
@@ -89,7 +87,7 @@ const Proof = () => {
 
             await submitZkProof(presentation, recentBlockHeight);
         } catch (error) {
-            setError((error as Error).message);
+            console.log('error', error);
         }
 
         // After verification
