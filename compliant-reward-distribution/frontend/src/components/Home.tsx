@@ -36,7 +36,7 @@ export default function Component() {
                         <div className="position-relative d-flex align-items-center justify-content-center mb-5">
                             <div className="position-relative">
                                 <img
-                                    src="/images/Frame 1983.svg"
+                                    src="../../images/Frame 1983.svg"
                                     alt="twitter"
                                     width={75}
                                     height={75}
@@ -44,7 +44,7 @@ export default function Component() {
                                     style={{ left: '-50px' }} // Positioning the first image to the left
                                 />
                                 <img
-                                    src="/images/Frame 1984.svg"
+                                    src="../../images/Frame 1984.svg"
                                     alt="Concordium logo"
                                     width={75}
                                     height={75}
