@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { version } from '../../../package.json';
-
+// images
 import BackButton from '../elements/BackButton';
 import profileImage from '../../../public/images/Ellipse 1.svg';
 import verifyImage from '../../../public/images/Verified.svg';
