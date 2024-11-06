@@ -47,7 +47,7 @@ const ConnectWalletAdmin = () => {
         } catch (error) {
             console.error('Error:', error);
         }
-    }, [provider]);
+    }, [provider, setConnectedAccount]);
     return (
         <Container fluid className="d-flex flex-column text-light bg-dark" style={{ position: 'relative' }}>
             <div className="d-flex align-items-center">
