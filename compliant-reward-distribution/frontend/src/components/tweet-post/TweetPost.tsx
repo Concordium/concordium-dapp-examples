@@ -24,19 +24,17 @@ const TweetPost = () => {
     const navigate = useNavigate();
     const { provider, connectedAccount } = useWallet();
     const [error, setError] = useState<string | undefined>(undefined);
-    const [successfulSubmission, setSuccessfulSubmission] = useState<boolean | undefined>(undefined);
     const grpcClient = useRef(new ConcordiumGRPCClient(new GrpcWebFetchTransport({ baseUrl: CONFIG.node }))).current;
     const capitalizedNetwork = CONFIG.network[0].toUpperCase() + CONFIG.network.substring(1);
 
     interface FormType {
         tweet: string;
     }
-    const { control, register, handleSubmit } = useForm<FormType>({ mode: 'all' });
+    const { control, register, handleSubmit, formState } = useForm<FormType>({ mode: 'all' });
     const [tweet] = useWatch({ control, name: ['tweet'] });
 
     async function onSubmit() {
         setError(undefined);
-        setSuccessfulSubmission(undefined);
 
         if (!connectedAccount) {
             setError('Wallet missing, connect any wallet!');
@@ -67,12 +65,10 @@ const TweetPost = () => {
             );
 
             await submitTweet(connectedAccount, signature, recentBlockHeight, tweet);
-            setSuccessfulSubmission(true);
-            // navigate('/proof')
+            navigate('/proof');
         } catch (error) {
             setError((error as Error).message);
         }
-        navigate('/proof');
     }
     return (
         <Container fluid className="d-flex flex-column min-vh-100 text-light bg-dark" style={{ position: 'relative' }}>
@@ -133,9 +129,11 @@ const TweetPost = () => {
                                 placeholder="https://x.com/coingecko/status/181499..."
                                 className="form-input"
                             />
-                            {/* {errors.tweet && (
-                                <p className="error-message">{errors.tweet.message}</p>
-                            )} */}
+                            {formState.errors.tweet && (
+                                <p className="text-red-500 text-center">
+                                    Tweet is required. {formState.errors.tweet.message}
+                                </p>
+                            )}
                         </div>
 
                         <div className="details-container mt-3">
@@ -153,8 +151,7 @@ const TweetPost = () => {
                             <div className="post-container">
                                 <button
                                     onClick={async () => {
-                                        const tweetToCopy = `Just created my @ConcordiumNet account and received 1000 $CCD reward!  Go to concordium.com/wallet to get yours! 
-                                    
+                                        const tweetToCopy = `Just created my @ConcordiumNet account and received 1000 $CCD reward!  Go to concordium.com/wallet to get yours!
 #Concordium`;
                                         await navigator.clipboard.writeText(tweetToCopy);
                                     }}
@@ -193,7 +190,6 @@ const TweetPost = () => {
                             </div>
                         </div>
                         {error && <p className="text-red-500 text-center">{error}</p>}
-                        {successfulSubmission && <p className="text-green-500 text-center">Submission Successful!</p>}
                         <div className="d-flex justify-content-center mt-3 mb-3">
                             {' '}
                             {/* Flex container to center the button */}

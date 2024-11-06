@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { Container, Button, Row, Col } from 'react-bootstrap';
 
 import { Check } from 'lucide-react';
+import { Buffer } from 'buffer';
 import SkeletonLoading from './Skeleton';
 import { useWallet } from '../../context/WalletContext';
 import ProgressStep from '../connect-wallet/ProgressStep';
@@ -16,6 +17,7 @@ import {
     ConcordiumGRPCClient,
     CredentialDeploymentValues,
     CredentialStatement,
+    RevealProof,
 } from '@concordium/web-sdk';
 import { GrpcWebFetchTransport } from '@protobuf-ts/grpcweb-transport';
 import { getStatement, submitZkProof } from '../../apiReqeuests';
@@ -26,12 +28,15 @@ import sha256 from 'sha256';
 const Proof = () => {
     const navigate = useNavigate();
     const { provider, connectedAccount } = useWallet();
-    const [verifyProgress, setVerifyProgress] = useState(false);
+    const [validProof, setValidProof] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const grpcClient = useRef(new ConcordiumGRPCClient(new GrpcWebFetchTransport({ baseUrl: CONFIG.node }))).current;
     const capitalizedNetwork = CONFIG.network[0].toUpperCase() + CONFIG.network.substring(1);
 
     const [zkStatement, setZkStatement] = useState<CredentialStatement | undefined>(undefined);
+    const [error, setError] = useState<string | undefined>(undefined);
+    const [IdNumber, setIdNumber] = useState<string | undefined>(undefined);
+    const [nationality, setNationality] = useState<string | undefined>(undefined);
 
     useEffect(() => {
         const fetchStatement = async () => {
@@ -44,6 +49,10 @@ const Proof = () => {
 
     const handleVerify = async () => {
         setIsLoading(true);
+        setValidProof(false);
+        setError(undefined);
+        setIdNumber(undefined);
+        setNationality(undefined);
         try {
             if (!zkStatement) {
                 throw Error(`'zkStatement' is undefined.`);
@@ -86,15 +95,20 @@ const Proof = () => {
             }
 
             await submitZkProof(presentation, recentBlockHeight);
+            setIdNumber(
+                (presentation.verifiableCredential[0].credentialSubject.proof.proofValue[0] as RevealProof<string>)
+                    .attribute,
+            );
+            setNationality(
+                (presentation.verifiableCredential[0].credentialSubject.proof.proofValue[1] as RevealProof<string>)
+                    .attribute,
+            );
+            setValidProof(true);
         } catch (error) {
-            console.log('error', error);
+            setError((error as Error).message);
+            setValidProof(false);
         }
-
-        // After verification
-        setTimeout(() => {
-            setIsLoading(false);
-            setVerifyProgress(true);
-        }, 1000);
+        setIsLoading(false);
     };
     return (
         <Container fluid className="d-flex flex-column min-vh-100 text-light bg-dark" style={{ position: 'relative' }}>
@@ -102,7 +116,6 @@ const Proof = () => {
                 <SkeletonLoading />
             ) : (
                 <>
-                    {/* <BackButton redirectURL={'/tweetPost'} /> */}
                     <div className="d-flex align-items-center">
                         <BackButton redirectURL={'/tweetPost'} />
                         <Button
@@ -148,18 +161,18 @@ const Proof = () => {
                     <Container className="connect-wallet-container text-center pt-2">
                         <h1 className="connect-wallet-title">Proof of eligibility</h1>
                         <div className="verification-container mb-5">
-                            {verifyProgress ? (
+                            {validProof ? (
                                 <Container className="user-info-container w-339 space-y-2">
                                     <Row>
                                         <Col>
-                                            <p className="label-text">User name</p>
-                                            <p className="info-text border-bottom">John Douglas</p>
+                                            <p className="label-text">Nationality</p>
+                                            <p className="info-text border-bottom">{nationality}</p>
                                         </Col>
                                     </Row>
                                     <Row>
                                         <Col>
                                             <p className="label-text">Passport number</p>
-                                            <p className="info-text border-bottom">US991298</p>
+                                            <p className="info-text border-bottom">{IdNumber}</p>
                                         </Col>
                                     </Row>
 
@@ -186,14 +199,13 @@ const Proof = () => {
                             ) : (
                                 <div className="w-full">
                                     <p className="text-gray-300 text-[12px] font-normal font-satoshi-sans mb-[8px]">
-                                        To collect your reward, you must verify the below data
-                                        <br /> using your ConcordiumID.
+                                        To collect your reward, you must verify the below data using your ConcordiumID.
                                     </p>
 
                                     <ul className="space-y-2 text-gray-300">
                                         <li className="verification-list-item">
                                             <span className="bullet"></span>
-                                            Your full name
+                                            Your nationality
                                         </li>
                                         <li className="verification-list-item">
                                             <span className="bullet"></span>
@@ -210,8 +222,7 @@ const Proof = () => {
                                     </ul>
 
                                     <p className="note-text text-[12px] font-normal pt-[29px] text-gray-400 font-satoshi-sans">
-                                        * Not eligible nationalities are: USA, Iran, North Korea, occupied regions of
-                                        Ukraine.
+                                        * Not eligible nationalities are: USA, or North Korea
                                     </p>
                                 </div>
                             )}
@@ -220,7 +231,7 @@ const Proof = () => {
                     <div className="d-flex justify-content-center mb-3">
                         {' '}
                         {/* Flex container to center the button */}
-                        {verifyProgress ? (
+                        {validProof ? (
                             <Button
                                 onClick={() => {
                                     navigate('/submission');
@@ -244,6 +255,7 @@ const Proof = () => {
                             </Button>
                         )}
                     </div>
+                    {error && <p className="text-red-500 text-center">{error}</p>}
                 </>
             )}
         </Container>

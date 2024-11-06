@@ -5,7 +5,7 @@
     "packageManager": "yarn@4.5.0",
     "scripts": {
         "dev": "vite",
-        "build": "tsc && vite build",
+        "build": "tsc && vite build && cp -r ./public ./dist/",
         "lint": "eslint . --cache --max-warnings 0 --ext .ts,.tsx",
         "lint-fix": "yarn lint --fix",
         "fmt-check": "prettier --check .",

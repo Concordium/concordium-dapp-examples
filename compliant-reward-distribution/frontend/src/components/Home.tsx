@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { version } from '../../package.json';
-import BackButton from './elements/BackButton';
 import { Container, Button } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import '../styles/Home.scss';
@@ -15,8 +14,6 @@ export default function Component() {
     };
     return (
         <Container fluid className="d-flex flex-column min-vh-100 text-light bg-dark" style={{ position: 'relative' }}>
-            {/* Back Button with Left Arrow Icon */}
-            <BackButton redirectURL={'/'} />
             <div className="d-flex justify-content-center mb-3">
                 <a
                     target="_blank"
