@@ -134,6 +134,9 @@ fn create_frontend_config(network: Network, node_endpoint: Endpoint) -> serde_js
         "node": node_endpoint.uri().to_string(),
         "network": network,
     });
+
+    tracing::info!("Frontend configuration: {}", config);
+
     // The config_string is injected as a handlebar to the frontend.
     let config_string = serde_json::to_string(&config).expect("JSON serialization always succeeds");
     serde_json::json!({ "config": config_string })
@@ -234,7 +237,8 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("Starting server...");
 
     // Setting up the front end files.
-    let serve_dir_service = ServeDir::new(app.frontend_assets.join("assets"));
+    let assets_folder = ServeDir::new(app.frontend_assets.join("assets"));
+    let images_folder = ServeDir::new(app.frontend_assets.join("images"));
 
     // Insert the frontend config into `index.html` using the handlebars
     // placeholder. Then render the `index.html` and assets.
@@ -259,6 +263,14 @@ async fn main() -> anyhow::Result<()> {
         .route("/health", get(health))
         // Frontend routes.
         .route(
+            // Landing page.
+            "/",
+            get({
+                let index_html = index_html.clone();
+                move || async { Html(index_html) }
+            }),
+        )
+        .route(
             "/connectWallet",
             get({
                 let index_html = index_html.clone();
@@ -266,14 +278,22 @@ async fn main() -> anyhow::Result<()> {
             }),
         )
         .route(
-            "/tweetSubmission",
+            "/tweetPost",
             get({
                 let index_html = index_html.clone();
                 move || async { Html(index_html) }
             }),
         )
         .route(
-            "/zkProofSubmission",
+            "/proof",
+            get({
+                let index_html = index_html.clone();
+                move || async { Html(index_html) }
+            }),
+        )
+        // Final page.
+        .route(
+            "/submission",
             get({
                 let index_html = index_html.clone();
                 move || async { Html(index_html) }
@@ -286,14 +306,8 @@ async fn main() -> anyhow::Result<()> {
                 move || async { Html(index_html) }
             }),
         )
-        .route(
-            "/",
-            get({
-                let index_html = index_html.clone();
-                move || async { Html(index_html) }
-            }),
-        )
-        .nest_service("/assets", serve_dir_service.clone())
+        .nest_service("/images", images_folder)
+        .nest_service("/assets", assets_folder)
         .with_state(state)
         .layer(
             tower_http::trace::TraceLayer::new_for_http()
