@@ -52,7 +52,7 @@ const ConnectWallet = () => {
         } catch (error) {
             console.error('Error:', error);
         }
-    }, [provider]);
+    }, [provider, setConnectedAccount]);
 
     return (
         <Container fluid className="d-flex flex-column min-vh-100 text-light bg-dark" style={{ position: 'relative' }}>
