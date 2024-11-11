@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { version } from '../../../package.json';
 import { Container, Row, Col } from 'react-bootstrap';
 import '../../styles/ConnectWallet.scss';
@@ -9,7 +9,8 @@ import '../../styles/ProgressStep.scss';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../../context/WalletContext';
 import { BrowserWalletProvider, WalletConnectProvider, WalletProvider } from '../../wallet-connection';
-import ProgressStep from './ProgressStep';
+import ProgressStep from '../elements/ProgressStep';
+import { GENESIS_HASH } from '../../constants';
 
 const ConnectWallet = () => {
     const navigate = useNavigate();
@@ -17,14 +18,18 @@ const ConnectWallet = () => {
 
     const capitalizedNetwork = CONFIG.network[0].toUpperCase() + CONFIG.network.substring(1);
 
+    const [error, setError] = useState<string | undefined>(undefined);
+
     const connectProvider = async (provider: WalletProvider) => {
         const account = await provider.connect();
-
         if (account) {
             setConnectedAccount(account);
+            setProvider(provider);
+        } else {
+            throw new Error(
+                'Ensure you have a Concordium wallet that is connected with at least one account present in the wallet.',
+            );
         }
-        setProvider(provider);
-        navigate('/tweetPost');
     };
     useEffect(() => {
         try {
@@ -76,7 +81,17 @@ const ConnectWallet = () => {
                 {/* Browser Wallet */}
                 <Container
                     onClick={async () => {
-                        connectProvider(await BrowserWalletProvider.getInstance());
+                        try {
+                            const provider = await BrowserWalletProvider.getInstance();
+                            await connectProvider(provider);
+                            const genesisHash = await provider.getConnectedGenesisHash();
+                            if (genesisHash != GENESIS_HASH) {
+                                throw new Error(`Please change the network in the browser wallet to ${CONFIG.network}`);
+                            }
+                            navigate('/tweetPost');
+                        } catch (error) {
+                            setError((error as Error).message);
+                        }
                     }}
                     className="wallet-option p-4 cursor-pointer rounded-lg"
                 >
@@ -91,7 +106,12 @@ const ConnectWallet = () => {
                 {/* Android Wallet */}
                 <Container
                     onClick={async () => {
-                        connectProvider(await WalletConnectProvider.getInstance());
+                        try {
+                            await connectProvider(await WalletConnectProvider.getInstance());
+                            navigate('/tweetPost');
+                        } catch (error) {
+                            setError((error as Error).message);
+                        }
                     }}
                     className="wallet-option p-4 rounded-lg cursor-pointer mt-2"
                 >
@@ -122,6 +142,7 @@ const ConnectWallet = () => {
                         </Col>
                     </Row>
                 </Container>
+                {error && <p className="text-red-500 text-center">{error}</p>}
             </Container>
         </Container>
     );

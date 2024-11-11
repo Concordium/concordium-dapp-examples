@@ -9,7 +9,6 @@ import { useWallet } from '../../context/WalletContext';
 import ConnectWalletAdmin from './ConnectWalletAdmin';
 
 export function Admin() {
-    // const { signer, grpcClient, provider } = props;
     const { provider, connectedAccount } = useWallet();
     const grpcClient = useRef(new ConcordiumGRPCClient(new GrpcWebFetchTransport({ baseUrl: CONFIG.node }))).current;
     return (

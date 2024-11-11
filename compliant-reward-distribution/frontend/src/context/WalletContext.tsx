@@ -4,7 +4,7 @@ import { createContext, useContext, useState, ReactNode } from 'react';
 import { WalletProvider } from '../wallet-connection';
 
 interface WalletContextType {
-    provider: WalletProvider | null; // Use the WalletProvider type here instead of any
+    provider: WalletProvider | null;
     connectedAccount: string | null;
     setProvider: (provider: WalletProvider) => void;
     setConnectedAccount: (account: string) => void;

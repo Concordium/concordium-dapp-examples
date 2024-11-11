@@ -11,7 +11,7 @@ import { Check } from 'lucide-react';
 import { Buffer } from 'buffer';
 import SkeletonLoading from './Skeleton';
 import { useWallet } from '../../context/WalletContext';
-import ProgressStep from '../connect-wallet/ProgressStep';
+import ProgressStep from '../elements/ProgressStep';
 import {
     AccountAddress,
     ConcordiumGRPCClient,
