@@ -64,23 +64,42 @@ function isWalletConnectError(obj: any): obj is WalletConnectError {
 }
 
 let browserWalletInstance: BrowserWalletProvider | undefined;
+let connectedGenesisHash: string | undefined;
 
 export class BrowserWalletProvider extends WalletProvider {
     constructor(private provider: WalletApi) {
         super();
+
+        this.setConnectedGenesisHash();
 
         provider.on('accountChanged', (account) => super.onAccountChanged(account));
         provider.on('accountDisconnected', async () =>
             super.onAccountChanged((await provider.getMostRecentlySelectedAccount()) ?? undefined),
         );
     }
+
+    private async setConnectedGenesisHash() {
+        const hash = await this.provider.getSelectedChain();
+        connectedGenesisHash = hash;
+    }
+
+    async getConnectedGenesisHash() {
+        return connectedGenesisHash;
+    }
+
     /**
      * @description gets a singleton instance, allowing existing session to be restored.
      */
     static async getInstance() {
-        if (browserWalletInstance === undefined) {
-            const provider = await detectConcordiumProvider();
-            browserWalletInstance = new BrowserWalletProvider(provider);
+        try {
+            if (browserWalletInstance === undefined) {
+                const provider = await detectConcordiumProvider();
+                browserWalletInstance = new BrowserWalletProvider(provider);
+            }
+        } catch (error) {
+            throw new Error(
+                'BrowserWalletInstance could not be initialized. Please ensure you have a Concordium browser wallet extension installed.',
+            );
         }
 
         return browserWalletInstance;

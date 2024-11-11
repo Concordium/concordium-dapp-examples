@@ -3,7 +3,7 @@ import '../../styles/Submission.scss';
 import backgroundImage from '../../../public/images/Slide 16_9 - 13.svg';
 import linkImage from '../../../public/images/link.svg';
 
-export default function Submission() {
+export default function FinalPage() {
     return (
         <div className="submission-container">
             <img src={backgroundImage} alt="background" className="submission-background" />

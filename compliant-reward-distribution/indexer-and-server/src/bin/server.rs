@@ -271,6 +271,13 @@ async fn main() -> anyhow::Result<()> {
             }),
         )
         .route(
+            "/termsAndConditions",
+            get({
+                let index_html = index_html.clone();
+                move || async { Html(index_html) }
+            }),
+        )
+        .route(
             "/connectWallet",
             get({
                 let index_html = index_html.clone();
@@ -291,9 +298,8 @@ async fn main() -> anyhow::Result<()> {
                 move || async { Html(index_html) }
             }),
         )
-        // Final page.
         .route(
-            "/submission",
+            "/finalPage",
             get({
                 let index_html = index_html.clone();
                 move || async { Html(index_html) }

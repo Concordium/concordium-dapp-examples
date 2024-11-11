@@ -6,9 +6,13 @@ import { SignClientTypes } from '@walletconnect/types';
 // signatures/zk-proofs across the different services due to this context string.
 export const CONTEXT_STRING = 'CONCORDIUM_COMPLIANT_REWARD_DISTRIBUTION_DAPP';
 
+const TESTNET_GENESIS_BLOCK_HASH = '4221332d34e1694168c2a0c0b3fd0f273809612cb13d000d5c2e00e85f50f796';
+const MAINNET_GENESIS_BLOCK_HASH = '9dd9ca4d19e9393877d2c44b70f89acbfc0883c2243e5eeaecc0d1cd0503f478';
+
 export const WALLET_CONNECT_PROJECT_ID = '76324905a70fe5c388bab46d3e0564dc';
 export const WALLET_CONNECT_SESSION_NAMESPACE = 'ccd';
 export const CHAIN_ID = `${WALLET_CONNECT_SESSION_NAMESPACE}:${CONFIG.network === 'testnet' ? `testnet` : `mainnet`}`;
+export const GENESIS_HASH = `${CONFIG.network === 'testnet' ? TESTNET_GENESIS_BLOCK_HASH : MAINNET_GENESIS_BLOCK_HASH}`;
 export const METHOD_GENERATE_ZK_PROOF = 'request_verifiable_presentation';
 export const METHOD_SIGN = 'sign_message';
 

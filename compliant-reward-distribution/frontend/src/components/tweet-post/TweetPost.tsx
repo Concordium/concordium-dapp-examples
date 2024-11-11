@@ -18,7 +18,7 @@ import { submitTweet } from '../../apiReqeuests';
 import { ConcordiumGRPCClient } from '@concordium/web-sdk';
 import { GrpcWebFetchTransport } from '@protobuf-ts/grpcweb-transport';
 import { SCHEMA_TWEET_MESSAGE } from '../../constants';
-import ProgressStep from '../connect-wallet/ProgressStep';
+import ProgressStep from '../elements/ProgressStep';
 
 const TweetPost = () => {
     const navigate = useNavigate();
@@ -150,6 +150,7 @@ const TweetPost = () => {
 
                             <div className="post-container">
                                 <button
+                                    type="button"
                                     onClick={async () => {
                                         const tweetToCopy = `Just created my @ConcordiumNet account and received 1000 $CCD reward!  Go to concordium.com/wallet to get yours!
 #Concordium`;
