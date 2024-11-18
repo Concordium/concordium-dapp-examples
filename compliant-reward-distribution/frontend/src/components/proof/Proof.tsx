@@ -234,7 +234,7 @@ const Proof = () => {
                         {validProof ? (
                             <Button
                                 onClick={() => {
-                                    navigate('/submission');
+                                    navigate('/finalPage');
                                 }}
                                 variant="light"
                                 className="px-5 py-3 rounded-pill bg-white text-black fw-semibold"

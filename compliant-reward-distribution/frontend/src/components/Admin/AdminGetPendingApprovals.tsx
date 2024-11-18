@@ -64,7 +64,9 @@ export function AdminGetPendingApprovals(props: Props) {
 
                     {error && <Alert variant="danger">{error}</Alert>}
 
-                    {pendingApprovals && <pre className="pre">{JSONbig.stringify(pendingApprovals, undefined, 2)}</pre>}
+                    {pendingApprovals && (
+                        <pre className="pre text-white">{JSONbig.stringify(pendingApprovals, undefined, 2)}</pre>
+                    )}
                 </Form>
             </div>
         </div>

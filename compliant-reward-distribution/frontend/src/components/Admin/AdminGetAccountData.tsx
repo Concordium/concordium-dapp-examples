@@ -81,7 +81,9 @@ export function AdminGetAccountData(props: Props) {
                     </Button>
 
                     <br />
-                    {accountData && <pre className="pre">{JSONbig.stringify(accountData, undefined, 2)}</pre>}
+                    {accountData && (
+                        <pre className="pre text-white">{JSONbig.stringify(accountData, undefined, 2)}</pre>
+                    )}
 
                     {error && <Alert variant="danger">{error}</Alert>}
                 </Form>
