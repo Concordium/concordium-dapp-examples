@@ -79,8 +79,7 @@ export class BrowserWalletProvider extends WalletProvider {
     }
 
     private async setConnectedGenesisHash() {
-        const hash = await this.provider.getSelectedChain();
-        connectedGenesisHash = hash;
+        connectedGenesisHash = await this.provider.getSelectedChain();
     }
 
     async getConnectedGenesisHash() {
