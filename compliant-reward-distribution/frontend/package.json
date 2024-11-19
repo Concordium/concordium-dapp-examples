@@ -2,7 +2,7 @@
     "name": "compliance-reward-distribution-front-end",
     "version": "1.0.0",
     "type": "module",
-    "packageManager": "yarn@4.5.0",
+    "packageManager": "yarn@3.6.3",
     "scripts": {
         "dev": "vite",
         "build": "tsc && vite build && cp -r ./public ./dist/",

@@ -5,6 +5,10 @@ ARG NODE_IMAGE=node:18-slim
 
 # Build frontend
 FROM ${NODE_IMAGE} AS frontend
+
+# Enable Corepack and prepare Yarn 3.6.3
+RUN corepack enable && corepack prepare yarn@3.6.3 --activate
+
 WORKDIR /frontend
 COPY ./compliant-reward-distribution/frontend ./
 RUN yarn
