@@ -12,6 +12,9 @@ COPY ./sponsoredTransactionsAuction/frontend/src ./src
 COPY ./sponsoredTransactionsAuction/frontend/index.html ./index.html
 COPY ./sponsoredTransactionsAuction/frontend/generated ./generated
 
+# Enable Corepack and prepare Yarn 3.6.3
+RUN corepack enable && corepack prepare yarn@3.6.3 --activate
+
 RUN yarn
 RUN yarn build
 
