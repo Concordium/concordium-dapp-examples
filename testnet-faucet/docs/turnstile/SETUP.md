@@ -23,13 +23,14 @@ The purpose of this guide is to show how to configure the production domain in V
 6. In your Cloudflare dashboard. Go to Turnstile and fill it in as follows.
    ![step6](images/step6.png)
 
-7. Click on create and copy the sitekey
+7. Click on create and copy the sitekey and the secret
+   
    ![step7](images/step7.png)
 
-8. Go to the project on Vercel, then Settings / Environment variables and update the variable NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY
+8. Go to the project on Vercel, then navigate to Settings > Environment Variables and update the variables NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY and CLOUDFLARE_TURNSTILE_SECRET.
    ![step8](images/step8.png)
 
-9. Go to Deployments and click on the three points of the last deployment and then click on redeploy.
+9.  Go to Deployments and click on the three points of the last deployment and then click on redeploy.
    ![step9](images/step9.png)
 
 That's it, the produccion domain and the Cloudfare Human Verification is ready now. 🎉
