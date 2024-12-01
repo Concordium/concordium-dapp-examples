@@ -84,6 +84,8 @@ pub struct StoredItemStatusChangedEvent {
     pub event_index:      u64,
     /// The item's id as logged in the event.
     pub item_id:          u64,
+    /// The item's metadata_url as logged in the event.
+    pub metadata_url:     Option<MetadataUrl>,
     /// The item's new status as logged in the event.
     pub new_status:       Status,
     /// Any additional data encoded as generic bytes as logged in the event.
@@ -109,8 +111,10 @@ impl TryFrom<tokio_postgres::Row> for StoredItemStatusChangedEvent {
                 .try_into()
                 .map_err(|_| DatabaseError::TypeConversion("transaction_hash".to_string()))?,
             event_index: raw_event_index as u64,
-            new_status,
             item_id: raw_item_id as u64,
+            metadata_url: from_bytes(value.try_get("metadata_url")?)
+            .map_err(|_| DatabaseError::TypeConversion("metadata_url".to_string()))?,
+            new_status,
             additional_data: AdditionalData::from_bytes(raw_additional_data.into()),
         };
         Ok(events)
@@ -132,6 +136,10 @@ pub struct StoredItemCreatedEvent {
     pub metadata_url:     Option<MetadataUrl>,
     /// The item's initial status as logged in the event.
     pub initial_status:   Status,
+    /// Any additional data encoded as generic bytes as logged in the event.
+    /// Usecase-specific data can be included here such as temperature,
+    /// longitude, latitude, ... .
+    pub additional_data:  AdditionalData,
 }
 
 impl TryFrom<tokio_postgres::Row> for StoredItemCreatedEvent {
@@ -142,6 +150,7 @@ impl TryFrom<tokio_postgres::Row> for StoredItemCreatedEvent {
         let raw_transaction_hash: &[u8] = value.try_get("transaction_hash")?;
         let raw_item_id: i64 = value.try_get("item_id")?;
         let raw_event_index: i64 = value.try_get("event_index")?;
+        let raw_additional_data: &[u8] = value.try_get("additional_data")?;
         let Json(initial_status): Json<Status> = value.try_get("initial_status")?;
 
         let events = Self {
@@ -154,6 +163,7 @@ impl TryFrom<tokio_postgres::Row> for StoredItemCreatedEvent {
             metadata_url: from_bytes(value.try_get("metadata_url")?)
                 .map_err(|_| DatabaseError::TypeConversion("metadata_url".to_string()))?,
             initial_status,
+            additional_data: AdditionalData::from_bytes(raw_additional_data.into())
         };
         Ok(events)
     }
@@ -224,7 +234,7 @@ impl Database {
         let get_item_status_changed_event_submissions = self
             .client
             .prepare_cached(
-                "SELECT block_time, transaction_hash, event_index, item_id, new_status, \
+                "SELECT block_time, transaction_hash, event_index, item_id, metadata_url, new_status, \
                  additional_data from item_status_changed_events WHERE item_id = $1 LIMIT $2 \
                  OFFSET $3",
             )
@@ -259,7 +269,7 @@ impl Database {
             .client
             .prepare_cached(
                 "SELECT block_time, transaction_hash, event_index, item_id, metadata_url, \
-                 initial_status from item_created_events WHERE item_id = $1",
+                 initial_status, additional_data from item_created_events WHERE item_id = $1",
             )
             .await?;
         let params: [&(dyn ToSql + Sync); 1] = [&(item_id as i64)];

@@ -119,11 +119,12 @@ impl indexer::ProcessEvent for StoreEvents {
                         item_status_change_event,
                     ) = parsed_event
                     {
-                        let params: [&(dyn ToSql + Sync); 6] = [
+                        let params: [&(dyn ToSql + Sync); 7] = [
                             &(block_info.block_slot_time),
                             &single_contract_update_info.0.transaction_hash.as_ref(),
                             &(event_index as i64),
                             &(item_status_change_event.item_id.0 as i64),
+                            &to_bytes(&item_status_change_event.metadata_url),
                             &Json(&item_status_change_event.new_status),
                             &item_status_change_event.additional_data.bytes,
                         ];
@@ -131,9 +132,9 @@ impl indexer::ProcessEvent for StoreEvents {
                         let statement = db_transaction
                             .prepare_cached(
                                 "INSERT INTO item_status_changed_events (id, block_time, \
-                                 transaction_hash, event_index, item_id, new_status, \
+                                 transaction_hash, event_index, item_id, metadata_url, new_status, \
                                  additional_data) SELECT COALESCE(MAX(id) + 1, 0), $1, $2, $3, \
-                                 $4, $5, $6 FROM item_status_changed_events;",
+                                 $4, $5, $6, $7 FROM item_status_changed_events;",
                             )
                             .await
                             .context("Failed to prepare item_status_change_event transaction")?;
@@ -154,21 +155,22 @@ impl indexer::ProcessEvent for StoreEvents {
                         item_created_event,
                     ) = parsed_event
                     {
-                        let params: [&(dyn ToSql + Sync); 6] = [
+                        let params: [&(dyn ToSql + Sync); 7] = [
                             &(block_info.block_slot_time),
                             &single_contract_update_info.0.transaction_hash.as_ref(),
                             &(event_index as i64),
                             &(item_created_event.item_id.0 as i64),
                             &to_bytes(&item_created_event.metadata_url),
                             &Json(&item_created_event.initial_status),
+                            &item_created_event.additional_data.bytes,
                         ];
 
                         let statement = db_transaction
                             .prepare_cached(
                                 "INSERT INTO item_created_events (id, block_time, \
                                  transaction_hash, event_index, item_id, metadata_url, \
-                                 initial_status) SELECT COALESCE(MAX(id) + 1, 0), $1, $2, $3, $4, \
-                                 $5, $6 FROM item_created_events;",
+                                 initial_status, additional_data) SELECT COALESCE(MAX(id) + 1, 0), $1, $2, $3, $4, \
+                                 $5, $6, $7 FROM item_created_events;",
                             )
                             .await
                             .context("Failed to prepare item_created_event transaction")?;

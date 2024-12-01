@@ -150,6 +150,20 @@ struct Args {
         env = "CCD_SERVER_CONTRACT_ADDRESS"
     )]
     contract_address: ContractAddress,
+    /// The JSON Web Token (JWT) for Pinata uploads to IPFS.
+    #[clap(
+        long = "pinata-jwt",
+        help = "The JSON Web Token (JWT) used for authentication with Pinata for uploading to IPFS.",
+        env = "CCD_SERVER_PINATA_JWT"
+    )]
+    pinata_jwt: String,
+    /// The Pinata Gateway URL for accessing files uploaded to IPFS.
+    #[clap(
+        long = "pinata-gateway",
+        help = "The base URL of the Pinata Gateway used for accessing files uploaded to IPFS.",
+        env = "CCD_SERVER_PINATA_GATEWAY"
+    )]
+    pinata_gateway: String,
     /// The sponsored transaction backend (passed to frontend).
     #[arg(
         long = "sponsored-transaction-backend",
@@ -167,6 +181,8 @@ impl Args {
             "node": self.node_endpoint.uri().to_string(),
             "network": self.network,
             "contractAddress": self.contract_address,
+            "pinataJWT": self.pinata_jwt,
+            "pinataGateway": self.pinata_gateway,
             "sponsoredTransactionBackend": self.sponsored_transaction_backend.uri().to_string(),
         });
         let config_string =
