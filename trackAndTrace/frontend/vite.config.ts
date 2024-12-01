@@ -6,7 +6,7 @@ import topLevelAwait from 'vite-plugin-top-level-await';
 import handlebars from 'vite-plugin-handlebars';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import 'dotenv/config';
-
+import path from 'path';
 const DEFAULT_NETWORK = 'testnet';
 const DEFAULT_NODE = 'https://grpc.testnet.concordium.com:20000';
 const DEFAULT_SPONSORED_API = 'http://localhost:8000/';
@@ -40,7 +40,12 @@ function getConfig() {
             `Unexpected value for environment variable "TRACK_AND_TRACE_NETWORK": ${process.env.TRACK_AND_TRACE_NETWORK} (should be either "testnet" or "mainnet")`,
         );
     }
-
+    if (!process.env.TRACK_AND_TRACE_PINATA_JWT) {
+        throw new Error('Environment variable "TRACK_AND_TRACE_PINATA_JWT" must be specified');
+    }
+    if (!process.env.TRACK_AND_TRACE_PINATA_GATEWAY) {
+        throw new Error('Environment variable "TRACK_AND_TRACE_PINATA_GATEWAY" must be specified');
+    }
     const [, index, subindex] =
         process.env.TRACK_AND_TRACE_CONTRACT_ADDRESS?.match(/<(\d*),(\d*)>/) ??
         (() => {
@@ -59,6 +64,8 @@ function getConfig() {
         node: process.env.TRACK_AND_TRACE_NODE ?? DEFAULT_NODE,
         contractAddress: { index, subindex },
         network: process.env.TRACK_AND_TRACE_NETWORK ?? DEFAULT_NETWORK,
+        pinataJWT: process.env.TRACK_AND_TRACE_PINATA_JWT,
+        pinataGateway: process.env.TRACK_AND_TRACE_PINATA_GATEWAY,
         sponsoredTransactionBackend: process.env.TRACK_AND_TRACE_SPONSORED_BACKEND_API ?? DEFAULT_SPONSORED_API,
     };
 }
@@ -80,6 +87,7 @@ const viteConfig: UserConfig = {
     },
     resolve: {
         alias: {
+            '@': path.resolve(__dirname, './src'),
             '@concordium/rust-bindings': '@concordium/rust-bindings/bundler',
             stream: 'rollup-plugin-node-polyfills/polyfills/stream',
         },

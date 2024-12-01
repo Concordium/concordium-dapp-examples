@@ -4,6 +4,7 @@ import { ContractAddress } from '@concordium/web-sdk';
 import { TESTNET, MAINNET } from '@concordium/wallet-connectors';
 
 const { protocol, hostname, port } = new URL(CONFIG.node);
+
 export const NODE_HOST = `${protocol}//${hostname}`;
 export const NODE_PORT = Number(port);
 
@@ -30,3 +31,5 @@ export const BROWSER_WALLET = ephemeralConnectorType(BrowserWalletConnector.crea
 
 export const SERIALIZATION_HELPER_SCHEMA_PERMIT_MESSAGE =
     'FAAFAAAAEAAAAGNvbnRyYWN0X2FkZHJlc3MMBQAAAG5vbmNlBQkAAAB0aW1lc3RhbXANCwAAAGVudHJ5X3BvaW50FgEHAAAAcGF5bG9hZBABAg==';
+
+export const DAPP_NAME = 'Track & Trace';

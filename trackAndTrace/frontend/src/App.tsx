@@ -1,124 +1,95 @@
 import { useEffect } from 'react';
-import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
-import { Button } from 'react-bootstrap';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 
 import { WalletConnectionProps, useConnection, useConnect } from '@concordium/react-components';
-
-import './styles.scss';
-import { AdminCreateItem } from './components/AdminCreateItem';
-import { AdminChangeRoles } from './components/AdminChangeRoles';
-import { ChangeItemStatus } from './components/ChangeItemStatus';
-import { Explorer } from './components/Explorer';
-import { AddTransitionRule } from './components/AddTransitionRule';
+import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { AppSidebar } from '@/components/AppSidebar';
+import { AdminChangeRoles } from '@/pages/AdminChangeRoles';
+import { AddTransitionRule } from '@/pages/AddTransitionRule';
+import { AdminCreateItem } from '@/pages/AdminCreateItem';
+import { ChangeItemStatus } from '@/pages/ChangeItemStatus';
+import { Explorer } from '@/pages/Explorer';
 import * as constants from './constants';
-import { version } from '../package.json';
+import { useIsMobile } from './hooks/use-mobile';
+import { PinataSDK } from 'pinata';
+
+const pinata = new PinataSDK({
+    pinataJwt: CONFIG.pinataJWT,
+    pinataGateway: CONFIG.pinataGateway,
+});
 
 export const App = (props: WalletConnectionProps) => {
     const { setActiveConnectorType, activeConnectorError, activeConnector, connectedAccounts, genesisHashes } = props;
 
     const { connection, setConnection, account } = useConnection(connectedAccounts, genesisHashes);
     const { connect } = useConnect(activeConnector, setConnection);
-
+    const isMobile = useIsMobile();
     useEffect(() => {
         setActiveConnectorType(constants.BROWSER_WALLET);
     }, [setActiveConnectorType]);
 
     return (
         <Router>
-            <div className="navbar">
-                <div>
-                    Track And Trace:{' '}
-                    <a
-                        target="_blank"
-                        rel="noreferrer"
-                        href={`https://github.com/Concordium/concordium-dapp-examples/tree/main/trackAndTrace`}
-                    >
-                        Version {version}
-                    </a>
-                    <br />
-                    Contract:{' '}
-                    <a
-                        target="_blank"
-                        rel="noreferrer"
-                        href={`https://${constants.NETWORK.name}.ccdscan.io/?dcount=1&dentity=contract&dcontractAddressIndex=${constants.CONTRACT_ADDRESS.index}&dcontractAddressSubIndex=${constants.CONTRACT_ADDRESS.subindex}`}
-                    >
-                        &lt;{Number(constants.CONTRACT_ADDRESS.index)},{Number(constants.CONTRACT_ADDRESS.subindex)}
-                        &gt;
-                    </a>
-                </div>
-                <Link className="secondary" to="/explorer">
-                    Explorer
-                </Link>
-                <Link className="secondary" to="/changeItemStatus">
-                    Admin1
-                </Link>
-                <Link className="secondary" to="/adminCreateItem">
-                    Admin2
-                </Link>
-                <Link className="secondary" to="/adminChangeRoles">
-                    Admin3
-                </Link>
-                <Link className="secondary" to="/addTransitionRule">
-                    Admin4
-                </Link>
-                <Button
-                    variant="primary"
-                    id="account"
-                    disabled={activeConnector && !account ? false : true}
-                    onClick={connect}
-                >
-                    {account
-                        ? account.slice(0, 5) + '...' + account.slice(-5)
-                        : activeConnector
-                          ? 'Connect Wallet'
-                          : 'Loading...'}
-                </Button>
-            </div>
-
-            <Routes>
-                <Route path="/explorer" element={<Explorer />} />
-                <Route
-                    path="/adminCreateItem"
-                    element={
-                        <AdminCreateItem
-                            activeConnectorError={activeConnectorError}
-                            connection={connection}
-                            accountAddress={account}
-                        />
-                    }
+            <SidebarProvider>
+                <AppSidebar
+                    connect={connect}
+                    disconnect={() => setConnection(undefined)}
+                    activeConnector={activeConnector}
+                    account={account}
                 />
-                <Route
-                    path="/adminChangeRoles"
-                    element={
-                        <AdminChangeRoles
-                            activeConnectorError={activeConnectorError}
-                            connection={connection}
-                            accountAddress={account}
+                <main className="w-full">
+                    {isMobile && (
+                        <div className="h-12 border-b flex items-center px-4">
+                            <SidebarTrigger />
+                        </div>
+                    )}
+                    <Routes>
+                        <Route path="/" element={<Explorer pinata={pinata} />} />
+                        <Route
+                            path="/item/create"
+                            element={
+                                <AdminCreateItem
+                                    activeConnectorError={activeConnectorError}
+                                    connection={connection}
+                                    accountAddress={account}
+                                    pinata={pinata}
+                                />
+                            }
                         />
-                    }
-                />
-                <Route
-                    path="/changeItemStatus"
-                    element={
-                        <ChangeItemStatus
-                            activeConnectorError={activeConnectorError}
-                            connection={connection}
-                            accountAddress={account}
+                        <Route
+                            path="/roles/change"
+                            element={
+                                <AdminChangeRoles
+                                    activeConnectorError={activeConnectorError}
+                                    connection={connection}
+                                    accountAddress={account}
+                                />
+                            }
                         />
-                    }
-                />
-                <Route
-                    path="/addTransitionRule"
-                    element={
-                        <AddTransitionRule
-                            activeConnectorError={activeConnectorError}
-                            connection={connection}
-                            accountAddress={account}
+                        <Route
+                            path="/item/update"
+                            element={
+                                <ChangeItemStatus
+                                    activeConnectorError={activeConnectorError}
+                                    connection={connection}
+                                    accountAddress={account}
+                                    pinata={pinata}
+                                />
+                            }
                         />
-                    }
-                />
-                <Route path="/" element={<div></div>} />
-            </Routes>
+                        <Route
+                            path="/transition-rules/add"
+                            element={
+                                <AddTransitionRule
+                                    activeConnectorError={activeConnectorError}
+                                    connection={connection}
+                                    accountAddress={account}
+                                />
+                            }
+                        />
+                    </Routes>
+                </main>
+            </SidebarProvider>
         </Router>
     );
 };

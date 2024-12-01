@@ -1,7 +1,7 @@
 // @ts-nocheck
 import * as SDK from "@concordium/web-sdk";
 /** The reference of the smart contract module supported by the provided client. */
-export const moduleReference: SDK.ModuleReference.Type = /*#__PURE__*/ SDK.ModuleReference.fromHexString('7f24e586bb7dcac318ca0c2876d3e4b5c07f36d48d0c7b20f8d82dad0552f1e3');
+export const moduleReference: SDK.ModuleReference.Type = /*#__PURE__*/ SDK.ModuleReference.fromHexString('757693d8e141665881e9dbc40be07da4cba32ef89d8824fb579cd66619443129');
 /** Name of the smart contract supported by this client. */
 export const contractName: SDK.ContractName.Type = /*#__PURE__*/ SDK.ContractName.fromStringUnchecked('track_and_trace');
 
@@ -80,6 +80,10 @@ export type Event = { type: 'GrantRole', content: {
     role: { type: 'Admin'},
     } } | { type: 'ItemStatusChanged', content: {
     item_id: SDK.HexString,
+    new_metadata_url: { type: 'None'} | { type: 'Some', content: {
+    url: string,
+    hash: { type: 'None'} | { type: 'Some', content: SDK.HexString },
+    } },
     new_status: { type: 'Produced'} | { type: 'InTransit'} | { type: 'InStore'} | { type: 'Sold'},
     additional_data: {
     bytes: Array<number>,
@@ -91,6 +95,9 @@ export type Event = { type: 'GrantRole', content: {
     hash: { type: 'None'} | { type: 'Some', content: SDK.HexString },
     } },
     initial_status: { type: 'Produced'} | { type: 'InTransit'} | { type: 'InStore'} | { type: 'Sold'},
+    additional_data: {
+    bytes: Array<number>,
+    },
     } } | { type: 'Nonce', content: {
     account: SDK.AccountAddress.Type,
     nonce: number | bigint,
@@ -110,6 +117,10 @@ export function parseEvent(event: SDK.ContractEvent.Type): Event {
     role: {'Admin' : [] },
     }] } | {'ItemStatusChanged' : [{
     item_id: string,
+    new_metadata_url: {'None' : [] } | {'Some' : [{
+    url: string,
+    hash: {'None' : [] } | {'Some' : [string] },
+    }] },
     new_status: {'Produced' : [] } | {'InTransit' : [] } | {'InStore' : [] } | {'Sold' : [] },
     additional_data: {
     bytes: Array<number>,
@@ -121,10 +132,13 @@ export function parseEvent(event: SDK.ContractEvent.Type): Event {
     hash: {'None' : [] } | {'Some' : [string] },
     }] },
     initial_status: {'Produced' : [] } | {'InTransit' : [] } | {'InStore' : [] } | {'Sold' : [] },
+    additional_data: {
+    bytes: Array<number>,
+    },
     }] } | {'Nonce' : [{
     account: SDK.AccountAddress.SchemaValue,
     nonce: bigint,
-    }] }>SDK.ContractEvent.parseWithSchemaTypeBase64(event, 'HwUAAAACCQAAAEdyYW50Um9sZQEBAAAAFAACAAAABwAAAGFkZHJlc3MVAgAAAAcAAABBY2NvdW50AQEAAAALCAAAAENvbnRyYWN0AQEAAAAMBAAAAHJvbGUVAQAAAAUAAABBZG1pbgIDCgAAAFJldm9rZVJvbGUBAQAAABQAAgAAAAcAAABhZGRyZXNzFQIAAAAHAAAAQWNjb3VudAEBAAAACwgAAABDb250cmFjdAEBAAAADAQAAAByb2xlFQEAAAAFAAAAQWRtaW4C7BEAAABJdGVtU3RhdHVzQ2hhbmdlZAEBAAAAFAADAAAABwAAAGl0ZW1faWQdAAoAAABuZXdfc3RhdHVzFQQAAAAIAAAAUHJvZHVjZWQCCQAAAEluVHJhbnNpdAIHAAAASW5TdG9yZQIEAAAAU29sZAIPAAAAYWRkaXRpb25hbF9kYXRhFAABAAAABQAAAGJ5dGVzEAIC7QsAAABJdGVtQ3JlYXRlZAEBAAAAFAADAAAABwAAAGl0ZW1faWQdAAwAAABtZXRhZGF0YV91cmwVAgAAAAQAAABOb25lAgQAAABTb21lAQEAAAAUAAIAAAADAAAAdXJsFgEEAAAAaGFzaBUCAAAABAAAAE5vbmUCBAAAAFNvbWUBAQAAAB4gAAAADgAAAGluaXRpYWxfc3RhdHVzFQQAAAAIAAAAUHJvZHVjZWQCCQAAAEluVHJhbnNpdAIHAAAASW5TdG9yZQIEAAAAU29sZAL6BQAAAE5vbmNlAQEAAAAUAAIAAAAHAAAAYWNjb3VudAsFAAAAbm9uY2UF');
+    }] }>SDK.ContractEvent.parseWithSchemaTypeBase64(event, 'HwUAAAACCQAAAEdyYW50Um9sZQEBAAAAFAACAAAABwAAAGFkZHJlc3MVAgAAAAcAAABBY2NvdW50AQEAAAALCAAAAENvbnRyYWN0AQEAAAAMBAAAAHJvbGUVAQAAAAUAAABBZG1pbgIDCgAAAFJldm9rZVJvbGUBAQAAABQAAgAAAAcAAABhZGRyZXNzFQIAAAAHAAAAQWNjb3VudAEBAAAACwgAAABDb250cmFjdAEBAAAADAQAAAByb2xlFQEAAAAFAAAAQWRtaW4C7BEAAABJdGVtU3RhdHVzQ2hhbmdlZAEBAAAAFAAEAAAABwAAAGl0ZW1faWQdABAAAABuZXdfbWV0YWRhdGFfdXJsFQIAAAAEAAAATm9uZQIEAAAAU29tZQEBAAAAFAACAAAAAwAAAHVybBYBBAAAAGhhc2gVAgAAAAQAAABOb25lAgQAAABTb21lAQEAAAAeIAAAAAoAAABuZXdfc3RhdHVzFQQAAAAIAAAAUHJvZHVjZWQCCQAAAEluVHJhbnNpdAIHAAAASW5TdG9yZQIEAAAAU29sZAIPAAAAYWRkaXRpb25hbF9kYXRhFAABAAAABQAAAGJ5dGVzEAIC7QsAAABJdGVtQ3JlYXRlZAEBAAAAFAAEAAAABwAAAGl0ZW1faWQdAAwAAABtZXRhZGF0YV91cmwVAgAAAAQAAABOb25lAgQAAABTb21lAQEAAAAUAAIAAAADAAAAdXJsFgEEAAAAaGFzaBUCAAAABAAAAE5vbmUCBAAAAFNvbWUBAQAAAB4gAAAADgAAAGluaXRpYWxfc3RhdHVzFQQAAAAIAAAAUHJvZHVjZWQCCQAAAEluVHJhbnNpdAIHAAAASW5TdG9yZQIEAAAAU29sZAIPAAAAYWRkaXRpb25hbF9kYXRhFAABAAAABQAAAGJ5dGVzEAIC+gUAAABOb25jZQEBAAAAFAACAAAABwAAAGFjY291bnQLBQAAAG5vbmNlBQ==');
     let match11: { type: 'GrantRole', content: {
     address: { type: 'Account', content: SDK.AccountAddress.Type } | { type: 'Contract', content: SDK.ContractAddress.Type },
     role: { type: 'Admin'},
@@ -133,6 +147,10 @@ export function parseEvent(event: SDK.ContractEvent.Type): Event {
     role: { type: 'Admin'},
     } } | { type: 'ItemStatusChanged', content: {
     item_id: SDK.HexString,
+    new_metadata_url: { type: 'None'} | { type: 'Some', content: {
+    url: string,
+    hash: { type: 'None'} | { type: 'Some', content: SDK.HexString },
+    } },
     new_status: { type: 'Produced'} | { type: 'InTransit'} | { type: 'InStore'} | { type: 'Sold'},
     additional_data: {
     bytes: Array<number>,
@@ -144,6 +162,9 @@ export function parseEvent(event: SDK.ContractEvent.Type): Event {
     hash: { type: 'None'} | { type: 'Some', content: SDK.HexString },
     } },
     initial_status: { type: 'Produced'} | { type: 'InTransit'} | { type: 'InStore'} | { type: 'Sold'},
+    additional_data: {
+    bytes: Array<number>,
+    },
     } } | { type: 'Nonce', content: {
     account: SDK.AccountAddress.Type,
     nonce: number | bigint,
@@ -231,128 +252,175 @@ export function parseEvent(event: SDK.ContractEvent.Type): Event {
     } else if ('ItemStatusChanged' in schemaJson) {
        const variant34 = schemaJson.ItemStatusChanged;
     const field35 = variant34[0].item_id;
-    const field36 = variant34[0].new_status;
-    let match37: { type: 'Produced'} | { type: 'InTransit'} | { type: 'InStore'} | { type: 'Sold'};
-    if ('Produced' in field36) {
-       match37 = {
-           type: 'Produced',
-       };
-    } else if ('InTransit' in field36) {
-       match37 = {
-           type: 'InTransit',
-       };
-    } else if ('InStore' in field36) {
-       match37 = {
-           type: 'InStore',
-       };
-    } else if ('Sold' in field36) {
-       match37 = {
-           type: 'Sold',
-       };
-    }
-     else {
-       throw new Error("Unexpected enum variant");
-    }
-    const field42 = variant34[0].additional_data;
-    const field43 = field42.bytes;
-    const named46 = {
-    bytes: field43,
-    };
-    const named47 = {
-    item_id: field35,
-    new_status: match37,
-    additional_data: named46,
-    };
-       match11 = {
-           type: 'ItemStatusChanged',
-           content: named47,
-       };
-    } else if ('ItemCreated' in schemaJson) {
-       const variant48 = schemaJson.ItemCreated;
-    const field49 = variant48[0].item_id;
-    const field50 = variant48[0].metadata_url;
-    let match51: { type: 'None'} | { type: 'Some', content: {
+    const field36 = variant34[0].new_metadata_url;
+    let match37: { type: 'None'} | { type: 'Some', content: {
     url: string,
     hash: { type: 'None'} | { type: 'Some', content: SDK.HexString },
     } };
-    if ('None' in field50) {
-       match51 = {
+    if ('None' in field36) {
+       match37 = {
            type: 'None',
        };
-    } else if ('Some' in field50) {
-       const variant53 = field50.Some;
-    const field54 = variant53[0].url;
-    const field55 = variant53[0].hash;
-    let match56: { type: 'None'} | { type: 'Some', content: SDK.HexString };
-    if ('None' in field55) {
-       match56 = {
+    } else if ('Some' in field36) {
+       const variant39 = field36.Some;
+    const field40 = variant39[0].url;
+    const field41 = variant39[0].hash;
+    let match42: { type: 'None'} | { type: 'Some', content: SDK.HexString };
+    if ('None' in field41) {
+       match42 = {
            type: 'None',
        };
-    } else if ('Some' in field55) {
-       const variant58 = field55.Some;
-       match56 = {
+    } else if ('Some' in field41) {
+       const variant44 = field41.Some;
+       match42 = {
            type: 'Some',
-           content: variant58[0],
+           content: variant44[0],
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-    const named59 = {
-    url: field54,
-    hash: match56,
+    const named45 = {
+    url: field40,
+    hash: match42,
     };
-       match51 = {
+       match37 = {
            type: 'Some',
-           content: named59,
+           content: named45,
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-    const field60 = variant48[0].initial_status;
-    let match61: { type: 'Produced'} | { type: 'InTransit'} | { type: 'InStore'} | { type: 'Sold'};
-    if ('Produced' in field60) {
-       match61 = {
+    const field46 = variant34[0].new_status;
+    let match47: { type: 'Produced'} | { type: 'InTransit'} | { type: 'InStore'} | { type: 'Sold'};
+    if ('Produced' in field46) {
+       match47 = {
            type: 'Produced',
        };
-    } else if ('InTransit' in field60) {
-       match61 = {
+    } else if ('InTransit' in field46) {
+       match47 = {
            type: 'InTransit',
        };
-    } else if ('InStore' in field60) {
-       match61 = {
+    } else if ('InStore' in field46) {
+       match47 = {
            type: 'InStore',
        };
-    } else if ('Sold' in field60) {
-       match61 = {
+    } else if ('Sold' in field46) {
+       match47 = {
            type: 'Sold',
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-    const named66 = {
-    item_id: field49,
-    metadata_url: match51,
-    initial_status: match61,
+    const field52 = variant34[0].additional_data;
+    const field53 = field52.bytes;
+    const named56 = {
+    bytes: field53,
+    };
+    const named57 = {
+    item_id: field35,
+    new_metadata_url: match37,
+    new_status: match47,
+    additional_data: named56,
+    };
+       match11 = {
+           type: 'ItemStatusChanged',
+           content: named57,
+       };
+    } else if ('ItemCreated' in schemaJson) {
+       const variant58 = schemaJson.ItemCreated;
+    const field59 = variant58[0].item_id;
+    const field60 = variant58[0].metadata_url;
+    let match61: { type: 'None'} | { type: 'Some', content: {
+    url: string,
+    hash: { type: 'None'} | { type: 'Some', content: SDK.HexString },
+    } };
+    if ('None' in field60) {
+       match61 = {
+           type: 'None',
+       };
+    } else if ('Some' in field60) {
+       const variant63 = field60.Some;
+    const field64 = variant63[0].url;
+    const field65 = variant63[0].hash;
+    let match66: { type: 'None'} | { type: 'Some', content: SDK.HexString };
+    if ('None' in field65) {
+       match66 = {
+           type: 'None',
+       };
+    } else if ('Some' in field65) {
+       const variant68 = field65.Some;
+       match66 = {
+           type: 'Some',
+           content: variant68[0],
+       };
+    }
+     else {
+       throw new Error("Unexpected enum variant");
+    }
+    const named69 = {
+    url: field64,
+    hash: match66,
+    };
+       match61 = {
+           type: 'Some',
+           content: named69,
+       };
+    }
+     else {
+       throw new Error("Unexpected enum variant");
+    }
+    const field70 = variant58[0].initial_status;
+    let match71: { type: 'Produced'} | { type: 'InTransit'} | { type: 'InStore'} | { type: 'Sold'};
+    if ('Produced' in field70) {
+       match71 = {
+           type: 'Produced',
+       };
+    } else if ('InTransit' in field70) {
+       match71 = {
+           type: 'InTransit',
+       };
+    } else if ('InStore' in field70) {
+       match71 = {
+           type: 'InStore',
+       };
+    } else if ('Sold' in field70) {
+       match71 = {
+           type: 'Sold',
+       };
+    }
+     else {
+       throw new Error("Unexpected enum variant");
+    }
+    const field76 = variant58[0].additional_data;
+    const field77 = field76.bytes;
+    const named80 = {
+    bytes: field77,
+    };
+    const named81 = {
+    item_id: field59,
+    metadata_url: match61,
+    initial_status: match71,
+    additional_data: named80,
     };
        match11 = {
            type: 'ItemCreated',
-           content: named66,
+           content: named81,
        };
     } else if ('Nonce' in schemaJson) {
-       const variant67 = schemaJson.Nonce;
-    const field68 = variant67[0].account;
-    const accountAddress69 = SDK.AccountAddress.fromSchemaValue(field68);
-    const field70 = variant67[0].nonce;
-    const named71 = {
-    account: accountAddress69,
-    nonce: field70,
+       const variant82 = schemaJson.Nonce;
+    const field83 = variant82[0].account;
+    const accountAddress84 = SDK.AccountAddress.fromSchemaValue(field83);
+    const field85 = variant82[0].nonce;
+    const named86 = {
+    account: accountAddress84,
+    nonce: field85,
     };
        match11 = {
            type: 'Nonce',
-           content: named71,
+           content: named86,
        };
     }
      else {
@@ -435,19 +503,19 @@ export type GetRolesParameter = { type: 'Account', content: SDK.AccountAddress.T
  * @returns {GetRolesParameterSchemaJson} The smart contract parameter JSON.
  */
 function createGetRolesParameterSchemaJson(parameter: GetRolesParameter): GetRolesParameterSchemaJson {
-    let match72: {'Account' : [SDK.AccountAddress.SchemaValue] } | {'Contract' : [SDK.ContractAddress.SchemaValue] };
+    let match87: {'Account' : [SDK.AccountAddress.SchemaValue] } | {'Contract' : [SDK.ContractAddress.SchemaValue] };
     switch (parameter.type) {
         case 'Account':
-    const accountAddress73 = SDK.AccountAddress.toSchemaValue(parameter.content);
-            match72 = { Account: [accountAddress73], };
+    const accountAddress88 = SDK.AccountAddress.toSchemaValue(parameter.content);
+            match87 = { Account: [accountAddress88], };
         break;
         case 'Contract':
-    const contractAddress74 = SDK.ContractAddress.toSchemaValue(parameter.content);
-            match72 = { Contract: [contractAddress74], };
+    const contractAddress89 = SDK.ContractAddress.toSchemaValue(parameter.content);
+            match87 = { Contract: [contractAddress89], };
         break;
     }
 
-    return match72;
+    return match87;
 }
 
 /**
@@ -531,10 +599,10 @@ export function parseReturnValueGetRoles(invokeResult: SDK.InvokeContractResult)
     }
 
     const schemaJson = <Array<{'Admin' : [] }>>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'EAIVAQAAAAUAAABBZG1pbgI=');
-    const list75 = schemaJson.map((item76) => {
-    let match77: { type: 'Admin'};
-    if ('Admin' in item76) {
-       match77 = {
+    const list90 = schemaJson.map((item91) => {
+    let match92: { type: 'Admin'};
+    if ('Admin' in item91) {
+       match92 = {
            type: 'Admin',
        };
     }
@@ -543,9 +611,139 @@ export function parseReturnValueGetRoles(invokeResult: SDK.InvokeContractResult)
        throw new Error("Unexpected enum variant");
     }
 
-    return match77;
+    return match92;
     });
-    return list75;
+    return list90;
+}
+/** Base64 encoding of the parameter schema type for update transactions to 'getAddressesByRole' entrypoint of the 'track_and_trace' contract. */
+const base64GetAddressesByRoleParameterSchema = 'FQEAAAAFAAAAQWRtaW4C';
+/** Parameter JSON type needed by the schema for update transaction for 'getAddressesByRole' entrypoint of the 'track_and_trace' contract. */
+type GetAddressesByRoleParameterSchemaJson = {'Admin' : [] };
+/** Parameter type for update transaction for 'getAddressesByRole' entrypoint of the 'track_and_trace' contract. */
+export type GetAddressesByRoleParameter = { type: 'Admin'};
+
+/**
+ * Construct schema JSON representation used in update transaction for 'getAddressesByRole' entrypoint of the 'track_and_trace' contract.
+ * @param {GetAddressesByRoleParameter} parameter The structured parameter to construct from.
+ * @returns {GetAddressesByRoleParameterSchemaJson} The smart contract parameter JSON.
+ */
+function createGetAddressesByRoleParameterSchemaJson(parameter: GetAddressesByRoleParameter): GetAddressesByRoleParameterSchemaJson {
+    let match94: {'Admin' : [] };
+    switch (parameter.type) {
+        case 'Admin':
+            match94 = { Admin: [], };
+        break;
+    }
+
+    return match94;
+}
+
+/**
+ * Construct Parameter type used in update transaction for 'getAddressesByRole' entrypoint of the 'track_and_trace' contract.
+ * @param {GetAddressesByRoleParameter} parameter The structured parameter to construct from.
+ * @returns {SDK.Parameter.Type} The smart contract parameter.
+ */
+export function createGetAddressesByRoleParameter(parameter: GetAddressesByRoleParameter): SDK.Parameter.Type {
+    return SDK.Parameter.fromBase64SchemaType(base64GetAddressesByRoleParameterSchema, createGetAddressesByRoleParameterSchemaJson(parameter));
+}
+
+/**
+ * Construct WebWallet parameter type used in update transaction for 'getAddressesByRole' entrypoint of the 'track_and_trace' contract.
+ * @param {GetAddressesByRoleParameter} parameter The structured parameter to construct from.
+ * @returns The smart contract parameter support by the WebWallet.
+ */
+export function createGetAddressesByRoleParameterWebWallet(parameter: GetAddressesByRoleParameter) {
+    return {
+        parameters: createGetAddressesByRoleParameterSchemaJson(parameter),
+        schema: {
+            type: 'TypeSchema' as const,
+            value: SDK.toBuffer(base64GetAddressesByRoleParameterSchema, 'base64')
+        },
+    }
+}
+
+/**
+ * Send an update-contract transaction to the 'getAddressesByRole' entrypoint of the 'track_and_trace' contract.
+ * @param {TrackAndTraceContract} contractClient The client for a 'track_and_trace' smart contract instance on chain.
+ * @param {SDK.ContractTransactionMetadata} transactionMetadata - Metadata related to constructing a transaction for a smart contract.
+ * @param {GetAddressesByRoleParameter} parameter - Parameter to provide the smart contract entrypoint as part of the transaction.
+ * @param {SDK.AccountSigner} signer - The signer of the update contract transaction.
+ * @throws If the entrypoint is not successfully invoked.
+ * @returns {SDK.TransactionHash.Type} Hash of the transaction.
+ */
+export function sendGetAddressesByRole(contractClient: TrackAndTraceContract, transactionMetadata: SDK.ContractTransactionMetadata, parameter: GetAddressesByRoleParameter, signer: SDK.AccountSigner): Promise<SDK.TransactionHash.Type> {
+    return contractClient.genericContract.createAndSendUpdateTransaction(
+        SDK.EntrypointName.fromStringUnchecked('getAddressesByRole'),
+        SDK.Parameter.toBuffer,
+        transactionMetadata,
+        createGetAddressesByRoleParameter(parameter),
+        signer
+    );
+}
+
+/**
+ * Dry-run an update-contract transaction to the 'getAddressesByRole' entrypoint of the 'track_and_trace' contract.
+ * @param {TrackAndTraceContract} contractClient The client for a 'track_and_trace' smart contract instance on chain.
+ * @param {SDK.ContractAddress.Type | SDK.AccountAddress.Type} invokeMetadata - The address of the account or contract which is invoking this transaction.
+ * @param {GetAddressesByRoleParameter} parameter - Parameter to provide the smart contract entrypoint as part of the transaction.
+ * @param {SDK.BlockHash.Type} [blockHash] - Optional block hash allowing for dry-running the transaction at the end of a specific block.
+ * @throws {SDK.RpcError} If failing to communicate with the concordium node or if any of the checks fails.
+ * @returns {SDK.InvokeContractResult} The result of invoking the smart contract instance.
+ */
+export function dryRunGetAddressesByRole(contractClient: TrackAndTraceContract, parameter: GetAddressesByRoleParameter, invokeMetadata: SDK.ContractInvokeMetadata = {}, blockHash?: SDK.BlockHash.Type): Promise<SDK.InvokeContractResult> {
+    return contractClient.genericContract.dryRun.invokeMethod(
+        SDK.EntrypointName.fromStringUnchecked('getAddressesByRole'),
+        invokeMetadata,
+        SDK.Parameter.toBuffer,
+        createGetAddressesByRoleParameter(parameter),
+        blockHash
+    );
+}
+
+/** Return value for dry-running update transaction for 'getAddressesByRole' entrypoint of the 'track_and_trace' contract. */
+export type ReturnValueGetAddressesByRole = Array<{ type: 'Account', content: SDK.AccountAddress.Type } | { type: 'Contract', content: SDK.ContractAddress.Type }>;
+
+/**
+ * Get and parse the return value from dry-running update transaction for 'getAddressesByRole' entrypoint of the 'track_and_trace' contract.
+ * Returns undefined if the result is not successful.
+ * @param {SDK.InvokeContractResult} invokeResult The result from dry-running the transaction.
+ * @returns {ReturnValueGetAddressesByRole | undefined} The structured return value or undefined if result was not a success.
+ */
+export function parseReturnValueGetAddressesByRole(invokeResult: SDK.InvokeContractResult): ReturnValueGetAddressesByRole | undefined {
+    if (invokeResult.tag !== 'success') {
+        return undefined;
+    }
+
+    if (invokeResult.returnValue === undefined) {
+        throw new Error('Unexpected missing \'returnValue\' in result of invocation. Client expected a V1 smart contract.');
+    }
+
+    const schemaJson = <Array<{'Account' : [SDK.AccountAddress.SchemaValue] } | {'Contract' : [SDK.ContractAddress.SchemaValue] }>>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'EAIVAgAAAAcAAABBY2NvdW50AQEAAAALCAAAAENvbnRyYWN0AQEAAAAM');
+    const list95 = schemaJson.map((item96) => {
+    let match97: { type: 'Account', content: SDK.AccountAddress.Type } | { type: 'Contract', content: SDK.ContractAddress.Type };
+    if ('Account' in item96) {
+       const variant98 = item96.Account;
+    const accountAddress99 = SDK.AccountAddress.fromSchemaValue(variant98[0]);
+       match97 = {
+           type: 'Account',
+           content: accountAddress99,
+       };
+    } else if ('Contract' in item96) {
+       const variant100 = item96.Contract;
+    const contractAddress101 = SDK.ContractAddress.fromSchemaValue(variant100[0]);
+       match97 = {
+           type: 'Contract',
+           content: contractAddress101,
+       };
+    }
+
+     else {
+       throw new Error("Unexpected enum variant");
+    }
+
+    return match97;
+    });
+    return list95;
 }
 /** Base64 encoding of the parameter schema type for update transactions to 'getItemState' entrypoint of the 'track_and_trace' contract. */
 const base64GetItemStateParameterSchema = 'HQA=';
@@ -656,22 +854,22 @@ export function parseReturnValueGetItemState(invokeResult: SDK.InvokeContractRes
     hash: {'None' : [] } | {'Some' : [string] },
     }] },
     }>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'FAACAAAABgAAAHN0YXR1cxUEAAAACAAAAFByb2R1Y2VkAgkAAABJblRyYW5zaXQCBwAAAEluU3RvcmUCBAAAAFNvbGQCDAAAAG1ldGFkYXRhX3VybBUCAAAABAAAAE5vbmUCBAAAAFNvbWUBAQAAABQAAgAAAAMAAAB1cmwWAQQAAABoYXNoFQIAAAAEAAAATm9uZQIEAAAAU29tZQEBAAAAHiAAAAA=');
-    const field79 = schemaJson.status;
-    let match80: { type: 'Produced'} | { type: 'InTransit'} | { type: 'InStore'} | { type: 'Sold'};
-    if ('Produced' in field79) {
-       match80 = {
+    const field102 = schemaJson.status;
+    let match103: { type: 'Produced'} | { type: 'InTransit'} | { type: 'InStore'} | { type: 'Sold'};
+    if ('Produced' in field102) {
+       match103 = {
            type: 'Produced',
        };
-    } else if ('InTransit' in field79) {
-       match80 = {
+    } else if ('InTransit' in field102) {
+       match103 = {
            type: 'InTransit',
        };
-    } else if ('InStore' in field79) {
-       match80 = {
+    } else if ('InStore' in field102) {
+       match103 = {
            type: 'InStore',
        };
-    } else if ('Sold' in field79) {
-       match80 = {
+    } else if ('Sold' in field102) {
+       match103 = {
            type: 'Sold',
        };
     }
@@ -680,41 +878,41 @@ export function parseReturnValueGetItemState(invokeResult: SDK.InvokeContractRes
        throw new Error("Unexpected enum variant");
     }
 
-    const field85 = schemaJson.metadata_url;
-    let match86: { type: 'None'} | { type: 'Some', content: {
+    const field108 = schemaJson.metadata_url;
+    let match109: { type: 'None'} | { type: 'Some', content: {
     url: string,
     hash: { type: 'None'} | { type: 'Some', content: SDK.HexString },
     } };
-    if ('None' in field85) {
-       match86 = {
+    if ('None' in field108) {
+       match109 = {
            type: 'None',
        };
-    } else if ('Some' in field85) {
-       const variant88 = field85.Some;
-    const field89 = variant88[0].url;
-    const field90 = variant88[0].hash;
-    let match91: { type: 'None'} | { type: 'Some', content: SDK.HexString };
-    if ('None' in field90) {
-       match91 = {
+    } else if ('Some' in field108) {
+       const variant111 = field108.Some;
+    const field112 = variant111[0].url;
+    const field113 = variant111[0].hash;
+    let match114: { type: 'None'} | { type: 'Some', content: SDK.HexString };
+    if ('None' in field113) {
+       match114 = {
            type: 'None',
        };
-    } else if ('Some' in field90) {
-       const variant93 = field90.Some;
-       match91 = {
+    } else if ('Some' in field113) {
+       const variant116 = field113.Some;
+       match114 = {
            type: 'Some',
-           content: variant93[0],
+           content: variant116[0],
        };
     }
      else {
        throw new Error("Unexpected enum variant");
     }
-    const named94 = {
-    url: field89,
-    hash: match91,
+    const named117 = {
+    url: field112,
+    hash: match114,
     };
-       match86 = {
+       match109 = {
            type: 'Some',
-           content: named94,
+           content: named117,
        };
     }
 
@@ -722,24 +920,34 @@ export function parseReturnValueGetItemState(invokeResult: SDK.InvokeContractRes
        throw new Error("Unexpected enum variant");
     }
 
-    const named95 = {
-    status: match80,
-    metadata_url: match86,
+    const named118 = {
+    status: match103,
+    metadata_url: match109,
     };
-    return named95;
+    return named118;
 }
 /** Base64 encoding of the parameter schema type for update transactions to 'createItem' entrypoint of the 'track_and_trace' contract. */
-const base64CreateItemParameterSchema = 'FQIAAAAEAAAATm9uZQIEAAAAU29tZQEBAAAAFAACAAAAAwAAAHVybBYBBAAAAGhhc2gVAgAAAAQAAABOb25lAgQAAABTb21lAQEAAAAeIAAAAA==';
+const base64CreateItemParameterSchema = 'FAACAAAADAAAAG1ldGFkYXRhX3VybBUCAAAABAAAAE5vbmUCBAAAAFNvbWUBAQAAABQAAgAAAAMAAAB1cmwWAQQAAABoYXNoFQIAAAAEAAAATm9uZQIEAAAAU29tZQEBAAAAHiAAAAAPAAAAYWRkaXRpb25hbF9kYXRhFAABAAAABQAAAGJ5dGVzEAIC';
 /** Parameter JSON type needed by the schema for update transaction for 'createItem' entrypoint of the 'track_and_trace' contract. */
-type CreateItemParameterSchemaJson = {'None' : [] } | {'Some' : [{
+type CreateItemParameterSchemaJson = {
+    metadata_url: {'None' : [] } | {'Some' : [{
     url: string,
     hash: {'None' : [] } | {'Some' : [string] },
-    }] };
+    }] },
+    additional_data: {
+    bytes: Array<number>,
+    },
+    };
 /** Parameter type for update transaction for 'createItem' entrypoint of the 'track_and_trace' contract. */
-export type CreateItemParameter = { type: 'None'} | { type: 'Some', content: {
+export type CreateItemParameter = {
+    metadata_url: { type: 'None'} | { type: 'Some', content: {
     url: string,
     hash: { type: 'None'} | { type: 'Some', content: SDK.HexString },
-    } };
+    } },
+    additional_data: {
+    bytes: Array<number>,
+    },
+    };
 
 /**
  * Construct schema JSON representation used in update transaction for 'createItem' entrypoint of the 'track_and_trace' contract.
@@ -747,36 +955,46 @@ export type CreateItemParameter = { type: 'None'} | { type: 'Some', content: {
  * @returns {CreateItemParameterSchemaJson} The smart contract parameter JSON.
  */
 function createCreateItemParameterSchemaJson(parameter: CreateItemParameter): CreateItemParameterSchemaJson {
-    let match96: {'None' : [] } | {'Some' : [{
+    const field120 = parameter.metadata_url;
+    let match121: {'None' : [] } | {'Some' : [{
     url: string,
     hash: {'None' : [] } | {'Some' : [string] },
     }] };
-    switch (parameter.type) {
+    switch (field120.type) {
         case 'None':
-            match96 = { None: [], };
+            match121 = { None: [], };
         break;
         case 'Some':
-    const field98 = parameter.content.url;
-    const field99 = parameter.content.hash;
-    let match100: {'None' : [] } | {'Some' : [string] };
-    switch (field99.type) {
+    const field123 = field120.content.url;
+    const field124 = field120.content.hash;
+    let match125: {'None' : [] } | {'Some' : [string] };
+    switch (field124.type) {
         case 'None':
-            match100 = { None: [], };
+            match125 = { None: [], };
         break;
         case 'Some':
-            match100 = { Some: [field99.content], };
+            match125 = { Some: [field124.content], };
         break;
     }
 
-    const named97 = {
-    url: field98,
-    hash: match100,
+    const named122 = {
+    url: field123,
+    hash: match125,
     };
-            match96 = { Some: [named97], };
+            match121 = { Some: [named122], };
         break;
     }
 
-    return match96;
+    const field126 = parameter.additional_data;
+    const field128 = field126.bytes;
+    const named127 = {
+    bytes: field128,
+    };
+    const named119 = {
+    metadata_url: match121,
+    additional_data: named127,
+    };
+    return named119;
 }
 
 /**
@@ -860,69 +1078,69 @@ export function parseErrorMessageCreateItem(invokeResult: SDK.InvokeContractResu
     }
 
     const schemaJson = <{'ParseParams' : [] } | {'LogFull' : [] } | {'LogMalformed' : [] } | {'Unauthorized' : [] } | {'ItemAlreadyExists' : [] } | {'ItemDoesNotExist' : [] } | {'FinalState' : [] } | {'NoContract' : [] } | {'MissingAccount' : [] } | {'MalformedData' : [] } | {'WrongSignature' : [] } | {'NonceMismatch' : [] } | {'WrongContract' : [] } | {'WrongEntryPoint' : [] } | {'Expired' : [] } | {'Unsuccessful' : [] }>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'FRAAAAALAAAAUGFyc2VQYXJhbXMCBwAAAExvZ0Z1bGwCDAAAAExvZ01hbGZvcm1lZAIMAAAAVW5hdXRob3JpemVkAhEAAABJdGVtQWxyZWFkeUV4aXN0cwIQAAAASXRlbURvZXNOb3RFeGlzdAIKAAAARmluYWxTdGF0ZQIKAAAATm9Db250cmFjdAIOAAAATWlzc2luZ0FjY291bnQCDQAAAE1hbGZvcm1lZERhdGECDgAAAFdyb25nU2lnbmF0dXJlAg0AAABOb25jZU1pc21hdGNoAg0AAABXcm9uZ0NvbnRyYWN0Ag8AAABXcm9uZ0VudHJ5UG9pbnQCBwAAAEV4cGlyZWQCDAAAAFVuc3VjY2Vzc2Z1bAI=');
-    let match101: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'Unauthorized'} | { type: 'ItemAlreadyExists'} | { type: 'ItemDoesNotExist'} | { type: 'FinalState'} | { type: 'NoContract'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} | { type: 'Unsuccessful'};
+    let match131: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'Unauthorized'} | { type: 'ItemAlreadyExists'} | { type: 'ItemDoesNotExist'} | { type: 'FinalState'} | { type: 'NoContract'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} | { type: 'Unsuccessful'};
     if ('ParseParams' in schemaJson) {
-       match101 = {
+       match131 = {
            type: 'ParseParams',
        };
     } else if ('LogFull' in schemaJson) {
-       match101 = {
+       match131 = {
            type: 'LogFull',
        };
     } else if ('LogMalformed' in schemaJson) {
-       match101 = {
+       match131 = {
            type: 'LogMalformed',
        };
     } else if ('Unauthorized' in schemaJson) {
-       match101 = {
+       match131 = {
            type: 'Unauthorized',
        };
     } else if ('ItemAlreadyExists' in schemaJson) {
-       match101 = {
+       match131 = {
            type: 'ItemAlreadyExists',
        };
     } else if ('ItemDoesNotExist' in schemaJson) {
-       match101 = {
+       match131 = {
            type: 'ItemDoesNotExist',
        };
     } else if ('FinalState' in schemaJson) {
-       match101 = {
+       match131 = {
            type: 'FinalState',
        };
     } else if ('NoContract' in schemaJson) {
-       match101 = {
+       match131 = {
            type: 'NoContract',
        };
     } else if ('MissingAccount' in schemaJson) {
-       match101 = {
+       match131 = {
            type: 'MissingAccount',
        };
     } else if ('MalformedData' in schemaJson) {
-       match101 = {
+       match131 = {
            type: 'MalformedData',
        };
     } else if ('WrongSignature' in schemaJson) {
-       match101 = {
+       match131 = {
            type: 'WrongSignature',
        };
     } else if ('NonceMismatch' in schemaJson) {
-       match101 = {
+       match131 = {
            type: 'NonceMismatch',
        };
     } else if ('WrongContract' in schemaJson) {
-       match101 = {
+       match131 = {
            type: 'WrongContract',
        };
     } else if ('WrongEntryPoint' in schemaJson) {
-       match101 = {
+       match131 = {
            type: 'WrongEntryPoint',
        };
     } else if ('Expired' in schemaJson) {
-       match101 = {
+       match131 = {
            type: 'Expired',
        };
     } else if ('Unsuccessful' in schemaJson) {
-       match101 = {
+       match131 = {
            type: 'Unsuccessful',
        };
     }
@@ -931,13 +1149,17 @@ export function parseErrorMessageCreateItem(invokeResult: SDK.InvokeContractResu
        throw new Error("Unexpected enum variant");
     }
 
-    return match101
+    return match131
 }
 /** Base64 encoding of the parameter schema type for update transactions to 'changeItemStatus' entrypoint of the 'track_and_trace' contract. */
-const base64ChangeItemStatusParameterSchema = 'FAADAAAABwAAAGl0ZW1faWQdAAoAAABuZXdfc3RhdHVzFQQAAAAIAAAAUHJvZHVjZWQCCQAAAEluVHJhbnNpdAIHAAAASW5TdG9yZQIEAAAAU29sZAIPAAAAYWRkaXRpb25hbF9kYXRhFAABAAAABQAAAGJ5dGVzEAIC';
+const base64ChangeItemStatusParameterSchema = 'FAAEAAAABwAAAGl0ZW1faWQdABAAAABuZXdfbWV0YWRhdGFfdXJsFQIAAAAEAAAATm9uZQIEAAAAU29tZQEBAAAAFAACAAAAAwAAAHVybBYBBAAAAGhhc2gVAgAAAAQAAABOb25lAgQAAABTb21lAQEAAAAeIAAAAAoAAABuZXdfc3RhdHVzFQQAAAAIAAAAUHJvZHVjZWQCCQAAAEluVHJhbnNpdAIHAAAASW5TdG9yZQIEAAAAU29sZAIPAAAAYWRkaXRpb25hbF9kYXRhFAABAAAABQAAAGJ5dGVzEAIC';
 /** Parameter JSON type needed by the schema for update transaction for 'changeItemStatus' entrypoint of the 'track_and_trace' contract. */
 type ChangeItemStatusParameterSchemaJson = {
     item_id: string,
+    new_metadata_url: {'None' : [] } | {'Some' : [{
+    url: string,
+    hash: {'None' : [] } | {'Some' : [string] },
+    }] },
     new_status: {'Produced' : [] } | {'InTransit' : [] } | {'InStore' : [] } | {'Sold' : [] },
     additional_data: {
     bytes: Array<number>,
@@ -946,6 +1168,10 @@ type ChangeItemStatusParameterSchemaJson = {
 /** Parameter type for update transaction for 'changeItemStatus' entrypoint of the 'track_and_trace' contract. */
 export type ChangeItemStatusParameter = {
     item_id: SDK.HexString,
+    new_metadata_url: { type: 'None'} | { type: 'Some', content: {
+    url: string,
+    hash: { type: 'None'} | { type: 'Some', content: SDK.HexString },
+    } },
     new_status: { type: 'Produced'} | { type: 'InTransit'} | { type: 'InStore'} | { type: 'Sold'},
     additional_data: {
     bytes: Array<number>,
@@ -958,35 +1184,66 @@ export type ChangeItemStatusParameter = {
  * @returns {ChangeItemStatusParameterSchemaJson} The smart contract parameter JSON.
  */
 function createChangeItemStatusParameterSchemaJson(parameter: ChangeItemStatusParameter): ChangeItemStatusParameterSchemaJson {
-    const field119 = parameter.item_id;
-    const field120 = parameter.new_status;
-    let match121: {'Produced' : [] } | {'InTransit' : [] } | {'InStore' : [] } | {'Sold' : [] };
-    switch (field120.type) {
-        case 'Produced':
-            match121 = { Produced: [], };
+    const field149 = parameter.item_id;
+    const field150 = parameter.new_metadata_url;
+    let match151: {'None' : [] } | {'Some' : [{
+    url: string,
+    hash: {'None' : [] } | {'Some' : [string] },
+    }] };
+    switch (field150.type) {
+        case 'None':
+            match151 = { None: [], };
         break;
-        case 'InTransit':
-            match121 = { InTransit: [], };
+        case 'Some':
+    const field153 = field150.content.url;
+    const field154 = field150.content.hash;
+    let match155: {'None' : [] } | {'Some' : [string] };
+    switch (field154.type) {
+        case 'None':
+            match155 = { None: [], };
         break;
-        case 'InStore':
-            match121 = { InStore: [], };
-        break;
-        case 'Sold':
-            match121 = { Sold: [], };
+        case 'Some':
+            match155 = { Some: [field154.content], };
         break;
     }
 
-    const field122 = parameter.additional_data;
-    const field124 = field122.bytes;
-    const named123 = {
-    bytes: field124,
+    const named152 = {
+    url: field153,
+    hash: match155,
     };
-    const named118 = {
-    item_id: field119,
-    new_status: match121,
-    additional_data: named123,
+            match151 = { Some: [named152], };
+        break;
+    }
+
+    const field156 = parameter.new_status;
+    let match157: {'Produced' : [] } | {'InTransit' : [] } | {'InStore' : [] } | {'Sold' : [] };
+    switch (field156.type) {
+        case 'Produced':
+            match157 = { Produced: [], };
+        break;
+        case 'InTransit':
+            match157 = { InTransit: [], };
+        break;
+        case 'InStore':
+            match157 = { InStore: [], };
+        break;
+        case 'Sold':
+            match157 = { Sold: [], };
+        break;
+    }
+
+    const field158 = parameter.additional_data;
+    const field160 = field158.bytes;
+    const named159 = {
+    bytes: field160,
     };
-    return named118;
+    const named148 = {
+    item_id: field149,
+    new_metadata_url: match151,
+    new_status: match157,
+    additional_data: named159,
+    };
+    return named148;
 }
 
 /**
@@ -1070,69 +1327,69 @@ export function parseErrorMessageChangeItemStatus(invokeResult: SDK.InvokeContra
     }
 
     const schemaJson = <{'ParseParams' : [] } | {'LogFull' : [] } | {'LogMalformed' : [] } | {'Unauthorized' : [] } | {'ItemAlreadyExists' : [] } | {'ItemDoesNotExist' : [] } | {'FinalState' : [] } | {'NoContract' : [] } | {'MissingAccount' : [] } | {'MalformedData' : [] } | {'WrongSignature' : [] } | {'NonceMismatch' : [] } | {'WrongContract' : [] } | {'WrongEntryPoint' : [] } | {'Expired' : [] } | {'Unsuccessful' : [] }>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'FRAAAAALAAAAUGFyc2VQYXJhbXMCBwAAAExvZ0Z1bGwCDAAAAExvZ01hbGZvcm1lZAIMAAAAVW5hdXRob3JpemVkAhEAAABJdGVtQWxyZWFkeUV4aXN0cwIQAAAASXRlbURvZXNOb3RFeGlzdAIKAAAARmluYWxTdGF0ZQIKAAAATm9Db250cmFjdAIOAAAATWlzc2luZ0FjY291bnQCDQAAAE1hbGZvcm1lZERhdGECDgAAAFdyb25nU2lnbmF0dXJlAg0AAABOb25jZU1pc21hdGNoAg0AAABXcm9uZ0NvbnRyYWN0Ag8AAABXcm9uZ0VudHJ5UG9pbnQCBwAAAEV4cGlyZWQCDAAAAFVuc3VjY2Vzc2Z1bAI=');
-    let match127: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'Unauthorized'} | { type: 'ItemAlreadyExists'} | { type: 'ItemDoesNotExist'} | { type: 'FinalState'} | { type: 'NoContract'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} | { type: 'Unsuccessful'};
+    let match163: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'Unauthorized'} | { type: 'ItemAlreadyExists'} | { type: 'ItemDoesNotExist'} | { type: 'FinalState'} | { type: 'NoContract'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} | { type: 'Unsuccessful'};
     if ('ParseParams' in schemaJson) {
-       match127 = {
+       match163 = {
            type: 'ParseParams',
        };
     } else if ('LogFull' in schemaJson) {
-       match127 = {
+       match163 = {
            type: 'LogFull',
        };
     } else if ('LogMalformed' in schemaJson) {
-       match127 = {
+       match163 = {
            type: 'LogMalformed',
        };
     } else if ('Unauthorized' in schemaJson) {
-       match127 = {
+       match163 = {
            type: 'Unauthorized',
        };
     } else if ('ItemAlreadyExists' in schemaJson) {
-       match127 = {
+       match163 = {
            type: 'ItemAlreadyExists',
        };
     } else if ('ItemDoesNotExist' in schemaJson) {
-       match127 = {
+       match163 = {
            type: 'ItemDoesNotExist',
        };
     } else if ('FinalState' in schemaJson) {
-       match127 = {
+       match163 = {
            type: 'FinalState',
        };
     } else if ('NoContract' in schemaJson) {
-       match127 = {
+       match163 = {
            type: 'NoContract',
        };
     } else if ('MissingAccount' in schemaJson) {
-       match127 = {
+       match163 = {
            type: 'MissingAccount',
        };
     } else if ('MalformedData' in schemaJson) {
-       match127 = {
+       match163 = {
            type: 'MalformedData',
        };
     } else if ('WrongSignature' in schemaJson) {
-       match127 = {
+       match163 = {
            type: 'WrongSignature',
        };
     } else if ('NonceMismatch' in schemaJson) {
-       match127 = {
+       match163 = {
            type: 'NonceMismatch',
        };
     } else if ('WrongContract' in schemaJson) {
-       match127 = {
+       match163 = {
            type: 'WrongContract',
        };
     } else if ('WrongEntryPoint' in schemaJson) {
-       match127 = {
+       match163 = {
            type: 'WrongEntryPoint',
        };
     } else if ('Expired' in schemaJson) {
-       match127 = {
+       match163 = {
            type: 'Expired',
        };
     } else if ('Unsuccessful' in schemaJson) {
-       match127 = {
+       match163 = {
            type: 'Unsuccessful',
        };
     }
@@ -1141,7 +1398,7 @@ export function parseErrorMessageChangeItemStatus(invokeResult: SDK.InvokeContra
        throw new Error("Unexpected enum variant");
     }
 
-    return match127
+    return match163
 }
 /** Base64 encoding of the parameter schema type for update transactions to 'updateStateMachine' entrypoint of the 'track_and_trace' contract. */
 const base64UpdateStateMachineParameterSchema = 'FAAEAAAABwAAAGFkZHJlc3MLCwAAAGZyb21fc3RhdHVzFQQAAAAIAAAAUHJvZHVjZWQCCQAAAEluVHJhbnNpdAIHAAAASW5TdG9yZQIEAAAAU29sZAIJAAAAdG9fc3RhdHVzFQQAAAAIAAAAUHJvZHVjZWQCCQAAAEluVHJhbnNpdAIHAAAASW5TdG9yZQIEAAAAU29sZAIGAAAAdXBkYXRlFQIAAAAGAAAAUmVtb3ZlAgMAAABBZGQC';
@@ -1166,60 +1423,60 @@ export type UpdateStateMachineParameter = {
  * @returns {UpdateStateMachineParameterSchemaJson} The smart contract parameter JSON.
  */
 function createUpdateStateMachineParameterSchemaJson(parameter: UpdateStateMachineParameter): UpdateStateMachineParameterSchemaJson {
-    const field145 = parameter.address;
-    const accountAddress146 = SDK.AccountAddress.toSchemaValue(field145);
-    const field147 = parameter.from_status;
-    let match148: {'Produced' : [] } | {'InTransit' : [] } | {'InStore' : [] } | {'Sold' : [] };
-    switch (field147.type) {
+    const field181 = parameter.address;
+    const accountAddress182 = SDK.AccountAddress.toSchemaValue(field181);
+    const field183 = parameter.from_status;
+    let match184: {'Produced' : [] } | {'InTransit' : [] } | {'InStore' : [] } | {'Sold' : [] };
+    switch (field183.type) {
         case 'Produced':
-            match148 = { Produced: [], };
+            match184 = { Produced: [], };
         break;
         case 'InTransit':
-            match148 = { InTransit: [], };
+            match184 = { InTransit: [], };
         break;
         case 'InStore':
-            match148 = { InStore: [], };
+            match184 = { InStore: [], };
         break;
         case 'Sold':
-            match148 = { Sold: [], };
+            match184 = { Sold: [], };
         break;
     }
 
-    const field149 = parameter.to_status;
-    let match150: {'Produced' : [] } | {'InTransit' : [] } | {'InStore' : [] } | {'Sold' : [] };
-    switch (field149.type) {
+    const field185 = parameter.to_status;
+    let match186: {'Produced' : [] } | {'InTransit' : [] } | {'InStore' : [] } | {'Sold' : [] };
+    switch (field185.type) {
         case 'Produced':
-            match150 = { Produced: [], };
+            match186 = { Produced: [], };
         break;
         case 'InTransit':
-            match150 = { InTransit: [], };
+            match186 = { InTransit: [], };
         break;
         case 'InStore':
-            match150 = { InStore: [], };
+            match186 = { InStore: [], };
         break;
         case 'Sold':
-            match150 = { Sold: [], };
+            match186 = { Sold: [], };
         break;
     }
 
-    const field151 = parameter.update;
-    let match152: {'Remove' : [] } | {'Add' : [] };
-    switch (field151.type) {
+    const field187 = parameter.update;
+    let match188: {'Remove' : [] } | {'Add' : [] };
+    switch (field187.type) {
         case 'Remove':
-            match152 = { Remove: [], };
+            match188 = { Remove: [], };
         break;
         case 'Add':
-            match152 = { Add: [], };
+            match188 = { Add: [], };
         break;
     }
 
-    const named144 = {
-    address: accountAddress146,
-    from_status: match148,
-    to_status: match150,
-    update: match152,
+    const named180 = {
+    address: accountAddress182,
+    from_status: match184,
+    to_status: match186,
+    update: match188,
     };
-    return named144;
+    return named180;
 }
 
 /**
@@ -1303,69 +1560,69 @@ export function parseErrorMessageUpdateStateMachine(invokeResult: SDK.InvokeCont
     }
 
     const schemaJson = <{'ParseParams' : [] } | {'LogFull' : [] } | {'LogMalformed' : [] } | {'Unauthorized' : [] } | {'ItemAlreadyExists' : [] } | {'ItemDoesNotExist' : [] } | {'FinalState' : [] } | {'NoContract' : [] } | {'MissingAccount' : [] } | {'MalformedData' : [] } | {'WrongSignature' : [] } | {'NonceMismatch' : [] } | {'WrongContract' : [] } | {'WrongEntryPoint' : [] } | {'Expired' : [] } | {'Unsuccessful' : [] }>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'FRAAAAALAAAAUGFyc2VQYXJhbXMCBwAAAExvZ0Z1bGwCDAAAAExvZ01hbGZvcm1lZAIMAAAAVW5hdXRob3JpemVkAhEAAABJdGVtQWxyZWFkeUV4aXN0cwIQAAAASXRlbURvZXNOb3RFeGlzdAIKAAAARmluYWxTdGF0ZQIKAAAATm9Db250cmFjdAIOAAAATWlzc2luZ0FjY291bnQCDQAAAE1hbGZvcm1lZERhdGECDgAAAFdyb25nU2lnbmF0dXJlAg0AAABOb25jZU1pc21hdGNoAg0AAABXcm9uZ0NvbnRyYWN0Ag8AAABXcm9uZ0VudHJ5UG9pbnQCBwAAAEV4cGlyZWQCDAAAAFVuc3VjY2Vzc2Z1bAI=');
-    let match153: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'Unauthorized'} | { type: 'ItemAlreadyExists'} | { type: 'ItemDoesNotExist'} | { type: 'FinalState'} | { type: 'NoContract'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} | { type: 'Unsuccessful'};
+    let match189: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'Unauthorized'} | { type: 'ItemAlreadyExists'} | { type: 'ItemDoesNotExist'} | { type: 'FinalState'} | { type: 'NoContract'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} | { type: 'Unsuccessful'};
     if ('ParseParams' in schemaJson) {
-       match153 = {
+       match189 = {
            type: 'ParseParams',
        };
     } else if ('LogFull' in schemaJson) {
-       match153 = {
+       match189 = {
            type: 'LogFull',
        };
     } else if ('LogMalformed' in schemaJson) {
-       match153 = {
+       match189 = {
            type: 'LogMalformed',
        };
     } else if ('Unauthorized' in schemaJson) {
-       match153 = {
+       match189 = {
            type: 'Unauthorized',
        };
     } else if ('ItemAlreadyExists' in schemaJson) {
-       match153 = {
+       match189 = {
            type: 'ItemAlreadyExists',
        };
     } else if ('ItemDoesNotExist' in schemaJson) {
-       match153 = {
+       match189 = {
            type: 'ItemDoesNotExist',
        };
     } else if ('FinalState' in schemaJson) {
-       match153 = {
+       match189 = {
            type: 'FinalState',
        };
     } else if ('NoContract' in schemaJson) {
-       match153 = {
+       match189 = {
            type: 'NoContract',
        };
     } else if ('MissingAccount' in schemaJson) {
-       match153 = {
+       match189 = {
            type: 'MissingAccount',
        };
     } else if ('MalformedData' in schemaJson) {
-       match153 = {
+       match189 = {
            type: 'MalformedData',
        };
     } else if ('WrongSignature' in schemaJson) {
-       match153 = {
+       match189 = {
            type: 'WrongSignature',
        };
     } else if ('NonceMismatch' in schemaJson) {
-       match153 = {
+       match189 = {
            type: 'NonceMismatch',
        };
     } else if ('WrongContract' in schemaJson) {
-       match153 = {
+       match189 = {
            type: 'WrongContract',
        };
     } else if ('WrongEntryPoint' in schemaJson) {
-       match153 = {
+       match189 = {
            type: 'WrongEntryPoint',
        };
     } else if ('Expired' in schemaJson) {
-       match153 = {
+       match189 = {
            type: 'Expired',
        };
     } else if ('Unsuccessful' in schemaJson) {
-       match153 = {
+       match189 = {
            type: 'Unsuccessful',
        };
     }
@@ -1374,7 +1631,7 @@ export function parseErrorMessageUpdateStateMachine(invokeResult: SDK.InvokeCont
        throw new Error("Unexpected enum variant");
     }
 
-    return match153
+    return match189
 }
 /** Base64 encoding of the parameter schema type for update transactions to 'grantRole' entrypoint of the 'track_and_trace' contract. */
 const base64GrantRoleParameterSchema = 'FAACAAAABwAAAGFkZHJlc3MVAgAAAAcAAABBY2NvdW50AQEAAAALCAAAAENvbnRyYWN0AQEAAAAMBAAAAHJvbGUVAQAAAAUAAABBZG1pbgI=';
@@ -1395,32 +1652,32 @@ export type GrantRoleParameter = {
  * @returns {GrantRoleParameterSchemaJson} The smart contract parameter JSON.
  */
 function createGrantRoleParameterSchemaJson(parameter: GrantRoleParameter): GrantRoleParameterSchemaJson {
-    const field171 = parameter.address;
-    let match172: {'Account' : [SDK.AccountAddress.SchemaValue] } | {'Contract' : [SDK.ContractAddress.SchemaValue] };
-    switch (field171.type) {
+    const field207 = parameter.address;
+    let match208: {'Account' : [SDK.AccountAddress.SchemaValue] } | {'Contract' : [SDK.ContractAddress.SchemaValue] };
+    switch (field207.type) {
         case 'Account':
-    const accountAddress173 = SDK.AccountAddress.toSchemaValue(field171.content);
-            match172 = { Account: [accountAddress173], };
+    const accountAddress209 = SDK.AccountAddress.toSchemaValue(field207.content);
+            match208 = { Account: [accountAddress209], };
         break;
         case 'Contract':
-    const contractAddress174 = SDK.ContractAddress.toSchemaValue(field171.content);
-            match172 = { Contract: [contractAddress174], };
+    const contractAddress210 = SDK.ContractAddress.toSchemaValue(field207.content);
+            match208 = { Contract: [contractAddress210], };
         break;
     }
 
-    const field175 = parameter.role;
-    let match176: {'Admin' : [] };
-    switch (field175.type) {
+    const field211 = parameter.role;
+    let match212: {'Admin' : [] };
+    switch (field211.type) {
         case 'Admin':
-            match176 = { Admin: [], };
+            match212 = { Admin: [], };
         break;
     }
 
-    const named170 = {
-    address: match172,
-    role: match176,
+    const named206 = {
+    address: match208,
+    role: match212,
     };
-    return named170;
+    return named206;
 }
 
 /**
@@ -1504,69 +1761,69 @@ export function parseErrorMessageGrantRole(invokeResult: SDK.InvokeContractResul
     }
 
     const schemaJson = <{'ParseParams' : [] } | {'LogFull' : [] } | {'LogMalformed' : [] } | {'Unauthorized' : [] } | {'ItemAlreadyExists' : [] } | {'ItemDoesNotExist' : [] } | {'FinalState' : [] } | {'NoContract' : [] } | {'MissingAccount' : [] } | {'MalformedData' : [] } | {'WrongSignature' : [] } | {'NonceMismatch' : [] } | {'WrongContract' : [] } | {'WrongEntryPoint' : [] } | {'Expired' : [] } | {'Unsuccessful' : [] }>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'FRAAAAALAAAAUGFyc2VQYXJhbXMCBwAAAExvZ0Z1bGwCDAAAAExvZ01hbGZvcm1lZAIMAAAAVW5hdXRob3JpemVkAhEAAABJdGVtQWxyZWFkeUV4aXN0cwIQAAAASXRlbURvZXNOb3RFeGlzdAIKAAAARmluYWxTdGF0ZQIKAAAATm9Db250cmFjdAIOAAAATWlzc2luZ0FjY291bnQCDQAAAE1hbGZvcm1lZERhdGECDgAAAFdyb25nU2lnbmF0dXJlAg0AAABOb25jZU1pc21hdGNoAg0AAABXcm9uZ0NvbnRyYWN0Ag8AAABXcm9uZ0VudHJ5UG9pbnQCBwAAAEV4cGlyZWQCDAAAAFVuc3VjY2Vzc2Z1bAI=');
-    let match177: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'Unauthorized'} | { type: 'ItemAlreadyExists'} | { type: 'ItemDoesNotExist'} | { type: 'FinalState'} | { type: 'NoContract'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} | { type: 'Unsuccessful'};
+    let match213: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'Unauthorized'} | { type: 'ItemAlreadyExists'} | { type: 'ItemDoesNotExist'} | { type: 'FinalState'} | { type: 'NoContract'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} | { type: 'Unsuccessful'};
     if ('ParseParams' in schemaJson) {
-       match177 = {
+       match213 = {
            type: 'ParseParams',
        };
     } else if ('LogFull' in schemaJson) {
-       match177 = {
+       match213 = {
            type: 'LogFull',
        };
     } else if ('LogMalformed' in schemaJson) {
-       match177 = {
+       match213 = {
            type: 'LogMalformed',
        };
     } else if ('Unauthorized' in schemaJson) {
-       match177 = {
+       match213 = {
            type: 'Unauthorized',
        };
     } else if ('ItemAlreadyExists' in schemaJson) {
-       match177 = {
+       match213 = {
            type: 'ItemAlreadyExists',
        };
     } else if ('ItemDoesNotExist' in schemaJson) {
-       match177 = {
+       match213 = {
            type: 'ItemDoesNotExist',
        };
     } else if ('FinalState' in schemaJson) {
-       match177 = {
+       match213 = {
            type: 'FinalState',
        };
     } else if ('NoContract' in schemaJson) {
-       match177 = {
+       match213 = {
            type: 'NoContract',
        };
     } else if ('MissingAccount' in schemaJson) {
-       match177 = {
+       match213 = {
            type: 'MissingAccount',
        };
     } else if ('MalformedData' in schemaJson) {
-       match177 = {
+       match213 = {
            type: 'MalformedData',
        };
     } else if ('WrongSignature' in schemaJson) {
-       match177 = {
+       match213 = {
            type: 'WrongSignature',
        };
     } else if ('NonceMismatch' in schemaJson) {
-       match177 = {
+       match213 = {
            type: 'NonceMismatch',
        };
     } else if ('WrongContract' in schemaJson) {
-       match177 = {
+       match213 = {
            type: 'WrongContract',
        };
     } else if ('WrongEntryPoint' in schemaJson) {
-       match177 = {
+       match213 = {
            type: 'WrongEntryPoint',
        };
     } else if ('Expired' in schemaJson) {
-       match177 = {
+       match213 = {
            type: 'Expired',
        };
     } else if ('Unsuccessful' in schemaJson) {
-       match177 = {
+       match213 = {
            type: 'Unsuccessful',
        };
     }
@@ -1575,7 +1832,7 @@ export function parseErrorMessageGrantRole(invokeResult: SDK.InvokeContractResul
        throw new Error("Unexpected enum variant");
     }
 
-    return match177
+    return match213
 }
 /** Base64 encoding of the parameter schema type for update transactions to 'revokeRole' entrypoint of the 'track_and_trace' contract. */
 const base64RevokeRoleParameterSchema = 'FAACAAAABwAAAGFkZHJlc3MVAgAAAAcAAABBY2NvdW50AQEAAAALCAAAAENvbnRyYWN0AQEAAAAMBAAAAHJvbGUVAQAAAAUAAABBZG1pbgI=';
@@ -1596,32 +1853,32 @@ export type RevokeRoleParameter = {
  * @returns {RevokeRoleParameterSchemaJson} The smart contract parameter JSON.
  */
 function createRevokeRoleParameterSchemaJson(parameter: RevokeRoleParameter): RevokeRoleParameterSchemaJson {
-    const field195 = parameter.address;
-    let match196: {'Account' : [SDK.AccountAddress.SchemaValue] } | {'Contract' : [SDK.ContractAddress.SchemaValue] };
-    switch (field195.type) {
+    const field231 = parameter.address;
+    let match232: {'Account' : [SDK.AccountAddress.SchemaValue] } | {'Contract' : [SDK.ContractAddress.SchemaValue] };
+    switch (field231.type) {
         case 'Account':
-    const accountAddress197 = SDK.AccountAddress.toSchemaValue(field195.content);
-            match196 = { Account: [accountAddress197], };
+    const accountAddress233 = SDK.AccountAddress.toSchemaValue(field231.content);
+            match232 = { Account: [accountAddress233], };
         break;
         case 'Contract':
-    const contractAddress198 = SDK.ContractAddress.toSchemaValue(field195.content);
-            match196 = { Contract: [contractAddress198], };
+    const contractAddress234 = SDK.ContractAddress.toSchemaValue(field231.content);
+            match232 = { Contract: [contractAddress234], };
         break;
     }
 
-    const field199 = parameter.role;
-    let match200: {'Admin' : [] };
-    switch (field199.type) {
+    const field235 = parameter.role;
+    let match236: {'Admin' : [] };
+    switch (field235.type) {
         case 'Admin':
-            match200 = { Admin: [], };
+            match236 = { Admin: [], };
         break;
     }
 
-    const named194 = {
-    address: match196,
-    role: match200,
+    const named230 = {
+    address: match232,
+    role: match236,
     };
-    return named194;
+    return named230;
 }
 
 /**
@@ -1705,69 +1962,69 @@ export function parseErrorMessageRevokeRole(invokeResult: SDK.InvokeContractResu
     }
 
     const schemaJson = <{'ParseParams' : [] } | {'LogFull' : [] } | {'LogMalformed' : [] } | {'Unauthorized' : [] } | {'ItemAlreadyExists' : [] } | {'ItemDoesNotExist' : [] } | {'FinalState' : [] } | {'NoContract' : [] } | {'MissingAccount' : [] } | {'MalformedData' : [] } | {'WrongSignature' : [] } | {'NonceMismatch' : [] } | {'WrongContract' : [] } | {'WrongEntryPoint' : [] } | {'Expired' : [] } | {'Unsuccessful' : [] }>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'FRAAAAALAAAAUGFyc2VQYXJhbXMCBwAAAExvZ0Z1bGwCDAAAAExvZ01hbGZvcm1lZAIMAAAAVW5hdXRob3JpemVkAhEAAABJdGVtQWxyZWFkeUV4aXN0cwIQAAAASXRlbURvZXNOb3RFeGlzdAIKAAAARmluYWxTdGF0ZQIKAAAATm9Db250cmFjdAIOAAAATWlzc2luZ0FjY291bnQCDQAAAE1hbGZvcm1lZERhdGECDgAAAFdyb25nU2lnbmF0dXJlAg0AAABOb25jZU1pc21hdGNoAg0AAABXcm9uZ0NvbnRyYWN0Ag8AAABXcm9uZ0VudHJ5UG9pbnQCBwAAAEV4cGlyZWQCDAAAAFVuc3VjY2Vzc2Z1bAI=');
-    let match201: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'Unauthorized'} | { type: 'ItemAlreadyExists'} | { type: 'ItemDoesNotExist'} | { type: 'FinalState'} | { type: 'NoContract'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} | { type: 'Unsuccessful'};
+    let match237: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'Unauthorized'} | { type: 'ItemAlreadyExists'} | { type: 'ItemDoesNotExist'} | { type: 'FinalState'} | { type: 'NoContract'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} | { type: 'Unsuccessful'};
     if ('ParseParams' in schemaJson) {
-       match201 = {
+       match237 = {
            type: 'ParseParams',
        };
     } else if ('LogFull' in schemaJson) {
-       match201 = {
+       match237 = {
            type: 'LogFull',
        };
     } else if ('LogMalformed' in schemaJson) {
-       match201 = {
+       match237 = {
            type: 'LogMalformed',
        };
     } else if ('Unauthorized' in schemaJson) {
-       match201 = {
+       match237 = {
            type: 'Unauthorized',
        };
     } else if ('ItemAlreadyExists' in schemaJson) {
-       match201 = {
+       match237 = {
            type: 'ItemAlreadyExists',
        };
     } else if ('ItemDoesNotExist' in schemaJson) {
-       match201 = {
+       match237 = {
            type: 'ItemDoesNotExist',
        };
     } else if ('FinalState' in schemaJson) {
-       match201 = {
+       match237 = {
            type: 'FinalState',
        };
     } else if ('NoContract' in schemaJson) {
-       match201 = {
+       match237 = {
            type: 'NoContract',
        };
     } else if ('MissingAccount' in schemaJson) {
-       match201 = {
+       match237 = {
            type: 'MissingAccount',
        };
     } else if ('MalformedData' in schemaJson) {
-       match201 = {
+       match237 = {
            type: 'MalformedData',
        };
     } else if ('WrongSignature' in schemaJson) {
-       match201 = {
+       match237 = {
            type: 'WrongSignature',
        };
     } else if ('NonceMismatch' in schemaJson) {
-       match201 = {
+       match237 = {
            type: 'NonceMismatch',
        };
     } else if ('WrongContract' in schemaJson) {
-       match201 = {
+       match237 = {
            type: 'WrongContract',
        };
     } else if ('WrongEntryPoint' in schemaJson) {
-       match201 = {
+       match237 = {
            type: 'WrongEntryPoint',
        };
     } else if ('Expired' in schemaJson) {
-       match201 = {
+       match237 = {
            type: 'Expired',
        };
     } else if ('Unsuccessful' in schemaJson) {
-       match201 = {
+       match237 = {
            type: 'Unsuccessful',
        };
     }
@@ -1776,7 +2033,7 @@ export function parseErrorMessageRevokeRole(invokeResult: SDK.InvokeContractResu
        throw new Error("Unexpected enum variant");
     }
 
-    return match201
+    return match237
 }
 /** Base64 encoding of the parameter schema type for update transactions to 'permit' entrypoint of the 'track_and_trace' contract. */
 const base64PermitParameterSchema = 'FAADAAAACQAAAHNpZ25hdHVyZRIAAhIAAhUBAAAABwAAAEVkMjU1MTkBAQAAAB5AAAAABgAAAHNpZ25lcgsHAAAAbWVzc2FnZRQABQAAABAAAABjb250cmFjdF9hZGRyZXNzDAUAAABub25jZQUJAAAAdGltZXN0YW1wDQsAAABlbnRyeV9wb2ludBYBBwAAAHBheWxvYWQQAQI=';
@@ -1811,44 +2068,44 @@ export type PermitParameter = {
  * @returns {PermitParameterSchemaJson} The smart contract parameter JSON.
  */
 function createPermitParameterSchemaJson(parameter: PermitParameter): PermitParameterSchemaJson {
-    const field219 = parameter.signature;
-    const map220: [number, [number, {'Ed25519' : [string] }][]][] = [...field219.entries()].map(([key221, value222]) => {
-    const map223: [number, {'Ed25519' : [string] }][] = [...value222.entries()].map(([key224, value225]) => {
-    let match226: {'Ed25519' : [string] };
-    switch (value225.type) {
+    const field255 = parameter.signature;
+    const map256: [number, [number, {'Ed25519' : [string] }][]][] = [...field255.entries()].map(([key257, value258]) => {
+    const map259: [number, {'Ed25519' : [string] }][] = [...value258.entries()].map(([key260, value261]) => {
+    let match262: {'Ed25519' : [string] };
+    switch (value261.type) {
         case 'Ed25519':
-            match226 = { Ed25519: [value225.content], };
+            match262 = { Ed25519: [value261.content], };
         break;
     }
 
-        return [key224, match226];
+        return [key260, match262];
     });
-        return [key221, map223];
+        return [key257, map259];
     });
-    const field227 = parameter.signer;
-    const accountAddress228 = SDK.AccountAddress.toSchemaValue(field227);
-    const field229 = parameter.message;
-    const field231 = field229.contract_address;
-    const contractAddress232 = SDK.ContractAddress.toSchemaValue(field231);
-    const field233 = field229.nonce;
-    const number234 = BigInt(field233);
-    const field235 = field229.timestamp;
-    const timestamp236 = SDK.Timestamp.toSchemaValue(field235);
-    const field237 = field229.entry_point;
-    const field238 = field229.payload;
-    const named230 = {
-    contract_address: contractAddress232,
-    nonce: number234,
-    timestamp: timestamp236,
-    entry_point: field237,
-    payload: field238,
+    const field263 = parameter.signer;
+    const accountAddress264 = SDK.AccountAddress.toSchemaValue(field263);
+    const field265 = parameter.message;
+    const field267 = field265.contract_address;
+    const contractAddress268 = SDK.ContractAddress.toSchemaValue(field267);
+    const field269 = field265.nonce;
+    const number270 = BigInt(field269);
+    const field271 = field265.timestamp;
+    const timestamp272 = SDK.Timestamp.toSchemaValue(field271);
+    const field273 = field265.entry_point;
+    const field274 = field265.payload;
+    const named266 = {
+    contract_address: contractAddress268,
+    nonce: number270,
+    timestamp: timestamp272,
+    entry_point: field273,
+    payload: field274,
     };
-    const named218 = {
-    signature: map220,
-    signer: accountAddress228,
-    message: named230,
+    const named254 = {
+    signature: map256,
+    signer: accountAddress264,
+    message: named266,
     };
-    return named218;
+    return named254;
 }
 
 /**
@@ -1932,69 +2189,69 @@ export function parseErrorMessagePermit(invokeResult: SDK.InvokeContractResult):
     }
 
     const schemaJson = <{'ParseParams' : [] } | {'LogFull' : [] } | {'LogMalformed' : [] } | {'Unauthorized' : [] } | {'ItemAlreadyExists' : [] } | {'ItemDoesNotExist' : [] } | {'FinalState' : [] } | {'NoContract' : [] } | {'MissingAccount' : [] } | {'MalformedData' : [] } | {'WrongSignature' : [] } | {'NonceMismatch' : [] } | {'WrongContract' : [] } | {'WrongEntryPoint' : [] } | {'Expired' : [] } | {'Unsuccessful' : [] }>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'FRAAAAALAAAAUGFyc2VQYXJhbXMCBwAAAExvZ0Z1bGwCDAAAAExvZ01hbGZvcm1lZAIMAAAAVW5hdXRob3JpemVkAhEAAABJdGVtQWxyZWFkeUV4aXN0cwIQAAAASXRlbURvZXNOb3RFeGlzdAIKAAAARmluYWxTdGF0ZQIKAAAATm9Db250cmFjdAIOAAAATWlzc2luZ0FjY291bnQCDQAAAE1hbGZvcm1lZERhdGECDgAAAFdyb25nU2lnbmF0dXJlAg0AAABOb25jZU1pc21hdGNoAg0AAABXcm9uZ0NvbnRyYWN0Ag8AAABXcm9uZ0VudHJ5UG9pbnQCBwAAAEV4cGlyZWQCDAAAAFVuc3VjY2Vzc2Z1bAI=');
-    let match241: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'Unauthorized'} | { type: 'ItemAlreadyExists'} | { type: 'ItemDoesNotExist'} | { type: 'FinalState'} | { type: 'NoContract'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} | { type: 'Unsuccessful'};
+    let match277: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'Unauthorized'} | { type: 'ItemAlreadyExists'} | { type: 'ItemDoesNotExist'} | { type: 'FinalState'} | { type: 'NoContract'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} | { type: 'Unsuccessful'};
     if ('ParseParams' in schemaJson) {
-       match241 = {
+       match277 = {
            type: 'ParseParams',
        };
     } else if ('LogFull' in schemaJson) {
-       match241 = {
+       match277 = {
            type: 'LogFull',
        };
     } else if ('LogMalformed' in schemaJson) {
-       match241 = {
+       match277 = {
            type: 'LogMalformed',
        };
     } else if ('Unauthorized' in schemaJson) {
-       match241 = {
+       match277 = {
            type: 'Unauthorized',
        };
     } else if ('ItemAlreadyExists' in schemaJson) {
-       match241 = {
+       match277 = {
            type: 'ItemAlreadyExists',
        };
     } else if ('ItemDoesNotExist' in schemaJson) {
-       match241 = {
+       match277 = {
            type: 'ItemDoesNotExist',
        };
     } else if ('FinalState' in schemaJson) {
-       match241 = {
+       match277 = {
            type: 'FinalState',
        };
     } else if ('NoContract' in schemaJson) {
-       match241 = {
+       match277 = {
            type: 'NoContract',
        };
     } else if ('MissingAccount' in schemaJson) {
-       match241 = {
+       match277 = {
            type: 'MissingAccount',
        };
     } else if ('MalformedData' in schemaJson) {
-       match241 = {
+       match277 = {
            type: 'MalformedData',
        };
     } else if ('WrongSignature' in schemaJson) {
-       match241 = {
+       match277 = {
            type: 'WrongSignature',
        };
     } else if ('NonceMismatch' in schemaJson) {
-       match241 = {
+       match277 = {
            type: 'NonceMismatch',
        };
     } else if ('WrongContract' in schemaJson) {
-       match241 = {
+       match277 = {
            type: 'WrongContract',
        };
     } else if ('WrongEntryPoint' in schemaJson) {
-       match241 = {
+       match277 = {
            type: 'WrongEntryPoint',
        };
     } else if ('Expired' in schemaJson) {
-       match241 = {
+       match277 = {
            type: 'Expired',
        };
     } else if ('Unsuccessful' in schemaJson) {
-       match241 = {
+       match277 = {
            type: 'Unsuccessful',
        };
     }
@@ -2003,7 +2260,7 @@ export function parseErrorMessagePermit(invokeResult: SDK.InvokeContractResult):
        throw new Error("Unexpected enum variant");
     }
 
-    return match241
+    return match277
 }
 /** Base64 encoding of the parameter schema type for update transactions to 'viewMessageHash' entrypoint of the 'track_and_trace' contract. */
 const base64ViewMessageHashParameterSchema = 'FAADAAAACQAAAHNpZ25hdHVyZRIAAhIAAhUBAAAABwAAAEVkMjU1MTkBAQAAAB5AAAAABgAAAHNpZ25lcgsHAAAAbWVzc2FnZRQABQAAABAAAABjb250cmFjdF9hZGRyZXNzDAUAAABub25jZQUJAAAAdGltZXN0YW1wDQsAAABlbnRyeV9wb2ludBYBBwAAAHBheWxvYWQQAQI=';
@@ -2038,44 +2295,44 @@ export type ViewMessageHashParameter = {
  * @returns {ViewMessageHashParameterSchemaJson} The smart contract parameter JSON.
  */
 function createViewMessageHashParameterSchemaJson(parameter: ViewMessageHashParameter): ViewMessageHashParameterSchemaJson {
-    const field259 = parameter.signature;
-    const map260: [number, [number, {'Ed25519' : [string] }][]][] = [...field259.entries()].map(([key261, value262]) => {
-    const map263: [number, {'Ed25519' : [string] }][] = [...value262.entries()].map(([key264, value265]) => {
-    let match266: {'Ed25519' : [string] };
-    switch (value265.type) {
+    const field295 = parameter.signature;
+    const map296: [number, [number, {'Ed25519' : [string] }][]][] = [...field295.entries()].map(([key297, value298]) => {
+    const map299: [number, {'Ed25519' : [string] }][] = [...value298.entries()].map(([key300, value301]) => {
+    let match302: {'Ed25519' : [string] };
+    switch (value301.type) {
         case 'Ed25519':
-            match266 = { Ed25519: [value265.content], };
+            match302 = { Ed25519: [value301.content], };
         break;
     }
 
-        return [key264, match266];
+        return [key300, match302];
     });
-        return [key261, map263];
+        return [key297, map299];
     });
-    const field267 = parameter.signer;
-    const accountAddress268 = SDK.AccountAddress.toSchemaValue(field267);
-    const field269 = parameter.message;
-    const field271 = field269.contract_address;
-    const contractAddress272 = SDK.ContractAddress.toSchemaValue(field271);
-    const field273 = field269.nonce;
-    const number274 = BigInt(field273);
-    const field275 = field269.timestamp;
-    const timestamp276 = SDK.Timestamp.toSchemaValue(field275);
-    const field277 = field269.entry_point;
-    const field278 = field269.payload;
-    const named270 = {
-    contract_address: contractAddress272,
-    nonce: number274,
-    timestamp: timestamp276,
-    entry_point: field277,
-    payload: field278,
+    const field303 = parameter.signer;
+    const accountAddress304 = SDK.AccountAddress.toSchemaValue(field303);
+    const field305 = parameter.message;
+    const field307 = field305.contract_address;
+    const contractAddress308 = SDK.ContractAddress.toSchemaValue(field307);
+    const field309 = field305.nonce;
+    const number310 = BigInt(field309);
+    const field311 = field305.timestamp;
+    const timestamp312 = SDK.Timestamp.toSchemaValue(field311);
+    const field313 = field305.entry_point;
+    const field314 = field305.payload;
+    const named306 = {
+    contract_address: contractAddress308,
+    nonce: number310,
+    timestamp: timestamp312,
+    entry_point: field313,
+    payload: field314,
     };
-    const named258 = {
-    signature: map260,
-    signer: accountAddress268,
-    message: named270,
+    const named294 = {
+    signature: map296,
+    signer: accountAddress304,
+    message: named306,
     };
-    return named258;
+    return named294;
 }
 
 /**
@@ -2181,69 +2438,69 @@ export function parseErrorMessageViewMessageHash(invokeResult: SDK.InvokeContrac
     }
 
     const schemaJson = <{'ParseParams' : [] } | {'LogFull' : [] } | {'LogMalformed' : [] } | {'Unauthorized' : [] } | {'ItemAlreadyExists' : [] } | {'ItemDoesNotExist' : [] } | {'FinalState' : [] } | {'NoContract' : [] } | {'MissingAccount' : [] } | {'MalformedData' : [] } | {'WrongSignature' : [] } | {'NonceMismatch' : [] } | {'WrongContract' : [] } | {'WrongEntryPoint' : [] } | {'Expired' : [] } | {'Unsuccessful' : [] }>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'FRAAAAALAAAAUGFyc2VQYXJhbXMCBwAAAExvZ0Z1bGwCDAAAAExvZ01hbGZvcm1lZAIMAAAAVW5hdXRob3JpemVkAhEAAABJdGVtQWxyZWFkeUV4aXN0cwIQAAAASXRlbURvZXNOb3RFeGlzdAIKAAAARmluYWxTdGF0ZQIKAAAATm9Db250cmFjdAIOAAAATWlzc2luZ0FjY291bnQCDQAAAE1hbGZvcm1lZERhdGECDgAAAFdyb25nU2lnbmF0dXJlAg0AAABOb25jZU1pc21hdGNoAg0AAABXcm9uZ0NvbnRyYWN0Ag8AAABXcm9uZ0VudHJ5UG9pbnQCBwAAAEV4cGlyZWQCDAAAAFVuc3VjY2Vzc2Z1bAI=');
-    let match283: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'Unauthorized'} | { type: 'ItemAlreadyExists'} | { type: 'ItemDoesNotExist'} | { type: 'FinalState'} | { type: 'NoContract'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} | { type: 'Unsuccessful'};
+    let match319: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'Unauthorized'} | { type: 'ItemAlreadyExists'} | { type: 'ItemDoesNotExist'} | { type: 'FinalState'} | { type: 'NoContract'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} | { type: 'Unsuccessful'};
     if ('ParseParams' in schemaJson) {
-       match283 = {
+       match319 = {
            type: 'ParseParams',
        };
     } else if ('LogFull' in schemaJson) {
-       match283 = {
+       match319 = {
            type: 'LogFull',
        };
     } else if ('LogMalformed' in schemaJson) {
-       match283 = {
+       match319 = {
            type: 'LogMalformed',
        };
     } else if ('Unauthorized' in schemaJson) {
-       match283 = {
+       match319 = {
            type: 'Unauthorized',
        };
     } else if ('ItemAlreadyExists' in schemaJson) {
-       match283 = {
+       match319 = {
            type: 'ItemAlreadyExists',
        };
     } else if ('ItemDoesNotExist' in schemaJson) {
-       match283 = {
+       match319 = {
            type: 'ItemDoesNotExist',
        };
     } else if ('FinalState' in schemaJson) {
-       match283 = {
+       match319 = {
            type: 'FinalState',
        };
     } else if ('NoContract' in schemaJson) {
-       match283 = {
+       match319 = {
            type: 'NoContract',
        };
     } else if ('MissingAccount' in schemaJson) {
-       match283 = {
+       match319 = {
            type: 'MissingAccount',
        };
     } else if ('MalformedData' in schemaJson) {
-       match283 = {
+       match319 = {
            type: 'MalformedData',
        };
     } else if ('WrongSignature' in schemaJson) {
-       match283 = {
+       match319 = {
            type: 'WrongSignature',
        };
     } else if ('NonceMismatch' in schemaJson) {
-       match283 = {
+       match319 = {
            type: 'NonceMismatch',
        };
     } else if ('WrongContract' in schemaJson) {
-       match283 = {
+       match319 = {
            type: 'WrongContract',
        };
     } else if ('WrongEntryPoint' in schemaJson) {
-       match283 = {
+       match319 = {
            type: 'WrongEntryPoint',
        };
     } else if ('Expired' in schemaJson) {
-       match283 = {
+       match319 = {
            type: 'Expired',
        };
     } else if ('Unsuccessful' in schemaJson) {
-       match283 = {
+       match319 = {
            type: 'Unsuccessful',
        };
     }
@@ -2252,7 +2509,7 @@ export function parseErrorMessageViewMessageHash(invokeResult: SDK.InvokeContrac
        throw new Error("Unexpected enum variant");
     }
 
-    return match283
+    return match319
 }
 /** Base64 encoding of the parameter schema type for update transactions to 'supports' entrypoint of the 'track_and_trace' contract. */
 const base64SupportsParameterSchema = 'EAEWAA==';
@@ -2351,25 +2608,25 @@ export function parseReturnValueSupports(invokeResult: SDK.InvokeContractResult)
     }
 
     const schemaJson = <Array<{'NoSupport' : [] } | {'Support' : [] } | {'SupportBy' : [Array<SDK.ContractAddress.SchemaValue>] }>>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'EAEVAwAAAAkAAABOb1N1cHBvcnQCBwAAAFN1cHBvcnQCCQAAAFN1cHBvcnRCeQEBAAAAEAAM');
-    const list302 = schemaJson.map((item303) => {
-    let match304: { type: 'NoSupport'} | { type: 'Support'} | { type: 'SupportBy', content: Array<SDK.ContractAddress.Type> };
-    if ('NoSupport' in item303) {
-       match304 = {
+    const list338 = schemaJson.map((item339) => {
+    let match340: { type: 'NoSupport'} | { type: 'Support'} | { type: 'SupportBy', content: Array<SDK.ContractAddress.Type> };
+    if ('NoSupport' in item339) {
+       match340 = {
            type: 'NoSupport',
        };
-    } else if ('Support' in item303) {
-       match304 = {
+    } else if ('Support' in item339) {
+       match340 = {
            type: 'Support',
        };
-    } else if ('SupportBy' in item303) {
-       const variant307 = item303.SupportBy;
-    const list308 = variant307[0].map((item309) => {
-    const contractAddress310 = SDK.ContractAddress.fromSchemaValue(item309);
-    return contractAddress310;
+    } else if ('SupportBy' in item339) {
+       const variant343 = item339.SupportBy;
+    const list344 = variant343[0].map((item345) => {
+    const contractAddress346 = SDK.ContractAddress.fromSchemaValue(item345);
+    return contractAddress346;
     });
-       match304 = {
+       match340 = {
            type: 'SupportBy',
-           content: list308,
+           content: list344,
        };
     }
 
@@ -2377,9 +2634,9 @@ export function parseReturnValueSupports(invokeResult: SDK.InvokeContractResult)
        throw new Error("Unexpected enum variant");
     }
 
-    return match304;
+    return match340;
     });
-    return list302;
+    return list338;
 }
 
 /** Error message for dry-running update transaction for 'supports' entrypoint of the 'track_and_trace' contract. */
@@ -2401,69 +2658,69 @@ export function parseErrorMessageSupports(invokeResult: SDK.InvokeContractResult
     }
 
     const schemaJson = <{'ParseParams' : [] } | {'LogFull' : [] } | {'LogMalformed' : [] } | {'Unauthorized' : [] } | {'ItemAlreadyExists' : [] } | {'ItemDoesNotExist' : [] } | {'FinalState' : [] } | {'NoContract' : [] } | {'MissingAccount' : [] } | {'MalformedData' : [] } | {'WrongSignature' : [] } | {'NonceMismatch' : [] } | {'WrongContract' : [] } | {'WrongEntryPoint' : [] } | {'Expired' : [] } | {'Unsuccessful' : [] }>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'FRAAAAALAAAAUGFyc2VQYXJhbXMCBwAAAExvZ0Z1bGwCDAAAAExvZ01hbGZvcm1lZAIMAAAAVW5hdXRob3JpemVkAhEAAABJdGVtQWxyZWFkeUV4aXN0cwIQAAAASXRlbURvZXNOb3RFeGlzdAIKAAAARmluYWxTdGF0ZQIKAAAATm9Db250cmFjdAIOAAAATWlzc2luZ0FjY291bnQCDQAAAE1hbGZvcm1lZERhdGECDgAAAFdyb25nU2lnbmF0dXJlAg0AAABOb25jZU1pc21hdGNoAg0AAABXcm9uZ0NvbnRyYWN0Ag8AAABXcm9uZ0VudHJ5UG9pbnQCBwAAAEV4cGlyZWQCDAAAAFVuc3VjY2Vzc2Z1bAI=');
-    let match311: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'Unauthorized'} | { type: 'ItemAlreadyExists'} | { type: 'ItemDoesNotExist'} | { type: 'FinalState'} | { type: 'NoContract'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} | { type: 'Unsuccessful'};
+    let match347: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'Unauthorized'} | { type: 'ItemAlreadyExists'} | { type: 'ItemDoesNotExist'} | { type: 'FinalState'} | { type: 'NoContract'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} | { type: 'Unsuccessful'};
     if ('ParseParams' in schemaJson) {
-       match311 = {
+       match347 = {
            type: 'ParseParams',
        };
     } else if ('LogFull' in schemaJson) {
-       match311 = {
+       match347 = {
            type: 'LogFull',
        };
     } else if ('LogMalformed' in schemaJson) {
-       match311 = {
+       match347 = {
            type: 'LogMalformed',
        };
     } else if ('Unauthorized' in schemaJson) {
-       match311 = {
+       match347 = {
            type: 'Unauthorized',
        };
     } else if ('ItemAlreadyExists' in schemaJson) {
-       match311 = {
+       match347 = {
            type: 'ItemAlreadyExists',
        };
     } else if ('ItemDoesNotExist' in schemaJson) {
-       match311 = {
+       match347 = {
            type: 'ItemDoesNotExist',
        };
     } else if ('FinalState' in schemaJson) {
-       match311 = {
+       match347 = {
            type: 'FinalState',
        };
     } else if ('NoContract' in schemaJson) {
-       match311 = {
+       match347 = {
            type: 'NoContract',
        };
     } else if ('MissingAccount' in schemaJson) {
-       match311 = {
+       match347 = {
            type: 'MissingAccount',
        };
     } else if ('MalformedData' in schemaJson) {
-       match311 = {
+       match347 = {
            type: 'MalformedData',
        };
     } else if ('WrongSignature' in schemaJson) {
-       match311 = {
+       match347 = {
            type: 'WrongSignature',
        };
     } else if ('NonceMismatch' in schemaJson) {
-       match311 = {
+       match347 = {
            type: 'NonceMismatch',
        };
     } else if ('WrongContract' in schemaJson) {
-       match311 = {
+       match347 = {
            type: 'WrongContract',
        };
     } else if ('WrongEntryPoint' in schemaJson) {
-       match311 = {
+       match347 = {
            type: 'WrongEntryPoint',
        };
     } else if ('Expired' in schemaJson) {
-       match311 = {
+       match347 = {
            type: 'Expired',
        };
     } else if ('Unsuccessful' in schemaJson) {
-       match311 = {
+       match347 = {
            type: 'Unsuccessful',
        };
     }
@@ -2472,7 +2729,7 @@ export function parseErrorMessageSupports(invokeResult: SDK.InvokeContractResult
        throw new Error("Unexpected enum variant");
     }
 
-    return match311
+    return match347
 }
 /** Base64 encoding of the parameter schema type for update transactions to 'supportsPermit' entrypoint of the 'track_and_trace' contract. */
 const base64SupportsPermitParameterSchema = 'FAABAAAABwAAAHF1ZXJpZXMQARYB';
@@ -2491,11 +2748,11 @@ export type SupportsPermitParameter = {
  * @returns {SupportsPermitParameterSchemaJson} The smart contract parameter JSON.
  */
 function createSupportsPermitParameterSchemaJson(parameter: SupportsPermitParameter): SupportsPermitParameterSchemaJson {
-    const field329 = parameter.queries;
-    const named328 = {
-    queries: field329,
+    const field365 = parameter.queries;
+    const named364 = {
+    queries: field365,
     };
-    return named328;
+    return named364;
 }
 
 /**
@@ -2579,25 +2836,25 @@ export function parseReturnValueSupportsPermit(invokeResult: SDK.InvokeContractR
     }
 
     const schemaJson = <Array<{'NoSupport' : [] } | {'Support' : [] } | {'SupportBy' : [Array<SDK.ContractAddress.SchemaValue>] }>>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'EAEVAwAAAAkAAABOb1N1cHBvcnQCBwAAAFN1cHBvcnQCCQAAAFN1cHBvcnRCeQEBAAAAEAAM');
-    const list332 = schemaJson.map((item333) => {
-    let match334: { type: 'NoSupport'} | { type: 'Support'} | { type: 'SupportBy', content: Array<SDK.ContractAddress.Type> };
-    if ('NoSupport' in item333) {
-       match334 = {
+    const list368 = schemaJson.map((item369) => {
+    let match370: { type: 'NoSupport'} | { type: 'Support'} | { type: 'SupportBy', content: Array<SDK.ContractAddress.Type> };
+    if ('NoSupport' in item369) {
+       match370 = {
            type: 'NoSupport',
        };
-    } else if ('Support' in item333) {
-       match334 = {
+    } else if ('Support' in item369) {
+       match370 = {
            type: 'Support',
        };
-    } else if ('SupportBy' in item333) {
-       const variant337 = item333.SupportBy;
-    const list338 = variant337[0].map((item339) => {
-    const contractAddress340 = SDK.ContractAddress.fromSchemaValue(item339);
-    return contractAddress340;
+    } else if ('SupportBy' in item369) {
+       const variant373 = item369.SupportBy;
+    const list374 = variant373[0].map((item375) => {
+    const contractAddress376 = SDK.ContractAddress.fromSchemaValue(item375);
+    return contractAddress376;
     });
-       match334 = {
+       match370 = {
            type: 'SupportBy',
-           content: list338,
+           content: list374,
        };
     }
 
@@ -2605,9 +2862,9 @@ export function parseReturnValueSupportsPermit(invokeResult: SDK.InvokeContractR
        throw new Error("Unexpected enum variant");
     }
 
-    return match334;
+    return match370;
     });
-    return list332;
+    return list368;
 }
 
 /** Error message for dry-running update transaction for 'supportsPermit' entrypoint of the 'track_and_trace' contract. */
@@ -2629,69 +2886,69 @@ export function parseErrorMessageSupportsPermit(invokeResult: SDK.InvokeContract
     }
 
     const schemaJson = <{'ParseParams' : [] } | {'LogFull' : [] } | {'LogMalformed' : [] } | {'Unauthorized' : [] } | {'ItemAlreadyExists' : [] } | {'ItemDoesNotExist' : [] } | {'FinalState' : [] } | {'NoContract' : [] } | {'MissingAccount' : [] } | {'MalformedData' : [] } | {'WrongSignature' : [] } | {'NonceMismatch' : [] } | {'WrongContract' : [] } | {'WrongEntryPoint' : [] } | {'Expired' : [] } | {'Unsuccessful' : [] }>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'FRAAAAALAAAAUGFyc2VQYXJhbXMCBwAAAExvZ0Z1bGwCDAAAAExvZ01hbGZvcm1lZAIMAAAAVW5hdXRob3JpemVkAhEAAABJdGVtQWxyZWFkeUV4aXN0cwIQAAAASXRlbURvZXNOb3RFeGlzdAIKAAAARmluYWxTdGF0ZQIKAAAATm9Db250cmFjdAIOAAAATWlzc2luZ0FjY291bnQCDQAAAE1hbGZvcm1lZERhdGECDgAAAFdyb25nU2lnbmF0dXJlAg0AAABOb25jZU1pc21hdGNoAg0AAABXcm9uZ0NvbnRyYWN0Ag8AAABXcm9uZ0VudHJ5UG9pbnQCBwAAAEV4cGlyZWQCDAAAAFVuc3VjY2Vzc2Z1bAI=');
-    let match341: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'Unauthorized'} | { type: 'ItemAlreadyExists'} | { type: 'ItemDoesNotExist'} | { type: 'FinalState'} | { type: 'NoContract'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} | { type: 'Unsuccessful'};
+    let match377: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'Unauthorized'} | { type: 'ItemAlreadyExists'} | { type: 'ItemDoesNotExist'} | { type: 'FinalState'} | { type: 'NoContract'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} | { type: 'Unsuccessful'};
     if ('ParseParams' in schemaJson) {
-       match341 = {
+       match377 = {
            type: 'ParseParams',
        };
     } else if ('LogFull' in schemaJson) {
-       match341 = {
+       match377 = {
            type: 'LogFull',
        };
     } else if ('LogMalformed' in schemaJson) {
-       match341 = {
+       match377 = {
            type: 'LogMalformed',
        };
     } else if ('Unauthorized' in schemaJson) {
-       match341 = {
+       match377 = {
            type: 'Unauthorized',
        };
     } else if ('ItemAlreadyExists' in schemaJson) {
-       match341 = {
+       match377 = {
            type: 'ItemAlreadyExists',
        };
     } else if ('ItemDoesNotExist' in schemaJson) {
-       match341 = {
+       match377 = {
            type: 'ItemDoesNotExist',
        };
     } else if ('FinalState' in schemaJson) {
-       match341 = {
+       match377 = {
            type: 'FinalState',
        };
     } else if ('NoContract' in schemaJson) {
-       match341 = {
+       match377 = {
            type: 'NoContract',
        };
     } else if ('MissingAccount' in schemaJson) {
-       match341 = {
+       match377 = {
            type: 'MissingAccount',
        };
     } else if ('MalformedData' in schemaJson) {
-       match341 = {
+       match377 = {
            type: 'MalformedData',
        };
     } else if ('WrongSignature' in schemaJson) {
-       match341 = {
+       match377 = {
            type: 'WrongSignature',
        };
     } else if ('NonceMismatch' in schemaJson) {
-       match341 = {
+       match377 = {
            type: 'NonceMismatch',
        };
     } else if ('WrongContract' in schemaJson) {
-       match341 = {
+       match377 = {
            type: 'WrongContract',
        };
     } else if ('WrongEntryPoint' in schemaJson) {
-       match341 = {
+       match377 = {
            type: 'WrongEntryPoint',
        };
     } else if ('Expired' in schemaJson) {
-       match341 = {
+       match377 = {
            type: 'Expired',
        };
     } else if ('Unsuccessful' in schemaJson) {
-       match341 = {
+       match377 = {
            type: 'Unsuccessful',
        };
     }
@@ -2700,7 +2957,7 @@ export function parseErrorMessageSupportsPermit(invokeResult: SDK.InvokeContract
        throw new Error("Unexpected enum variant");
     }
 
-    return match341
+    return match377
 }
 /** Base64 encoding of the parameter schema type for update transactions to 'serializationHelper' entrypoint of the 'track_and_trace' contract. */
 const base64SerializationHelperParameterSchema = 'FAAFAAAAEAAAAGNvbnRyYWN0X2FkZHJlc3MMBQAAAG5vbmNlBQkAAAB0aW1lc3RhbXANCwAAAGVudHJ5X3BvaW50FgEHAAAAcGF5bG9hZBABAg==';
@@ -2727,22 +2984,22 @@ export type SerializationHelperParameter = {
  * @returns {SerializationHelperParameterSchemaJson} The smart contract parameter JSON.
  */
 function createSerializationHelperParameterSchemaJson(parameter: SerializationHelperParameter): SerializationHelperParameterSchemaJson {
-    const field359 = parameter.contract_address;
-    const contractAddress360 = SDK.ContractAddress.toSchemaValue(field359);
-    const field361 = parameter.nonce;
-    const number362 = BigInt(field361);
-    const field363 = parameter.timestamp;
-    const timestamp364 = SDK.Timestamp.toSchemaValue(field363);
-    const field365 = parameter.entry_point;
-    const field366 = parameter.payload;
-    const named358 = {
-    contract_address: contractAddress360,
-    nonce: number362,
-    timestamp: timestamp364,
-    entry_point: field365,
-    payload: field366,
+    const field395 = parameter.contract_address;
+    const contractAddress396 = SDK.ContractAddress.toSchemaValue(field395);
+    const field397 = parameter.nonce;
+    const number398 = BigInt(field397);
+    const field399 = parameter.timestamp;
+    const timestamp400 = SDK.Timestamp.toSchemaValue(field399);
+    const field401 = parameter.entry_point;
+    const field402 = parameter.payload;
+    const named394 = {
+    contract_address: contractAddress396,
+    nonce: number398,
+    timestamp: timestamp400,
+    entry_point: field401,
+    payload: field402,
     };
-    return named358;
+    return named394;
 }
 
 /**
@@ -2819,11 +3076,11 @@ export type NonceOfParameter = Array<SDK.AccountAddress.Type>;
  * @returns {NonceOfParameterSchemaJson} The smart contract parameter JSON.
  */
 function createNonceOfParameterSchemaJson(parameter: NonceOfParameter): NonceOfParameterSchemaJson {
-    const list369 = parameter.map((item370) => {
-    const accountAddress371 = SDK.AccountAddress.toSchemaValue(item370);
-    return accountAddress371;
+    const list405 = parameter.map((item406) => {
+    const accountAddress407 = SDK.AccountAddress.toSchemaValue(item406);
+    return accountAddress407;
     });
-    return list369;
+    return list405;
 }
 
 /**
@@ -2929,69 +3186,69 @@ export function parseErrorMessageNonceOf(invokeResult: SDK.InvokeContractResult)
     }
 
     const schemaJson = <{'ParseParams' : [] } | {'LogFull' : [] } | {'LogMalformed' : [] } | {'Unauthorized' : [] } | {'ItemAlreadyExists' : [] } | {'ItemDoesNotExist' : [] } | {'FinalState' : [] } | {'NoContract' : [] } | {'MissingAccount' : [] } | {'MalformedData' : [] } | {'WrongSignature' : [] } | {'NonceMismatch' : [] } | {'WrongContract' : [] } | {'WrongEntryPoint' : [] } | {'Expired' : [] } | {'Unsuccessful' : [] }>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'FRAAAAALAAAAUGFyc2VQYXJhbXMCBwAAAExvZ0Z1bGwCDAAAAExvZ01hbGZvcm1lZAIMAAAAVW5hdXRob3JpemVkAhEAAABJdGVtQWxyZWFkeUV4aXN0cwIQAAAASXRlbURvZXNOb3RFeGlzdAIKAAAARmluYWxTdGF0ZQIKAAAATm9Db250cmFjdAIOAAAATWlzc2luZ0FjY291bnQCDQAAAE1hbGZvcm1lZERhdGECDgAAAFdyb25nU2lnbmF0dXJlAg0AAABOb25jZU1pc21hdGNoAg0AAABXcm9uZ0NvbnRyYWN0Ag8AAABXcm9uZ0VudHJ5UG9pbnQCBwAAAEV4cGlyZWQCDAAAAFVuc3VjY2Vzc2Z1bAI=');
-    let match374: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'Unauthorized'} | { type: 'ItemAlreadyExists'} | { type: 'ItemDoesNotExist'} | { type: 'FinalState'} | { type: 'NoContract'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} | { type: 'Unsuccessful'};
+    let match410: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'Unauthorized'} | { type: 'ItemAlreadyExists'} | { type: 'ItemDoesNotExist'} | { type: 'FinalState'} | { type: 'NoContract'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} | { type: 'Unsuccessful'};
     if ('ParseParams' in schemaJson) {
-       match374 = {
+       match410 = {
            type: 'ParseParams',
        };
     } else if ('LogFull' in schemaJson) {
-       match374 = {
+       match410 = {
            type: 'LogFull',
        };
     } else if ('LogMalformed' in schemaJson) {
-       match374 = {
+       match410 = {
            type: 'LogMalformed',
        };
     } else if ('Unauthorized' in schemaJson) {
-       match374 = {
+       match410 = {
            type: 'Unauthorized',
        };
     } else if ('ItemAlreadyExists' in schemaJson) {
-       match374 = {
+       match410 = {
            type: 'ItemAlreadyExists',
        };
     } else if ('ItemDoesNotExist' in schemaJson) {
-       match374 = {
+       match410 = {
            type: 'ItemDoesNotExist',
        };
     } else if ('FinalState' in schemaJson) {
-       match374 = {
+       match410 = {
            type: 'FinalState',
        };
     } else if ('NoContract' in schemaJson) {
-       match374 = {
+       match410 = {
            type: 'NoContract',
        };
     } else if ('MissingAccount' in schemaJson) {
-       match374 = {
+       match410 = {
            type: 'MissingAccount',
        };
     } else if ('MalformedData' in schemaJson) {
-       match374 = {
+       match410 = {
            type: 'MalformedData',
        };
     } else if ('WrongSignature' in schemaJson) {
-       match374 = {
+       match410 = {
            type: 'WrongSignature',
        };
     } else if ('NonceMismatch' in schemaJson) {
-       match374 = {
+       match410 = {
            type: 'NonceMismatch',
        };
     } else if ('WrongContract' in schemaJson) {
-       match374 = {
+       match410 = {
            type: 'WrongContract',
        };
     } else if ('WrongEntryPoint' in schemaJson) {
-       match374 = {
+       match410 = {
            type: 'WrongEntryPoint',
        };
     } else if ('Expired' in schemaJson) {
-       match374 = {
+       match410 = {
            type: 'Expired',
        };
     } else if ('Unsuccessful' in schemaJson) {
-       match374 = {
+       match410 = {
            type: 'Unsuccessful',
        };
     }
@@ -3000,7 +3257,7 @@ export function parseErrorMessageNonceOf(invokeResult: SDK.InvokeContractResult)
        throw new Error("Unexpected enum variant");
     }
 
-    return match374
+    return match410
 }
 /** Base64 encoding of the parameter schema type for update transactions to 'hasRole' entrypoint of the 'track_and_trace' contract. */
 const base64HasRoleParameterSchema = 'FAACAAAABwAAAGFkZHJlc3MVAgAAAAcAAABBY2NvdW50AQEAAAALCAAAAENvbnRyYWN0AQEAAAAMBAAAAHJvbGUVAQAAAAUAAABBZG1pbgI=';
@@ -3021,32 +3278,32 @@ export type HasRoleParameter = {
  * @returns {HasRoleParameterSchemaJson} The smart contract parameter JSON.
  */
 function createHasRoleParameterSchemaJson(parameter: HasRoleParameter): HasRoleParameterSchemaJson {
-    const field392 = parameter.address;
-    let match393: {'Account' : [SDK.AccountAddress.SchemaValue] } | {'Contract' : [SDK.ContractAddress.SchemaValue] };
-    switch (field392.type) {
+    const field428 = parameter.address;
+    let match429: {'Account' : [SDK.AccountAddress.SchemaValue] } | {'Contract' : [SDK.ContractAddress.SchemaValue] };
+    switch (field428.type) {
         case 'Account':
-    const accountAddress394 = SDK.AccountAddress.toSchemaValue(field392.content);
-            match393 = { Account: [accountAddress394], };
+    const accountAddress430 = SDK.AccountAddress.toSchemaValue(field428.content);
+            match429 = { Account: [accountAddress430], };
         break;
         case 'Contract':
-    const contractAddress395 = SDK.ContractAddress.toSchemaValue(field392.content);
-            match393 = { Contract: [contractAddress395], };
+    const contractAddress431 = SDK.ContractAddress.toSchemaValue(field428.content);
+            match429 = { Contract: [contractAddress431], };
         break;
     }
 
-    const field396 = parameter.role;
-    let match397: {'Admin' : [] };
-    switch (field396.type) {
+    const field432 = parameter.role;
+    let match433: {'Admin' : [] };
+    switch (field432.type) {
         case 'Admin':
-            match397 = { Admin: [], };
+            match433 = { Admin: [], };
         break;
     }
 
-    const named391 = {
-    address: match393,
-    role: match397,
+    const named427 = {
+    address: match429,
+    role: match433,
     };
-    return named391;
+    return named427;
 }
 
 /**
@@ -3152,69 +3409,69 @@ export function parseErrorMessageHasRole(invokeResult: SDK.InvokeContractResult)
     }
 
     const schemaJson = <{'ParseParams' : [] } | {'LogFull' : [] } | {'LogMalformed' : [] } | {'Unauthorized' : [] } | {'ItemAlreadyExists' : [] } | {'ItemDoesNotExist' : [] } | {'FinalState' : [] } | {'NoContract' : [] } | {'MissingAccount' : [] } | {'MalformedData' : [] } | {'WrongSignature' : [] } | {'NonceMismatch' : [] } | {'WrongContract' : [] } | {'WrongEntryPoint' : [] } | {'Expired' : [] } | {'Unsuccessful' : [] }>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'FRAAAAALAAAAUGFyc2VQYXJhbXMCBwAAAExvZ0Z1bGwCDAAAAExvZ01hbGZvcm1lZAIMAAAAVW5hdXRob3JpemVkAhEAAABJdGVtQWxyZWFkeUV4aXN0cwIQAAAASXRlbURvZXNOb3RFeGlzdAIKAAAARmluYWxTdGF0ZQIKAAAATm9Db250cmFjdAIOAAAATWlzc2luZ0FjY291bnQCDQAAAE1hbGZvcm1lZERhdGECDgAAAFdyb25nU2lnbmF0dXJlAg0AAABOb25jZU1pc21hdGNoAg0AAABXcm9uZ0NvbnRyYWN0Ag8AAABXcm9uZ0VudHJ5UG9pbnQCBwAAAEV4cGlyZWQCDAAAAFVuc3VjY2Vzc2Z1bAI=');
-    let match398: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'Unauthorized'} | { type: 'ItemAlreadyExists'} | { type: 'ItemDoesNotExist'} | { type: 'FinalState'} | { type: 'NoContract'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} | { type: 'Unsuccessful'};
+    let match434: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'Unauthorized'} | { type: 'ItemAlreadyExists'} | { type: 'ItemDoesNotExist'} | { type: 'FinalState'} | { type: 'NoContract'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} | { type: 'Unsuccessful'};
     if ('ParseParams' in schemaJson) {
-       match398 = {
+       match434 = {
            type: 'ParseParams',
        };
     } else if ('LogFull' in schemaJson) {
-       match398 = {
+       match434 = {
            type: 'LogFull',
        };
     } else if ('LogMalformed' in schemaJson) {
-       match398 = {
+       match434 = {
            type: 'LogMalformed',
        };
     } else if ('Unauthorized' in schemaJson) {
-       match398 = {
+       match434 = {
            type: 'Unauthorized',
        };
     } else if ('ItemAlreadyExists' in schemaJson) {
-       match398 = {
+       match434 = {
            type: 'ItemAlreadyExists',
        };
     } else if ('ItemDoesNotExist' in schemaJson) {
-       match398 = {
+       match434 = {
            type: 'ItemDoesNotExist',
        };
     } else if ('FinalState' in schemaJson) {
-       match398 = {
+       match434 = {
            type: 'FinalState',
        };
     } else if ('NoContract' in schemaJson) {
-       match398 = {
+       match434 = {
            type: 'NoContract',
        };
     } else if ('MissingAccount' in schemaJson) {
-       match398 = {
+       match434 = {
            type: 'MissingAccount',
        };
     } else if ('MalformedData' in schemaJson) {
-       match398 = {
+       match434 = {
            type: 'MalformedData',
        };
     } else if ('WrongSignature' in schemaJson) {
-       match398 = {
+       match434 = {
            type: 'WrongSignature',
        };
     } else if ('NonceMismatch' in schemaJson) {
-       match398 = {
+       match434 = {
            type: 'NonceMismatch',
        };
     } else if ('WrongContract' in schemaJson) {
-       match398 = {
+       match434 = {
            type: 'WrongContract',
        };
     } else if ('WrongEntryPoint' in schemaJson) {
-       match398 = {
+       match434 = {
            type: 'WrongEntryPoint',
        };
     } else if ('Expired' in schemaJson) {
-       match398 = {
+       match434 = {
            type: 'Expired',
        };
     } else if ('Unsuccessful' in schemaJson) {
-       match398 = {
+       match434 = {
            type: 'Unsuccessful',
        };
     }
@@ -3223,7 +3480,7 @@ export function parseErrorMessageHasRole(invokeResult: SDK.InvokeContractResult)
        throw new Error("Unexpected enum variant");
     }
 
-    return match398
+    return match434
 }
 /** Base64 encoding of the parameter schema type for update transactions to 'isTransitionEdge' entrypoint of the 'track_and_trace' contract. */
 const base64IsTransitionEdgeParameterSchema = 'FAADAAAABwAAAGFjY291bnQLCwAAAGZyb21fc3RhdHVzFQQAAAAIAAAAUHJvZHVjZWQCCQAAAEluVHJhbnNpdAIHAAAASW5TdG9yZQIEAAAAU29sZAIJAAAAdG9fc3RhdHVzFQQAAAAIAAAAUHJvZHVjZWQCCQAAAEluVHJhbnNpdAIHAAAASW5TdG9yZQIEAAAAU29sZAI=';
@@ -3246,48 +3503,48 @@ export type IsTransitionEdgeParameter = {
  * @returns {IsTransitionEdgeParameterSchemaJson} The smart contract parameter JSON.
  */
 function createIsTransitionEdgeParameterSchemaJson(parameter: IsTransitionEdgeParameter): IsTransitionEdgeParameterSchemaJson {
-    const field416 = parameter.account;
-    const accountAddress417 = SDK.AccountAddress.toSchemaValue(field416);
-    const field418 = parameter.from_status;
-    let match419: {'Produced' : [] } | {'InTransit' : [] } | {'InStore' : [] } | {'Sold' : [] };
-    switch (field418.type) {
+    const field452 = parameter.account;
+    const accountAddress453 = SDK.AccountAddress.toSchemaValue(field452);
+    const field454 = parameter.from_status;
+    let match455: {'Produced' : [] } | {'InTransit' : [] } | {'InStore' : [] } | {'Sold' : [] };
+    switch (field454.type) {
         case 'Produced':
-            match419 = { Produced: [], };
+            match455 = { Produced: [], };
         break;
         case 'InTransit':
-            match419 = { InTransit: [], };
+            match455 = { InTransit: [], };
         break;
         case 'InStore':
-            match419 = { InStore: [], };
+            match455 = { InStore: [], };
         break;
         case 'Sold':
-            match419 = { Sold: [], };
+            match455 = { Sold: [], };
         break;
     }
 
-    const field420 = parameter.to_status;
-    let match421: {'Produced' : [] } | {'InTransit' : [] } | {'InStore' : [] } | {'Sold' : [] };
-    switch (field420.type) {
+    const field456 = parameter.to_status;
+    let match457: {'Produced' : [] } | {'InTransit' : [] } | {'InStore' : [] } | {'Sold' : [] };
+    switch (field456.type) {
         case 'Produced':
-            match421 = { Produced: [], };
+            match457 = { Produced: [], };
         break;
         case 'InTransit':
-            match421 = { InTransit: [], };
+            match457 = { InTransit: [], };
         break;
         case 'InStore':
-            match421 = { InStore: [], };
+            match457 = { InStore: [], };
         break;
         case 'Sold':
-            match421 = { Sold: [], };
+            match457 = { Sold: [], };
         break;
     }
 
-    const named415 = {
-    account: accountAddress417,
-    from_status: match419,
-    to_status: match421,
+    const named451 = {
+    account: accountAddress453,
+    from_status: match455,
+    to_status: match457,
     };
-    return named415;
+    return named451;
 }
 
 /**
@@ -3393,69 +3650,69 @@ export function parseErrorMessageIsTransitionEdge(invokeResult: SDK.InvokeContra
     }
 
     const schemaJson = <{'ParseParams' : [] } | {'LogFull' : [] } | {'LogMalformed' : [] } | {'Unauthorized' : [] } | {'ItemAlreadyExists' : [] } | {'ItemDoesNotExist' : [] } | {'FinalState' : [] } | {'NoContract' : [] } | {'MissingAccount' : [] } | {'MalformedData' : [] } | {'WrongSignature' : [] } | {'NonceMismatch' : [] } | {'WrongContract' : [] } | {'WrongEntryPoint' : [] } | {'Expired' : [] } | {'Unsuccessful' : [] }>SDK.ReturnValue.parseWithSchemaTypeBase64(invokeResult.returnValue, 'FRAAAAALAAAAUGFyc2VQYXJhbXMCBwAAAExvZ0Z1bGwCDAAAAExvZ01hbGZvcm1lZAIMAAAAVW5hdXRob3JpemVkAhEAAABJdGVtQWxyZWFkeUV4aXN0cwIQAAAASXRlbURvZXNOb3RFeGlzdAIKAAAARmluYWxTdGF0ZQIKAAAATm9Db250cmFjdAIOAAAATWlzc2luZ0FjY291bnQCDQAAAE1hbGZvcm1lZERhdGECDgAAAFdyb25nU2lnbmF0dXJlAg0AAABOb25jZU1pc21hdGNoAg0AAABXcm9uZ0NvbnRyYWN0Ag8AAABXcm9uZ0VudHJ5UG9pbnQCBwAAAEV4cGlyZWQCDAAAAFVuc3VjY2Vzc2Z1bAI=');
-    let match422: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'Unauthorized'} | { type: 'ItemAlreadyExists'} | { type: 'ItemDoesNotExist'} | { type: 'FinalState'} | { type: 'NoContract'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} | { type: 'Unsuccessful'};
+    let match458: { type: 'ParseParams'} | { type: 'LogFull'} | { type: 'LogMalformed'} | { type: 'Unauthorized'} | { type: 'ItemAlreadyExists'} | { type: 'ItemDoesNotExist'} | { type: 'FinalState'} | { type: 'NoContract'} | { type: 'MissingAccount'} | { type: 'MalformedData'} | { type: 'WrongSignature'} | { type: 'NonceMismatch'} | { type: 'WrongContract'} | { type: 'WrongEntryPoint'} | { type: 'Expired'} | { type: 'Unsuccessful'};
     if ('ParseParams' in schemaJson) {
-       match422 = {
+       match458 = {
            type: 'ParseParams',
        };
     } else if ('LogFull' in schemaJson) {
-       match422 = {
+       match458 = {
            type: 'LogFull',
        };
     } else if ('LogMalformed' in schemaJson) {
-       match422 = {
+       match458 = {
            type: 'LogMalformed',
        };
     } else if ('Unauthorized' in schemaJson) {
-       match422 = {
+       match458 = {
            type: 'Unauthorized',
        };
     } else if ('ItemAlreadyExists' in schemaJson) {
-       match422 = {
+       match458 = {
            type: 'ItemAlreadyExists',
        };
     } else if ('ItemDoesNotExist' in schemaJson) {
-       match422 = {
+       match458 = {
            type: 'ItemDoesNotExist',
        };
     } else if ('FinalState' in schemaJson) {
-       match422 = {
+       match458 = {
            type: 'FinalState',
        };
     } else if ('NoContract' in schemaJson) {
-       match422 = {
+       match458 = {
            type: 'NoContract',
        };
     } else if ('MissingAccount' in schemaJson) {
-       match422 = {
+       match458 = {
            type: 'MissingAccount',
        };
     } else if ('MalformedData' in schemaJson) {
-       match422 = {
+       match458 = {
            type: 'MalformedData',
        };
     } else if ('WrongSignature' in schemaJson) {
-       match422 = {
+       match458 = {
            type: 'WrongSignature',
        };
     } else if ('NonceMismatch' in schemaJson) {
-       match422 = {
+       match458 = {
            type: 'NonceMismatch',
        };
     } else if ('WrongContract' in schemaJson) {
-       match422 = {
+       match458 = {
            type: 'WrongContract',
        };
     } else if ('WrongEntryPoint' in schemaJson) {
-       match422 = {
+       match458 = {
            type: 'WrongEntryPoint',
        };
     } else if ('Expired' in schemaJson) {
-       match422 = {
+       match458 = {
            type: 'Expired',
        };
     } else if ('Unsuccessful' in schemaJson) {
-       match422 = {
+       match458 = {
            type: 'Unsuccessful',
        };
     }
@@ -3464,5 +3721,5 @@ export function parseErrorMessageIsTransitionEdge(invokeResult: SDK.InvokeContra
        throw new Error("Unexpected enum variant");
     }
 
-    return match422
+    return match458
 }
