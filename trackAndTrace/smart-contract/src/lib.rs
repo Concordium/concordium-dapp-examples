@@ -83,7 +83,7 @@ pub type ItemID = TokenIdU64;
 pub enum Event<A: Serial> {
     /// The event tracks when an item is created.
     #[concordium(tag = 237)]
-    ItemCreated(ItemCreatedEvent),
+    ItemCreated(ItemCreatedEvent<A>),
     /// The event tracks when the item's status is updated.
     #[concordium(tag = 236)]
     ItemStatusChanged(ItemStatusChangedEvent<A>),
@@ -101,13 +101,16 @@ pub enum Event<A: Serial> {
 
 /// The [`ItemCreatedEvent`] is logged when an item is created.
 #[derive(Serialize, SchemaType, Debug, PartialEq, Eq, Clone)]
-pub struct ItemCreatedEvent {
+pub struct ItemCreatedEvent<A: Serial> {
     /// The item's id.
     pub item_id:        ItemID,
     /// The item's metadata_url.
     pub metadata_url:   Option<MetadataUrl>,
     /// The item's initial status.
     pub initial_status: Status,
+    /// Any additional data encoded as generic bytes. Usecase-specific data can
+    /// be included here such as temperature, longitude, latitude, ... .
+    pub additional_data: A,
 }
 
 /// The [`ItemStatusChangedEvent`] is logged when the status of an item is
@@ -116,6 +119,8 @@ pub struct ItemCreatedEvent {
 pub struct ItemStatusChangedEvent<A: Serial> {
     /// The item's id.
     pub item_id:         ItemID,
+    /// The item's new_metadata_url.
+    pub new_metadata_url:   Option<MetadataUrl>,
     /// The item's new status.
     pub new_status:      Status,
     /// Any additional data encoded as generic bytes. Usecase-specific data can
@@ -503,6 +508,29 @@ fn contract_get_roles(ctx: &ReceiveContext, host: &Host<State>) -> ReceiveResult
     Ok(roles)
 }
 
+#[receive(
+    contract = "track_and_trace",
+    name = "getAddressesByRole",
+    parameter = "Roles",
+    return_value = "Vec<Address>"
+)]
+fn contract_get_addresses_by_role(ctx: &ReceiveContext, host: &Host<State>) -> ReceiveResult<Vec<Address>> {
+    let role: Roles = ctx.parameter_cursor().get()?;
+    
+    // Create a vector to store the addresses with the specified role.
+    let mut addresses: Vec<Address> = Vec::new();
+
+    // Iterate over the roles map in the contract's state.
+    for (address, role_state) in host.state().roles.iter() {
+        if role_state.roles.contains(&role) {
+            addresses.push(*address);
+        }
+    }
+
+    // Return the collected addresses.
+    Ok(addresses)
+}
+
 /// View the state of an item.
 #[receive(
     contract = "track_and_trace",
@@ -521,62 +549,9 @@ fn contract_get_item_state(ctx: &ReceiveContext, host: &Host<State>) -> ReceiveR
         .ok_or(CustomContractError::ItemDoesNotExist.into())
 }
 
-/// Receive function for the Admin to create a new item.
-///
-/// It rejects if:
-/// - It fails to parse the parameter.
-/// - The sender is not the Admin of the contract instance.
-/// - The item already exists in the state which should technically not happen.
-/// - It fails to log the `ItemCreatedEvent`.
-#[receive(
-    contract = "track_and_trace",
-    name = "createItem",
-    parameter = "Option<MetadataUrl>",
-    error = "CustomContractError",
-    mutable,
-    enable_logger
-)]
-fn create_item(
-    ctx: &ReceiveContext,
-    host: &mut Host<State>,
-    logger: &mut impl HasLogger,
-) -> Result<(), CustomContractError> {
-    // Parse the parameter.
-    let metadata_url: Option<MetadataUrl> = ctx.parameter_cursor().get()?;
 
-    // Check that only the Admin is authorized to create a new item.
-    ensure!(
-        host.state().has_role(&ctx.sender(), Roles::Admin),
-        CustomContractError::Unauthorized
-    );
-
-    // Get the next available item id.
-    let next_item_id = host.state().next_item_id;
-    // Increase the item id tracker in the state.
-    host.state_mut().next_item_id += 1;
-
-    let item_id = ItemID::from(next_item_id);
-
-    // Create the item in state.
-    let previous_item = host.state_mut().items.insert(item_id, ItemState {
-        metadata_url: metadata_url.clone(),
-        status:       Status::Produced,
-    });
-
-    ensure_eq!(previous_item, None, CustomContractError::ItemAlreadyExists);
-
-    // Log an ItemCreatedEvent.
-    logger.log(&Event::<AdditionalData>::ItemCreated(ItemCreatedEvent {
-        item_id,
-        metadata_url,
-        initial_status: Status::Produced,
-    }))?;
-
-    Ok(())
-}
-
-/// Partial parameter type for the contract function
-/// `changeItemStatus`.
+/// Partial parameter type for the contract functions
+/// `createItem` and `changeItemStatus`.
 #[derive(Serialize, SchemaType, Debug, PartialEq, Eq, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct AdditionalData {
@@ -594,9 +569,77 @@ impl AdditionalData {
 /// The parameter type for the contract function `changeItemStatus` which
 /// updates the status of an item.
 #[derive(Serialize, SchemaType)]
+pub struct CreateItemParams<A> {
+    pub metadata_url:   Option<MetadataUrl>,
+    /// Any additional data encoded as generic bytes. Usecase-specific data can
+    /// be included here such as temperature, longitude, latitude, ... .
+    pub additional_data: A,
+}
+
+
+/// Receive function for the Admin to create a new item.
+///
+/// It rejects if:
+/// - It fails to parse the parameter.
+/// - The sender is not the Admin of the contract instance.
+/// - The item already exists in the state which should technically not happen.
+/// - It fails to log the `ItemCreatedEvent`.
+#[receive(
+    contract = "track_and_trace",
+    name = "createItem",
+    parameter = "CreateItemParams<AdditionalData>",
+    error = "CustomContractError",
+    mutable,
+    enable_logger
+)]
+fn create_item(
+    ctx: &ReceiveContext,
+    host: &mut Host<State>,
+    logger: &mut impl HasLogger,
+) -> Result<(), CustomContractError> {
+    // Parse the parameter.
+    let param: CreateItemParams<AdditionalData> = ctx.parameter_cursor().get()?;
+
+    // Check that only the Admin is authorized to create a new item.
+    ensure!(
+        host.state().has_role(&ctx.sender(), Roles::Admin),
+        CustomContractError::Unauthorized
+    );
+
+    // Get the next available item id.
+    let next_item_id = host.state().next_item_id;
+    // Increase the item id tracker in the state.
+    host.state_mut().next_item_id += 1;
+
+    let item_id = ItemID::from(next_item_id);
+
+    // Create the item in state.
+    let previous_item = host.state_mut().items.insert(item_id, ItemState {
+        metadata_url: param.metadata_url.clone(),
+        status:       Status::Produced,
+    });
+
+    ensure_eq!(previous_item, None, CustomContractError::ItemAlreadyExists);
+
+    // Log an ItemCreatedEvent.
+    logger.log(&Event::<AdditionalData>::ItemCreated(ItemCreatedEvent {
+        item_id,
+        metadata_url: param.metadata_url,
+        initial_status: Status::Produced,
+        additional_data: param.additional_data
+    }))?;
+
+    Ok(())
+}
+
+/// The parameter type for the contract function `changeItemStatus` which
+/// updates the status of an item.
+#[derive(Serialize, SchemaType)]
 pub struct ChangeItemStatusParams<A> {
     /// The item's id.
     pub item_id:         ItemID,
+    /// The item's new_metadata_url.
+    pub new_metadata_url:   Option<MetadataUrl>,
     /// The item's new status.
     pub new_status:      Status,
     /// Any additional data encoded as generic bytes. Usecase-specific data can
@@ -653,11 +696,13 @@ fn change_item_status(
     ensure!(verify, CustomContractError::Unauthorized);
 
     // Update the state of the item.
+    item.metadata_url = param.new_metadata_url.clone();
     item.status = param.new_status;
 
     // Log an ItemStatusChangedEvent.
     logger.log(&Event::ItemStatusChanged(ItemStatusChangedEvent {
         item_id:         param.item_id,
+        new_metadata_url:    param.new_metadata_url,
         new_status:      param.new_status,
         additional_data: param.additional_data,
     }))?;
