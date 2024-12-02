@@ -7,7 +7,7 @@ export interface ChangeItem {
     transaction_hash: string;
     event_index: number;
     item_id: number;
-    metadata_url: { hash: string | null; url: string } | null;
+    new_metadata_url: { hash: string | null; url: string } | null;
     new_status: ItemStatus;
     additional_data: { bytes: number[] };
 }

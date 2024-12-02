@@ -84,8 +84,8 @@ pub struct StoredItemStatusChangedEvent {
     pub event_index:      u64,
     /// The item's id as logged in the event.
     pub item_id:          u64,
-    /// The item's metadata_url as logged in the event.
-    pub metadata_url:     Option<MetadataUrl>,
+    /// The item's new_metadata_url as logged in the event.
+    pub new_metadata_url:     Option<MetadataUrl>,
     /// The item's new status as logged in the event.
     pub new_status:       Status,
     /// Any additional data encoded as generic bytes as logged in the event.
@@ -112,8 +112,8 @@ impl TryFrom<tokio_postgres::Row> for StoredItemStatusChangedEvent {
                 .map_err(|_| DatabaseError::TypeConversion("transaction_hash".to_string()))?,
             event_index: raw_event_index as u64,
             item_id: raw_item_id as u64,
-            metadata_url: from_bytes(value.try_get("metadata_url")?)
-            .map_err(|_| DatabaseError::TypeConversion("metadata_url".to_string()))?,
+            new_metadata_url: from_bytes(value.try_get("new_metadata_url")?)
+            .map_err(|_| DatabaseError::TypeConversion("new_metadata_url".to_string()))?,
             new_status,
             additional_data: AdditionalData::from_bytes(raw_additional_data.into()),
         };
@@ -234,7 +234,7 @@ impl Database {
         let get_item_status_changed_event_submissions = self
             .client
             .prepare_cached(
-                "SELECT block_time, transaction_hash, event_index, item_id, metadata_url, new_status, \
+                "SELECT block_time, transaction_hash, event_index, item_id, new_metadata_url, new_status, \
                  additional_data from item_status_changed_events WHERE item_id = $1 LIMIT $2 \
                  OFFSET $3",
             )
