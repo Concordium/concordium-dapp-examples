@@ -695,8 +695,11 @@ fn change_item_status(
     // Check that transition adheres to the state machine rules.
     ensure!(verify, CustomContractError::Unauthorized);
 
-    // Update the state of the item.
-    item.metadata_url = param.new_metadata_url.clone();
+    // Update the metadata_url only if param.new_metadata_url is Some.
+    if let Some(new_url) = &param.new_metadata_url {
+        item.metadata_url = Some(new_url.clone());
+    }
+    
     item.status = param.new_status;
 
     // Log an ItemStatusChangedEvent.
