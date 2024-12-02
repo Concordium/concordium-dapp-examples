@@ -302,7 +302,7 @@ export function ChangeItemStatus(props: Props) {
                                     <FormItem>
                                         <FormLabel>Location</FormLabel>
                                         <FormControl>
-                                            <div className="flex w-full max-w-sm items-center space-x-1">
+                                            <div className="flex w-full items-center space-x-1">
                                                 <Input placeholder="Enter the location coordinates" {...field} />
                                                 <LocationDetector onDetectLocation={onDetectLocation} />
                                                 <LocationPicker onSaveLocation={onSaveLocation} />
@@ -353,7 +353,7 @@ export function ChangeItemStatus(props: Props) {
                                 )}
                             />
                             <InputFile onChange={(imageFiles) => form.setValue('productImages', imageFiles)} />
-                            <Button type="submit" disabled={isLoading}>
+                            <Button type="submit" className='min-w-24' disabled={isLoading}>
                                 {isLoading ? <Loader2 className="animate-spin" /> : 'Submit'}
                             </Button>
                         </form>

@@ -114,7 +114,7 @@ export function AdminChangeRoles(props: Props) {
                 </CardHeader>
                 <CardContent>
                     <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                             <FormField
                                 control={form.control}
                                 name="address"
@@ -132,9 +132,7 @@ export function AdminChangeRoles(props: Props) {
                                     </FormItem>
                                 )}
                             />
-                            <div className="flex justify-end mt-4">
-                                <Button type="submit">Add</Button>
-                            </div>
+                            <Button type="submit" className='min-w-24'>Add</Button>
                         </form>
                     </Form>
                 </CardContent>

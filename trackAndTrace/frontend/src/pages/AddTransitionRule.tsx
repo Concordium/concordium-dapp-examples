@@ -97,7 +97,7 @@ export function AddTransitionRule(props: Props) {
                 </CardHeader>
                 <CardContent>
                     <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                             <FormField
                                 control={form.control}
                                 name="isUpdateAdd"
@@ -178,7 +178,7 @@ export function AddTransitionRule(props: Props) {
                                     </FormItem>
                                 )}
                             />
-                            <Button type="submit">Submit</Button>
+                            <Button type="submit" className="min-w-24">Submit</Button>
                         </form>
                     </Form>
                 </CardContent>

@@ -188,7 +188,7 @@ export function AdminCreateItem(props: Props) {
                 </CardHeader>
                 <CardContent>
                     <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                             <FormField
                                 control={form.control}
                                 name="url"
@@ -210,7 +210,7 @@ export function AdminCreateItem(props: Props) {
                                     <FormItem>
                                         <FormLabel>Location</FormLabel>
                                         <FormControl>
-                                            <div className="flex w-full max-w-sm items-center space-x-1">
+                                            <div className="flex w-full items-center space-x-1">
                                                 <Input placeholder="Enter the location coordinates" {...field} />
                                                 <LocationDetector onDetectLocation={onDetectLocation} />
                                                 <LocationPicker onSaveLocation={onSaveLocation} />
@@ -224,7 +224,7 @@ export function AdminCreateItem(props: Props) {
                                 )}
                             />
                             <InputFile onChange={(imageFiles) => form.setValue('productImages', imageFiles)} />
-                            <Button type="submit" disabled={isLoading}>
+                            <Button type="submit" className="min-w-24" disabled={isLoading}>
                                 {isLoading ? <Loader2 className="animate-spin" /> : 'Create'}
                             </Button>
                         </form>

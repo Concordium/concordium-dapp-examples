@@ -82,7 +82,7 @@ export function Explorer(props: Props) {
                 </CardHeader>
                 <CardContent>
                     <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>
                             <FormField
                                 control={form.control}
                                 name="itemID"
@@ -101,9 +101,7 @@ export function Explorer(props: Props) {
                                     </FormItem>
                                 )}
                             />
-                            <div className="flex justify-end mt-4">
-                                <Button type="submit">Search</Button>
-                            </div>
+                            <Button type="submit" className='min-w-24'>Search</Button>
                         </form>
                     </Form>
                 </CardContent>
