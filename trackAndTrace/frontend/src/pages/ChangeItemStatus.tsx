@@ -178,6 +178,7 @@ export function ChangeItemStatus(props: Props) {
                     newMetadata = await fetchJson(values.newMetadataUrl);
                 } catch (e) {
                     setError((e as Error).message);
+                    setIsLoading(false);
                     return;
                 }
 
@@ -203,6 +204,7 @@ export function ChangeItemStatus(props: Props) {
                         };
                     } catch (e) {
                         setError((e as Error).message);
+                        setIsLoading(false);
                         return;
                     }
                 }
@@ -252,9 +254,11 @@ export function ChangeItemStatus(props: Props) {
 
             if (!response.ok) {
                 const error = (await response.json()) as Error;
+                setIsLoading(false);
                 throw new Error(`Unable to get txHash from backend: ${JSON.stringify(error)}`);
             }
             const txHash = (await response.json()) as string;
+            setIsLoading(false);
 
             if (txHash) {
                 setTxHash(txHash);
