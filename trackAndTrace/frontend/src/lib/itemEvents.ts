@@ -30,7 +30,7 @@ export interface CreateItem {
  * @returns A json object including a vector of historical ItemStatusChangedEvents.
  */
 export async function getItemStatusChangedEvents(itemID: number, setItemChanged: Dispatch<ChangeItem[]>) {
-    const response = await fetch(`http://localhost:8080/api/getItemStatusChangedEvents`, {
+    const response = await fetch(`/api/getItemStatusChangedEvents`, {
         method: 'POST',
         headers: new Headers({ 'content-type': 'application/json' }),
         body: JSON.stringify({
@@ -60,7 +60,7 @@ export async function getItemStatusChangedEvents(itemID: number, setItemChanged:
  * @returns A json object including an option of the historical ItemCreateEvent.
  */
 export async function getItemCreatedEvent(itemID: number, setItemCreated: Dispatch<CreateItem>) {
-    const response = await fetch(`http://localhost:8080/api/getItemCreatedEvent`, {
+    const response = await fetch(`/api/getItemCreatedEvent`, {
         method: 'POST',
         headers: new Headers({ 'content-type': 'application/json' }),
         body: JSON.stringify(itemID),
