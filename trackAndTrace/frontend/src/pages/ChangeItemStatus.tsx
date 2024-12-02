@@ -59,7 +59,7 @@ function generateMessage(
         // Create ChangeItemStatus parameter
         const changeItemStatusParameter: TrackAndTraceContract.ChangeItemStatusParameter = {
             additional_data: {
-                bytes: objectToBytes({ currentLocation: newLocation }),
+                bytes: newLocation ? objectToBytes({ location: newLocation }) : [],
             },
             item_id: tokenIdU64,
             new_status: {

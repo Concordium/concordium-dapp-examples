@@ -152,7 +152,7 @@ export function AdminCreateItem(props: Props) {
 
             const parameter: TrackAndTraceContract.CreateItemParameter = {
                 additional_data: {
-                    bytes: objectToBytes({ location: values.location }),
+                    bytes: values.location !== '' ? objectToBytes({ location: values.location }) : [],
                 },
                 metadata_url: metadataCid
                     ? {

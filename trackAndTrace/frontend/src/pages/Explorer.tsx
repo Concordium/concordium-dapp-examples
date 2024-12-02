@@ -37,14 +37,22 @@ export function Explorer(props: Props) {
             return;
         }
         const coordinates: LatLngExpression[] = [];
-        coordinates.push(
-            parseCoordinates(bytesToObject<{ location: string }>(itemCreated.additional_data.bytes).location),
-        );
+
+        if (itemCreated.additional_data.bytes.length > 0) {
+            const locationRaw = bytesToObject<{ location: string | undefined }>(itemCreated.additional_data.bytes).location
+            if (locationRaw) {
+                coordinates.push(parseCoordinates(locationRaw));
+            }
+        }
+        
         if (itemChanged && itemChanged.length > 0) {
             itemChanged.forEach((item) => {
-                coordinates.push(
-                    parseCoordinates(bytesToObject<{ location: string }>(item.additional_data.bytes).location),
-                );
+                if (item.additional_data.bytes.length > 0) {
+                    const locationRaw = bytesToObject<{ location: string | undefined }>(item.additional_data.bytes).location
+                    if (locationRaw) {
+                        coordinates.push(parseCoordinates(locationRaw));
+                    }
+                }
             });
         }
         return coordinates;
