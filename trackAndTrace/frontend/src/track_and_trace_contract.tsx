@@ -22,7 +22,7 @@ const contract = TrackAndTraceContract.createUnchecked(grpc, constants.CONTRACT_
 /**
  * This function submits a transaction to create an item in the track and trace contract.
  *
- * @param provider - The wallet provider to use for sending the transaction.
+ * @param connection - The active wallet connection  to use for sending the transaction.
  * @param accountAddress - The account address to send from.
  * @param createItemParameter - The parameter for the createItem function.
  * @throws If simulating the contract update fails.
@@ -77,9 +77,9 @@ export async function createItem(
 /**
  * This function submits a transaction to create an item in the track and trace contract.
  *
- * @param provider - The wallet provider to use for sending the transaction.
+ * @param connection - The active wallet connection to use for sending the transaction.
  * @param accountAddress - The account address to send from.
- * @param createItemParameter - The parameter for the createItem function.
+ * @param revokeRoleParameter - The parameter for the createItem function.
  * @throws If simulating the contract update fails.
  * @returns A promise resolving with the corresponding {@linkcode string}
  */
@@ -132,7 +132,7 @@ export async function removeRole(
 /**
  * This function submits a transaction to update the state machine.
  *
- * @param provider - The wallet provider to use for sending the transaction.
+ * @param connection - The active wallet connection to use for sending the transaction.
  * @param accountAddress - The account address to send from.
  * @param updateStateMachineParameter - The parameter for the updateStateMachine function.
  * @throws If simulating the contract update fails.
@@ -191,9 +191,9 @@ export async function updateStateMachine(
 /**
  * This function submits a transaction to create an item in the track and trace contract.
  *
- * @param provider - The wallet provider to use for sending the transaction.
+ * @param connection - The active wallet connection to use for sending the transaction.
  * @param accountAddress - The account address to send from.
- * @param createItemParameter - The parameter for the createItem function.
+ * @param grantRoleParameter - The parameter for the createItem function.
  * @throws If simulating the contract update fails.
  * @returns A promise resolving with the corresponding {@linkcode string}
  */
