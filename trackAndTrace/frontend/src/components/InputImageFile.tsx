@@ -10,8 +10,8 @@ const ALLOWED_IMAGE_TYPES = ['jpeg', 'png', 'webp'];
 interface Props {
     onChange: (f: File[]) => void;
 }
-export function InputFile({ onChange }: Props) {
-    const [imageNames, setImageNames] = useState<string[] | undefined>();
+export function InputImageFile({ onChange }: Props) {
+    const [imageNames, setImageNames] = useState<string[]>([]);
     const [error, setError] = useState<string | undefined>();
 
     const onDrop = (acceptedFiles: File[]) => {
@@ -23,6 +23,10 @@ export function InputFile({ onChange }: Props) {
         console.log(e);
     };
 
+    const onClear = () => {
+        onChange([])
+        setImageNames([])
+    };
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const onDropRejected = (fileRejections: FileRejection[], _event: DropEvent) => {
         if (fileRejections.length > 1) {
@@ -73,7 +77,7 @@ export function InputFile({ onChange }: Props) {
                 </div>
             </div>
             {imageNames && imageNames.length > 0 && (
-                <Button variant="outline" size="sm" className="float-right" onClick={() => onChange([])} type="button">
+                <Button variant="outline" size="sm" className="float-right" onClick={onClear} type="button">
                     Clear
                 </Button>
             )}

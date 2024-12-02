@@ -23,7 +23,7 @@ import { LocationDetector } from '@/components/LocationDetector';
 import { PinataSDK } from 'pinata';
 import { Loader2 } from 'lucide-react';
 import { ItemStatus } from '@/lib/itemEvents';
-import { InputFile } from '@/components/InputFile';
+import { InputImageFile } from '@/components/InputImageFile';
 
 interface Props {
     connection: WalletConnection | undefined;
@@ -356,7 +356,7 @@ export function ChangeItemStatus(props: Props) {
                                     </FormItem>
                                 )}
                             />
-                            <InputFile onChange={(imageFiles) => form.setValue('productImages', imageFiles)} />
+                            <InputImageFile onChange={(imageFiles) => form.setValue('productImages', imageFiles)} />
                             <Button type="submit" className='min-w-24' disabled={isLoading}>
                                 {isLoading ? <Loader2 className="animate-spin" /> : 'Submit'}
                             </Button>

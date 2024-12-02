@@ -21,7 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert } from '@/components/Alert';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { InputFile } from '@/components/InputFile';
+import { InputImageFile } from '@/components/InputImageFile';
 import { LocationPicker } from '@/components/LocationPicker';
 import { LocationDetector } from '@/components/LocationDetector';
 import { PinataSDK } from 'pinata';
@@ -223,7 +223,7 @@ export function AdminCreateItem(props: Props) {
                                     </FormItem>
                                 )}
                             />
-                            <InputFile onChange={(imageFiles) => form.setValue('productImages', imageFiles)} />
+                            <InputImageFile onChange={(imageFiles) => form.setValue('productImages', imageFiles)} />
                             <Button type="submit" className="min-w-24" disabled={isLoading}>
                                 {isLoading ? <Loader2 className="animate-spin" /> : 'Create'}
                             </Button>
