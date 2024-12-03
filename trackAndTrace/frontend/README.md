@@ -4,9 +4,9 @@
 
 Make sure to have the following installed:
 
--   [NodeJs](https://nodejs.org).
--   Rust and cargo (Recommended to install using [rustup](https://rustup.rs)).
--   Recent version of [cargo concordium](https://crates.io/crates/cargo-concordium). Install using `cargo install --locked cargo-concordium`.
+- [NodeJs](https://nodejs.org).
+- Rust and cargo (Recommended to install using [rustup](https://rustup.rs)).
+- Recent version of [cargo concordium](https://crates.io/crates/cargo-concordium). Install using `cargo install --locked cargo-concordium`.
 
 ## Frontend
 
@@ -22,9 +22,9 @@ Set the environment variable `TRACK_AND_TRACE_CONTRACT_ADDRESS`, or prefix it be
 
 This front end calls three backend endpoints:
 
--   `/api/submitTransaction` from the [sponsored transaction backend service](../sponsored-transaction-service)
--   `/api/getItemStatusChangedEvents` from the [backend server](../indexer)
--   `/api/getItemCreatedEvent` from the [backend server](../indexer)
+- `/api/submitTransaction` from the [sponsored transaction backend service](../sponsored-transaction-service)
+- `/api/getItemStatusChangedEvents` from the [backend server](../indexer)
+- `/api/getItemCreatedEvent` from the [backend server](../indexer)
 
 See the [Environment variables](#environment-variables) section below for configuration options regarding the sponsored service.
 
