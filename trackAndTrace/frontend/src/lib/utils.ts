@@ -226,3 +226,20 @@ export async function getPinataSignedUrl(urlOrCid: string, pinata: PinataSDK): P
         throw new Error('Failed to create signed URL.');
     }
 }
+
+/**
+ * Calculates an expiration time based on the current time and the number of days provided.
+ * 
+ * @param {number} days - The number of days from now until the expiration time.
+ * @returns {Date} - A JavaScript `Date` object representing the expiration time.
+ * 
+ * @example
+ * // Get the expiration time 2 days from now
+ * const expiry = getExpiryTime(2);
+ * console.log(expiry.toISOString());
+ */
+export function getExpiryTime(days: number): Date {
+    const expiry = new Date();
+    expiry.setTime(expiry.getTime() + days * 86400 * 1000); // Add days in milliseconds
+    return expiry;
+}

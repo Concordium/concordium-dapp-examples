@@ -5,11 +5,12 @@ import JSONbig from 'json-bigint';
 
 import { WalletConnection, typeSchemaFromBase64 } from '@concordium/wallet-connectors';
 import { useGrpcClient } from '@concordium/react-components';
+import { AccountAddress, AccountTransactionSignature, Parameter, Timestamp } from '@concordium/web-sdk';
 import { TxHashLink } from '@/components/TxHashLink';
 import * as constants from '.././constants';
 import { getItemState, nonceOf } from '../track_and_trace_contract';
 import * as TrackAndTraceContract from '../../generated/module_track_and_trace'; // Code generated from a smart contract module. The naming convention of the generated file is `moduleName_smartContractName`.
-import { ToTokenIdU64, fetchIPFSMetadata, fetchJson, getLocation, objectToBytes } from '@/lib/utils';
+import { ToTokenIdU64, fetchIPFSMetadata, fetchJson, getExpiryTime, getLocation, objectToBytes } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -151,127 +152,105 @@ export function ChangeItemStatus(props: Props) {
 
     async function onSubmit(values: FormType) {
         setError(undefined);
-
-        // if (values.newStatus === "") {
-        //     setError(`'newStatus' input field is undefined`);
-        //     throw Error(`'newStatus' input field is undefined`);
-        // }
-        if (values.itemID === '') {
-            setError(`'itemID' input field is undefined`);
-            throw Error(`'itemID' input field is undefined`);
+    
+        if (!connection || !accountAddress) {
+            setError(`Wallet is not connected. Click 'Connect Wallet' button.`);
+            return;
         }
-
-        // Signatures should expire in one day. Add 1 day to the current time.
-        const expiryTimeSignature = new Date();
-        expiryTimeSignature.setTime(expiryTimeSignature.getTime() + 86400 * 1000);
-
-        if (connection && accountAddress) {
-            setIsLoading(true);
-
-            let newMetadataUrl: string | undefined;
-            if (values.newMetadataUrl != '') {
-                let newMetadata: Record<string, unknown> | undefined;
-
-                try {
-                    newMetadata = await fetchJson(values.newMetadataUrl);
-                } catch (e) {
-                    setError((e as Error).message);
-                    setIsLoading(false);
-                    return;
-                }
-
-                if (!(values.productImages.length > 0)) {
-                    const itemState = await getItemState(ToTokenIdU64(Number(values.itemID)));
-
-                    if (itemState.metadata_url.type === 'Some') {
-                        const currentMetadata = await fetchIPFSMetadata(itemState.metadata_url.content.url, pinata);
-
-                        if (currentMetadata.imageUrl) {
-                            newMetadata = {
-                                ...newMetadata,
-                                imageUrl: currentMetadata.imageUrl,
-                            };
-                        }
-                    }
-                } else {
-                    try {
-                        const imageCid = (await pinata.upload.file(values.productImages[0])).cid;
-                        newMetadata = {
-                            ...newMetadata,
-                            imageUrl: `ipfs://${imageCid}`,
-                        };
-                    } catch (e) {
-                        setError((e as Error).message);
-                        setIsLoading(false);
-                        return;
-                    }
-                }
-
-                if (newMetadata) {
-                    try {
-                        const metadataCid = (await pinata.upload.json(newMetadata)).cid;
-                        newMetadataUrl = `ipfs://${metadataCid}`;
-                    } catch (e) {
-                        setError((e as Error).message);
-                        setIsLoading(false);
-                        return;
-                    }
-                }
-            }
-
+    
+        setIsLoading(true);
+        try {
+            const expiryTimeSignature = getExpiryTime(1);
+            const newMetadataUrl = await handleMetadata(values);
+    
             const [payload, serializedMessage] = generateMessage(
                 Number(values.itemID),
                 expiryTimeSignature,
                 nextNonce,
                 values.newStatus,
                 newMetadataUrl,
-                values.newLocation || undefined,
+                values.newLocation || undefined
             );
-
+    
             const permitSignature = await connection.signMessage(accountAddress, {
                 type: 'BinaryMessage',
                 value: Buffer.from(serializedMessage.buffer),
                 schema: typeSchemaFromBase64(constants.SERIALIZATION_HELPER_SCHEMA_PERMIT_MESSAGE),
             });
-
-            const response = await fetch(constants.SPONSORED_TRANSACTION_BACKEND + `api/submitTransaction`, {
-                method: 'POST',
-                headers: new Headers({ 'content-type': 'application/json' }),
-                body: JSONbig.stringify({
-                    signer: accountAddress,
-                    nonce: Number(nextNonce),
-                    signature: permitSignature[0][0],
-                    // RFC 3339 format (e.g. 2030-08-08T05:15:00Z)
-                    expiryTime: expiryTimeSignature.toISOString(),
-                    contractAddress: constants.CONTRACT_ADDRESS,
-                    contractName: TrackAndTraceContract.contractName.value,
-                    entrypointName: 'changeItemStatus',
-                    parameter: Buffer.from(payload.buffer).toString('hex'),
-                }),
-            });
-
-            if (!response.ok) {
-                const error = (await response.json()) as Error;
-                setIsLoading(false);
-                throw new Error(`Unable to get txHash from backend: ${JSON.stringify(error)}`);
-            }
-            const txHash = (await response.json()) as string;
+    
+            const txHash = await submitTransaction(
+                payload,
+                permitSignature,
+                expiryTimeSignature,
+                nextNonce,
+                accountAddress
+            );
+    
+            setTxHash(txHash);
+            form.reset();
+        } catch (e) {
+            setError((e as Error).message);
+        } finally {
             setIsLoading(false);
-
-            if (txHash) {
-                setTxHash(txHash);
-                form.reset();
-            } else {
-                throw new Error(`Unable to get txHash from backend`);
-            }
-        } else {
-            setError(`Wallet is not connected. Click 'Connect Wallet' button.`);
         }
     }
 
+    
+    async function handleMetadata(values: FormType): Promise<string | undefined> {
+        if (!values.newMetadataUrl) return undefined;
+    
+        let newMetadata = await fetchJson(values.newMetadataUrl);
+    
+        if (values.productImages.length === 0) {
+            const itemState = await getItemState(ToTokenIdU64(Number(values.itemID)));
+            if (itemState.metadata_url.type === 'Some') {
+                const currentMetadata = await fetchIPFSMetadata(itemState.metadata_url.content.url, pinata);
+                console.log(`currentMetadata: ${JSON.stringify(currentMetadata)}`)
+                if (currentMetadata.imageUrl) {
+                    newMetadata = { ...newMetadata, imageUrl: currentMetadata.imageUrl };
+                }
+            }
+        } else {
+            const imageCid = await pinata.upload.file(values.productImages[0]);
+            newMetadata = { ...newMetadata, imageUrl: `ipfs://${imageCid.cid}` };
+        }
+    
+        const metadataCid = await pinata.upload.json(newMetadata);
+        return `ipfs://${metadataCid.cid}`;
+    }
+
+    
+    async function submitTransaction(
+        payload: Parameter.Type,
+        permitSignature: AccountTransactionSignature,
+        expiryTime: Date,
+        nonce: number | bigint,
+        signer: string
+    ): Promise<string> {
+        const response = await fetch(constants.SPONSORED_TRANSACTION_BACKEND + `api/submitTransaction`, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSONbig.stringify({
+                signer,
+                nonce,
+                signature: permitSignature[0][0],
+                expiryTime: expiryTime.toISOString(),
+                contractAddress: constants.CONTRACT_ADDRESS,
+                contractName: TrackAndTraceContract.contractName.value,
+                entrypointName: 'changeItemStatus',
+                parameter: Buffer.from(payload.buffer).toString('hex'),
+            }),
+        });
+    
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(`Unable to get txHash from backend: ${JSON.stringify(error)}`);
+        }
+        return response.json();
+    }
+    
     return (
         <div className="h-full w-full flex flex-col items-center py-16 px-2">
-            <p>{nextNonce.toString()}</p>
             <Card className="w-full sm:max-w-md">
                 <CardHeader>
                     <CardTitle>Update The Product Status</CardTitle>
