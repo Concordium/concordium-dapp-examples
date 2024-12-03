@@ -168,7 +168,7 @@ export function Explorer(props: Props) {
                                             className="link"
                                             target="_blank"
                                             rel="noreferrer"
-                                            href={`${constants.CCD_SCAN_URL}/?dcount=1&dentity=transaction&dhash=${itemCreated.transaction_hash}`}
+                                            href={`${constants.CCD_EXPLORER_URL}/transaction/${itemCreated.transaction_hash}`}
                                         >
                                             {itemCreated.transaction_hash.slice(0, 5)}...
                                             {itemCreated.transaction_hash.slice(-5)}
@@ -187,7 +187,7 @@ export function Explorer(props: Props) {
                                                 className="link"
                                                 target="_blank"
                                                 rel="noreferrer"
-                                                href={`${constants.CCD_SCAN_URL}/?dcount=1&dentity=transaction&dhash=${event.transaction_hash}`}
+                                                href={`${constants.CCD_EXPLORER_URL}/transaction/${event.transaction_hash}`}
                                             >
                                                 {event.transaction_hash.slice(0, 5)}...
                                                 {event.transaction_hash.slice(-5)}

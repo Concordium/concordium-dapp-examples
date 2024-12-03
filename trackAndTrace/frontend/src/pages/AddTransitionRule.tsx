@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { WalletConnection } from '@concordium/wallet-connectors';
 import { AccountAddress } from '@concordium/web-sdk';
 
-import { TxHashLink } from '@/components/CCDScanLinks';
+import { TxHashLink } from '@/components/TxHashLink';
 import { updateStateMachine } from '../track_and_trace_contract';
 import * as TrackAndTraceContract from '../../generated/module_track_and_trace';
 import { validateAccountAddress } from '@/lib/utils';

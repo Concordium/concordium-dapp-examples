@@ -12,7 +12,7 @@ import {
 import { useGrpcClient } from '@concordium/react-components';
 
 import * as constants from '../constants';
-import { TxHashLink } from '../components/CCDScanLinks';
+import { TxHashLink } from '@/components/TxHashLink';
 import { createItem } from '../track_and_trace_contract';
 import * as TrackAndTraceContract from '../../generated/module_track_and_trace';
 import { fetchJson, FromTokenIdU64, getLocation, objectToBytes } from '@/lib/utils';
@@ -247,7 +247,7 @@ export function AdminCreateItem(props: Props) {
                 )}
                 {txHash && (
                     <Alert
-                        title="Transaction Result"
+                        title="Transaction Hash"
                         description={
                             <>
                                 <TxHashLink txHash={txHash} />
