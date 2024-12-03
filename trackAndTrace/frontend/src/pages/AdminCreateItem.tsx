@@ -11,9 +11,9 @@ import {
 } from '@concordium/web-sdk';
 import { useGrpcClient } from '@concordium/react-components';
 
-import * as constants from '../constants';
+import * as constants from '@/constants';
 import { TxHashLink } from '@/components/TxHashLink';
-import { createItem } from '../track_and_trace_contract';
+import { createItem } from '@/track_and_trace_contract';
 import * as TrackAndTraceContract from '../../generated/module_track_and_trace';
 import { fetchJson, FromTokenIdU64, getLocation, objectToBytes } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

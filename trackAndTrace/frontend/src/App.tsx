@@ -9,8 +9,8 @@ import { AddTransitionRule } from '@/pages/AddTransitionRule';
 import { AdminCreateItem } from '@/pages/AdminCreateItem';
 import { ChangeItemStatus } from '@/pages/ChangeItemStatus';
 import { Explorer } from '@/pages/Explorer';
-import * as constants from './constants';
-import { useIsMobile } from './hooks/use-mobile';
+import * as constants from '@/constants';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { PinataSDK } from 'pinata';
 
 const pinata = new PinataSDK({

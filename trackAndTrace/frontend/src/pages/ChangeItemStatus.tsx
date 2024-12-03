@@ -7,8 +7,8 @@ import { WalletConnection, typeSchemaFromBase64 } from '@concordium/wallet-conne
 import { useGrpcClient } from '@concordium/react-components';
 import { AccountAddress, AccountTransactionSignature, Parameter, Timestamp } from '@concordium/web-sdk';
 import { TxHashLink } from '@/components/TxHashLink';
-import * as constants from '.././constants';
-import { getItemState, nonceOf } from '../track_and_trace_contract';
+import * as constants from '@/constants';
+import { getItemState, nonceOf } from '@/track_and_trace_contract';
 import * as TrackAndTraceContract from '../../generated/module_track_and_trace'; // Code generated from a smart contract module. The naming convention of the generated file is `moduleName_smartContractName`.
 import { ToTokenIdU64, fetchIPFSMetadata, fetchJson, getExpiryTime, getLocation, objectToBytes } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
