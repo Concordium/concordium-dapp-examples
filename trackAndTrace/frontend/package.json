@@ -35,7 +35,7 @@
         "leaflet": "^1.9.4",
         "lucide-react": "^0.456.0",
         "moment": "^2.30.1",
-        "pinata": "^1.7.2",
+        "pinata": "1.8.1",
         "react": "^18.3.1",
         "react-dom": "^18.3.1",
         "react-dropzone": "^14.3.5",
