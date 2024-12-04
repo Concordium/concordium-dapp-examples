@@ -10,7 +10,7 @@ import { TxHashLink } from '@/components/TxHashLink';
 import * as constants from '@/constants';
 import { getItemState, nonceOf } from '@/track_and_trace_contract';
 import * as TrackAndTraceContract from '../../generated/module_track_and_trace'; // Code generated from a smart contract module. The naming convention of the generated file is `moduleName_smartContractName`.
-import { ToTokenIdU64, fetchIPFSMetadata, fetchJson, getExpiryTime, getLocation, objectToBytes } from '@/lib/utils';
+import { ToTokenIdU64, getPinataData, fetchJson, getExpiryTime, getLocation, objectToBytes } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -204,9 +204,8 @@ export function ChangeItemStatus(props: Props) {
         if (values.productImages.length === 0) {
             const itemState = await getItemState(ToTokenIdU64(Number(values.itemID)));
             if (itemState.metadata_url.type === 'Some') {
-                const currentMetadata = await fetchIPFSMetadata(itemState.metadata_url.content.url, pinata);
-                console.log(`currentMetadata: ${JSON.stringify(currentMetadata)}`)
-                if (currentMetadata.imageUrl) {
+                const currentMetadata = await getPinataData(itemState.metadata_url.content.url, pinata);
+                if (currentMetadata && !(currentMetadata instanceof Blob) && currentMetadata.imageUrl) {
                     newMetadata = { ...newMetadata, imageUrl: currentMetadata.imageUrl };
                 }
             }

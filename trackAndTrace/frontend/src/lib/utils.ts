@@ -179,55 +179,6 @@ export function parseCoordinates(coordinates: string): LatLngExpression {
 }
 
 /**
- * Fetches metadata from an IPFS gateway using a URL or CID.
- *
- * @param urlOrCid - The IPFS URL or CID. If the input starts with "ipfs://", the CID is extracted from it.
- * @param pinata - The Pinata client instance to interact with IPFS gateways.
- * @returns A Promise resolving to the metadata object fetched from the IPFS gateway.
- * @throws Will throw an error if the metadata retrieval fails.
- */
-export async function fetchIPFSMetadata(urlOrCid: string, pinata: PinataSDK) {
-    try {
-        // Extract CID from URL or use the provided string if it doesn't start with "ipfs://"
-        const cid = urlOrCid.startsWith('ipfs://') ? urlOrCid.split('//')[1] : urlOrCid;
-
-        // Fetch metadata from the IPFS gateway
-        const { data } = await pinata.gateways.get(cid);
-        if (!data) {
-            throw new Error('Invalid IPFS CID');
-        }
-        return data as unknown as { [key: string]: unknown; imageUrl: string | null };
-    } catch (error) {
-        console.error('Error fetching IPFS metadata:', error);
-        throw new Error('Failed to retrieve IPFS metadata.');
-    }
-}
-
-/**
- * Creates a signed URL for an file stored on IPFS using a URL or CID.
- *
- * @param urlOrCid - The IPFS URL or CID. If the input starts with "ipfs://", the CID is extracted from it.
- * @param pinata - The Pinata client instance to interact with IPFS gateways.
- * @returns A Promise resolving to the signed URL for the file.
- * @throws Will throw an error if the signed URL generation fails.
- */
-export async function getPinataSignedUrl(urlOrCid: string, pinata: PinataSDK): Promise<string> {
-    try {
-        const cid = urlOrCid.startsWith('ipfs://') ? urlOrCid.split('//')[1] : urlOrCid;
-
-        const signedUrl = await pinata.gateways.createSignedURL({
-            cid,
-            expires: 30,
-        });
-
-        return signedUrl;
-    } catch (error) {
-        console.error('Error creating signed URL:', error);
-        throw new Error('Failed to create signed URL.');
-    }
-}
-
-/**
  * Calculates an expiration time based on the current time and the number of days provided.
  * 
  * @param {number} days - The number of days from now until the expiration time.
@@ -243,3 +194,45 @@ export function getExpiryTime(days: number): Date {
     expiry.setTime(expiry.getTime() + days * 86400 * 1000); // Add days in milliseconds
     return expiry;
 }
+
+
+/**
+ * Fetches data from a IPFS URL or CID content.
+ *
+ * @param urlOrCid The IPFS URL or CID content.
+ * @throws If the server responds with an error or the response is malformed.
+ * @returns The Pinata data as a JSON object, a Blob (for binary data), 
+ *          or null if the response is empty.
+ */
+export async function getPinataData(urlOrCid: string, pinata: PinataSDK): Promise<Record<string, unknown> | Blob | null> {
+    const cid = urlOrCid.startsWith('ipfs://') ? urlOrCid.split('//')[1] : urlOrCid;
+
+    const url = await pinata.gateways.createSignedURL({
+        cid,
+        expires: 3600,
+    });
+
+    const response = await fetch('/api/getPinataData', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+    });
+  
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(`Unable to fetch Pinata data: ${JSON.stringify(error)}`);
+    }
+  
+    if (response.status === 204 || response.body === null ) {
+      return null;
+    }
+  
+    const contentType = response.headers.get('content-type') || '';
+  
+    if (contentType.includes('application/json')) {
+        return response.json();
+    } else {
+        return response.blob();
+    }
+  
+  }

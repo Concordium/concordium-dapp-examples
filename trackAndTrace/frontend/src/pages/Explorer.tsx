@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { set, useForm } from 'react-hook-form';
 import * as constants from '@/constants';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Alert } from '@/components/Alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ChangeItem, CreateItem, getItemCreatedEvent, getItemStatusChangedEvents } from '@/lib/itemEvents';
-import { bytesToObject, getPinataSignedUrl, parseCoordinates, ToTokenIdU64 } from '@/lib/utils';
+import { bytesToObject, getPinataData, parseCoordinates, ToTokenIdU64 } from '@/lib/utils';
 import { MapContainer, TileLayer, CircleMarker, Popup, Polyline, Circle } from 'react-leaflet';
 import { LatLngExpression } from 'leaflet';
 import { PinataSDK } from 'pinata';
@@ -31,7 +31,7 @@ export function Explorer(props: Props) {
     const [itemChanged, setItemChanged] = useState<ChangeItem[] | undefined>(undefined);
     const [itemCreated, setItemCreated] = useState<CreateItem | undefined>(undefined);
 
-    const [productImageSignedUrl, setProductImageSignedUrl] = useState<string | undefined>(undefined);
+    const [productImageUrl, setProductImageUrl] = useState<string | undefined>(undefined);
     const tracePath = useMemo<LatLngExpression[] | undefined>(() => {
         if (!itemCreated) {
             return;
@@ -74,8 +74,14 @@ export function Explorer(props: Props) {
             const itemState = await getItemState(ToTokenIdU64(Number(values.itemID)));
 
             if (itemState.metadata_url.type === 'Some') {
-                const imageSignedUrl = await getPinataSignedUrl(itemState.metadata_url.content.url, pinata);
-                setProductImageSignedUrl(imageSignedUrl);
+                const metadata = await getPinataData(itemState.metadata_url.content.url, pinata);
+                if (metadata && !(metadata instanceof Blob) && metadata.imageUrl) {
+                    const imageData = await getPinataData(metadata.imageUrl as string, pinata);
+                    if (imageData instanceof Blob) {
+                        const blobUrl = URL.createObjectURL(imageData);
+                        setProductImageUrl(blobUrl);
+                    }
+                }
             }
         } catch (error) {
             setError(`Couldn't get data from database. Orginal error: ${(error as Error).message}`);
@@ -118,8 +124,8 @@ export function Explorer(props: Props) {
             {itemChanged !== undefined && itemCreated !== undefined && (
                 <div className="grid md:grid-cols-2 gap-1 w-full max-w-2xl p-2 border rounded-lg">
                     <div className="relative border rounded-lg">
-                        {productImageSignedUrl ? (
-                            <img src={productImageSignedUrl} alt="" className="h-60 mx-auto" crossOrigin="anonymous" />
+                        {productImageUrl ? (
+                            <img src={productImageUrl} alt="product-image" className="h-60 mx-auto" crossOrigin="anonymous" />
                         ) : (
                             <div className="h-full flex items-center justify-center">
                                 <p className="text-[0.8rem] text-muted-foreground">No product images avalaible.</p>
