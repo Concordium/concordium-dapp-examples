@@ -33,6 +33,8 @@ services:
     environment:
       CCD_SERVER_DB_CONNECTION: "host=postgres dbname=indexer user=postgres password=password port=5432"
       CCD_SERVER_CONTRACT_ADDRESS: ${TRACK_AND_TRACE_CONTRACT_ADDRESS:?Please specify the Track and Trace contract instance address (format <1234,0>)}
+      CCD_SERVER_PINATA_JWT: ${TRACK_AND_TRACE_PINATA_JWT:?Please specify the Pinata JWT for IPFS uploads}
+      CCD_SERVER_PINATA_GATEWAY: ${TRACK_AND_TRACE_PINATA_GATEWAY:?Please specify the Pinata Gateway URL for IPFS access}
       CCD_SERVER_SPONSORED_TRANSACTION_BACKEND: "http://localhost:8000"
       CCD_SERVER_NETWORK: ${TRACK_AND_TRACE_NETWORK:-testnet}
       CCD_SERVER_NODE: ${TRACK_AND_TRACE_NODE:-https://grpc.testnet.concordium.com:20000}
