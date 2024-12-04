@@ -152,40 +152,40 @@ export function ChangeItemStatus(props: Props) {
 
     async function onSubmit(values: FormType) {
         setError(undefined);
-    
+
         if (!connection || !accountAddress) {
             setError(`Wallet is not connected. Click 'Connect Wallet' button.`);
             return;
         }
-    
+
         setIsLoading(true);
         try {
             const expiryTimeSignature = getExpiryTime(1);
             const newMetadataUrl = await handleMetadata(values);
-    
+
             const [payload, serializedMessage] = generateMessage(
                 Number(values.itemID),
                 expiryTimeSignature,
                 nextNonce,
                 values.newStatus,
                 newMetadataUrl,
-                values.newLocation || undefined
+                values.newLocation || undefined,
             );
-    
+
             const permitSignature = await connection.signMessage(accountAddress, {
                 type: 'BinaryMessage',
                 value: Buffer.from(serializedMessage.buffer),
                 schema: typeSchemaFromBase64(constants.SERIALIZATION_HELPER_SCHEMA_PERMIT_MESSAGE),
             });
-    
+
             const txHash = await submitTransaction(
                 payload,
                 permitSignature,
                 expiryTimeSignature,
                 nextNonce,
-                accountAddress
+                accountAddress,
             );
-    
+
             setTxHash(txHash);
             form.reset();
         } catch (e) {
@@ -195,12 +195,11 @@ export function ChangeItemStatus(props: Props) {
         }
     }
 
-    
     async function handleMetadata(values: FormType): Promise<string | undefined> {
         if (!values.newMetadataUrl) return undefined;
-    
+
         let newMetadata = await fetchJson(values.newMetadataUrl);
-    
+
         if (values.productImages.length === 0) {
             const itemState = await getItemState(ToTokenIdU64(Number(values.itemID)));
             if (itemState.metadata_url.type === 'Some') {
@@ -213,18 +212,17 @@ export function ChangeItemStatus(props: Props) {
             const imageCid = await pinata.upload.file(values.productImages[0]);
             newMetadata = { ...newMetadata, imageUrl: `ipfs://${imageCid.cid}` };
         }
-    
+
         const metadataCid = await pinata.upload.json(newMetadata);
         return `ipfs://${metadataCid.cid}`;
     }
 
-    
     async function submitTransaction(
         payload: Parameter.Type,
         permitSignature: AccountTransactionSignature,
         expiryTime: Date,
         nonce: number | bigint,
-        signer: string
+        signer: string,
     ): Promise<string> {
         const response = await fetch(constants.SPONSORED_TRANSACTION_BACKEND + `api/submitTransaction`, {
             method: 'POST',
@@ -240,14 +238,14 @@ export function ChangeItemStatus(props: Props) {
                 parameter: Buffer.from(payload.buffer).toString('hex'),
             }),
         });
-    
+
         if (!response.ok) {
             const error = await response.json();
             throw new Error(`Unable to get txHash from backend: ${JSON.stringify(error)}`);
         }
         return response.json();
     }
-    
+
     return (
         <div className="h-full w-full flex flex-col items-center py-16 px-2">
             <Card className="w-full sm:max-w-md">
@@ -333,7 +331,7 @@ export function ChangeItemStatus(props: Props) {
                                 )}
                             />
                             <InputImageFile onChange={(imageFiles) => form.setValue('productImages', imageFiles)} />
-                            <Button type="submit" className='min-w-24' disabled={isLoading}>
+                            <Button type="submit" className="min-w-24" disabled={isLoading}>
                                 {isLoading ? <Loader2 className="animate-spin" /> : 'Submit'}
                             </Button>
                         </form>

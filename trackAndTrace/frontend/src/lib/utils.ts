@@ -180,10 +180,10 @@ export function parseCoordinates(coordinates: string): LatLngExpression {
 
 /**
  * Calculates an expiration time based on the current time and the number of days provided.
- * 
+ *
  * @param {number} days - The number of days from now until the expiration time.
  * @returns {Date} - A JavaScript `Date` object representing the expiration time.
- * 
+ *
  * @example
  * // Get the expiration time 2 days from now
  * const expiry = getExpiryTime(2);
@@ -195,16 +195,18 @@ export function getExpiryTime(days: number): Date {
     return expiry;
 }
 
-
 /**
  * Fetches data from a IPFS URL or CID content.
  *
  * @param urlOrCid The IPFS URL or CID content.
  * @throws If the server responds with an error or the response is malformed.
- * @returns The Pinata data as a JSON object, a Blob (for binary data), 
+ * @returns The Pinata data as a JSON object, a Blob (for binary data),
  *          or null if the response is empty.
  */
-export async function getPinataData(urlOrCid: string, pinata: PinataSDK): Promise<Record<string, unknown> | Blob | null> {
+export async function getPinataData(
+    urlOrCid: string,
+    pinata: PinataSDK,
+): Promise<Record<string, unknown> | Blob | null> {
     const cid = urlOrCid.startsWith('ipfs://') ? urlOrCid.split('//')[1] : urlOrCid;
 
     const url = await pinata.gateways.createSignedURL({
@@ -213,26 +215,25 @@ export async function getPinataData(urlOrCid: string, pinata: PinataSDK): Promis
     });
 
     const response = await fetch('/api/getPinataData', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url }),
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
     });
-  
+
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(`Unable to fetch Pinata data: ${JSON.stringify(error)}`);
+        const error = await response.json();
+        throw new Error(`Unable to fetch Pinata data: ${JSON.stringify(error)}`);
     }
-  
-    if (response.status === 204 || response.body === null ) {
-      return null;
+
+    if (response.status === 204 || response.body === null) {
+        return null;
     }
-  
+
     const contentType = response.headers.get('content-type') || '';
-  
+
     if (contentType.includes('application/json')) {
         return response.json();
     } else {
         return response.blob();
     }
-  
-  }
+}

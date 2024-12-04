@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { set, useForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import * as constants from '@/constants';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -39,16 +39,20 @@ export function Explorer(props: Props) {
         const coordinates: LatLngExpression[] = [];
 
         if (itemCreated.additional_data.bytes.length > 0) {
-            const locationRaw = bytesToObject<{ location: string | undefined }>(itemCreated.additional_data.bytes).location
+            const locationRaw = bytesToObject<{ location: string | undefined }>(
+                itemCreated.additional_data.bytes,
+            ).location;
             if (locationRaw) {
                 coordinates.push(parseCoordinates(locationRaw));
             }
         }
-        
+
         if (itemChanged && itemChanged.length > 0) {
             itemChanged.forEach((item) => {
                 if (item.additional_data.bytes.length > 0) {
-                    const locationRaw = bytesToObject<{ location: string | undefined }>(item.additional_data.bytes).location
+                    const locationRaw = bytesToObject<{ location: string | undefined }>(
+                        item.additional_data.bytes,
+                    ).location;
                     if (locationRaw) {
                         coordinates.push(parseCoordinates(locationRaw));
                     }
@@ -96,7 +100,7 @@ export function Explorer(props: Props) {
                 </CardHeader>
                 <CardContent>
                     <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                             <FormField
                                 control={form.control}
                                 name="itemID"
@@ -115,7 +119,9 @@ export function Explorer(props: Props) {
                                     </FormItem>
                                 )}
                             />
-                            <Button type="submit" className='min-w-24'>Search</Button>
+                            <Button type="submit" className="min-w-24">
+                                Search
+                            </Button>
                         </form>
                     </Form>
                 </CardContent>
@@ -125,7 +131,12 @@ export function Explorer(props: Props) {
                 <div className="grid md:grid-cols-2 gap-1 w-full max-w-2xl p-2 border rounded-lg">
                     <div className="relative border rounded-lg">
                         {productImageUrl ? (
-                            <img src={productImageUrl} alt="product-image" className="h-60 mx-auto" crossOrigin="anonymous" />
+                            <img
+                                src={productImageUrl}
+                                alt="product-image"
+                                className="h-60 mx-auto"
+                                crossOrigin="anonymous"
+                            />
                         ) : (
                             <div className="h-full flex items-center justify-center">
                                 <p className="text-[0.8rem] text-muted-foreground">No product images avalaible.</p>

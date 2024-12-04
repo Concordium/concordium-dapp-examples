@@ -18,7 +18,8 @@ export const CONTRACT_ADDRESS = ContractAddress.fromSerializable(CONFIG.contract
 /** The Concordium network used for the application. */
 export const NETWORK = CONFIG.network === 'mainnet' ? MAINNET : TESTNET;
 
-export const CCD_EXPLORER_URL = NETWORK === MAINNET ? 'https://ccdexplorer.io/mainnet' : 'https://ccdexplorer.io/testnet';
+export const CCD_EXPLORER_URL =
+    NETWORK === MAINNET ? 'https://ccdexplorer.io/mainnet' : 'https://ccdexplorer.io/testnet';
 
 // Before submitting a transaction we simulate/dry-run the transaction to get an
 // estimate of the energy needed for executing the transaction. In addition, we

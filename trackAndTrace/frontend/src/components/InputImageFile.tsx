@@ -24,8 +24,8 @@ export function InputImageFile({ onChange }: Props) {
     };
 
     const onClear = () => {
-        onChange([])
-        setImageNames([])
+        onChange([]);
+        setImageNames([]);
     };
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const onDropRejected = (fileRejections: FileRejection[], _event: DropEvent) => {

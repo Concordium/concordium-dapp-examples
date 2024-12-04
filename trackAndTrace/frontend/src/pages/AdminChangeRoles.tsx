@@ -132,7 +132,9 @@ export function AdminChangeRoles(props: Props) {
                                     </FormItem>
                                 )}
                             />
-                            <Button type="submit" className='min-w-24'>Add</Button>
+                            <Button type="submit" className="min-w-24">
+                                Add
+                            </Button>
                         </form>
                     </Form>
                 </CardContent>

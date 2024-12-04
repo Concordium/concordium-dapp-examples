@@ -178,7 +178,9 @@ export function AddTransitionRule(props: Props) {
                                     </FormItem>
                                 )}
                             />
-                            <Button type="submit" className="min-w-24">Submit</Button>
+                            <Button type="submit" className="min-w-24">
+                                Submit
+                            </Button>
                         </form>
                     </Form>
                 </CardContent>
