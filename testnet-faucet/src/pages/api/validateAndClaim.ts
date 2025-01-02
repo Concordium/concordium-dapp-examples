@@ -30,7 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         throw new Error('SENDER_ADDRESS env vars undefined.');
     }
 
-    const { humanToken, receiver, XPostId} = req.body as IBody;
+    const { humanToken, receiver, XPostId } = req.body as IBody;
 
     if (!humanToken || !XPostId || !receiver) {
         return res.status(400).json({
@@ -38,7 +38,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         });
     }
     try {
-        const isHumanTokenValid = await validateTurnsiteToken(humanToken)
+        const isHumanTokenValid = await validateTurnsiteToken(humanToken);
 
         if (!isHumanTokenValid) {
             return res.status(403).json({

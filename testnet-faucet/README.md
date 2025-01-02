@@ -29,13 +29,13 @@ Note: The values `3x00000000000000000000FF` for `NEXT_PUBLIC_CLOUDFLARE_TURNSTIL
 
 This project includes several Yarn scripts to streamline development and production tasks. Below is a description of each script:
 
-- **`yarn dev`**: Runs the development server using Next.js. Use this script during development to see your changes live.
-  The development server will be available at `http://localhost:3000` by default.
+**`yarn dev`**: Runs the development server using Next.js. Use this script during development to see your changes live.
+The development server will be available at `http://localhost:3000` by default.
 
-- **`yarn build`**: Compiles and optimizes your application for production. Run this script before deploying your project.
+**`yarn build`**: Compiles and optimizes your application for production. Run this script before deploying your project.
 
-- **`yarn start`**: Starts the optimized application in production mode. This requires running `yarn build` beforehand.  
+**`yarn start`**: Starts the optimized application in production mode. This requires running `yarn build` beforehand.
 
-- **`yarn lint`**: Analyzes your codebase for potential errors and enforces coding standards using ESLint.  
+**`yarn lint`**: Analyzes your codebase for potential errors and enforces coding standards using ESLint.
 
 Feel free to use these scripts as part of your development workflow!
