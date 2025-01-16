@@ -3,9 +3,14 @@
         "jsx": "react-jsx",
         "esModuleInterop": true,
         "target": "ES2021",
-        "lib": ["dom", "dom.iterable", "esnext"],
+        "lib": [
+            "dom",
+            "dom.iterable",
+            "esnext"
+        ],
         "moduleResolution": "Node",
-        "outDir": "dist"
+        "outDir": "dist",
+        "strict": true
     },
     "references": [
         {
@@ -18,6 +23,12 @@
             "path": "./mint-ui/tsconfig.json"
         }
     ],
-    "include": ["./common-ui/src/**/*", "./market-ui/src/**/*", "./mint-ui/src/**/*"],
-    "exclude": ["./node_modules"]
+    "include": [
+        "./common-ui/src/**/*",
+        "./market-ui/src/**/*",
+        "./mint-ui/src/**/*"
+    ],
+    "exclude": [
+        "./node_modules"
+    ]
 }
