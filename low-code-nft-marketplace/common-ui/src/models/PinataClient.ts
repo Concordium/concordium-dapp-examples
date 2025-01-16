@@ -1,7 +1,7 @@
 import { default as axios } from 'axios';
 
 export class PinataClient {
-    constructor(private pinataJwt: string) {}
+    constructor(private pinataJwt: string) { }
 
     async isJwtValid(): Promise<boolean> {
         const response = await axios({
@@ -33,7 +33,10 @@ export class PinataClient {
         }
 
         const responseData = response.data as PinFileToIPFSResponse;
-        return `ipfs://${responseData.IpfsHash}`;
+        // usually platforms should handle the gateway OR prefix usage but wallet doesnt at the moment.
+        // since this is an example, we can use it like below.
+        return `https://ipfs.io/ipfs/${responseData.IpfsHash}`
+        // return `ipfs://${responseData.IpfsHash}`;
     }
 
     async uploadJson(json: object, fileName: string): Promise<string> {
@@ -60,7 +63,10 @@ export class PinataClient {
         }
 
         const responseData = response.data as PinFileToIPFSResponse;
-        return `ipfs://${responseData.IpfsHash}`;
+        // usually platforms should handle the gateway OR prefix usage but wallet doesnt at the moment.
+        // since this is an example, we can use it like below.
+        return `https://ipfs.io/ipfs/${responseData.IpfsHash}`
+        // return `ipfs://${responseData.IpfsHash}`;
     }
 }
 

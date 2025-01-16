@@ -32,7 +32,7 @@ function LazyCis2Metadata(props: {
                 });
             });
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [props.metadataUrl.url]);
+    }, [toIpfsGatewayUrl(props.metadataUrl.url)]);
 
     if (state.error) {
         return props.errorLoadingTemplate(state.error.toString());

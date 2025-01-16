@@ -2,8 +2,8 @@
 
 The example project included in this repository serves as a working example of how to integrate sponsored transactions with smart contracts on the Concordium blockchain. This web app supports the following flows with the browser wallet:
 
--   Compute the message of a sponsored updateOperator transaction => Sign it with the wallet => Submit the signature and some input parameters to the `/submitUpdateOperator` backend endpoint.
--   Mint an NFT to your wallet => Compute the message of a sponsored transfer transaction => Sign it with the wallet => Submit the signature and some input parameters to the `/submitTransfer` backend endpoint.
+- Compute the message of a sponsored updateOperator transaction => Sign it with the wallet => Submit the signature and some input parameters to the `/submitUpdateOperator` backend endpoint.
+- Mint an NFT to your wallet => Compute the message of a sponsored transfer transaction => Sign it with the wallet => Submit the signature and some input parameters to the `/submitTransfer` backend endpoint.
 
 The backend creates a sponsored transaction and submits it to the `permit` function in the smart contract {index: SMART_CONTRACT_INDEX, subindex: 0}. You can look up the SMART_CONTRACT_INDEX in the `package.json` file. The backend returns the transaction hash to the frontend.
 
@@ -14,25 +14,25 @@ The smart contract code at {index: SMART_CONTRACT_INDEX, subindex: 0} can be fou
 
 ## Prerequisites
 
--   Browser wallet extension version 1.5.2 or above must be installed in Google Chrome and the Concordium testnet needs to be selected or a mobile wallet needs to be set up that supports wallet connect in order to view smart contract details or submit transactions.
+- Browser wallet extension version 1.5.2 or above must be installed in Google Chrome and the Concordium testnet needs to be selected or a mobile wallet needs to be set up that supports wallet connect in order to view smart contract details or submit transactions.
 
 ## Running the sponsored txs example (without backend -> submitting the sponsored transaction to chain will fail)
 
--   Run `yarn install` in this folder.
--   Run `yarn build` in a terminal in this folder.
--   Run `yarn start`.
--   Open URL logged in console (typically http://127.0.0.1:8080).
+- Run `yarn install` in this folder.
+- Run `yarn build` in a terminal in this folder.
+- Run `yarn start`.
+- Open URL logged in console (typically http://127.0.0.1:8080).
 
 To have hot-reload (useful for development), do the following instead:
 
--   Run `yarn watch` in a terminal.
--   Run `yarn start` in another terminal.
--   Open URL logged in console (typically http://127.0.0.1:8080).
+- Run `yarn watch` in a terminal.
+- Run `yarn start` in another terminal.
+- Open URL logged in console (typically http://127.0.0.1:8080).
 
 ## Running the sponsored txs example (with backend -> submitting the sponsored transaction to chain will work)
 
--   Run `yarn install` in this folder.
--   Run `yarn build` in a terminal in this folder.
+- Run `yarn install` in this folder.
+- Run `yarn build` in a terminal in this folder.
 
 This creates a `dist` folder which can be served via the backend. Start the backend server by following the [README.md](../backend/README.md)
 
