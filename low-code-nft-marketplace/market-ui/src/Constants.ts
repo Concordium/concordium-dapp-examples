@@ -7,7 +7,7 @@ import { ModuleReference } from '@concordium/web-sdk';
  * Contract Address for Marketplace. You should specify your contract's index when you initialized it.
  */
 export const MARKET_CONTRACT_ADDRESS = {
-    index: BigInt(5987),
+    index: BigInt(10491),
     subindex: BigInt(0),
 };
 
@@ -36,7 +36,7 @@ export const CIS2_MULTI_CONTRACT_INFO: Cis2ContractInfo = {
     moduleRef: new ModuleReference(MULTI_CONTRACT_MODULE_REF),
     tokenIdByteSize: 1,
 };
-export const IPFS_GATEWAY_URL = 'https://gateway.pinata.cloud/ipfs/';
+export const IPFS_GATEWAY_URL = 'https://ipfs.io/ipfs/';
 
 // Default value of the new marketplace contract init flag is false.
 // It needs to be set as true in order to allow to create a new marketplace contract instance
