@@ -47,7 +47,7 @@ const getLatestTransactions = async () => {
     }
 };
 
-const validateAndClaim = async (XPostId: string | undefined, receiver: string) => {
+const validateAndClaim = async (humanToken: string, receiver: string, XPostId: string | undefined) => {
     try {
         const response = await fetch('/api/validateAndClaim', {
             method: 'POST',
@@ -55,8 +55,9 @@ const validateAndClaim = async (XPostId: string | undefined, receiver: string) =
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                XPostId,
+                humanToken,
                 receiver,
+                XPostId,
             }),
         });
 
@@ -128,11 +129,11 @@ export default function Home() {
             'width=500,height=500',
         );
 
-    const handleVerifyTweetAndSendTokens = async () => {
+    const handleVerifyTweetAndSendTokens = async (token: string) => {
         setTurnstileOpen(false);
         setIsVerifyLoading(true);
         try {
-            const response = await validateAndClaim(XPostId, address);
+            const response = await validateAndClaim(token, address, XPostId);
 
             if (response.ok && !response.data.error) {
                 setIsValidVerification(true);
@@ -366,7 +367,7 @@ export default function Home() {
                             ref={turnstileRef}
                             siteKey={process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY as string}
                             options={{ theme: 'light', size: 'normal' }}
-                            onSuccess={() => setTimeout(handleVerifyTweetAndSendTokens, 1500)}
+                            onSuccess={(token) => setTimeout(() => handleVerifyTweetAndSendTokens(token), 1000)}
                         />
                     </DialogPanel>
                 </div>
