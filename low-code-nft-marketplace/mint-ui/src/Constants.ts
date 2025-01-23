@@ -12,7 +12,7 @@ export const CIS2_MULTI_CONTRACT_INFO: Cis2ContractInfo = {
     moduleRef: new ModuleReference(MULTI_CONTRACT_MODULE_REF),
     tokenIdByteSize: 1,
 };
-export const IPFS_GATEWAY_URL = 'https://gateway.pinata.cloud/ipfs/';
+export const IPFS_GATEWAY_URL = 'https://ipfs.io/ipfs/';
 
 export const CONNCORDIUM_NODE_ENDPOINT = 'https://grpc.testnet.concordium.com';
 export const CONCORDIUM_NODE_PORT = 20000;
