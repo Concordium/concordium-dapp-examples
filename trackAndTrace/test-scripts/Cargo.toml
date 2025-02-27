@@ -13,6 +13,10 @@ tonic = { version = "0.10", features = ["tls", "tls-roots"] }
 track-and-trace = { path = "../smart-contract/", default-features = false, features = ["std", "serde"] }
 serde_json = "1.0"
 
+# The track-and-trace-test binary explicitly specifies these libraries to
+# resolve version conflicts between concordium-std (which imports its own
+# version) and the local rust-sdk dependency. This overrides dependencies with
+# versions matching those in the local rust-sdk to prevent compiler errors.
 [patch.crates-io]
 concordium-contracts-common = { git = "https://github.com/concordium/concordium-rust-sdk"}
 concordium-contracts-common-derive = { git = "https://github.com/concordium/concordium-rust-sdk"}
