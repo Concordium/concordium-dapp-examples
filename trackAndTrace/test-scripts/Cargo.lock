@@ -609,7 +609,7 @@ dependencies = [
 [[package]]
 name = "concordium-contracts-common"
 version = "9.2.0"
-source = "git+https://github.com/concordium/concordium-rust-sdk#f06dfa45ba72ea161cef759dfcf308c5a8404093"
+source = "git+https://github.com/concordium/concordium-rust-sdk?rev=c0af25d#c0af25dbda5e9917e6fd08ef652ca0743758faaa"
 dependencies = [
  "base64",
  "bs58",
@@ -630,7 +630,7 @@ dependencies = [
 [[package]]
 name = "concordium-contracts-common-derive"
 version = "4.1.0"
-source = "git+https://github.com/concordium/concordium-rust-sdk#f06dfa45ba72ea161cef759dfcf308c5a8404093"
+source = "git+https://github.com/concordium/concordium-rust-sdk?rev=c0af25d#c0af25dbda5e9917e6fd08ef652ca0743758faaa"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -640,7 +640,7 @@ dependencies = [
 [[package]]
 name = "concordium-rust-sdk"
 version = "6.0.0"
-source = "git+https://github.com/concordium/concordium-rust-sdk#f06dfa45ba72ea161cef759dfcf308c5a8404093"
+source = "git+https://github.com/concordium/concordium-rust-sdk?rev=c0af25d#c0af25dbda5e9917e6fd08ef652ca0743758faaa"
 dependencies = [
  "aes-gcm",
  "anyhow",
@@ -672,7 +672,7 @@ dependencies = [
 [[package]]
 name = "concordium-smart-contract-engine"
 version = "6.0.0"
-source = "git+https://github.com/concordium/concordium-rust-sdk#f06dfa45ba72ea161cef759dfcf308c5a8404093"
+source = "git+https://github.com/concordium/concordium-rust-sdk?rev=c0af25d#c0af25dbda5e9917e6fd08ef652ca0743758faaa"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -705,7 +705,7 @@ dependencies = [
 [[package]]
 name = "concordium-wasm"
 version = "5.0.0"
-source = "git+https://github.com/concordium/concordium-rust-sdk#f06dfa45ba72ea161cef759dfcf308c5a8404093"
+source = "git+https://github.com/concordium/concordium-rust-sdk?rev=c0af25d#c0af25dbda5e9917e6fd08ef652ca0743758faaa"
 dependencies = [
  "anyhow",
  "concordium-contracts-common",
@@ -717,7 +717,7 @@ dependencies = [
 [[package]]
 name = "concordium_base"
 version = "7.0.0"
-source = "git+https://github.com/concordium/concordium-rust-sdk#f06dfa45ba72ea161cef759dfcf308c5a8404093"
+source = "git+https://github.com/concordium/concordium-rust-sdk?rev=c0af25d#c0af25dbda5e9917e6fd08ef652ca0743758faaa"
 dependencies = [
  "aes",
  "anyhow",
@@ -764,7 +764,7 @@ dependencies = [
 [[package]]
 name = "concordium_base_derive"
 version = "1.0.0"
-source = "git+https://github.com/concordium/concordium-rust-sdk#f06dfa45ba72ea161cef759dfcf308c5a8404093"
+source = "git+https://github.com/concordium/concordium-rust-sdk?rev=c0af25d#c0af25dbda5e9917e6fd08ef652ca0743758faaa"
 dependencies = [
  "proc-macro2",
  "quote",
