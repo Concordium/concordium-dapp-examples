@@ -1,4 +1,4 @@
-use anyhow::Context;
+use anyhow::{anyhow, Context};
 use clap::Parser as _;
 use concordium_rust_sdk::{
     contract_client::{ContractInitBuilder, ModuleDeployBuilder, ViewError},
@@ -6,7 +6,7 @@ use concordium_rust_sdk::{
     types::{smart_contracts::WasmModule, WalletAccount},
     v2::{self as sdk, BlockIdentifier},
 };
-use track_and_trace::{MetadataUrl, *};
+use track_and_trace::{ItemState, MetadataUrl, *};
 
 pub enum TrackAndTraceContract {}
 
@@ -30,7 +30,7 @@ struct Args {
     module:                    std::path::PathBuf,
     #[arg(
         long = "input-parameter-file",
-        short = 'i',
+        short = 'p',
         help = "A JSON file containing the input parameter."
     )]
     input_parameter_json_file: std::path::PathBuf,
@@ -163,6 +163,24 @@ async fn main() -> anyhow::Result<()> {
             additional_data: AdditionalData::empty(),
         };
 
+        // Check the status of the item before the transaction
+        let tx_dry_run = contract_client
+            .dry_run_update::<ItemID, ViewError>(
+                "getItemState",
+                Amount::zero(),
+                admin_key.address,
+                &ItemID::from(i),
+            )
+            .await?;
+
+        eprintln!(
+            "Item state for item with index {i} before transaction: {:#?}",
+            tx_dry_run
+                .return_value()
+                .ok_or(anyhow!("Failed to get return value"))?
+                .parse::<ItemState>()?
+        );
+
         let tx_dry_run = contract_client
             .dry_run_update::<ChangeItemStatusParams<AdditionalData>, ViewError>(
                 "changeItemStatus",
@@ -181,10 +199,45 @@ async fn main() -> anyhow::Result<()> {
         if let Err(err) = tx_hash.wait_for_finalization().await {
             anyhow::bail!("Update item status failed: {err:#?}.");
         }
+
+        // Check the status of the item after the transaction
+        let tx_dry_run = contract_client
+            .dry_run_update::<ItemID, ViewError>(
+                "getItemState",
+                Amount::zero(),
+                admin_key.address,
+                &ItemID::from(i),
+            )
+            .await?;
+        eprintln!(
+            "Item state for item with index {i} after transaction: {:#?}",
+            tx_dry_run
+                .return_value()
+                .ok_or(anyhow!("Failed to get return value"))?
+                .parse::<ItemState>()?
+        );
     }
 
     // Update items from `InTransit` to `InStore`
     for i in 0..args.num_items {
+        // Check the status of the item before the transaction
+        let tx_dry_run = contract_client
+            .dry_run_update::<ItemID, ViewError>(
+                "getItemState",
+                Amount::zero(),
+                admin_key.address,
+                &ItemID::from(i),
+            )
+            .await?;
+
+        eprintln!(
+            "Item state for item with index {i} before transaction: {:#?}",
+            tx_dry_run
+                .return_value()
+                .ok_or(anyhow!("Failed to get return value"))?
+                .parse::<ItemState>()?
+        );
+
         let param: ChangeItemStatusParams<AdditionalData> = ChangeItemStatusParams {
             item_id:         ItemID::from(i),
             new_status:      Status::InStore,
@@ -210,10 +263,45 @@ async fn main() -> anyhow::Result<()> {
         if let Err(err) = tx_hash.wait_for_finalization().await {
             anyhow::bail!("Update item status failed: {err:#?}.");
         }
+
+        // Check the status of the item after the transaction
+        let tx_dry_run = contract_client
+            .dry_run_update::<ItemID, ViewError>(
+                "getItemState",
+                Amount::zero(),
+                admin_key.address,
+                &ItemID::from(i),
+            )
+            .await?;
+        eprintln!(
+            "Item state for item with index {i} after transaction: {:#?}",
+            tx_dry_run
+                .return_value()
+                .ok_or(anyhow!("Failed to get return value"))?
+                .parse::<ItemState>()?
+        );
     }
 
     // Update items from `InStore` to `Sold`
     for i in 0..args.num_items {
+        // Check the status of the item before the transaction
+        let tx_dry_run = contract_client
+            .dry_run_update::<ItemID, ViewError>(
+                "getItemState",
+                Amount::zero(),
+                admin_key.address,
+                &ItemID::from(i),
+            )
+            .await?;
+
+        eprintln!(
+            "Item state for item with index {i} before transaction: {:#?}",
+            tx_dry_run
+                .return_value()
+                .ok_or(anyhow!("Failed to get return value"))?
+                .parse::<ItemState>()?
+        );
+
         let param: ChangeItemStatusParams<AdditionalData> = ChangeItemStatusParams {
             item_id:         ItemID::from(i),
             new_status:      Status::Sold,
@@ -238,6 +326,23 @@ async fn main() -> anyhow::Result<()> {
         if let Err(err) = tx_hash.wait_for_finalization().await {
             anyhow::bail!("Update item status failed: {err:#?}.");
         }
+
+        // Check the status of the item after the transaction
+        let tx_dry_run = contract_client
+            .dry_run_update::<ItemID, ViewError>(
+                "getItemState",
+                Amount::zero(),
+                admin_key.address,
+                &ItemID::from(i),
+            )
+            .await?;
+        eprintln!(
+            "Item state for item with index {i} after transaction: {:#?}",
+            tx_dry_run
+                .return_value()
+                .ok_or(anyhow!("Failed to get return value"))?
+                .parse::<ItemState>()?
+        );
     }
 
     eprintln!("Script completed successfully");

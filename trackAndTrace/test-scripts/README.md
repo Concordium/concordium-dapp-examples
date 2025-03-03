@@ -57,18 +57,66 @@ To get your account file (the `4bbdAUCDK2D6cUvUeprGr4FaSaHXKuYmYVjyCa4bXSCu3NUXz
 The script will run a series of transactions. The output will be similar to:
 
 ```
-Starting script with admin account 4bbdAUCDK2D6cUvUeprGr4FaSaHXKuYmYVjyCa4bXSCu3NUXzA.
-Source module with reference f94a1503030142b4dfdd6667875403783e6f457eafb020f0a957270cfe7499e9 already exists.
-The maximum amount of NRG allowed for the transaction is 4075.
-Transaction a2cc66c2e674af64e5a7b85ec1b97e87f9433a21f5ffdc795c038c0f7195a712 submitted. Waiting for finalization.
-Initialized a new smart contract instance at address <8021,0>.
-Submitted create item with index 0 in transaction 15f6cfe148a65cc621fba6164326466702d35df14b5dac07d35bd40b0354e9a1.
-Submitted create item with index 1 in transaction db037444d4d619f5bfb195bdc7532d933120873a517dae5b87dad754da24a53d.
-Submitted update item status with index 0 to `InTransit` in transaction fd2b2cbd9e9c0c1ed34306ed7fef2d698ce86465b4dbf13a1bb97538217a72b7.
-Submitted update item status with index 1 to `InTransit` in transaction 73af8cedac05f3dddde14b9358481892a5c1923457dbd6e6c6e920fb5a35ccef.
-Submitted update item status with index 0 to `InStore` in transaction hash 94cff0ec86bdfe059299798ee3aa7e62ed7b1e806ff55bdb397601d0044740c9.
-Submitted update item status with index 1 to `InStore` in transaction hash 718eb74c88429c59032e2e2367f570f66b6f16b87f9e86661e2ddaf3758c5d37.
-Submitted update item status with index 0 to `Sold` in transaction 88cc980eb9c58eccfa9d98605a7f463738ce17f8993cafbef2b17be17cdfe425.
-Submitted update item status with index 1 to `Sold` in transaction 8b8f0729ca0d8f4ca36dcd226b042f4baa5b98fce71effff31db52d90337a466.
+Starting script with admin account 3eQtum35Gkba7g6uePqr9Zc5iYKVaKKCeho7YcydTBJLvxdZgG.
+Source module with reference a5a2660cd12561cc2fe11411e840655453ff1cbdfe6bcfb91b5949c6ef9e84c5 already exists.
+The maximum amount of NRG allowed for the transaction is 2828.
+Transaction c29ea78ba1f26101fe18e5a8d2b7f8ccd5ec7729db31a38a4965e0b24fdc576f submitted. Waiting for finalization.
+Initialized a new smart contract instance at address <5090,0>.
+Submitted create item with index 0 in transaction e9c60ef7256fb0afa9ca4148ebade5827d2c0573e196e807c83b4dc58f1db13f.
+Submitted create item with index 1 in transaction d2365b4ce2f70fe79a668afc303c94912dc7a878e1ca5fae2611b64c3ac368aa.
+Item state for item with index 0 before transaction: ItemState {
+    status: Produced,
+    metadata_url: None,
+}
+Submitted update item status with index 0 to `InTransit` in transaction 89a6cf6a4a074991599a9640974828db64af982710b9e6018f094be8c3091889.
+Item state for item with index 0 after transaction: ItemState {
+    status: InTransit,
+    metadata_url: None,
+}
+Item state for item with index 1 before transaction: ItemState {
+    status: Produced,
+    metadata_url: None,
+}
+Submitted update item status with index 1 to `InTransit` in transaction d83e6e3a3b9d23e9afc46cee4f37618a57e39d092c32b7c1c4d00727e2242ba2.
+Item state for item with index 1 after transaction: ItemState {
+    status: InTransit,
+    metadata_url: None,
+}
+Item state for item with index 0 before transaction: ItemState {
+    status: InTransit,
+    metadata_url: None,
+}
+Submitted update item status with index 0 to `InStore` in transaction hash 5bf0af1674ecdd6b604f5b2cbeab154b95dc6b6ce6dc90dc86a4b76feab7070d.
+Item state for item with index 0 after transaction: ItemState {
+    status: InStore,
+    metadata_url: None,
+}
+Item state for item with index 1 before transaction: ItemState {
+    status: InTransit,
+    metadata_url: None,
+}
+Submitted update item status with index 1 to `InStore` in transaction hash d7950ac2876ebd21f3a789b01099c96ac633650be3895934b90287a909c9dfa6.
+Item state for item with index 1 after transaction: ItemState {
+    status: InStore,
+    metadata_url: None,
+}
+Item state for item with index 0 before transaction: ItemState {
+    status: InStore,
+    metadata_url: None,
+}
+Submitted update item status with index 0 to `Sold` in transaction 86f150c41f171617ac58a41f0525fe85ceb3533b269dd36383a317f45a137720.
+Item state for item with index 0 after transaction: ItemState {
+    status: Sold,
+    metadata_url: None,
+}
+Item state for item with index 1 before transaction: ItemState {
+    status: InStore,
+    metadata_url: None,
+}
+Submitted update item status with index 1 to `Sold` in transaction f0e687e09c13130ac8d372d1ba96da79ac48adeb964208a3e3e1e1d4f755f04d.
+Item state for item with index 1 after transaction: ItemState {
+    status: Sold,
+    metadata_url: None,
+}
 Script completed successfully
 ```
