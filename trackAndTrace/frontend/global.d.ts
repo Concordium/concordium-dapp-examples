@@ -25,6 +25,10 @@ interface Config {
     contractAddress: { index: string; subindex: string };
     /** The concordium network used. */
     network: TargetNetwork;
+    /** The Pinata JSON Web Token. */
+    pinataJWT: string;
+    /** The base URL of the Pinata Gateway. */
+    pinataGateway: string;
     /** The URL of the sponsored transaction backend API. */
     sponsoredTransactionBackend: string;
 }
