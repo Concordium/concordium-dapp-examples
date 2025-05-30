@@ -1,0 +1,17 @@
+name: Release Backend
+
+on:
+  push:
+    tags:
+      - allowlist-backend/*
+
+jobs:
+  release-backend:
+    uses: concordium/.github/.github/workflows/docker-release-workflow.yaml@v1
+    with:
+      SERVICE_NAME: allowlist-backend
+      BUILD_ARGS: |
+        build_image=node:18-slim
+      DOCKER_FILE_PATH: allowListManagerFaucet/backend/Dockerfile
+      DOCKER_CONTEXT_PATH: allowListManagerFaucet/backend
+    secrets: inherit

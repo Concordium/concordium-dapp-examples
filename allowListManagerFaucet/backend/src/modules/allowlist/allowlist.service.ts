@@ -20,7 +20,7 @@ export class AllowListService {
     private readonly processTrackingService: ProcessTrackingService,
     private readonly configService: ConfigService,
   ) {
-    this.defaultTokenId = this.configService.get('DEFAULT_TOKEN_ID', 'DragosToken')
+    this.defaultTokenId = this.configService.get('DEFAULT_TOKEN_ID', 'PabloToken2')
     this.logger.log(`Initialized with default token: ${this.defaultTokenId}`)
   }
 
@@ -48,7 +48,7 @@ export class AllowListService {
 
   private async executeAllowListProcess(processId: string, dto: AddToAllowListDto, tokenId: string) {
     try {
-      const defaultMintAmount = this.configService.get('DEFAULT_MINT_AMOUNT', '10')
+      const defaultMintAmount = this.configService.get('DEFAULT_MINT_AMOUNT', '100')
 
       // Step 1: Add to allow list FIRST
       this.processTrackingService.updateStep(processId, 0, 'processing')

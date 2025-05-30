@@ -1,0 +1,41 @@
+services:
+  web3id-verifier:
+    build: 
+      context: ./services/web3id-verifier-ts
+    ports:
+      - "8080:8080"
+    environment:
+      - CONCORDIUM_NODE_ENDPOINT=${CONCORDIUM_NODE_ENDPOINT}
+    networks:
+      - allowlist-network
+
+  backend:
+    build: 
+      context: ./backend
+    ports:
+      - "3001:3001"
+    environment:
+      - CONCORDIUM_GRPC_HOST=${CONCORDIUM_GRPC_HOST}
+      - CONCORDIUM_GRPC_PORT=${CONCORDIUM_GRPC_PORT}
+      - DEFAULT_TOKEN_ID=${DEFAULT_TOKEN_ID}
+    depends_on:
+      - web3id-verifier
+    networks:
+      - allowlist-network
+
+  frontend:
+    build: 
+      context: ./frontend
+      args:
+        TOKEN_ID: ${DEFAULT_TOKEN_ID}
+        BACKEND_URL: ${FRONTEND_BACKEND_URL} # e.g., http://localhost:3001
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - allowlist-network
+
+networks:
+  allowlist-network:
+    driver: bridge
