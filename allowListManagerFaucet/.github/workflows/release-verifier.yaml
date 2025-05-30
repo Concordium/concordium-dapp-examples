@@ -1,0 +1,23 @@
+name: Release Web3ID Verifier
+
+on:
+  push:
+    tags:
+      - allowlist-web3id-verifier/*
+
+jobs:
+  release-web3id-verifier:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Release Docker Image
+        uses: concordium/.github/.github/workflows/docker-release-workflow.yaml@main
+        with:
+          SERVICE_NAME: allowlist-web3id-verifier
+          BUILD_ARGS: |
+            build_image=node:18-slim
+          DOCKER_FILE_PATH: services/web3id-verifier-ts/Dockerfile
+          DOCKER_CONTEXT_PATH: services/web3id-verifier-ts
+        secrets: inherit

@@ -1,0 +1,39 @@
+services:
+  web3id-verifier:
+    build: 
+      context: ./services/web3id-verifier-ts
+    ports:
+      - "8080:8080"
+    networks:
+      - allowlist-network
+
+  backend:
+    build: 
+      context: ./backend
+    ports:
+      - "3001:3001"
+    environment:
+      - CONCORDIUM_GRPC_HOST=`DEVNET_ADDRESS`
+      - CONCORDIUM_GRPC_PORT=`DEVNET_PORT`
+      - DEFAULT_TOKEN_ID=`SECRET_TOKEN_ID`
+    depends_on:
+      - web3id-verifier
+    networks:
+      - allowlist-network
+
+  frontend:
+    build: 
+      context: ./frontend
+      args:
+        TOKEN_ID: SECRET_TOKEN_ID
+        BACKEND_URL: http://localhost:3001
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - allowlist-network
+
+networks:
+  allowlist-network:
+    driver: bridge

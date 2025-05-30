@@ -1,0 +1,25 @@
+name: Release Frontend
+
+on:
+  push:
+    tags:
+      - allowlist-frontend/*
+
+jobs:
+  release-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Release Docker Image
+        uses: concordium/.github/.github/workflows/docker-release-workflow.yaml@main
+        with:
+          SERVICE_NAME: allowlist-frontend
+          BUILD_ARGS: |
+            build_image=node:18-slim
+            TOKEN_ID=SECRET-DELETE-AFTER-PR
+            BACKEND_URL=http://localhost:3001
+          DOCKER_FILE_PATH: frontend/Dockerfile
+          DOCKER_CONTEXT_PATH: frontend
+        secrets: inherit
