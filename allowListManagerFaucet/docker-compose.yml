@@ -39,4 +39,3 @@ services:
 networks:
   allowlist-network:
     driver: bridge
-    
