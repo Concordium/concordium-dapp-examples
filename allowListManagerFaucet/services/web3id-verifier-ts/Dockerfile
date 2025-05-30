@@ -50,4 +50,4 @@ COPY --from=build /build/tsconfig.json ./
 EXPOSE 8080
 
 # Use yarn start with endpoint argument
-CMD ["yarn", "start", "--endpoint", "https://grpc.devnet-plt-alpha.concordium.com:20000"]
+CMD ["yarn", "start", "--endpoint", "devnet-address-and-port"]
