@@ -28,8 +28,5 @@ RUN npm ci --only=production && npm cache clean --force
 # Copy built application
 COPY --from=build /build/dist ./dist
 
-# Copy wallet folder to runtime (temporary - will be replaced with proper secret management)
-COPY wallet/ ./wallet/
-
 EXPOSE 3001
 CMD ["node", "dist/main.js"]

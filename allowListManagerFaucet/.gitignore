@@ -6,6 +6,7 @@
 *.env
 
 # Wallet files (CRITICAL - DO NOT COMMIT)
+wallet/
 *.export
 *.key
 
