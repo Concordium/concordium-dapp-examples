@@ -21,3 +21,4 @@ jobs:
           DOCKER_FILE_PATH: backend/Dockerfile
           DOCKER_CONTEXT_PATH: backend
         secrets: inherit
+        

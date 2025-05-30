@@ -21,3 +21,4 @@ jobs:
           DOCKER_FILE_PATH: services/web3id-verifier-ts/Dockerfile
           DOCKER_CONTEXT_PATH: services/web3id-verifier-ts
         secrets: inherit
+        

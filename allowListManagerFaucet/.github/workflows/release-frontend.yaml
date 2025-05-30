@@ -18,8 +18,8 @@ jobs:
           SERVICE_NAME: allowlist-frontend
           BUILD_ARGS: |
             build_image=node:18-slim
-            TOKEN_ID=SECRET-DELETE-AFTER-PR
-            BACKEND_URL=http://localhost:3001
+            TOKEN_ID=${{ secrets.DEFAULT_TOKEN_ID }}
+            BACKEND_URL=${{ secrets.FRONTEND_BACKEND_URL }}
           DOCKER_FILE_PATH: frontend/Dockerfile
           DOCKER_CONTEXT_PATH: frontend
         secrets: inherit

@@ -50,4 +50,4 @@ COPY --from=build /build/tsconfig.json ./
 EXPOSE 8080
 
 # Use yarn start with endpoint argument
-CMD ["yarn", "start", "--endpoint", "devnet-address-and-port"]
+CMD ["sh", "-c", "yarn start --endpoint $CONCORDIUM_NODE_ENDPOINT"]
