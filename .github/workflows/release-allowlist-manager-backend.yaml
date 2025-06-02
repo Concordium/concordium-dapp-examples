@@ -13,5 +13,4 @@ jobs:
       BUILD_ARGS: |
         build_image=node:18-slim
       DOCKER_FILE_PATH: allowListManagerFaucet/backend/Dockerfile
-      DOCKER_CONTEXT_PATH: allowListManagerFaucet/backend
     secrets: inherit
