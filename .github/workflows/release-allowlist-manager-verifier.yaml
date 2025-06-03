@@ -7,7 +7,7 @@ on:
 
 jobs:
   release-web3id-verifier:
-    uses: concordium/.github/.github/workflows/docker-release-workflow.yaml@main
+    uses: concordium/.github/.github/workflows/docker-release-workflow.yaml@v1
     with:
       SERVICE_NAME: allowlist-web3id-verifier
       BUILD_ARGS: |
