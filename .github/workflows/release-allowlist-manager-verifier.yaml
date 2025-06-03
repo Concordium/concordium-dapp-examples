@@ -13,4 +13,5 @@ jobs:
       BUILD_ARGS: |
         build_image=node:18-slim
       DOCKER_FILE_PATH: allowListManagerFaucet/services/web3id-verifier-ts/Dockerfile
+      DOCKER_CONTEXT: allowListManagerFaucet/services/web3id-verifier-ts
     secrets: inherit
