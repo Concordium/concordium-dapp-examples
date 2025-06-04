@@ -12,6 +12,8 @@ jobs:
       SERVICE_NAME: allowlist-frontend
       BUILD_ARGS: |
         build_image=node:18-slim
+        TOKEN_ID=${{ secrets.TOKEN_ID }}
+        BACKEND_URL=${{ secrets.BACKEND_URL }}
       DOCKER_FILE_PATH: allowListManagerFaucet/frontend/Dockerfile
       DOCKER_CONTEXT: allowListManagerFaucet/frontend
     secrets: inherit

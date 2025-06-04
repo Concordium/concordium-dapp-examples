@@ -4,6 +4,14 @@ FROM ${build_image} AS build
 ARG build_image
 WORKDIR /build
 
+# Accept build arguments for frontend environment variables
+ARG TOKEN_ID
+ARG BACKEND_URL
+
+# Set as environment variables for Vite to use during build
+ENV TOKEN_ID=${TOKEN_ID}
+ENV BACKEND_URL=${BACKEND_URL}
+
 # Copy package files first for better caching
 COPY package.json package-lock.json* ./
 RUN npm ci
