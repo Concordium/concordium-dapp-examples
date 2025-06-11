@@ -1,12 +1,21 @@
 <!DOCTYPE html>
 <html>
-
-<head>
+  <head>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <meta charset="utf-8" />
     <title>Allow List dApp</title>
+    
+    <!-- Runtime configuration - will be replaced by deployment script -->
+    <script>
+      window.runtimeConfig = {
+        TOKEN_ID: "__TOKEN_ID__",
+        BACKEND_URL: "__BACKEND_URL__",
+        VERIFIER_URL: "__VERIFIER_URL__"
+      };
+    </script>
+    
     <style>
         body {
             background-color: #f8f9fa;
@@ -50,11 +59,9 @@
             border-width: .2em;
         }
     </style>
-</head>
-
-<body>
+  </head>
+  <body>
     <div id="root"></div>
     <script type="module" src="/src/index.tsx"></script>
-</body>
-
+  </body>
 </html>

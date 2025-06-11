@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 ARG build_image="node:18-slim"
-FROM ${build_image}
+FROM ${build_image} 
 ARG build_image
 
 WORKDIR /app
@@ -21,13 +21,16 @@ COPY index.html ./
 COPY src/ ./src/
 COPY public/ ./public/
 
-# Copy the build and serve script
+# Build the application 
+RUN npm run build
+
+# Copy the runtime configuration script
 COPY build-and-serve.sh ./
 RUN chmod +x build-and-serve.sh
 
 EXPOSE 3000
 
-# Use the script to build and serve at runtime
+# Use the script to inject runtime variables and serve
 CMD ["./build-and-serve.sh"]
 
 LABEL build_image=${build_image}
