@@ -8,7 +8,7 @@ async function bootstrap() {
   
   // Enable CORS for frontend
   app.enableCors({
-    origin: ['http://localhost:5173', 'http://localhost:3000'], //frontend URLs
+    origin: ['http://localhost:5173', 'http://localhost:3000', 'https://allowlist.devnet-plt-alpha.concordium.com'], //frontend URLs
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   })
