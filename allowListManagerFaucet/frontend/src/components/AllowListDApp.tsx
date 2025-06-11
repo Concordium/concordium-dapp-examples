@@ -8,11 +8,21 @@ import {
     HexString,
 } from '@concordium/web-sdk';
 import { BrowserWalletProvider, WalletProvider } from '../services/wallet-connection';
-import { getVerifierURL } from '../services/verification-service';
 import { Buffer } from 'buffer';
 
-const TOKEN_ID = process.env.TOKEN_ID;
-const BACKEND_URL = process.env.BACKEND_URL;
+declare global {
+  interface Window {
+    runtimeConfig: {
+      TOKEN_ID: string;
+      BACKEND_URL: string;
+      VERIFIER_URL: string;
+    };
+  }
+}
+
+const TOKEN_ID = window.runtimeConfig?.TOKEN_ID || 'ExampleToken';
+const BACKEND_URL = window.runtimeConfig?.BACKEND_URL || 'http://localhost:3001';
+const VERIFIER_URL = window.runtimeConfig?.VERIFIER_URL || 'http://localhost:8080';
 
 export default function AllowListDApp() {
     const [provider, setProvider] = useState<WalletProvider>();
@@ -154,7 +164,7 @@ export default function AllowListDApp() {
             }
 
             setProofStatus('Verifying proof...');
-            const resp = await fetch(`${getVerifierURL()}/v0/verify`, {
+            const resp = await fetch(`${VERIFIER_URL}/v0/verify`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
