@@ -138,7 +138,6 @@ export function runServer(appConfig: AppConfig) {
     app.use(cors({
         origin: ['http://localhost:5173', 'http://localhost:3000', 'https://allowlist.devnet-plt-alpha.concordium.com'], // AllowListManager Frontend
         methods: ['GET', 'POST'],
-        credentials: true
     }));
 
     app.use(bodyParser.raw({ type: 'application/json' }));
