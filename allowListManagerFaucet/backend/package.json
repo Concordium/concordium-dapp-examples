@@ -18,7 +18,7 @@
     "@nestjs/platform-express": "^10.4.5",
     "@nestjs/config": "^4.0.2",
     "@nestjs/swagger": "^7.4.2",
-    "@concordium/web-sdk": "^10.0.0-alpha.4",
+    "@concordium/web-sdk": "^10.0.0-alpha.6",
     "@grpc/grpc-js": "^1.12.2",
     "@protobuf-ts/grpc-transport": "^2.9.1",
     "class-validator": "^0.14.1",

@@ -20,9 +20,9 @@ declare global {
   }
 }
 
-const TOKEN_ID = window.runtimeConfig?.TOKEN_ID || 'ExampleToken';
-const BACKEND_URL = window.runtimeConfig?.BACKEND_URL || 'http://localhost:3001';
-const VERIFIER_URL = window.runtimeConfig?.VERIFIER_URL || 'http://localhost:8080';
+const TOKEN_ID =  'ExampleToken';
+const BACKEND_URL = 'http://localhost:3001';
+const VERIFIER_URL = 'http://localhost:8080';
 
 export default function AllowListDApp() {
     const [provider, setProvider] = useState<WalletProvider>();
