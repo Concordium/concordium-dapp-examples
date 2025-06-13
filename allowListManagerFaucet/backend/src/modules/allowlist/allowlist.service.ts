@@ -132,18 +132,18 @@ export class AllowListService {
       // Debug: Log all tokens in the account (properly handle TokenAmount and TokenId)
       this.logger.log(`All tokens in account ${userAccount}:`)
       tokenAccountInfo.forEach(balance =>
-        this.logger.log(`Token ${balance.id.symbol}, allowList=${balance.state.memberAllowList}, denyList=${balance.state.memberDenyList}`)
+        this.logger.log(`Token ${balance.id.value}, allowList=${balance.state.memberAllowList}, denyList=${balance.state.memberDenyList}`)
       );
       
       // Find the specific token in the account's token list
-      // Use balance.id.symbol for comparison
-      const tokenInfo = tokenAccountInfo.find(balance => 
-        balance.id.symbol === checkTokenId
+      // Use balance.id.value for comparison
+      const tokenInfo = tokenAccountInfo.find(balance =>
+        balance.id.value === checkTokenId
       )
 
       if (!tokenInfo) {
         this.logger.log(`Token ${checkTokenId} not found in account ${userAccount} - user not on allow list`)
-        this.logger.log(`Available tokens: ${tokenAccountInfo.map(t => t.id.symbol).join(', ')}`)
+        this.logger.log(`Available tokens: ${tokenAccountInfo.map(t => t.id.value).join(', ')}`)
         return false
       }
 

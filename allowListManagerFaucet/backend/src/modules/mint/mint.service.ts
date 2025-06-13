@@ -65,12 +65,12 @@ export class MintService {
       // Find the specific token in the account's token list
       // Use balance.id.symbol for comparison
       const tokenInfo = tokenAccountInfo.find(balance => 
-        balance.id.symbol === tokenId
+        balance.id.value === tokenId
       )
       
       if (!tokenInfo) {
         this.logger.log(`Token ${tokenId} not found in account ${accountAddress} - balance is 0`)
-        this.logger.log(`Available tokens: ${tokenAccountInfo.map(t => t.id.symbol).join(', ')}`)
+        this.logger.log(`Available tokens: ${tokenAccountInfo.map(t => t.id.value).join(', ')}`)
         return "0"
       }
 
