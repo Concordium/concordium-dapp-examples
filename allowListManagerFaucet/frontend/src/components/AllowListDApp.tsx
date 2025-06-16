@@ -513,7 +513,7 @@ export default function AllowListDApp() {
                                         <ol className="mb-0 mt-1 ps-3">
                                             <li>Verify you're eligible for the {TOKEN_ID} tokens</li>
                                             <li>Add to allow list</li>
-                                            <li>Mint 10 new {TOKEN_ID} tokens</li>
+                                            <li>Mint 100 new {TOKEN_ID} tokens</li>
                                             <li>Transfer tokens directly to your wallet</li>
                                         </ol>
                                     </div>
