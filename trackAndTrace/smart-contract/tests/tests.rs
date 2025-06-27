@@ -216,6 +216,10 @@ fn test_create_item_and_update_item_status() {
 
     let item_id = ItemID::from(0u64);
 
+    let parameter = CreateItemParams {
+        metadata_url: metadata_url.clone(),
+        additional_data: AdditionalData { bytes: vec![] },
+    };
     // Check the ADMIN can create a new item.
     let update = chain
         .contract_update(
@@ -229,7 +233,7 @@ fn test_create_item_and_update_item_status() {
                 receive_name: OwnedReceiveName::new_unchecked(
                     "track_and_trace.createItem".to_string(),
                 ),
-                message:      OwnedParameter::from_serial(&metadata_url)
+                message:      OwnedParameter::from_serial(&parameter)
                     .expect("Serialize parameter"),
             },
         )
@@ -243,8 +247,9 @@ fn test_create_item_and_update_item_status() {
 
     assert_eq!(events, [Event::ItemCreated(ItemCreatedEvent {
         item_id,
-        metadata_url: metadata_url.clone(),
+        metadata_url: parameter.metadata_url.clone(),
         initial_status: Status::Produced,
+        additional_data: parameter.additional_data,
     })]);
 
     // Check contract state.
@@ -252,13 +257,19 @@ fn test_create_item_and_update_item_status() {
         &chain,
         track_and_trace_contract_address,
         Status::Produced,
-        metadata_url.clone(),
+        parameter.metadata_url.clone(),
     );
+
+    let new_metadata_url = Some(MetadataUrl {
+        url:  "https://some.example/2".to_string(),
+        hash: None,
+    });
 
     let parameter = ChangeItemStatusParams {
         item_id,
         additional_data: AdditionalData { bytes: vec![] },
         new_status: Status::InTransit,
+        new_metadata_url: new_metadata_url.clone(),
     };
 
     // Check the PRODUCER can update the item based on the state machine rules.
@@ -287,6 +298,7 @@ fn test_create_item_and_update_item_status() {
 
     assert_eq!(events, [Event::ItemStatusChanged(ItemStatusChangedEvent {
         item_id:         parameter.item_id,
+        new_metadata_url:    parameter.new_metadata_url.clone(),
         new_status:      Status::InTransit,
         additional_data: parameter.additional_data,
     })]);
@@ -296,13 +308,15 @@ fn test_create_item_and_update_item_status() {
         &chain,
         track_and_trace_contract_address,
         Status::InTransit,
-        metadata_url.clone(),
+        parameter.new_metadata_url.clone(),
     );
+
 
     let parameter = ChangeItemStatusParams {
         item_id,
         additional_data: AdditionalData { bytes: vec![] },
         new_status: Status::Sold,
+        new_metadata_url: None
     };
 
     // Check the SELLER can NOT update the item because of the rules of the state
@@ -334,6 +348,7 @@ fn test_create_item_and_update_item_status() {
         item_id,
         new_status: Status::Sold,
         additional_data: AdditionalData { bytes: vec![] },
+        new_metadata_url: new_metadata_url.clone(),
     };
 
     // Check the ADMIN can update the item to any state.
@@ -364,6 +379,7 @@ fn test_create_item_and_update_item_status() {
         item_id:         parameter.item_id,
         new_status:      parameter.new_status,
         additional_data: parameter.additional_data,
+        new_metadata_url:    parameter.new_metadata_url
     })]);
 
     // Check contract state.
@@ -371,7 +387,7 @@ fn test_create_item_and_update_item_status() {
         &chain,
         track_and_trace_contract_address,
         parameter.new_status,
-        metadata_url,
+        new_metadata_url,
     );
 }
 
@@ -559,6 +575,11 @@ fn test_permit_change_item_status() {
         hash: None,
     });
 
+    let param = CreateItemParams {
+        metadata_url: metadata_url.clone(),
+        additional_data: AdditionalData { bytes: vec![] },
+    };
+
     // Have the ADMIN create a new item.
     let _update = chain
         .contract_update(
@@ -572,7 +593,7 @@ fn test_permit_change_item_status() {
                 receive_name: OwnedReceiveName::new_unchecked(
                     "track_and_trace.createItem".to_string(),
                 ),
-                message:      OwnedParameter::from_serial(&metadata_url)
+                message:      OwnedParameter::from_serial(&param)
                     .expect("Serialize parameter"),
             },
         )
@@ -580,12 +601,19 @@ fn test_permit_change_item_status() {
 
     let item_id = ItemID::from(0u64);
 
+    // Create the Parameter.
+    let new_metadata_url = Some(MetadataUrl {
+        url:  "https://some.example/".to_string(),
+        hash: None,
+    });
+    
     // Check that the status can be updated to `InStore` with a sponsored
     // transaction.
     let payload = ChangeItemStatusParams {
         item_id,
         additional_data: AdditionalData { bytes: vec![] },
         new_status: Status::InStore,
+        new_metadata_url: new_metadata_url.clone(),
     };
 
     let update = permit(
@@ -616,7 +644,7 @@ fn test_permit_change_item_status() {
         &chain,
         contract_address,
         Status::InStore,
-        metadata_url.clone(),
+        new_metadata_url.clone(),
     );
 
     // Check if correct nonces are returned by the `nonceOf` function.
@@ -655,6 +683,7 @@ fn test_permit_change_item_status() {
         item_id,
         additional_data: AdditionalData { bytes: vec![] },
         new_status: Status::Sold,
+        new_metadata_url: None,
     };
 
     let _update = permit(
@@ -668,7 +697,7 @@ fn test_permit_change_item_status() {
     .expect_err("PRODUCER should not be able to change state to Sold");
 
     // Check that the status was not updated.
-    check_state(&chain, contract_address, Status::InStore, metadata_url);
+    check_state(&chain, contract_address, Status::InStore, new_metadata_url);
 }
 
 /// Execute a permit function invoke.
