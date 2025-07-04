@@ -15,6 +15,7 @@ use concordium_rust_sdk::{
     },
     types::{hashes::TransactionHash, WalletAccount},
 };
+use http::uri::Scheme;
 use std::{collections::BTreeMap, path::PathBuf};
 use tonic::transport::ClientTlsConfig;
 use tower_http::cors::{AllowOrigin, CorsLayer};
@@ -109,12 +110,7 @@ async fn main() -> anyhow::Result<()> {
             .init();
     }
 
-    let endpoint = if app
-        .endpoint
-        .uri()
-        .scheme()
-        .map_or(false, |x| *x == concordium_rust_sdk::v2::Scheme::HTTPS)
-    {
+    let endpoint = if app.endpoint.uri().scheme() == Some(&Scheme::HTTPS) {
         app.endpoint
             .tls_config(ClientTlsConfig::new())
             .context("Unable to construct a TLS connection for the Concordium API.")?

@@ -14,7 +14,7 @@ on:
 env:
   RUST_FMT: nightly-2023-04-01-x86_64-unknown-linux-gnu
   RUST_VERSION: 1.85
-  CARGO_CONCORDIUM_VERSION: "3.2.0"
+  CARGO_CONCORDIUM_VERSION: "4.2.0"
 
 jobs:
   lint_fmt:
@@ -141,10 +141,9 @@ jobs:
 
       - name: Download and install Cargo Concordium
         run: |
-          CARGO_CCD=cargo-concordium_${{ env.CARGO_CONCORDIUM_VERSION }}
-          wget https://distribution.concordium.software/tools/linux/$CARGO_CCD
-          chmod +x $CARGO_CCD
-          sudo mv $CARGO_CCD /usr/bin/cargo-concordium
+          curl -L https://github.com/Concordium/concordium-smart-contract-tools/releases/download/releases/cargo-concordium/${CARGO_CONCORDIUM_VERSION}/cargo-concordium-linux-amd64 -o /tmp/cargo-concordium
+          chmod +x /tmp/cargo-concordium
+          sudo mv /tmp/cargo-concordium /usr/bin/cargo-concordium
 
       - name: Run cargo concordium test
         run: cargo concordium test --out "${{ matrix.crates }}/concordium-out/module.wasm.v1" -- --manifest-path "${{ matrix.crates }}/Cargo.toml"
