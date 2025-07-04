@@ -1,5 +1,9 @@
 ## Unreleased changes
 
+## 0.2.1
+
+- Update rust-sdk submodule link.
+
 ## 0.2.0
 
 - Add `initial_status` field in the create event.
