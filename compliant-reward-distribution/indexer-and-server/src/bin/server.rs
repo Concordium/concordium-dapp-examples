@@ -169,20 +169,16 @@ async fn main() -> anyhow::Result<()> {
         .context("Could not get database connection from pool")?;
 
     // Set up endpoint to the node.
-    let endpoint = if app
-        .node_endpoint
-        .uri()
-        .scheme()
-        .map_or(false, |x| x == &concordium_rust_sdk::v2::Scheme::HTTPS)
-    {
-        app.node_endpoint
-            .tls_config(tonic::transport::channel::ClientTlsConfig::new())
-            .context("Unable to construct TLS configuration for the Concordium API")?
-    } else {
-        app.node_endpoint
-    }
-    .connect_timeout(std::time::Duration::from_secs(5))
-    .timeout(std::time::Duration::from_secs(10));
+    let endpoint =
+        if app.node_endpoint.uri().scheme() == Some(&concordium_rust_sdk::v2::Scheme::HTTPS) {
+            app.node_endpoint
+                .tls_config(tonic::transport::channel::ClientTlsConfig::new())
+                .context("Unable to construct TLS configuration for the Concordium API")?
+        } else {
+            app.node_endpoint
+        }
+        .connect_timeout(std::time::Duration::from_secs(5))
+        .timeout(std::time::Duration::from_secs(10));
 
     // Establish connection to the blockchain node.
     let mut node_client = Client::new(endpoint.clone())
@@ -340,7 +336,7 @@ async fn main() -> anyhow::Result<()> {
 /// Check that the account is eligible for claiming the reward by checking that:
 /// - the account exists in the database.
 /// - the account creation has not expired.
-/// Returns the account data stored in the database.
+///    Returns the account data stored in the database.
 pub async fn check_account_eligible(
     db: &Database,
     state: &Server,
@@ -374,8 +370,8 @@ pub async fn check_account_eligible(
 /// - the proof is not expired.
 /// - the proof was intended for this service.
 /// - the proof is not from an `Initial` account (these accounts have no Pedersen commitment on chain).
-/// The function returns the revealed `national_id`, `nationality` and `prover`
-/// associated with the proof.
+///    The function returns the revealed `national_id`, `nationality` and `prover`
+///    associated with the proof.
 async fn check_zk_proof(
     state: &mut Server,
     param: PostZKProofParam,
@@ -442,7 +438,7 @@ async fn check_zk_proof(
     // that the proof is generated for this specific service. These checks are
     // done similarly in the `signature` verification flow in this service.
     let challenge_hash =
-        sha2::Sha256::digest([block_hash.as_ref(), &CONTEXT_STRING.as_bytes()].concat());
+        sha2::Sha256::digest([block_hash.as_ref(), CONTEXT_STRING.as_bytes()].concat());
     let challenge = Challenge::try_from(challenge_hash.as_slice())
         .map_err(|e| ServerError::TypeConversion("challenge".to_string(), e))?;
 
@@ -545,7 +541,7 @@ async fn check_zk_proof(
 /// - the signature is valid.
 /// - the signature is not expired.
 /// - the signature was intended for this service.
-/// The function returns the `signer`.
+///   The function returns the `signer`.
 async fn check_signature<T>(state: &mut Server, param: &T) -> Result<AccountAddress, ServerError>
 where
     T: HasSigningData,

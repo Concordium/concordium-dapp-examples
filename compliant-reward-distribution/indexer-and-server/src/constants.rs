@@ -29,7 +29,7 @@ pub const CURRENT_TWEET_VERIFICATION_VERSION: u16 = 1;
 /// 2. Proof: Reveal attribute proof ("nationality" attribute).
 /// 3. Proof: Range proof ("dob=dateOfBirth" attribute). User is older than 18 years.
 /// 4. Proof: Not set membership proof ("countryOfResidence" attribute). User is not from the USA or North Korea.
-/// Countries are represented by 2 letters (ISO 3166-1 alpha-2).
+///    Countries are represented by 2 letters (ISO 3166-1 alpha-2).
 pub const ZK_STATEMENTS: &str = r#"[
     {
         "type": "RevealAttribute",

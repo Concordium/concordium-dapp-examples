@@ -64,12 +64,7 @@ async fn main() -> anyhow::Result<()> {
     log_builder.filter_level(app.log_level); // filter filter_module(module_path!(), app.log_level);
     log_builder.init();
 
-    let endpoint = if app
-        .endpoint
-        .uri()
-        .scheme()
-        .map_or(false, |x| x == &Scheme::HTTPS)
-    {
+    let endpoint = if app.endpoint.uri().scheme() == Some(&Scheme::HTTPS) {
         app.endpoint.tls_config(ClientTlsConfig::new())?
     } else {
         app.endpoint
