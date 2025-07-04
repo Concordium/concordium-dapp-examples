@@ -1,6 +1,6 @@
 [package]
 name = "indexer"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 
 [dependencies]
@@ -23,7 +23,7 @@ http = "0.2"
 tonic = { version = "0.10", features = ["tls-roots", "tls"] }
 thiserror = "1.0"
 chrono = "0.4"
-concordium-rust-sdk = { version = "4.2"}
+concordium-rust-sdk = { version = "6.0"}
 # It is essential that the bump_alloc feature is **not** enabled since it will
 # globally set an inefficient allocator.
 track-and-trace = { path = "../smart-contract", default-features = false, features = ["std", "serde"] } 
