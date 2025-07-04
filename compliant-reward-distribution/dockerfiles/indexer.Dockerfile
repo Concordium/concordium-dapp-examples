@@ -1,6 +1,6 @@
 # This file should be executed from the `compliant-reward-distribution` directory.
 
-ARG RUST_IMAGE=rust:1.74-bookworm
+ARG RUST_IMAGE=rust:1.85-bookworm
 
 # Build indexer
 FROM ${RUST_IMAGE} as build
