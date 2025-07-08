@@ -1,4 +1,4 @@
-# This file should be executed from the `trackAndTrace` directory.
+# This file should be executed from the `root` directory of the repo.
 
 ARG RUST_IMAGE=rust:1.85-bookworm
 ARG NODE_IMAGE=node:18-slim
