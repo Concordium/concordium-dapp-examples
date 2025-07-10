@@ -1,32 +1,41 @@
 # Concordium Allow List dApp
 
-Complete token distribution system with EU nationality verification on Concordium.
+Complete token distribution system with EU nationality verification on Concordium, featuring single-transaction atomic operations.
 
 ## 🎯 Overview
 
-This dApp automatically distributes PLT tokens to users who prove EU nationality using zero-knowledge proofs. No manual intervention required - everything happens automatically on the blockchain.
+This dApp automatically distributes PLT tokens to users who prove EU nationality using zero-knowledge proofs. Using the latest Concordium SDK's `Token.sendOperations`, all operations execute in a single atomic transaction.
 
 ## 🔄 How It Works
 
 1. **User connects** Concordium wallet
 2. **User proves** EU nationality (zero-knowledge proof)
-3. **Backend automatically**:
-   - Adds user to token allowlist
-   - Mints new tokens
-   - Transfers tokens to user
-   - Single API call executes**: Add to allowlist → Mint tokens → Transfer to user
+3. **Backend executes single atomic transaction**:
+   ```
+   Token.sendOperations([
+     addToAllowList,
+     mintTokens,
+     transferTokens
+   ])
+   ```
 4. **User receives** tokens instantly
 
 ## 🏗️ Architecture
 
 ```
-Frontend (React)          Backend (NestJS)           Concordium Blockchain
-     │                         │                           │
-     ├─ Wallet Connection      ├─ Process Orchestration    ├─ Protocol Native Tokens
-     ├─ Proof Generation       ├─ Governance Wallet        ├─ Allowlist Management  
-     ├─ Real-time Updates      ├─ Transaction Signing      ├─ Token Minting
-     └─ Balance Display        └─ Status Tracking          └─ Token Transfers
+Frontend (React)          Backend (NestJS)              Concordium Blockchain
+     │                         │                              │
+     ├─ Wallet Connection      ├─ Token Distribution Service ├─ Protocol Native Tokens
+     ├─ Proof Generation       ├─ Process Tracking           ├─ Atomic Operations
+     ├─ Real-time Updates      ├─ Governance Wallet          ├─ Single Transaction
+     └─ Balance Display        └─ Combined Operations        └─ Instant Execution
 ```
+
+### Key Features
+
+- **Single Transaction**: All operations (allowlist + mint + transfer) in one atomic transaction
+- **Instant Distribution**: ~4 seconds total execution time
+- **Atomic Guarantee**: All operations succeed or all fail - no partial states
 
 ## 🚀 Quick Start
 
@@ -64,10 +73,10 @@ CONCORDIUM_GRPC_PORT=`PORT_NUMBER`
 CONCORDIUM_USE_SSL=true
 
 # Token Configuration
-DEFAULT_TOKEN_ID=`TOKEN_ID`
-DEFAULT_MINT_AMOUNT=`NR_OF_TOKENS_TO_MINT`
+DEFAULT_TOKEN_ID=YOUR_TOKEN_ID
+DEFAULT_MINT_AMOUNT=100
 
-# Governance Wallet Configuration
+# Governance Wallet
 GOVERNANCE_WALLET_PATH=./wallet/wallet.export
 
 # Server Configuration
@@ -90,45 +99,73 @@ npm run build
 npm run start         # Runs on :5173
 ```
 
-### 3. Access Application
+### 4. Access Application
 Open `http://localhost:5173` and connect your Concordium wallet.
 
-## 🔧 Configuration
+## 🔧 API Endpoints
 
-### Frontend
-- Update `TOKEN_ID` in `AllowListDApp.tsx`
-- Ensure backend URL points to `:3001`
+### New Endpoints (Recommended)
+- `POST /token-distribution/distribute` - Start token distribution
+- `GET /token-distribution/status/:id` - Check process status
+- `GET /token-distribution/allowlist/:user/:token?` - Check allowlist status
+- `GET /token-distribution/balance/:token/:user` - Get token balance
 
-### Backend  
-- Configure `.env` with your PLT token details
-- Place governance wallet export in `wallet/` folder, placed in the root
-- Set Concordium devnet connection details
+## 📊 Technical Details
 
-## 🚨 Important Setup Notes
+### Single Transaction Implementation
 
-- **This is a proof-of-concept**: Some values are hardcoded in the frontend
-- **Governance wallet required**: You must be the issuer of the PLT token
-- **Wallet security**: Never commit wallet.export files to version control
-- **Environment files**: Create your own .env files (they're gitignored for security)
+The core method used is `Token.sendOperations`:
 
-## 📊 Features
-
-- **Zero-Knowledge Proofs**: Privacy-preserving nationality verification
-- **Automated Distribution**: No manual token distribution needed
-- **Real-time Tracking**: Live transaction status updates
-- **Blockchain Integration**: Direct integration with Concordium Blockchain
-- **API Documentation**: Swagger docs at `/api`
+```typescript
+const combinedTx = await Token.sendOperations(
+  token,
+  sender,
+  [
+    { addAllowList: { target: targetHolder } },
+    { mint: { amount: tokenAmount } },
+    { transfer: { 
+      recipient: targetHolder, 
+      amount: tokenAmount,
+      memo: CborMemo.fromString(`Faucet distribution`)
+    }}
+  ],
+  signer
+)
+```
 
 ## 🔐 Security
 
 - Governance wallet manages all token operations
 - Zero-knowledge proofs protect user privacy
-- No user credentials stored on servers
-- All transactions signed by governance wallet
+- Atomic transactions prevent partial states
+- No intermediate failure points
 
 ## 🛠️ Development
 
-Both frontend and backend include detailed setup instructions in their respective README files. The system is designed for easy local development and testing.
+### Project Structure
+```
+backend/
+├── src/
+│   ├── modules/
+│   │   ├── concordium/        # Blockchain connection
+│   │   └── token-distribution/ # All token operations
+│   └── main.ts, app.module.ts, app.controller.ts
+   
+frontend/
+├── src/
+│   ├── components/
+│   │   └── AllowListDApp.tsx  # Main UI component
+│   └── services/
+│       └── wallet-connection.ts
+|       |__ credential-provider-services.tsx  
+```
+
+## 🚨 Important Notes
+
+- **Governance wallet required**: Must be the token issuer
+- **Wallet security**: Never commit wallet files
+- **Environment files**: Create your own .env files
+- **Token configuration**: Update TOKEN_ID in both frontend and backend
 
 ## 📝 License
 
