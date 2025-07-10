@@ -86,15 +86,10 @@ npm run start:dev     # Runs on :3001
 ```
 
 ### 3. Frontend Setup
+To test locally, change lines `23`, `24` and `25` in `AllowListDApp.tsx` and set appropiate variables, simulating an env file.
 ```bash
 cd frontend
 npm install
-
-Create .env file in frontend root:
-env# Frontend example env file
-TOKEN_ID=YOUR_TOKEN_ID
-BACKEND_URL=http://localhost:3001
-
 npm run build
 npm run start         # Runs on :5173
 ```
