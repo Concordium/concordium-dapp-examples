@@ -1,9 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { AllowListModule } from './modules/allowlist/allowlist.module.js';
-import { MintModule } from './modules/mint/mint.module.js';
-import { PaymentModule } from './modules/payment/payment.module.js';
 import { ConcordiumModule } from './modules/concordium/concordium.module.js';
+import { AppController } from './app.controller.js';
+import { TokenDistributionModule } from './modules/token-distribution/token-distribution.module.js';
 
 @Module({
   imports: [
@@ -12,9 +11,8 @@ import { ConcordiumModule } from './modules/concordium/concordium.module.js';
       envFilePath: '.env',
     }),
     ConcordiumModule,
-    AllowListModule,
-    MintModule,
-    PaymentModule,
+    TokenDistributionModule,
   ],
+  controllers: [AppController],
 })
 export class AppModule {}

@@ -24,19 +24,17 @@ async function bootstrap() {
 
   // Swagger documentation
   const config = new DocumentBuilder()
-    .setTitle('Allow List dApp API')
-    .setDescription('Backend API for Concordium Allow List dApp')
-    .setVersion('1.0')
-    .addTag('allowlist')
-    .addTag('mint')
-    .addTag('payment')
+    .setTitle('Token Distribution dApp API')
+    .setDescription('Backend API for Concordium Token Distribution dApp with atomic operations')
+    .setVersion('2.0')
+    .addTag('token-distribution', 'Single-transaction token distribution operations')
+    .addTag('legacy-compatibility', 'Backward-compatible endpoints')
     .build()
   
   const document = SwaggerModule.createDocument(app, config)
   SwaggerModule.setup('api', app, document)
 
   await app.listen(3001)
-  console.log('Backend server running on http://localhost:3001')
-  console.log('API documentation available at http://localhost:3001/api')
+  
 }
 bootstrap()

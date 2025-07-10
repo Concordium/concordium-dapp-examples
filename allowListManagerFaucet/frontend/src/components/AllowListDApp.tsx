@@ -20,7 +20,7 @@ declare global {
   }
 }
 
-const TOKEN_ID = window.runtimeConfig?.TOKEN_ID || 'ExampleToken';
+const TOKEN_ID = window.runtimeConfig?.TOKEN_ID || 'EUDemo';
 const BACKEND_URL = window.runtimeConfig?.BACKEND_URL || 'http://localhost:3001';
 const VERIFIER_URL = window.runtimeConfig?.VERIFIER_URL || 'http://localhost:8080';
 
@@ -30,7 +30,7 @@ export default function AllowListDApp() {
     const [proofStatus, setProofStatus] = useState<string>('');
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState<string>('');
-    const [transactionHashes, setTransactionHashes] = useState<{ [key: string]: string }>({});
+    const [transactionHash, setTransactionHash] = useState<string>('');
     const [showProofDetails, setShowProofDetails] = useState(false);
     const [currentProof, setCurrentProof] = useState<string | null>(null);
     const [tokenBalance, setTokenBalance] = useState<string>('');
@@ -76,7 +76,7 @@ export default function AllowListDApp() {
 
         setBalanceLoading(true);
         try {
-            const response = await fetch(`${BACKEND_URL}/mint/balance/${TOKEN_ID}/${accountAddress}`);
+            const response = await fetch(`${BACKEND_URL}/token-distribution/balance/${TOKEN_ID}/${accountAddress}`);
             if (response.ok) {
                 const balanceData = await response.json();
                 setTokenBalance(balanceData.balance);
@@ -97,7 +97,7 @@ export default function AllowListDApp() {
 
         setAllowListChecking(true);
         try {
-            const response = await fetch(`${BACKEND_URL}/allowlist/verify-user/${accountAddress}/${TOKEN_ID}`);
+            const response = await fetch(`${BACKEND_URL}/token-distribution/allowlist/${accountAddress}/${TOKEN_ID}`);
             if (response.ok) {
                 const statusData = await response.json();
                 setIsOnAllowList(statusData.isOnAllowList);
@@ -122,6 +122,7 @@ export default function AllowListDApp() {
         setIsLoading(true);
         setProofStatus('Requesting EU nationality proof...');
         setMessage('');
+        setTransactionHash('');
 
         try {
             // Create a statement to check if nationality is in the EU countries
@@ -174,8 +175,8 @@ export default function AllowListDApp() {
 
             if (resp.ok) {
                 setProofStatus('✅ Proof verified successfully!');
-                setMessage('EU nationality verified. Starting token allocation process...');
-                await startAllowListProcess();
+                setMessage('EU nationality verified. Starting token distribution...');
+                await startTokenDistribution();
             } else {
                 const body = await resp.json();
                 setProofStatus(`❌ Proof verification failed`);
@@ -210,22 +211,22 @@ export default function AllowListDApp() {
             setMessage('Disconnected from wallet');
             // Clear any other state as needed
             setProofStatus('');
-            setTransactionHashes({});
+            setTransactionHash('');
             setCurrentProof(null);
         }
     };
 
-    const startAllowListProcess = async () => {
+    const startTokenDistribution = async () => {
         if (!provider || !selectedAccount) {
-            setMessage('Missing required data for allowlist process');
+            setMessage('Missing required data for token distribution');
             return;
         }
 
         setIsLoading(true);
-        setMessage('Initiating token allocation process...');
+        setMessage('Initiating token distribution process...');
 
         try {
-            const response = await fetch(`${BACKEND_URL}/allowlist/add-user`, {
+            const response = await fetch(`${BACKEND_URL}/token-distribution/distribute`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -247,9 +248,9 @@ export default function AllowListDApp() {
             await pollProcessStatus(processId);
 
         } catch (error: any) {
-            console.error('Error in allowlist process:', error);
-            setMessage(`Failed to start allowlist process: ${error.message}`);
-            setProofStatus('❌ Failed to start allowlist process');
+            console.error('Error in token distribution:', error);
+            setMessage(`Failed to start token distribution: ${error.message}`);
+            setProofStatus('❌ Failed to start token distribution');
         } finally {
             setIsLoading(false);
         }
@@ -261,7 +262,7 @@ export default function AllowListDApp() {
 
         const poll = async () => {
             try {
-                const response = await fetch(`${BACKEND_URL}/allowlist/status/${processId}`);
+                const response = await fetch(`${BACKEND_URL}/token-distribution/status/${processId}`);
                 if (!response.ok) {
                     throw new Error('Failed to get process status');
                 }
@@ -271,20 +272,11 @@ export default function AllowListDApp() {
 
                 if (status.status === 'completed') {
                     setProofStatus('✅ Successfully added to allow list and received tokens!');
-                    setMessage('🎉 Process completed successfully!\n✅ Added to allow list\n✅ Tokens minted\n✅ Tokens transferred to your account');
+                    setMessage('🎉 Process completed successfully!\n✅ Added to allow list\n✅ Tokens minted\n✅ Tokens transferred to your account\n\nAll operations completed in a single transaction!');
 
                     if (status.result) {
-                        const txHashes: { [key: string]: string } = {};
-                        if (status.result.allowListTransactionHash) {
-                            txHashes['Allow List'] = status.result.allowListTransactionHash;
-                        }
-                        if (status.result.mintTransactionHash) {
-                            txHashes['Mint'] = status.result.mintTransactionHash;
-                        }
-                        if (status.result.transferTransactionHash) {
-                            txHashes['Transfer'] = status.result.transferTransactionHash;
-                        }
-                        setTransactionHashes(txHashes);
+                        const txHash = status.result.transactionHash || 'Transaction completed';
+                        setTransactionHash(txHash);
                     }
 
                     setIsOnAllowList(true);
@@ -333,7 +325,7 @@ export default function AllowListDApp() {
             return `${icon} ${step.step}${txInfo}`;
         }).join('\n');
 
-        setMessage(`Blockchain Transaction Status:\n${stepDetails}\n\nProcess: 📋 Eligibility → 🏭 Mint → 💸 Transfer\nNote: Each step takes ~4 seconds to finalize on Concordium`);
+        setMessage(`Blockchain Transaction Status:\n${stepDetails}\n\nNote: All operations execute in a single atomic transaction using Token.sendOperations()!`);
     };
 
     const getButtonState = () => {
@@ -368,7 +360,7 @@ export default function AllowListDApp() {
                             height="30"
                             className="me-3"
                         />
-                        <span className="fw-light">Allow List Manager</span>
+                        <span className="fw-light">Token Distribution dApp</span>
                     </a>
                 </div>
             </nav>
@@ -506,7 +498,7 @@ export default function AllowListDApp() {
                                     Verify your EU nationality to be added to the token's allow list and receive tokens.
                                 </p>
 
-                                {/* Process flow description */}
+                                {/* Process flow description - Single Transaction */}
                                 <div className="alert alert-info border-0 mb-3">
                                     <div className="small">
                                         <strong>Proof of concept, how it works:</strong>
@@ -516,6 +508,9 @@ export default function AllowListDApp() {
                                             <li>Mint 100 new {TOKEN_ID} tokens</li>
                                             <li>Transfer tokens directly to your wallet</li>
                                         </ol>
+                                        <p className="mb-0 mt-2">
+                                            <em>✨ All operations execute atomically in one transaction - instant and secure!</em>
+                                        </p>
                                     </div>
                                 </div>
 
@@ -561,7 +556,7 @@ export default function AllowListDApp() {
                     </div>
                 </div>
 
-                {(message || Object.keys(transactionHashes).length > 0 || showProofDetails) && (
+                {(message || transactionHash || showProofDetails) && (
                     <div className="row mt-4">
                         <div className="col-12">
                             {message && (
@@ -575,18 +570,20 @@ export default function AllowListDApp() {
                                 </div>
                             )}
 
-                            {Object.keys(transactionHashes).length > 0 && (
+                            {transactionHash && (
                                 <div className="card border-0 shadow-sm mt-3">
                                     <div className="card-body">
                                         <h6 className="card-title fw-light mb-3">
                                             <i className="bi bi-receipt me-2"></i>Transaction Details
                                         </h6>
-                                        {Object.entries(transactionHashes).map(([type, hash]) => (
-                                            <div key={type} className="mb-3">
-                                                <p className="small text-muted mb-1">{type} Transaction:</p>
-                                                <p className="font-monospace small text-break">{hash}</p>
-                                            </div>
-                                        ))}
+                                        <div className="mb-3">
+                                            <p className="small text-muted mb-1">Transaction Hash:</p>
+                                            <p className="font-monospace small text-break">{transactionHash}</p>
+                                            <p className="small text-muted mt-2">
+                                                <i className="bi bi-info-circle me-1"></i>
+                                                This single transaction performed all operations: allow list addition, token minting, and transfer!
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                             )}
