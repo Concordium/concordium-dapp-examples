@@ -23,7 +23,7 @@ export class TokenDistributionService {
     private readonly processTrackingService: ProcessTrackingService,
     private readonly configService: ConfigService,
   ) {
-    this.defaultTokenId = this.configService.get('DEFAULT_TOKEN_ID', 'PabloToken2')
+    this.defaultTokenId = this.configService.get('DEFAULT_TOKEN_ID', 'TestLists')
     this.defaultMintAmount = parseInt(this.configService.get('DEFAULT_MINT_AMOUNT', '100'))
     this.logger.log(`Initialized with default token: ${this.defaultTokenId}, amount: ${this.defaultMintAmount}`)
   }
@@ -140,18 +140,8 @@ export class TokenDistributionService {
         case TransactionKindString.TokenUpdate:
           this.logger.log('Token operations successful. Events:')
           result.summary.events.forEach((e) => {
-            if (e.tag !== TransactionEventTag.TokenModuleEvent) {
-              throw new Error('Unexpected event type: ' + e.tag);
-            }
-            // Log the event without trying to decode with a specific type
-            this.logger.log(`  - Event: ${JSON.stringify(e)}`);
-            // Optionally, try to decode the details generically
-            try {
-              const decodedDetails = Cbor.decode(e.details);
-              this.logger.log(`    Decoded details: ${JSON.stringify(decodedDetails)}`);
-            } catch (decodeError) {
-              this.logger.log(`    Could not decode event details: ${decodeError.message}`);
-            }
+            // Simply log all events without trying to decode details
+            this.logger.log(`  - Event (${e.tag}): ${JSON.stringify(e)}`);
           })
           break
         case TransactionKindString.Failed:
