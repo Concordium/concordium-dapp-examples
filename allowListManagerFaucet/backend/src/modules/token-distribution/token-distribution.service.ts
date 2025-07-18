@@ -5,10 +5,11 @@ import { ProcessTrackingService } from './process-tracking.service.js'
 import { TokenId, TokenAmount, Token, TokenHolder, CborMemo, Cbor } from '@concordium/web-sdk/plt'
 import { v4 as uuidv4 } from 'uuid'
 import { AddToAllowListDto } from './dto/add-to-allow-list.dto.js'
-import { 
+import {
   TransactionSummaryType,
   TransactionKindString,
-  RejectReasonTag 
+  RejectReasonTag,
+  TransactionEventTag
 } from '@concordium/web-sdk'
 
 @Injectable()
@@ -55,14 +56,14 @@ export class TokenDistributionService {
     try {
       // Update status to processing
       this.processTrackingService.updateStep(processId, 0, 'processing')
-      
+
       // Execute the combined transaction
       const txHash = await this.executeCombinedTokenOperation(
-        dto.userAccount, 
-        tokenIdStr, 
+        dto.userAccount,
+        tokenIdStr,
         this.defaultMintAmount
       )
-      
+
       // Update status to completed
       this.processTrackingService.updateStep(processId, 0, 'completed', txHash)
 
@@ -88,8 +89,8 @@ export class TokenDistributionService {
    * 3. Transfers tokens to user
    */
   private async executeCombinedTokenOperation(
-    userAccount: string, 
-    tokenIdStr: string, 
+    userAccount: string,
+    tokenIdStr: string,
     amount: number
   ): Promise<string> {
     try {
@@ -107,18 +108,20 @@ export class TokenDistributionService {
 
       // Execute all operations in a single transaction
       this.logger.log(`Sending combined transaction: add to allowlist + mint ${amount} + transfer to ${userAccount}`)
-      
+
       const combinedTx = await Token.sendOperations(
         token,
         sender,
         [
           { addAllowList: { target: targetHolder } },
           { mint: { amount: tokenAmount } },
-          { transfer: { 
-            recipient: targetHolder, 
-            amount: tokenAmount,
-            memo: CborMemo.fromString(`Faucet distribution to ${userAccount}`)
-          }}
+          {
+            transfer: {
+              recipient: targetHolder,
+              amount: tokenAmount,
+              memo: CborMemo.fromString(`Faucet distribution to ${userAccount}`)
+            }
+          }
         ],
         signer
       )
@@ -127,7 +130,7 @@ export class TokenDistributionService {
 
       // Wait for finalization
       const result = await client.waitForTransactionFinalization(combinedTx)
-      
+
       // Validate transaction result
       if (result.summary.type !== TransactionSummaryType.AccountTransaction) {
         throw new Error('Unexpected transaction type: ' + result.summary.type)
@@ -136,7 +139,20 @@ export class TokenDistributionService {
       switch (result.summary.transactionType) {
         case TransactionKindString.TokenUpdate:
           this.logger.log('Token operations successful. Events:')
-          result.summary.events.forEach((e) => this.logger.log(`  - ${JSON.stringify(e.event)}`))
+          result.summary.events.forEach((e) => {
+            if (e.tag !== TransactionEventTag.TokenModuleEvent) {
+              throw new Error('Unexpected event type: ' + e.tag);
+            }
+            // Log the event without trying to decode with a specific type
+            this.logger.log(`  - Event: ${JSON.stringify(e)}`);
+            // Optionally, try to decode the details generically
+            try {
+              const decodedDetails = Cbor.decode(e.details);
+              this.logger.log(`    Decoded details: ${JSON.stringify(decodedDetails)}`);
+            } catch (decodeError) {
+              this.logger.log(`    Could not decode event details: ${decodeError.message}`);
+            }
+          })
           break
         case TransactionKindString.Failed:
           if (result.summary.rejectReason.tag !== RejectReasonTag.TokenUpdateTransactionFailed) {
@@ -230,9 +246,9 @@ export class TokenDistributionService {
 
       const accountInfo = await client.getAccountInfo(userAddress)
       const tokenAccountInfo = accountInfo.accountTokens
-      
+
       const tokenInfo = tokenAccountInfo.find(balance => balance.id.value === tokenId)
-      
+
       if (!tokenInfo) {
         this.logger.log(`Token ${tokenId} not found in account ${accountAddress} - balance is 0`)
         return "0"
@@ -240,7 +256,7 @@ export class TokenDistributionService {
 
       const balance = tokenInfo.state.balance.toString()
       this.logger.log(`Account ${accountAddress} has balance ${balance} for token ${tokenId}`)
-      
+
       return balance
     } catch (error) {
       this.logger.error(`Failed to get token balance: ${error.message}`)
