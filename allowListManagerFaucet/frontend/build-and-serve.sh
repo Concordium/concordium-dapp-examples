@@ -12,12 +12,12 @@ else
 fi
 
 echo "Injecting runtime environment variables..."
-echo "TOKEN_ID: ${TOKEN_ID:-ExampleToken}"
+echo "TOKEN_ID: ${TOKEN_ID:-EUDemo}"
 echo "BACKEND_URL: ${BACKEND_URL:-http://localhost:3001}"
 echo "VERIFIER_URL: ${VERIFIER_URL:-http://localhost:8080}"
 
 # Replace placeholders in index.html with actual environment variable values
-sed -i "s|__TOKEN_ID__|${TOKEN_ID:-ExampleToken}|g" dist/index.html
+sed -i "s|__TOKEN_ID__|${TOKEN_ID:-EUDemo}|g" dist/index.html
 sed -i "s|__BACKEND_URL__|${BACKEND_URL:-http://localhost:3001}|g" dist/index.html
 sed -i "s|__VERIFIER_URL__|${VERIFIER_URL:-http://localhost:8080}|g" dist/index.html
 

@@ -29,9 +29,8 @@ export class ProcessStatusDto {
 
   @ApiProperty({ description: 'Final result data', required: false })
   result?: {
-    mintTransactionHash?: string
-    allowListTransactionHash?: string
-    transferTransactionHash?: string
+    transactionHash?: string
+    operations?: string[]  // ['addToAllowList', 'mint', 'transfer']
     tokensTransferred?: number
   }
 

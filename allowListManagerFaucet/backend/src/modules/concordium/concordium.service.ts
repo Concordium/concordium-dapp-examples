@@ -1,16 +1,17 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { ChannelCredentials, credentials } from '@grpc/grpc-js'
+import { credentials } from '@grpc/grpc-js'
 import { 
   AccountAddress,
   parseWallet,
   buildAccountSigner,
   AccountSigner,
   TransactionHash,
-  TransactionStatusEnum 
+ 
 } from '@concordium/web-sdk'
+import { Cbor } from '@concordium/web-sdk/plt'
 import { readFileSync } from 'node:fs'
-import { ConcordiumGRPCNodeClient } from '@concordium/web-sdk/nodejs';
+import { ConcordiumGRPCNodeClient } from '@concordium/web-sdk/nodejs'
 
 @Injectable()
 export class ConcordiumService implements OnModuleInit {
@@ -80,6 +81,16 @@ export class ConcordiumService implements OnModuleInit {
     } catch (error) {
       this.logger.error(`Failed to load governance wallet: ${error.message}`)
       throw new Error(`Governance wallet initialization failed: ${error.message}`)
+    }
+  }
+
+  // Helper method to decode Cbor error details (useful for debugging)
+  decodeCborError(details: any): any {
+    try {
+      return Cbor.decode(details)
+    } catch (error) {
+      this.logger.error('Failed to decode CBOR error details:', error)
+      return details
     }
   }
 }
