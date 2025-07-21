@@ -136,7 +136,7 @@ export function runServer(appConfig: AppConfig) {
     const app = express();
     // Add CORS before other middleware
     app.use(cors({
-        origin: ['http://localhost:5173', 'http://localhost:3000', 'https://allowlist.devnet-plt-alpha.concordium.com'], // AllowListManager Frontend
+        origin: ['http://localhost:5173', 'http://localhost:3000', 'https://allowlist.devnet-plt-alpha.concordium.com', 'https://allowlist.devnet-plt-beta.concordium.com'], // AllowListManager Frontend
         methods: ['GET', 'POST'],
     }));
 
