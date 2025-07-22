@@ -73,10 +73,15 @@ jobs:
       with:
         submodules: recursive
 
-    - name: Set the directory to build from to the dapp's rather than repo root where needed.
-      if: ${{ contains(fromJson('["euroe-demo", "signMessage", "simpleAgeVerification"]'), matrix.image.dir) }}
+    - name: Build image
+      working-directory: ${{ env.DOCKER_DIR }}
       run:
-        export DOCKER_DIR="./${{ matrix.image.dir }}"
+        echo "${{ matrix.image }} is the matrix image to build
+  
+    - name: Set the directory to build from to the dapp's rather than repo root where needed.
+      if: ${{ contains(fromJson('["euroe-demo", "signMessage", "simpleAgeVerification"]'), matrix.image) }}
+      run:
+        export DOCKER_DIR="./${{ matrix.image }}"
 
     - name: Build image
       working-directory: ${{ env.DOCKER_DIR }}
