@@ -1,5 +1,9 @@
 ## Unreleased changes
 
+## 2.0.4
+
+-   Something wild and new!
+
 ## 2.0.3
 
 -   Change the dApp to use new `signCIS3Message` function from the BrowserWallet.

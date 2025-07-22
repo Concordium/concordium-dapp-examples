@@ -3,11 +3,35 @@ name: Build Docker Containers
 on:
   push:
     branches: main
+    paths:
+      - 'euroe-demo'
+      - 'signMessage'
+      - 'simpleAgeVerification'
+      - 'gallery' 
+      - 'deps'
+      - 'sponsoredTransactions'
+      - 'sponsoredTransactionsAuction'
+      - '!**.md'
+
 
   pull_request:
     branches: main
 
   workflow_dispatch: # allows manual trigger
+
+jobs:
+  plan-changes:
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
 
 jobs:
   build:
