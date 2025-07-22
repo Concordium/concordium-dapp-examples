@@ -32,6 +32,7 @@ jobs:
     # Map a step output to a job output
     outputs:
       docker-changes: ${{ steps.docker-changes.outputs.changes }}
+      compose-changes: ${{ steps.compose-changes.outputs.changes }}
     steps:
       - uses: actions/checkout@v4
 
@@ -56,7 +57,17 @@ jobs:
               - 'sponsoredTransactionsAuction/**'
               - 'deps'
 
-  build:
+      - name: Check for backend file changes for Docker Compose builds
+        uses: dorny/paths-filter@v3.0.2
+        id: compose-changes
+        with:
+          filters: |
+            trackAndTrace:
+              - 'trackAndTrace/**'
+            compliant-reward-distribution:
+              - 'compliant-reward-distribution/**'
+
+  docker-build:
     name: Building Docker Containers
     # Require the diff job.
     needs: changes
@@ -66,7 +77,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # JSON array contains all directories with docker images and changed files
+        # JSON array contains all directories with docker images which have changed files
         # e.g. ['euroe-demo', 'signMessage'] if both package folders contains changes
         image: ${{ fromJSON(needs.changes.outputs.docker-changes) }}
 
@@ -103,30 +114,37 @@ jobs:
         echo "DOCKERFILE_DIR is ${DOCKERFILE_DIR}"
         docker build -f ${{ env.DOCKERFILE_DIR}}/Dockerfile .
 
-  # compose-build:
-  #   name: Building with docker compose
-  #   # Don't run on draft pull requests
-  #   if: ${{ !github.event.pull_request.draft }}
-  #   runs-on: ubuntu-latest
-  #   strategy:
-  #     matrix:
-  #       directories:
-  #         - trackAndTrace
-  #         - compliant-reward-distribution
+  compose-build:
+    name: Building Docker Containers
+    # Require the diff job.
+    needs: changes
+    # Don't run on draft pull requests
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # JSON array contains all directories with docker compose builds which have changed files
+        dapp: ${{ fromJSON(needs.changes.outputs.compose-changes) }}
 
-  #   steps:
-  #   - name: Checkout
-  #     uses: actions/checkout@v4
-  #     with:
-  #       submodules: recursive
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
 
-  #   - name: Build with docker compose
-  #     working-directory: ${{ matrix.directories }}
-  #     env:
-  #       # Dummy values are set for the `trackAndTrace` run because `docker compose build`
-  #       # enforces the presence of environment variables during the build phase,
-  #       # even though these variables are only needed at runtime.
-  #       TRACK_AND_TRACE_CONTRACT_ADDRESS: "<8351,0>"
-  #       TRACK_AND_TRACE_PRIVATE_KEY_FILE: "./trackAndTrace/README.md"
-  #     run:
-  #       docker compose build
+    - name: If building Track and Trace app, set environment variables.
+      if: ${{ matrix.dapp == 'trackAndTrace' }}
+      # Dummy values are set for the `trackAndTrace` run because `docker compose build`
+      # enforces the presence of environment variables during the build phase,
+      # even though these variables are only needed at runtime.
+      run: |
+        echo "TRACK_AND_TRACE_CONTRACT_ADDRESS='<8351,0>'" >> $GITHUB_ENV
+        echo "TRACK_AND_TRACE_PRIVATE_KEY_FILE='./trackAndTrace/README.md'" >> $GITHUB_ENV
+
+    - name: Build with docker compose
+      working-directory: ${{ matrix.dapp }}        
+      run: |
+        env | grep TRACK
+        docker compose build
+
