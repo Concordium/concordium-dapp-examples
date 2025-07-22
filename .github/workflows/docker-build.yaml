@@ -20,19 +20,17 @@ on:
 
 jobs:
   plan-changes:
+    name: Evaluating which images to build.
+    # Don't run on draft pull requests
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout
       uses: actions/checkout@v4
       with:
         submodules: recursive
 
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive
 
-
-jobs:
   build:
     name: Building Docker Containers
     # Don't run on draft pull requests
@@ -42,11 +40,11 @@ jobs:
       matrix:
         image:
           - {dir: euroe-demo, dockerfile: scripts/Dockerfile}
-          - {dir: ., dockerfile: gallery/Dockerfile}
-          - {dir: signMessage, dockerfile: Dockerfile}
-          - {dir: simpleAgeVerification, dockerfile: Dockerfile}
-          - {dir: ., dockerfile: sponsoredTransactions/Dockerfile}
-          - {dir: ., dockerfile: sponsoredTransactionsAuction/Dockerfile}
+          # - {dir: ., dockerfile: gallery/Dockerfile}
+          # - {dir: signMessage, dockerfile: Dockerfile}
+          # - {dir: simpleAgeVerification, dockerfile: Dockerfile}
+          # - {dir: ., dockerfile: sponsoredTransactions/Dockerfile}
+          # - {dir: ., dockerfile: sponsoredTransactionsAuction/Dockerfile}
 
     steps:
     - name: Checkout
