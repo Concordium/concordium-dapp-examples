@@ -81,7 +81,7 @@ jobs:
     - name: Set the directory to build from to the dapp's rather than repo root where needed.
       if: ${{ contains(fromJson('["euroe-demo", "signMessage", "simpleAgeVerification"]'), matrix.image) }}
       run:
-        echo "DOCKER_DIR="./${{ matrix.image }}" >> $GITHUB_ENV
+        echo "DOCKER_DIR=./${{ matrix.image }}" >> $GITHUB_ENV
 
         
     - name: Build image
