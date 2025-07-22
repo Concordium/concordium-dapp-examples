@@ -73,10 +73,17 @@ jobs:
       with:
         submodules: recursive
 
-  #   - name: Build image
-  #     working-directory: ${{ matrix.image.dir }}
-  #     run:
-  #       docker build -f ${{ matrix.image.dockerfile }} .
+    - name: Set the directory to build from to the dapp's rather than repo root where needed.
+      if: ${{ contains((fromJson('["euroe-demo", "signMessage", "simpleAgeVerification"]') matrix.image.dir }}
+      run:
+        export DOCKER_DIR="./${{ matrix.image.dir }}"
+
+    - name: Build image
+      working-directory: ${{ env.DOCKER_DIR }}
+      run:
+        echo "$DOCKER_DIR is"
+        pwd
+        docker build -f ${{ matrix.image.dir }}/Dockerfile .
 
   # compose-build:
   #   name: Building with docker compose
