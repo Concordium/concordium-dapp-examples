@@ -7,5 +7,4 @@ node_modules
 
 dist
 package.json
-
 esbuild.config.ts
