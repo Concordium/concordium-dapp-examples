@@ -3,6 +3,7 @@ mod types;
 use crate::handlers::*;
 use crate::types::*;
 
+
 use anyhow::Context;
 use clap::Parser;
 use concordium_rust_sdk::{

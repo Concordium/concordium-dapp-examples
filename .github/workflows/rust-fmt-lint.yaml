@@ -1,0 +1,189 @@
+name: Fmt and Clippy
+
+# This job runs rustfmt and clippy linting,
+
+on:
+  push:
+    branches: main
+
+  pull_request:
+    branches: main
+    paths:
+      - 'gallery/verifier/**'
+      - 'low-code-nft-marketplace/cis2-market/**'
+      - 'sponsoredTransactions/**'
+      - 'sponsoredTransactionsAuction/backend/**'
+      - 'trackAndTrace/smart-contract/**'
+      - 'trackAndTrace/test-scripts/**'
+      - 'trackAndTrace/indexer/**'
+      - trackAndTrace/sponsored-transaction-service/**'
+      - 'compliant-reward-distribution/indexer-and-server/**'
+
+  workflow_dispatch: # allows manual trigger
+
+env:
+  RUST_FMT: nightly-2023-04-01-x86_64-unknown-linux-gnu
+  RUST_VERSION: 1.85
+  CARGO_CONCORDIUM_VERSION: "4.2.0"
+
+jobs:
+  changes:
+    name: Detect changed files in Rust projects
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    # Map a step output to a job output
+    outputs:
+      rust-files: ${{ steps.rust-changes.outputs.changes }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for backend file changes for Docker builds
+        uses: dorny/paths-filter@v3
+        id: rust-changes
+        with:
+          list-files: shell
+          filters: |
+            rust:
+            - added|modified: '*.rs'
+
+      - name: Process the list of files
+        if: ${{ steps.rust-changes.outputs.rust == 'true' }}
+        run: |
+          echo ${{ steps.rust-changes.outputs.rust_files }} 
+
+      - name: Process the list of files
+        if: ${{ steps.rust-changes.outputs.rust == 'true' }}
+        run: |
+          echo ${{ steps.rust-changes.outputs.rust_files }} | cut -d'/' -f1-2 
+          
+# jobs:
+#   lint_fmt:
+#     name: Running formatting
+#     # Don't run on draft pull requests
+#     if: ${{ !github.event.pull_request.draft }}
+#     runs-on: ubuntu-latest
+#     strategy:
+#       matrix:
+#         crates:
+#           - gallery/verifier/Cargo.toml
+#           - low-code-nft-marketplace/cis2-market/Cargo.toml
+#           - sponsoredTransactions/backend/Cargo.toml
+#           - sponsoredTransactionsAuction/backend/Cargo.toml
+#           - trackAndTrace/smart-contract/Cargo.toml
+#           - trackAndTrace/test-scripts/Cargo.toml
+#           - trackAndTrace/indexer/Cargo.toml
+#           - trackAndTrace/sponsored-transaction-service/Cargo.toml
+#           - compliant-reward-distribution/indexer-and-server/Cargo.toml
+
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v4
+#         with:
+#           submodules: recursive
+#       - name: Get toolchain
+#         # Ensure rustfmt is installed and setup problem matcher
+#         uses: actions-rust-lang/setup-rust-toolchain@v1
+#         with:
+#           toolchain: ${{ env.RUST_FMT }}
+#           components: rustfmt
+#       - name: Rustfmt Check
+#         run: cargo fmt --manifest-path=${{ matrix.crates }} -- --check
+
+  # lint_clippy:
+  #   name: Running clippy
+  #   needs: lint_fmt
+  #   # Don't run on draft pull requests
+  #   if: ${{ !github.event.pull_request.draft }}
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     matrix:
+  #       crates:
+  #         - gallery/verifier/Cargo.toml
+  #         - low-code-nft-marketplace/cis2-market/Cargo.toml
+  #         - sponsoredTransactions/backend/Cargo.toml
+  #         - sponsoredTransactionsAuction/backend/Cargo.toml
+  #         - trackAndTrace/smart-contract/Cargo.toml
+  #         - trackAndTrace/test-scripts/Cargo.toml
+  #         - trackAndTrace/indexer/Cargo.toml
+  #         - trackAndTrace/sponsored-transaction-service/Cargo.toml
+  #         - compliant-reward-distribution/indexer-and-server/Cargo.toml
+
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+  #       with:
+  #         submodules: recursive
+  #     - name: Get toolchain
+  #       # Ensure rustfmt is installed and setup problem matcher
+  #       uses: actions-rust-lang/setup-rust-toolchain@v1
+  #       with:
+  #         toolchain: ${{ env.RUST_VERSION }}
+  #         components: clippy
+  #     - name: Run cargo clippy
+  #       run: cargo clippy --manifest-path=${{ matrix.crates }} --locked -- -D warnings
+
+  # build:
+  #   name: Build Rust project
+  #   # Don't run on draft pull requests
+  #   if: ${{ !github.event.pull_request.draft }}
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     matrix:
+  #       crates:
+  #         - trackAndTrace/indexer/Cargo.toml
+  #         - trackAndTrace/sponsored-transaction-service/Cargo.toml
+  #         - trackAndTrace/test-scripts/Cargo.toml
+  #         - compliant-reward-distribution/indexer-and-server/Cargo.toml
+
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+  #       with:
+  #         submodules: recursive
+  #     - name: Get toolchain
+  #       # Ensure rustfmt is installed and setup problem matcher
+  #       uses: actions-rust-lang/setup-rust-toolchain@v1
+  #       with:
+  #         toolchain: ${{ env.RUST_VERSION }}
+  #     - name: Run cargo build
+  #       run: cargo build --manifest-path=${{ matrix.crates }} --locked
+
+  # test:
+  #   name: Running cargo-concordium tests
+  #   # Don't run on draft pull requests
+  #   if: ${{ !github.event.pull_request.draft }}
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     matrix:
+  #       target:
+  #         - x86_64-unknown-linux-gnu
+
+  #       crates:
+  #         - low-code-nft-marketplace/cis2-market
+  #         - trackAndTrace/smart-contract
+
+  #   steps:
+  #     - name: Checkout sources
+  #       uses: actions/checkout@v4
+  #       with:
+  #         submodules: recursive
+
+  #     - name: Install toolchain
+  #       uses: actions-rs/toolchain@v1
+  #       with:
+  #         profile: minimal
+  #         toolchain: ${{ env.RUST_VERSION }}
+  #         target: ${{ matrix.target }}
+  #         override: true
+
+  #     - name: Install Wasm target
+  #       run: rustup target install wasm32-unknown-unknown
+
+  #     - name: Download and install Cargo Concordium
+  #       run: |
+  #         curl -L https://github.com/Concordium/concordium-smart-contract-tools/releases/download/releases/cargo-concordium/${CARGO_CONCORDIUM_VERSION}/cargo-concordium-linux-amd64 -o /tmp/cargo-concordium
+  #         chmod +x /tmp/cargo-concordium
+  #         sudo mv /tmp/cargo-concordium /usr/bin/cargo-concordium
+
+  #     - name: Run cargo concordium test
+  #       run: cargo concordium test --out "${{ matrix.crates }}/concordium-out/module.wasm.v1" -- --manifest-path "${{ matrix.crates }}/Cargo.toml"
