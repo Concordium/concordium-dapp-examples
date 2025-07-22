@@ -4,6 +4,8 @@ version: '3.8'
 #  - `ADMIN_ACCOUNT`: An admin account that can read and write to the database.
 #  - `CONCORDIUM_NODE`: The gRPC interface of a node on the correct network. (Defaults to 'https://grpc.testnet.concordium.com')
 
+# TEMP: Changing file to trigger CI.
+
 services:
   postgres:
     image: postgres:latest
