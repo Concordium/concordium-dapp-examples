@@ -35,20 +35,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check for backend file changes
+      - name: Check for backend file changes for Docker builds
         uses: dorny/paths-filter@v3.0.2
-        id: changes
+        id: docker-changes
         with:
           filters: |
             euroe-demo:
               - 'euroe-demo/**'
-            signMessage:
-              - 'signMessage/**'
-            simpleAgeVerification:
-              - 'simpleAgeVerification/**'
             gallery:
               - 'gallery/**'
               - 'deps/concordium-rust-sdk'
+            simpleAgeVerification:
+              - 'simpleAgeVerification/**'
+            signMessage:
+              - 'signMessage/**'
             sponsoredTransactions:
               - 'sponsoredTransactions/**'
               - 'deps/concordium-rust-sdk'
@@ -59,7 +59,7 @@ jobs:
   build:
     name: Building Docker Containers
     # Require the diff job.
-    needs: changes
+    needs: docker-changes
     # Don't run on draft pull requests
     if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
@@ -67,7 +67,7 @@ jobs:
       matrix:
         # JSON array contains all directories with docker images and changed files
         # e.g. ['euroe-demo', 'signMessage'] if both package folders contains changes
-        image: ${{ fromJSON(needs.changes.outputs.directories) }}
+        image: ${{ fromJSON(needs.docker-changes.outputs.directories) }}
 
     steps:
     - name: Checkout
@@ -82,29 +82,24 @@ jobs:
   
     - name: Set the path to the docker build directory to the dapp name for some apps.
       if: ${{ contains(fromJson('["euroe-demo", "signMessage", "simpleAgeVerification"]'), matrix.image) }}
-      run:
+      run: |
         echo "DOCKER_DIR=./${{ matrix.image }}" >> $GITHUB_ENV
 
     - name: Set the path to the dockerfile to the scripts subdirectory for euroe-demo.
       if: ${{ contains(fromJson('["euroe-demo"]'), matrix.image) }}
-      run:
+      run: |
         echo "DOCKERFILE_DIR=./scripts" >> $GITHUB_ENV
   
     - name: Set the path to the dockerfile where it is the dapp name.
       if: ${{ contains(fromJson('["sponsoredTransactionsAuction", "sponsoredTransactions", "sponsoredTransactions"]'), matrix.image) }}
-      run:
+      run: |
         echo "DOCKERFILE_DIR=./${{ matrix.image }}" >> $GITHUB_ENV
 
     - name: Build image
       working-directory: ${{ env.DOCKER_DIR }}
       run: |
         echo "DOCKER_DIR is ${DOCKER_DIR}"
-        echo "ls is:"
-        ls 
-        echo "pwd is:"
-        pwd
-        echo "env is:"
-        env
+        echo "DOCKERFILE_DIR is ${DOCKERFILE_DIR}"
         docker build -f ${{ env.DOCKERFILE_DIR}}/Dockerfile .
 
   # compose-build:
