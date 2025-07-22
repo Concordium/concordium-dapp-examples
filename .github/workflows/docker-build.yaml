@@ -18,7 +18,7 @@ on:
       - 'trackAndTrace/**'
       - '!**.md'
 
-  workflow_dispatch: # allows manual trigger
+  workflow_dispatch: # This allows the job to be manually triggered
 
 # These get updated conditionally for specific apps
 # The build process slightly differs between them.
@@ -31,7 +31,7 @@ jobs:
     name: detect what files changed
     if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
-    # Map a step output to a job output
+    # Map the output from the steps below to output for the job as a whole
     outputs:
       docker-changes: ${{ steps.docker-changes.outputs.changes }}
       compose-changes: ${{ steps.compose-changes.outputs.changes }}
@@ -71,16 +71,16 @@ jobs:
 
   docker-build:
     name: Building Docker Containers
-    # Require the diff job.
+    # Require the job which generates list of changed files.
     needs: changes
-    # Don't run on draft pull requests
+    # Don't run on draft pull requests.
     if: ${{ !github.event.pull_request.draft && needs.changes.outputs.docker-changes != '[]' && needs.changes.outputs.docker-changes != '' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        # JSON array contains all directories with docker images which have changed files
-        # e.g. ['euroe-demo', 'signMessage'] if both package folders contains changes
+        # This JSON array is the names of dapps with Dockerfiles which have changes
+        # e.g. ['euroe-demo', 'signMessage'] if those directories have changed files relative to `main`.
         image: ${{ fromJSON(needs.changes.outputs.docker-changes) }}
 
     steps:
@@ -89,11 +89,6 @@ jobs:
       with:
         submodules: recursive
 
-    - name: Build image
-      working-directory: ${{ env.DOCKER_DIR }}
-      run: |
-        echo "${{ matrix.image }} is the matrix image to build"
-  
     - name: Set the path to the docker build directory to the dapp name for some apps.
       if: ${{ contains(fromJson('["euroe-demo", "signMessage", "simpleAgeVerification"]'), matrix.image) }}
       run: |
@@ -118,7 +113,7 @@ jobs:
 
   compose-build:
     name: Building dapps which use Docker Compose
-    # Require the diff job.
+    # Require the job which generates list of changed files.
     needs: changes
     # Don't run on draft pull requests
     if: ${{ !github.event.pull_request.draft }}
@@ -126,7 +121,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # JSON array contains all directories with docker compose builds which have changed files
+        # This JSON array is the names of dapps with docker compose files which have changes
+        # e.g. ['euroe-demo', 'signMessage'] if those directories have changed files relative to `main`.
         dapp: ${{ fromJSON(needs.changes.outputs.compose-changes) }}
 
     steps:
@@ -147,7 +143,5 @@ jobs:
     - name: Build with docker compose
       working-directory: ${{ matrix.dapp }}        
       run: |
-        env | grep TRACK
-        pwd
         docker compose build
 
