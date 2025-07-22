@@ -117,7 +117,7 @@ jobs:
         docker build -f ${{ env.DOCKERFILE_DIR}}/Dockerfile .
 
   compose-build:
-    name: Building Docker Containers
+    name: Building dapps which use Docker Compose
     # Require the diff job.
     needs: changes
     # Don't run on draft pull requests
@@ -141,12 +141,13 @@ jobs:
       # enforces the presence of environment variables during the build phase,
       # even though these variables are only needed at runtime.
       run: |
-        echo "TRACK_AND_TRACE_CONTRACT_ADDRESS='<8351,0>'" >> $GITHUB_ENV
-        echo "TRACK_AND_TRACE_PRIVATE_KEY_FILE='./trackAndTrace/README.md'" >> $GITHUB_ENV
+        echo "TRACK_AND_TRACE_CONTRACT_ADDRESS=<8351,0>" >> $GITHUB_ENV
+        echo "TRACK_AND_TRACE_PRIVATE_KEY_FILE=./trackAndTrace/README.md" >> $GITHUB_ENV
 
     - name: Build with docker compose
       working-directory: ${{ matrix.dapp }}        
       run: |
         env | grep TRACK
+        pwd
         docker compose build
 
