@@ -18,8 +18,11 @@ on:
 
   workflow_dispatch: # allows manual trigger
 
+# These get updated conditionally for specific apps
+# The build process slightly differs between them.
 env:
   DOCKER_DIR: '.'
+  DOCKERFILE_DIR: '.'
 
 jobs:
   changes:
@@ -83,18 +86,23 @@ jobs:
       run:
         echo "DOCKER_DIR=./${{ matrix.image }}" >> $GITHUB_ENV
 
+    - name: Set the path to the dockerfile is needed
+      if: ${{ contains(fromJson('["euroe-demo"]'), matrix.image) }}
+      run:
+        echo "DOCKERFILE_DIR=./scripts" >> $GITHUB_ENV
+
         
     - name: Build image
       working-directory: ${{ env.DOCKER_DIR }}
       run: |
-        echo "DOCKER_DIR is ${DOCKER_DIR}"
+        echo "DOCKER_DIR is ${DOCKER_DIR:.}"
         echo "ls is:"
         ls 
         echo "pwd is:"
         pwd
         echo "env is:"
         env
-        docker build -f ${{ matrix.image }}/Dockerfile .
+        docker build -f ${{ env.DOCKERFILE_DIR}}/Dockerfile .
 
   # compose-build:
   #   name: Building with docker compose
