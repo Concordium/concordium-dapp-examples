@@ -81,14 +81,15 @@ jobs:
     - name: Set the directory to build from to the dapp's rather than repo root where needed.
       if: ${{ contains(fromJson('["euroe-demo", "signMessage", "simpleAgeVerification"]'), matrix.image) }}
       run:
-        export DOCKER_DIR="./${{ matrix.image }}"
+        echo "DOCKER_DIR="./${{ matrix.image }}" >> $GITHUB_ENV
 
+        
     - name: Build image
       working-directory: ${{ env.DOCKER_DIR }}
       run:
-        echo "$DOCKER_DIR is"
+        echo "DOCKER_DIR is ${DOCKER_DIR}"
         pwd
-        docker build -f ${{ matrix.image.dir }}/Dockerfile .
+        docker build -f ${{ matrix.image }}/Dockerfile .
 
   # compose-build:
   #   name: Building with docker compose
