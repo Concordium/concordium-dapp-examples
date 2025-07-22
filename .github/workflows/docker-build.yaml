@@ -18,20 +18,17 @@ on:
 
   workflow_dispatch: # allows manual trigger
 
+env:
+  DOCKER_DIR: '.'
 
 jobs:
-  files-changed:
+  changes:
     name: detect what files changed
     if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     # Map a step output to a job output
     outputs:
-      euroe_demo: ${{ steps.changes.outputs.euroe_demo }}
-      signMessage: ${{ steps.changes.outputs.sign_message }}
-      simpleAgeVerification: ${{ steps.changes.outputs.simpleAgeVerification }}
-      gallery: ${{ steps.changes.outputs.gallery }}
-      sponsoredTransactions: ${{ steps.changes.outputs.sponsoredTransactions }}
-      sponsoredTransactionsAuction: ${{ steps.changes.outputs.sponsoredTransactionsAuction }}
+      directories: ${{ steps.changes.outputs.changes }}
     steps:
       - uses: actions/checkout@v4
 
@@ -57,26 +54,24 @@ jobs:
               - 'deps'
 
 
-  # build:
-  #   name: Building Docker Containers
-  #   # Don't run on draft pull requests
-  #   if: ${{ !github.event.pull_request.draft }}
-  #   runs-on: ubuntu-latest
-  #   strategy:
-  #     matrix:
-  #       image:
-  #         - {dir: euroe-demo, dockerfile: scripts/Dockerfile}
-  #         - {dir: ., dockerfile: gallery/Dockerfile}
-  #         - {dir: signMessage, dockerfile: Dockerfile}
-  #         - {dir: simpleAgeVerification, dockerfile: Dockerfile}
-  #         - {dir: ., dockerfile: sponsoredTransactions/Dockerfile}
-  #         - {dir: ., dockerfile: sponsoredTransactionsAuction/Dockerfile}
+  build:
+    name: Building Docker Containers
+    # Require the diff job.
+    needs: changes
+    # Don't run on draft pull requests
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # JSON array contains all directories with docker images and changed files
+        # e.g. ['euroe-demo', 'signMessage'] if both package folders contains changes
+        inage: ${{ fromJSON(needs.changes.outputs.directories) }}
 
-  #   steps:
-  #   - name: Checkout
-  #     uses: actions/checkout@v4
-  #     with:
-  #       submodules: recursive
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
 
   #   - name: Build image
   #     working-directory: ${{ matrix.image.dir }}
