@@ -74,7 +74,7 @@ jobs:
     # Require the diff job.
     needs: changes
     # Don't run on draft pull requests
-    if: ${{ !github.event.pull_request.draft }}
+    if: ${{ !github.event.pull_request.draft && needs.changes.outputs.docker-changes != '[]' && needs.changes.outputs.docker-changes != '' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
