@@ -7,13 +7,13 @@ on:
   pull_request:
     branches: main
     paths:
-      - 'euroe-demo'
-      - 'signMessage'
-      - 'simpleAgeVerification'
-      - 'gallery' 
-      - 'deps'
-      - 'sponsoredTransactions'
-      - 'sponsoredTransactionsAuction'
+      - 'euroe-demo/**'
+      - 'signMessage/**'
+      - 'simpleAgeVerification/**'
+      - 'gallery/**' 
+      - 'deps/concordium-rust-sdk'
+      - 'sponsoredTransactions/**'
+      - 'sponsoredTransactionsAuction/**'
       - '!**.md'
 
   workflow_dispatch: # allows manual trigger
@@ -41,19 +41,19 @@ jobs:
         with:
           filters: |
             euroe-demo:
-              - 'euroe-demo'
+              - 'euroe-demo/**'
             signMessage:
-              - 'signMessage'
+              - 'signMessage/**'
             simpleAgeVerification:
-              - 'simpleAgeVerification'
+              - 'simpleAgeVerification/**'
             gallery:
-              - 'gallery'
-              - 'deps'
+              - 'gallery/**'
+              - 'deps/concordium-rust-sdk'
             sponsoredTransactions:
-              - 'sponsoredTransactions'
-              - 'deps'
+              - 'sponsoredTransactions/**'
+              - 'deps/concordium-rust-sdk'
             sponsoredTransactionsAuction:
-              - 'sponsoredTransactionsAuction'
+              - 'sponsoredTransactionsAuction/**'
               - 'deps'
 
 
