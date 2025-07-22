@@ -3,6 +3,9 @@ name: Build Docker Containers
 on:
   push:
     branches: main
+
+  pull_request:
+    branches: main
     paths:
       - 'euroe-demo'
       - 'signMessage'
@@ -12,10 +15,6 @@ on:
       - 'sponsoredTransactions'
       - 'sponsoredTransactionsAuction'
       - '!**.md'
-
-
-  pull_request:
-    branches: main
 
   workflow_dispatch: # allows manual trigger
 
