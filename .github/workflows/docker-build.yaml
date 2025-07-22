@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     # Map a step output to a job output
     outputs:
-      directories: ${{ steps.changes.outputs.changes }}
+      docker-changes: ${{ steps.docker-changes.outputs.changes }}
     steps:
       - uses: actions/checkout@v4
 
@@ -59,7 +59,7 @@ jobs:
   build:
     name: Building Docker Containers
     # Require the diff job.
-    needs: docker-changes
+    needs: changes
     # Don't run on draft pull requests
     if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
@@ -67,7 +67,7 @@ jobs:
       matrix:
         # JSON array contains all directories with docker images and changed files
         # e.g. ['euroe-demo', 'signMessage'] if both package folders contains changes
-        image: ${{ fromJSON(needs.docker-changes.outputs.directories) }}
+        image: ${{ fromJSON(needs.changes.outputs.docker-changes) }}
 
     steps:
     - name: Checkout
