@@ -81,21 +81,20 @@ jobs:
       run:
         echo "${{ matrix.image }} is the matrix image to build"
   
-    - name: Set the directory to build from to the dapp's rather than repo root where needed.
+    - name: Set the directory to build if it's not the repo base.
       if: ${{ contains(fromJson('["euroe-demo", "signMessage", "simpleAgeVerification"]'), matrix.image) }}
       run:
         echo "DOCKER_DIR=./${{ matrix.image }}" >> $GITHUB_ENV
 
-    - name: Set the path to the dockerfile is needed
+    - name: Set the path to the dockerfile if it's not in the current working directory.
       if: ${{ contains(fromJson('["euroe-demo"]'), matrix.image) }}
       run:
         echo "DOCKERFILE_DIR=./scripts" >> $GITHUB_ENV
-
         
     - name: Build image
       working-directory: ${{ env.DOCKER_DIR }}
       run: |
-        echo "DOCKER_DIR is ${DOCKER_DIR:.}"
+        echo "DOCKER_DIR is ${DOCKER_DIR}"
         echo "ls is:"
         ls 
         echo "pwd is:"
