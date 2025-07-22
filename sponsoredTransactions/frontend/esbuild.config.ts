@@ -11,6 +11,8 @@ if (process.env.SMART_CONTRACT_INDEX === undefined || Number.isNaN(process.env.S
 
 const watch = Boolean(process.env.WATCH);
 
+
+
 const main = 'src/index.tsx';
 
 const htmlTemplate = fs.readFileSync('src/index.html').toString();

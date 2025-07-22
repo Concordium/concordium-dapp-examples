@@ -18,69 +18,95 @@ on:
 
   workflow_dispatch: # allows manual trigger
 
+
 jobs:
-  plan-changes:
-    name: Evaluating which images to build.
-    # Don't run on draft pull requests
+  files-changed:
+    name: detect what files changed
     if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
+    # Map a step output to a job output
+    outputs:
+      euroe_demo: ${{ steps.changes.outputs.euroe_demo }}
+      signMessage: ${{ steps.changes.outputs.sign_message }}
+      simpleAgeVerification: ${{ steps.changes.outputs.simpleAgeVerification }}
+      gallery: ${{ steps.changes.outputs.gallery }}
+      sponsoredTransactions: ${{ steps.changes.outputs.sponsoredTransactions }}
+      sponsoredTransactionsAuction: ${{ steps.changes.outputs.sponsoredTransactionsAuction }}
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive
+      - uses: actions/checkout@v4
+
+      - name: Check for backend file changes
+        uses: dorny/paths-filter@v3.0.2
+        id: changes
+        with:
+          filters: |
+            euroe-demo:
+              - 'euroe-demo'
+            signMessage:
+              - 'signMessage'
+            simpleAgeVerification:
+              - 'simpleAgeVerification'
+            gallery:
+              - 'gallery'
+              - 'deps'
+            sponsoredTransactions:
+              - 'sponsoredTransactions'
+              - 'deps'
+            sponsoredTransactionsAuction:
+              - 'sponsoredTransactionsAuction'
+              - 'deps'
 
 
-  build:
-    name: Building Docker Containers
-    # Don't run on draft pull requests
-    if: ${{ !github.event.pull_request.draft }}
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        image:
-          - {dir: euroe-demo, dockerfile: scripts/Dockerfile}
-          # - {dir: ., dockerfile: gallery/Dockerfile}
-          # - {dir: signMessage, dockerfile: Dockerfile}
-          # - {dir: simpleAgeVerification, dockerfile: Dockerfile}
-          # - {dir: ., dockerfile: sponsoredTransactions/Dockerfile}
-          # - {dir: ., dockerfile: sponsoredTransactionsAuction/Dockerfile}
+  # build:
+  #   name: Building Docker Containers
+  #   # Don't run on draft pull requests
+  #   if: ${{ !github.event.pull_request.draft }}
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     matrix:
+  #       image:
+  #         - {dir: euroe-demo, dockerfile: scripts/Dockerfile}
+  #         - {dir: ., dockerfile: gallery/Dockerfile}
+  #         - {dir: signMessage, dockerfile: Dockerfile}
+  #         - {dir: simpleAgeVerification, dockerfile: Dockerfile}
+  #         - {dir: ., dockerfile: sponsoredTransactions/Dockerfile}
+  #         - {dir: ., dockerfile: sponsoredTransactionsAuction/Dockerfile}
 
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive
+  #   steps:
+  #   - name: Checkout
+  #     uses: actions/checkout@v4
+  #     with:
+  #       submodules: recursive
 
-    - name: Build image
-      working-directory: ${{ matrix.image.dir }}
-      run:
-        docker build -f ${{ matrix.image.dockerfile }} .
+  #   - name: Build image
+  #     working-directory: ${{ matrix.image.dir }}
+  #     run:
+  #       docker build -f ${{ matrix.image.dockerfile }} .
 
-  compose-build:
-    name: Building with docker compose
-    # Don't run on draft pull requests
-    if: ${{ !github.event.pull_request.draft }}
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        directories:
-          - trackAndTrace
-          - compliant-reward-distribution
+  # compose-build:
+  #   name: Building with docker compose
+  #   # Don't run on draft pull requests
+  #   if: ${{ !github.event.pull_request.draft }}
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     matrix:
+  #       directories:
+  #         - trackAndTrace
+  #         - compliant-reward-distribution
 
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive
+  #   steps:
+  #   - name: Checkout
+  #     uses: actions/checkout@v4
+  #     with:
+  #       submodules: recursive
 
-    - name: Build with docker compose
-      working-directory: ${{ matrix.directories }}
-      env:
-        # Dummy values are set for the `trackAndTrace` run because `docker compose build`
-        # enforces the presence of environment variables during the build phase,
-        # even though these variables are only needed at runtime.
-        TRACK_AND_TRACE_CONTRACT_ADDRESS: "<8351,0>"
-        TRACK_AND_TRACE_PRIVATE_KEY_FILE: "./trackAndTrace/README.md"
-      run:
-        docker compose build
+  #   - name: Build with docker compose
+  #     working-directory: ${{ matrix.directories }}
+  #     env:
+  #       # Dummy values are set for the `trackAndTrace` run because `docker compose build`
+  #       # enforces the presence of environment variables during the build phase,
+  #       # even though these variables are only needed at runtime.
+  #       TRACK_AND_TRACE_CONTRACT_ADDRESS: "<8351,0>"
+  #       TRACK_AND_TRACE_PRIVATE_KEY_FILE: "./trackAndTrace/README.md"
+  #     run:
+  #       docker compose build
