@@ -76,7 +76,7 @@ jobs:
     - name: Build image
       working-directory: ${{ env.DOCKER_DIR }}
       run:
-        echo "${{ matrix.image }} is the matrix image to build
+        echo "${{ matrix.image }} is the matrix image to build"
   
     - name: Set the directory to build from to the dapp's rather than repo root where needed.
       if: ${{ contains(fromJson('["euroe-demo", "signMessage", "simpleAgeVerification"]'), matrix.image) }}
