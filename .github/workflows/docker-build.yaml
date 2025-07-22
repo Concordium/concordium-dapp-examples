@@ -56,7 +56,6 @@ jobs:
               - 'sponsoredTransactionsAuction/**'
               - 'deps'
 
-
   build:
     name: Building Docker Containers
     # Require the diff job.
@@ -78,24 +77,24 @@ jobs:
 
     - name: Build image
       working-directory: ${{ env.DOCKER_DIR }}
-      run:
+      run: |
         echo "${{ matrix.image }} is the matrix image to build"
   
-    - name: Set the directory to run the build from if it's not the repo base.
+    - name: Set the path to the docker build directory to the dapp name for some apps.
       if: ${{ contains(fromJson('["euroe-demo", "signMessage", "simpleAgeVerification"]'), matrix.image) }}
       run:
         echo "DOCKER_DIR=./${{ matrix.image }}" >> $GITHUB_ENV
 
-    - name: Set the path to the dockerfile for euroe-demo.
+    - name: Set the path to the dockerfile to the scripts subdirectory for euroe-demo.
       if: ${{ contains(fromJson('["euroe-demo"]'), matrix.image) }}
       run:
         echo "DOCKERFILE_DIR=./scripts" >> $GITHUB_ENV
   
-      - name: Set the path to the dockerfile where it's the dapp name.
+    - name: Set the path to the dockerfile where it is the dapp name.
       if: ${{ contains(fromJson('["sponsoredTransactionsAuction", "sponsoredTransactions", "sponsoredTransactions"]'), matrix.image) }}
       run:
         echo "DOCKERFILE_DIR=./${{ matrix.image }}" >> $GITHUB_ENV
-  
+
     - name: Build image
       working-directory: ${{ env.DOCKER_DIR }}
       run: |
