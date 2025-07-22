@@ -31,3 +31,5 @@ COPY --from=front_end ./app/dist ./public
 RUN apt-get update && apt-get install -y  ca-certificates
 
 CMD ./sponsored-transaction-backend --frontend public
+
+

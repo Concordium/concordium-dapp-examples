@@ -15,6 +15,8 @@ const watch = Boolean(process.env.WATCH);
 
 const main = 'src/index.tsx';
 
+
+
 const htmlTemplate = fs.readFileSync('src/index.html').toString();
 const htmlOut = 'index.html';
 
