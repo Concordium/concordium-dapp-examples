@@ -86,7 +86,7 @@ jobs:
         
     - name: Build image
       working-directory: ${{ env.DOCKER_DIR }}
-      run:
+      run: |
         echo "DOCKER_DIR is ${DOCKER_DIR}"
         pwd
         docker build -f ${{ matrix.image }}/Dockerfile .
