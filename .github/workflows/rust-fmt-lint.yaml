@@ -8,6 +8,16 @@ on:
 
   pull_request:
     branches: main
+    paths:
+      - 'gallery/verifier/**'
+      - 'low-code-nft-marketplace/cis2-market/**'
+      - 'sponsoredTransactions/**'
+      - 'sponsoredTransactionsAuction/backend/**'
+      - 'trackAndTrace/smart-contract/**'
+      - 'trackAndTrace/test-scripts/**'
+      - 'trackAndTrace/indexer/**'
+      - 'trackAndTrace/sponsored-transaction-service/**'
+      - 'compliant-reward-distribution/indexer-and-server/**'
 
   workflow_dispatch: # allows manual trigger
 
@@ -17,23 +27,45 @@ env:
   CARGO_CONCORDIUM_VERSION: "4.2.0"
 
 jobs:
-  lint_fmt:
-    name: Running formatting
-    # Don't run on draft pull requests
+  changes:
+    name: Detect changed files in Rust projects
     if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
+    outputs:
+      paths: ${{ steps.rust-directories.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for backend file changes for Docker builds
+        uses: dorny/paths-filter@v3
+        id: rust-changes
+        with:
+          list-files: json
+          filters: |
+            rust:
+            - '**/*.rs'
+  
+      - name: Print the list of files
+        id: rust-directories
+        run: |
+          echo "Print the output"
+          echo ${{ steps.rust-changes.outputs.rust_files }}
+          echo '${{ steps.rust-changes.outputs.rust_files }}' | jq '[.[] | split("/")[:2] | join("/")] | unique' 
+          matrix=$(echo '${{ steps.rust-changes.outputs.rust_files }}' | jq -c '[.[] | split("/")[:2] | join("/")] | unique')
+          echo "printing resulting variable"
+          echo $linters
+          echo "writing to github output"
+          echo "matrix=${matrix}" >> $GITHUB_OUTPUT
+     
+  lint_fmt:
+    name: Running formatting
+    needs: changes
+    # Don't run on draft pull requests, or if there are no changes in Rust files. 
+    if: ${{ !github.event.pull_request.draft && needs.changes.outputs.paths != '[]' && needs.changes.outputs.paths != '' }}
+    runs-on: ubuntu-latest  
     strategy:
       matrix:
-        crates:
-          - gallery/verifier/Cargo.toml
-          - low-code-nft-marketplace/cis2-market/Cargo.toml
-          - sponsoredTransactions/backend/Cargo.toml
-          - sponsoredTransactionsAuction/backend/Cargo.toml
-          - trackAndTrace/smart-contract/Cargo.toml
-          - trackAndTrace/test-scripts/Cargo.toml
-          - trackAndTrace/indexer/Cargo.toml
-          - trackAndTrace/sponsored-transaction-service/Cargo.toml
-          - compliant-reward-distribution/indexer-and-server/Cargo.toml
+        paths: ${{ fromJSON(needs.changes.outputs.paths) }}
 
     steps:
       - name: Checkout
@@ -47,26 +79,17 @@ jobs:
           toolchain: ${{ env.RUST_FMT }}
           components: rustfmt
       - name: Rustfmt Check
-        run: cargo fmt --manifest-path=${{ matrix.crates }} -- --check
+        run: cargo fmt --manifest-path=${{ matrix.paths }}/Cargo.toml -- --check
 
   lint_clippy:
     name: Running clippy
-    needs: lint_fmt
-    # Don't run on draft pull requests
-    if: ${{ !github.event.pull_request.draft }}
+    needs: changes
+    # Don't run on draft pull requests, or if there are no changes in Rust files. 
+    if: ${{ !github.event.pull_request.draft && needs.changes.outputs.paths != '[]' && needs.changes.outputs.paths != '' }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        crates:
-          - gallery/verifier/Cargo.toml
-          - low-code-nft-marketplace/cis2-market/Cargo.toml
-          - sponsoredTransactions/backend/Cargo.toml
-          - sponsoredTransactionsAuction/backend/Cargo.toml
-          - trackAndTrace/smart-contract/Cargo.toml
-          - trackAndTrace/test-scripts/Cargo.toml
-          - trackAndTrace/indexer/Cargo.toml
-          - trackAndTrace/sponsored-transaction-service/Cargo.toml
-          - compliant-reward-distribution/indexer-and-server/Cargo.toml
+        paths: ${{ fromJSON(needs.changes.outputs.paths) }}
 
     steps:
       - name: Checkout
@@ -80,37 +103,41 @@ jobs:
           toolchain: ${{ env.RUST_VERSION }}
           components: clippy
       - name: Run cargo clippy
-        run: cargo clippy --manifest-path=${{ matrix.crates }} --locked -- -D warnings
+        run: cargo clippy --manifest-path=${{ matrix.paths }}/Cargo.toml --locked -- -D warnings
 
   build:
     name: Build Rust project
-    # Don't run on draft pull requests
+    needs: changes
+    # Don't run on draft pull requests, only run on trackAndTrace and compliant-reward-distribution
     if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        crates:
-          - trackAndTrace/indexer/Cargo.toml
-          - trackAndTrace/sponsored-transaction-service/Cargo.toml
-          - trackAndTrace/test-scripts/Cargo.toml
-          - compliant-reward-distribution/indexer-and-server/Cargo.toml
+        paths: ${{ fromJSON(needs.changes.outputs.paths) }}
 
     steps:
       - name: Checkout
+        if: ${{ contains(fromJson('["trackAndTrace"]'), matrix.paths) || contains(fromJson('["compliant-reward-distribution"]'), matrix.paths) }}
+        id: checkout
         uses: actions/checkout@v4
         with:
           submodules: recursive
+
       - name: Get toolchain
+        if: ${{ contains(fromJson('["trackAndTrace"]'), matrix.paths) || contains(fromJson('["compliant-reward-distribution"]'), matrix.paths) }}
         # Ensure rustfmt is installed and setup problem matcher
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: ${{ env.RUST_VERSION }}
+
       - name: Run cargo build
-        run: cargo build --manifest-path=${{ matrix.crates }} --locked
+        if: ${{ contains(fromJson('["trackAndTrace"]'), matrix.paths) || contains(fromJson('["compliant-reward-distribution"]'), matrix.paths) }}
+        run: cargo build --manifest-path=${{ matrix.paths }}/Cargo.toml --locked
 
   test:
     name: Running cargo-concordium tests
-    # Don't run on draft pull requests
+    needs: changes
+    # Don't run on draft pull requests,  only run on trackAndTrace and compliant-reward-distribution
     if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     strategy:
@@ -118,9 +145,7 @@ jobs:
         target:
           - x86_64-unknown-linux-gnu
 
-        crates:
-          - low-code-nft-marketplace/cis2-market
-          - trackAndTrace/smart-contract
+        paths: ${{ fromJSON(needs.changes.outputs.paths) }}
 
     steps:
       - name: Checkout sources
@@ -129,7 +154,8 @@ jobs:
           submodules: recursive
 
       - name: Install toolchain
-        uses: actions-rs/toolchain@v1
+        if: ${{ contains(fromJson('["trackAndTrace/smart-contract"]'), matrix.paths ) || contains(fromJson('["low-code-nft-marketplace/cis2-market"]'), matrix.paths) }}
+        uses: actions-rs/toolchain@v1.0.6
         with:
           profile: minimal
           toolchain: ${{ env.RUST_VERSION }}
@@ -137,13 +163,16 @@ jobs:
           override: true
 
       - name: Install Wasm target
+        if: ${{ contains(fromJson('["trackAndTrace/smart-contract"]'), matrix.paths ) || contains(fromJson('["low-code-nft-marketplace/cis2-market"]'), matrix.paths) }}
         run: rustup target install wasm32-unknown-unknown
 
       - name: Download and install Cargo Concordium
+        if: ${{ contains(fromJson('["trackAndTrace/smart-contract"]'), matrix.paths ) || contains(fromJson('["low-code-nft-marketplace/cis2-market"]'), matrix.paths) }}
         run: |
           curl -L https://github.com/Concordium/concordium-smart-contract-tools/releases/download/releases/cargo-concordium/${CARGO_CONCORDIUM_VERSION}/cargo-concordium-linux-amd64 -o /tmp/cargo-concordium
           chmod +x /tmp/cargo-concordium
           sudo mv /tmp/cargo-concordium /usr/bin/cargo-concordium
 
       - name: Run cargo concordium test
-        run: cargo concordium test --out "${{ matrix.crates }}/concordium-out/module.wasm.v1" -- --manifest-path "${{ matrix.crates }}/Cargo.toml"
+        if: ${{ contains(fromJson('["trackAndTrace/smart-contract"]'), matrix.paths ) || contains(fromJson('["low-code-nft-marketplace/cis2-market"]'), matrix.paths) }}
+        run: cargo concordium test --out "${{ matrix.paths }}/concordium-out/module.wasm.v1" -- --manifest-path "${{ matrix.paths }}/Cargo.toml"

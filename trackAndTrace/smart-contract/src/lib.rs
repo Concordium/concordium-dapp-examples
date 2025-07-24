@@ -1,3 +1,5 @@
+//! # TEMP: run test against this.
+//!
 //! # Implementation of a simple track-and-trace contract.
 //!
 //! ## Grant and Revoke roles:
