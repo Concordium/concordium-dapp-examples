@@ -1,5 +1,3 @@
-# TEMP: Changing file to trigger CI.
-
 ARG build_image="node:20-slim"
 FROM ${build_image} AS build
 WORKDIR /app

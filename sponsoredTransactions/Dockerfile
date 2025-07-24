@@ -1,8 +1,6 @@
 ARG node_base_image=node:20-slim
 ARG rust_base_image=rust:1.85
 
-# TEMP: Changing file to trigger CI.
-
 FROM ${node_base_image} AS frontend
 
 WORKDIR /app
