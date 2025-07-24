@@ -34,3 +34,4 @@ tokio-postgres = { version = "0.7", features = [
 ] }
 deadpool-postgres = "0.11"
 handlebars = "4.5"
+reqwest = { version = "0.11", features = ["json"] }
