@@ -11,8 +11,6 @@ use deadpool_postgres::{GenericClient, Object};
 use serde::Serialize;
 use tokio_postgres::{types::ToSql, NoTls};
 
-
-/// TEMP: please run format against this file.
 /// Alias for returning results with [`DatabaseError`]s as the `Err` variant.
 type DatabaseResult<T> = Result<T, DatabaseError>;
 
