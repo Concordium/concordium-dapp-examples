@@ -9,6 +9,7 @@ on:
   pull_request:
     branches: main
     paths:
+      - 'deps/concordium-rust-sdk'
       - 'gallery/verifier/**'
       - 'low-code-nft-marketplace/cis2-market/**'
       - 'sponsoredTransactions/**'

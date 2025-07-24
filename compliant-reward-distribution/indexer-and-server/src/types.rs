@@ -18,7 +18,7 @@ use concordium_rust_sdk::{
 };
 use std::{num::ParseIntError, str::FromStr};
 
-//! TEMP: please run format against this file.
+/// TEMP: please run format against this file.
 /// Server struct to store values that are not persisted in the database.
 /// When re-starting the server this struct will be re-initialized based on the
 /// options/flags provided.
