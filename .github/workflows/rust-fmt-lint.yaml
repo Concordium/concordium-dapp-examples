@@ -33,11 +33,14 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       paths: ${{ steps.rust-directories.outputs.matrix }}
+      builds: ${{ steps.build-changes.outputs.changes }}
+      tests: ${{ steps.test-changes.outputs.changes }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check for backend file changes for Docker builds
-        uses: dorny/paths-filter@v3
+      - name: Check for Rust file changes to lint.
+        # Tag 3.0.2, referencing by commit SHA as a security best practice.
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36
         id: rust-changes
         with:
           list-files: json
@@ -48,15 +51,57 @@ jobs:
       - name: Print the list of files
         id: rust-directories
         run: |
-          echo "Print the output"
-          echo ${{ steps.rust-changes.outputs.rust_files }}
+          echo "Generating a list of Rust projects with changes:"
           echo '${{ steps.rust-changes.outputs.rust_files }}' | jq '[.[] | split("/")[:2] | join("/")] | unique' 
           matrix=$(echo '${{ steps.rust-changes.outputs.rust_files }}' | jq -c '[.[] | split("/")[:2] | join("/")] | unique')
-          echo "printing resulting variable"
-          echo $linters
-          echo "writing to github output"
+          echo "Writing changes to GITHUB_OUTPUT."
           echo "matrix=${matrix}" >> $GITHUB_OUTPUT
-     
+
+
+      - name: Check for Rust projects to build
+        # Tag 3.0.2, referencing by commit SHA as a security best practice.
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36
+        id: build-changes
+        with:
+          filters: |
+            low-code-nft-marketplace/cis2-market:
+            - 'deps/concordium-rust-sdk'
+            - 'low-code-nft-marketplace/cis2-market/**'
+            trackAndTrace/smart-contract:
+            - 'deps/concordium-rust-sdk'
+            - 'trackAndTrace/smart-contract/**'
+            trackAndTrace/test-scripts:
+            - 'deps/concordium-rust-sdk'
+            - 'trackAndTrace/test-scripts/**'
+            trackAndTrace/indexer:
+            - 'deps/concordium-rust-sdk'
+            - 'trackAndTrace/indexer/**'
+            trackAndTrace/sponsored-transaction-service:
+            - 'deps/concordium-rust-sdk'
+            - 'trackAndTrace/sponsored-transaction-service/**'
+            compliant-reward-distribution/indexer-and-server:
+            - 'deps/concordium-rust-sdk'
+            - 'compliant-reward-distribution/indexer-and-server/**'
+
+      - name: Check for Rust projects to test
+        # Tag 3.0.2, referencing by commit SHA as a security best practice.
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36
+        id: test-changes
+        with:
+          filters: |
+            low-code-nft-marketplace/cis2-market:
+            - 'deps/concordium-rust-sdk'
+            - 'low-code-nft-marketplace/cis2-market/**'
+            trackAndTrace/smart-contract:
+            - 'deps/concordium-rust-sdk'
+            - 'trackAndTrace/smart-contract/**'
+
+      - name: Print the list of files triggering tests
+        id: test-targets
+        run: |
+          echo "Printing list of changes:"
+          echo '${{ steps.test-changes.outputs.changes }}'
+
   lint_fmt:
     name: Running formatting
     needs: changes
@@ -84,7 +129,7 @@ jobs:
   lint_clippy:
     name: Running clippy
     needs: changes
-    # Don't run on draft pull requests, or if there are no changes in Rust files. 
+    # Don't run on draft pull requests, only run if there were changes on target files
     if: ${{ !github.event.pull_request.draft && needs.changes.outputs.paths != '[]' && needs.changes.outputs.paths != '' }}
     runs-on: ubuntu-latest
     strategy:
@@ -108,44 +153,41 @@ jobs:
   build:
     name: Build Rust project
     needs: changes
-    # Don't run on draft pull requests, only run on trackAndTrace and compliant-reward-distribution
-    if: ${{ !github.event.pull_request.draft }}
+    # Don't run on draft pull requests, only run if there were changes on target files
+    if: ${{ !github.event.pull_request.draft && needs.changes.outputs.builds != '[]' && needs.changes.outputs.builds != '' }}}}
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        paths: ${{ fromJSON(needs.changes.outputs.paths) }}
+        paths: ${{ fromJSON(needs.changes.outputs.builds) }}
 
     steps:
       - name: Checkout
-        if: ${{ contains(fromJson('["trackAndTrace"]'), matrix.paths) || contains(fromJson('["compliant-reward-distribution"]'), matrix.paths) }}
         id: checkout
         uses: actions/checkout@v4
         with:
           submodules: recursive
 
       - name: Get toolchain
-        if: ${{ contains(fromJson('["trackAndTrace"]'), matrix.paths) || contains(fromJson('["compliant-reward-distribution"]'), matrix.paths) }}
         # Ensure rustfmt is installed and setup problem matcher
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: ${{ env.RUST_VERSION }}
 
       - name: Run cargo build
-        if: ${{ contains(fromJson('["trackAndTrace"]'), matrix.paths) || contains(fromJson('["compliant-reward-distribution"]'), matrix.paths) }}
         run: cargo build --manifest-path=${{ matrix.paths }}/Cargo.toml --locked
 
   test:
     name: Running cargo-concordium tests
     needs: changes
-    # Don't run on draft pull requests,  only run on trackAndTrace and compliant-reward-distribution
-    if: ${{ !github.event.pull_request.draft }}
+    # Don't run on draft pull requests, only run if there were changes on target files
+    if: ${{ !github.event.pull_request.draft && needs.changes.outputs.tests != '[]' && needs.changes.outputs.tests != '' }} }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
         target:
           - x86_64-unknown-linux-gnu
 
-        paths: ${{ fromJSON(needs.changes.outputs.paths) }}
+        paths: ${{ fromJSON(needs.changes.outputs.tests) }}
 
     steps:
       - name: Checkout sources
@@ -154,7 +196,6 @@ jobs:
           submodules: recursive
 
       - name: Install toolchain
-        if: ${{ contains(fromJson('["trackAndTrace/smart-contract"]'), matrix.paths ) || contains(fromJson('["low-code-nft-marketplace/cis2-market"]'), matrix.paths) }}
         uses: actions-rs/toolchain@v1.0.6
         with:
           profile: minimal
@@ -163,16 +204,13 @@ jobs:
           override: true
 
       - name: Install Wasm target
-        if: ${{ contains(fromJson('["trackAndTrace/smart-contract"]'), matrix.paths ) || contains(fromJson('["low-code-nft-marketplace/cis2-market"]'), matrix.paths) }}
         run: rustup target install wasm32-unknown-unknown
 
       - name: Download and install Cargo Concordium
-        if: ${{ contains(fromJson('["trackAndTrace/smart-contract"]'), matrix.paths ) || contains(fromJson('["low-code-nft-marketplace/cis2-market"]'), matrix.paths) }}
         run: |
           curl -L https://github.com/Concordium/concordium-smart-contract-tools/releases/download/releases/cargo-concordium/${CARGO_CONCORDIUM_VERSION}/cargo-concordium-linux-amd64 -o /tmp/cargo-concordium
           chmod +x /tmp/cargo-concordium
           sudo mv /tmp/cargo-concordium /usr/bin/cargo-concordium
 
       - name: Run cargo concordium test
-        if: ${{ contains(fromJson('["trackAndTrace/smart-contract"]'), matrix.paths ) || contains(fromJson('["low-code-nft-marketplace/cis2-market"]'), matrix.paths) }}
         run: cargo concordium test --out "${{ matrix.paths }}/concordium-out/module.wasm.v1" -- --manifest-path "${{ matrix.paths }}/Cargo.toml"
