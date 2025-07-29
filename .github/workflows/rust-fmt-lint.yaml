@@ -31,8 +31,6 @@ jobs:
 
       - name: Run cargo fmt
         run: |
-          rustup show
-          rustc -V
           rustup +${{ env.RUST_FMT_VERSION }} component add rustfmt
           cargo +${{ env.RUST_FMT_VERSION }} fmt --check
 
@@ -101,5 +99,5 @@ jobs:
       - name: Run cargo concordium test against low-code-nft-marketplace cis2-market  
         run: cargo concordium test --out "low-code-nft-marketplace/cis2-market/concordium-out/module.wasm.v1" -- --manifest-path "low-code-nft-marketplace/cis2-market/Cargo.toml"
 
-      - name: Run cargo concordium test against low-code-nft-marketplace cis2-market  
+      - name: Run cargo concordium test against trackAndTrace/smart-contract 
         run: cargo concordium test --out "trackAndTrace/smart-contract/concordium-out/module.wasm.v1" -- --manifest-path "trackAndTrace/smart-contract/Cargo.toml"
