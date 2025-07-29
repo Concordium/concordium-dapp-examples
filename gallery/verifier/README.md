@@ -1,6 +1,6 @@
 # The Gallery verifier
 
-This page describes the id verifier backend for the gallery dapp example. It ensures that only users that are able to verify themselves using the prove endpoint, using a challenge gotten from the challenge endpoint can access item images from the image endpoint.
+This page describes the ID verifier backend for the gallery dapp example. It ensures that only users that are able to verify themselves using the `prove` endpoint, using a challenge gotten from the `challenge` endpoint can access item images from the `image` endpoint.
 
 # Supported configuration options
 
@@ -56,7 +56,7 @@ Changes to any of the packages must be such that
 -   `cargo clippy --all` produces no warnings
 -   `rust fmt` makes no changes.
 
-Everything in this repository should build with stable rust at the moment (at least version 1.62 and up), however the fmt tool must be from a nightly release since some of the configuration options are not stable. One way to run the `fmt` tool is
+Everything in this repository should build with stable Rust at the moment (our CI system uses 1.85), however the fmt tool must be from a nightly release since some of the configuration options are not stable. One way to run the `fmt` tool is
 
 ```shell
  cargo +nightly-2022-06-09 fmt
@@ -75,10 +75,10 @@ In order to contribute you should make a pull request and ask a person familiar 
 
 ## Building
 
-The project is a pure Rust project, and can be build by running
+The project is a pure Rust project, and can be built from the repo root directory by running:
 
 ```shell
-cargo build --release
+cargo build --locked -p gallery-verifier --release
 ```
 
 This produces a single binary `target/release/gallery-verifier`.

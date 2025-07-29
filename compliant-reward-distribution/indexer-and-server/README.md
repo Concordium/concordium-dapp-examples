@@ -30,15 +30,15 @@ To build the tools make sure you have the repository submodules initialized
 git submodule update --init --recursive
 ```
 
-The tools can be built by running
+The tools can be built from the repo root directory by running:
 
 ```console
-cargo build --release
+cargo build --locked -p crdindexer --release
 ```
 
-This will produce two binaries (`indexer` and `server`) in the `target/release` directory.
+This will produce two binaries (`crdindexer` and `server`) in the `target/release` directory.
 
-# The `indexer` binary
+# The `crdindexer` binary
 
 It is a tool for indexing newly created accounts on Concordium into a postgres database. The database is configured with the tables from the file `../resources/schema.sql`. A table `settings` exists to store global configurations.
 
@@ -48,13 +48,13 @@ When the indexer is started for the first time, it will look up the current bloc
 
 All newly created accounts in a block are atomically added in one database transaction to postgres. This ensures a simple recovery process since we always process the complete block or roll back the database to the beginning of the block. In addition, the indexer has a re-try logic and will try to re-connect to the database pool and re-submit any failed database transaction.
 
-## Run the `indexer`
+## Run the `crdindexer`
 
 ```console
 cargo run --bin indexer -- --node https://grpc.testnet.concordium.com:20000 --log-level debug
 ```
 
-## Configure the `indexer`
+## Configure the `crdindexer`
 
 There are a few options to configure the indexer:
 

@@ -18,16 +18,15 @@ RUN yarn build
 FROM ${rust_base_image} AS back_end
 
 WORKDIR /backend/app
-COPY ./deps/concordium-rust-sdk /deps/concordium-rust-sdk
-COPY ./sponsoredTransactionsAuction/backend ./
+COPY ../ ./
 
-RUN cargo build --release
+RUN cargo build --locked -p sponsored-transaction-auction-backend --release
 
 FROM ubuntu:22.04
 WORKDIR /build
 
-COPY --from=back_end ./backend/app/target/release/sponsored-transaction-backend ./sponsored-transaction-backend
+COPY --from=back_end ./backend/app/target/release/sponsored-transaction-auction-backend ./sponsored-transaction-auction-backend
 COPY --from=front_end ./app/dist ./public
 RUN apt-get update && apt-get install -y  ca-certificates
 
-CMD ./sponsored-transaction-backend --frontend public
+CMD ./sponsored-transaction-auction-backend --frontend public
