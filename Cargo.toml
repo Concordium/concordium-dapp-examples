@@ -1,5 +1,5 @@
 [workspace]
-# Unclear if needed, seems like this is the default behaviour as of rust 2021?
+# Not sure if needed, seems like this is the default behaviour as of rust 2021?
 # https://doc.rust-lang.org/edition-guide/rust-2021/default-cargo-resolver.html
 resolver = "2"
 
@@ -10,7 +10,7 @@ members = [
   "sponsoredTransactionsAuction/backend",
   "sponsoredTransactions/backend",
   "trackAndTrace/smart-contract",
-#  "trackAndTrace/test-scripts", # Clippy errors because it's using an older test library, needs updating
+#  "trackAndTrace/test-scripts",
   "trackAndTrace/indexer",
   "trackAndTrace/sponsored-transaction-service"
 ]
@@ -26,7 +26,7 @@ default-members = [
   "sponsoredTransactionsAuction/backend",
   "sponsoredTransactions/backend",
   "trackAndTrace/smart-contract",
-#  "trackAndTrace/test-scripts", # Clippy errors because it's using an older test library, needs updating
+#  "trackAndTrace/test-scripts",
   "trackAndTrace/indexer",
   "trackAndTrace/sponsored-transaction-service"
 ]
