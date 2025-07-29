@@ -16,13 +16,13 @@ All of the above is available by using `--help` to get usage information.
 
 An example to run the backend with basic settings and testnet node would be:
 ```shell
-cargo run -- --node http://node.testnet.concordium.com:20000 --account <YourAccountPathToYourKeys> --smart-contract-index 9586
+cargo run -p sponsored-transaction-backend -- --node http://node.testnet.concordium.com:20000 --account <YourAccountPathToYourKeys> --smart-contract-index 9586  
 ```
 
 An example to run the backend with some filled in example settings would be:
 
 ```shell
-cargo run -- --node http://node.testnet.concordium.com:20000 --port 8080 --account ./4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export --public-folder ../frontend/dist --smart-contract-index 9586
+cargo run -p sponsored-transaction-backend -- --node http://node.testnet.concordium.com:20000 --port 8080 --account ./4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export --public-folder ../frontend/dist --smart-contract-index 9586
 ```
 
 To get your account file (the `4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export` file in the above example), export it from the Concordium Browser wallet for web.
@@ -100,10 +100,10 @@ In order to contribute you should make a pull request and ask a person familiar 
 
 ## Building
 
-The project is a pure Rust project, and can be built by running
+The project is a pure Rust project, and can be built from the repo base directory by running:
 
 ```shell
-cargo build --release
+cargo build --locked -p sponsored-transaction-backend --release
 ```
 
 This produces a single binary `target/release/sponsored-transaction-backend`.

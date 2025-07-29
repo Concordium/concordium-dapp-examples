@@ -54,10 +54,6 @@ See the [docker file](./Dockerfile) to explore the environment variables that ca
 
 Note: Use the same smart contract index for the frontend and backend. In other words, use the smart contract index from the `./frontend/package.json` file in the dockerfile.
 
-
-
 ## Explore the tutorial
 
 You can find an associated tutorial on the [developer documentation](./https://developer.concordium.software/en/mainnet/smart-contracts/tutorials/index.html).
-
-

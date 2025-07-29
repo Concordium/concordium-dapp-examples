@@ -1,6 +1,6 @@
 ## Compliant-Reward-Distribution Indexer And Server
 
-There are two binaries in this project. An `indexer` that indexes data into a database and a `server` that provides API endpoints to post/get data to/from the database.
+There are two binaries in this project. An indexer (`crdindexer`) that indexes data into a database and a `server` that provides API endpoints to post/get data to/from the database.
 
 ## Prerequisites
 
@@ -22,7 +22,7 @@ Alternatively, you can run the Postgres database in a docker container. The comm
 docker run -p 5432:5432 -e POSTGRES_PASSWORD=password -e POSTGRES_DB="indexer" --rm postgres
 ```
 
-## Build the `indexer` and `server`
+## Build the `crdindexer` and `server`
 
 To build the tools make sure you have the repository submodules initialized
 
@@ -51,7 +51,7 @@ All newly created accounts in a block are atomically added in one database trans
 ## Run the `crdindexer`
 
 ```console
-cargo run --bin indexer -- --node https://grpc.testnet.concordium.com:20000 --log-level debug
+cargo run --bin crdindexer -- --node https://grpc.testnet.concordium.com:20000 --log-level debug
 ```
 
 ## Configure the `crdindexer`
@@ -68,7 +68,7 @@ Note: In production, you should use the environment variable and not pass the da
 You can open the help menu as follows:
 
 ```console
-cargo run --bin indexer -- --help
+cargo run -p crdindexer --bin crdindexer -- --help
 ```
 
 # The `server` binary
@@ -80,7 +80,7 @@ The server has several endpoints to read/write from/to the database. The authori
 You have to build the front end in the folder `../frontend` before running this command.
 
 ```console
-cargo run --bin server -- --admin_accounts "4eDtVqZrkmcNEFziEMSs8S2anvkH5KnsYK4MhwedwGWK1pmjZe" --admin_accounts "4dT5vPrnnpwVrXZgmYLtHrDLvBYhtzheaK4fDWbJewqRCGQKWz"
+cargo run -p crdindexer --bin server -- --admin_accounts "4eDtVqZrkmcNEFziEMSs8S2anvkH5KnsYK4MhwedwGWK1pmjZe" --admin_accounts "4dT5vPrnnpwVrXZgmYLtHrDLvBYhtzheaK4fDWbJewqRCGQKWz"
 ```
 
 ## Configure the `server`

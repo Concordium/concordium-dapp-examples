@@ -4,10 +4,9 @@ ARG RUST_IMAGE=rust:1.85-bookworm
 
 # Build indexer
 FROM ${RUST_IMAGE} as build
-COPY ./trackAndTrace/smart-contract ./smart-contract
 WORKDIR /indexer
-COPY ./trackAndTrace/indexer ./
-RUN cargo build --release
+COPY . .
+RUN cargo build --locked -p indexer --release
 
 FROM debian:bookworm
 

@@ -1,6 +1,6 @@
 # CIS2-Marketplace contract for [CIS2 Tokens](https://proposals.concordium.software/CIS/cis-2.html)
 
-In order to build, deploy, mint, transfer, etc all functions using concordium-client you can check the [Developer Portal](https://developer.concordium.software/en/mainnet/smart-contracts/tutorials/nft-marketplace/index.html)
+In order to build, deploy, mint, transfer, etc all functions using concordium-client you can check the [Developer Portal](https://docs.concordium.com/en/mainnet/tutorials/low-code-nft-marketplace/marketplace.html)
 
 ## Build
 
@@ -17,4 +17,5 @@ Uses `node.testnet.concordium.com` node for deployment.
 yarn deploy wallet-account
 ```
 
-**Here `wallet-account` reffers to the account which you have setup in [`concordium-client`](https://developer.concordium.software/en/mainnet/net/references/concordium-client.html)**
+**Here `wallet-account` refers to the account which you have setup in [`concordium-client`](https://developer.concordium.software/en/mainnet/net/references/concordium-client.html)**
+
