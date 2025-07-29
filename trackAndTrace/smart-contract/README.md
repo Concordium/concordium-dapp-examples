@@ -4,6 +4,12 @@
 
 `cargo/rustup` and `cargo-concordium` needs to be [set up](https://developer.concordium.software/en/mainnet/smart-contracts/guides/quick-start.html).
 
+## Profile
+
+Use the profile `smart-contract` to run tests. 
+
+TODO: We need to update cargo-concordium to support using profiles other than `release`.
+
 ## Building
 
 Run the following command to compile the smart contract into the wasm module `module.wasm.v1` with embedded schema:

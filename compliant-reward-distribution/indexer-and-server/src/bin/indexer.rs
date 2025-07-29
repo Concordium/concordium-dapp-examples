@@ -2,7 +2,7 @@
 //! postgres database. The database is configured with the tables from the file
 //! `../resources/schema.sql`. A table
 //! `settings` exists to store global configurations.
-use ::indexer::db::DatabasePool;
+use ::crdindexer::db::DatabasePool;
 use anyhow::Context;
 use clap::Parser;
 use concordium_rust_sdk::{

@@ -1,0 +1,39 @@
+[workspace]
+# Unclear if needed, seems like this is the default behaviour as of rust 2021?
+# https://doc.rust-lang.org/edition-guide/rust-2021/default-cargo-resolver.html
+resolver = "2"
+
+members = [
+  "compliant-reward-distribution/indexer-and-server",
+  "gallery/verifier",
+  "low-code-nft-marketplace/cis2-market",
+  "sponsoredTransactionsAuction/backend",
+  "sponsoredTransactions/backend",
+  "trackAndTrace/smart-contract",
+#  "trackAndTrace/test-scripts", # Clippy errors because it's using an older test library, needs updating
+  "trackAndTrace/indexer",
+  "trackAndTrace/sponsored-transaction-service"
+]
+
+# The crates in the concordium-rust-sdk submodule are implicitly members
+# of the workspace since they are local path dependencies of the explicit members.
+# Hence, we list the explicit members here as default members such that cargo commands
+# run on these by default.
+default-members = [
+  "compliant-reward-distribution/indexer-and-server",
+  "gallery/verifier",
+  "low-code-nft-marketplace/cis2-market",
+  "sponsoredTransactionsAuction/backend",
+  "sponsoredTransactions/backend",
+  "trackAndTrace/smart-contract",
+#  "trackAndTrace/test-scripts", # Clippy errors because it's using an older test library, needs updating
+  "trackAndTrace/indexer",
+  "trackAndTrace/sponsored-transaction-service"
+]
+
+# This is used by trackAndTrace/smart-contract
+[profile.smart-contract]
+inherits = "release"
+panic = "abort"
+opt-level = "s"
+codegen-units = 1
