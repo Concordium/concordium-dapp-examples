@@ -1,6 +1,4 @@
 [workspace]
-# Not sure if needed, seems like this is the default behaviour as of rust 2021?
-# https://doc.rust-lang.org/edition-guide/rust-2021/default-cargo-resolver.html
 resolver = "2"
 
 members = [
