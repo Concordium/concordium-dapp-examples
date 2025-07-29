@@ -117,8 +117,8 @@ jobs:
     name: Building dapps which use Docker Compose
     # Require the job which generates list of changed files.
     needs: changes
-    # Don't run on draft pull requests
-    if: ${{ !github.event.pull_request.draft }}
+    # Don't run on draft pull requests, or if there are no changes to dapps built with compose:
+    if: ${{ !github.event.pull_request.draft && needs.changes.outputs.compose-changes != '[]' && needs.changes.outputs.compose-changes != '' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
