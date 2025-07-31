@@ -1,5 +1,5 @@
 [package]
-name = "sponsored-transaction-backend"
+name = "sponsored-transaction-auction-backend"
 version = "1.0.0"
 authors = ["Concordium AG <developers@concordium.com>"]
 edition = "2021"

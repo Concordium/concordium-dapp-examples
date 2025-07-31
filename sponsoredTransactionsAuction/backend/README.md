@@ -68,12 +68,13 @@ The smart contract code at {index: AUCTION_CONTRACT_INDEX, subindex: 0} can be f
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.0-4baaaa.svg)](https://github.com/Concordium/.github/blob/main/.github/CODE_OF_CONDUCT.md)
 
 This repository's CI automatically checks formatting and common problems in rust.
+
 Changes to any of the packages must be such that
 
 - ```cargo clippy --all``` produces no warnings
 - ```rust fmt``` makes no changes.
 
-Everything in this repository should build with rust version 1.70 however the `fmt` tool must be from a nightly release since some of the configuration options are not stable. One way to run the `fmt` tool is
+Our CI systems use Rust 1.85, however the `fmt` tool must be from a nightly release since some of the configuration options are not stable. One way to run the `fmt` tool is
 ```
 cargo +nightly-2023-04-01 fmt
 ```
@@ -87,10 +88,10 @@ rustup toolchain install nightly-2023-04-01
 
 ## Building
 
-The project is a pure Rust project, and can be built by running
+The project is a pure Rust project, and can be built from the directory root by running
 
 ```shell
-cargo build --release
+cargo build --locked -p sponsored-transaction-auction-backend --release
 ```
 
-This produces a single binary `target/release/sponsored-transaction-backend`.
+This produces a single binary `target/release/sponsored-transaction-auction-backend`.

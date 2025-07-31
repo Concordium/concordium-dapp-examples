@@ -14,9 +14,10 @@ RUN yarn build
 # Build server
 FROM ${RUST_IMAGE} AS server
 WORKDIR /server
-COPY ./compliant-reward-distribution/indexer-and-server ./
-COPY ./deps/concordium-rust-sdk /deps/concordium-rust-sdk
-RUN cargo build --release
+COPY ../ ./
+# It seems as if the `crdindexer` package outputs both and indexer and a server binary...
+# Is the name just a little misleading?
+RUN cargo build --locked -p crdindexer --release
 
 FROM debian:bookworm
 
