@@ -1,9 +1,5 @@
 ## Unreleased changes
 
-## 0.1.3
-
--   Renamed the `indexer` package to support single workspace format for the repo.
-
 ## 0.1.2
 
 -   Update rust-sdk submodule link.
