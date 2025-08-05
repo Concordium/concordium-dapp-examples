@@ -926,6 +926,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "concordium-contracts-common"
+version = "9.2.0"
+source = "git+https://github.com/concordium/concordium-rust-sdk?rev=c0af25d#c0af25dbda5e9917e6fd08ef652ca0743758faaa"
+dependencies = [
+ "base64 0.21.7",
+ "bs58",
+ "chrono",
+ "concordium-contracts-common-derive 4.1.0 (git+https://github.com/concordium/concordium-rust-sdk?rev=c0af25d)",
+ "fnv",
+ "hashbrown 0.11.2",
+ "hex",
+ "num-bigint",
+ "num-integer",
+ "num-traits 0.2.19",
+ "rust_decimal",
+ "serde 1.0.219",
+ "serde_json",
+ "thiserror 1.0.69",
+]
+
+[[package]]
 name = "concordium-contracts-common-derive"
 version = "4.1.0"
 dependencies = [
@@ -939,6 +960,16 @@ name = "concordium-contracts-common-derive"
 version = "4.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ee3482ffacf3c18133be976c1b874b6e87e018ac0316e9385888b43df07fa39c"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.104",
+]
+
+[[package]]
+name = "concordium-contracts-common-derive"
+version = "4.1.0"
+source = "git+https://github.com/concordium/concordium-rust-sdk?rev=c0af25d#c0af25dbda5e9917e6fd08ef652ca0743758faaa"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1016,6 +1047,62 @@ dependencies = [
 ]
 
 [[package]]
+name = "concordium-rust-sdk"
+version = "6.0.0"
+source = "git+https://github.com/concordium/concordium-rust-sdk?rev=c0af25d#c0af25dbda5e9917e6fd08ef652ca0743758faaa"
+dependencies = [
+ "aes-gcm",
+ "anyhow",
+ "chrono",
+ "concordium-smart-contract-engine 6.0.0",
+ "concordium_base 7.0.0 (git+https://github.com/concordium/concordium-rust-sdk?rev=c0af25d)",
+ "derive_more",
+ "ed25519-dalek",
+ "futures",
+ "hex",
+ "http 0.2.12",
+ "num",
+ "num-bigint",
+ "num-traits 0.2.19",
+ "prost 0.12.6",
+ "rand 0.8.5",
+ "rust_decimal",
+ "semver",
+ "serde 1.0.219",
+ "serde_json",
+ "sha2",
+ "thiserror 1.0.69",
+ "tokio",
+ "tokio-stream",
+ "tonic 0.10.2",
+ "tracing",
+]
+
+[[package]]
+name = "concordium-smart-contract-engine"
+version = "6.0.0"
+source = "git+https://github.com/concordium/concordium-rust-sdk?rev=c0af25d#c0af25dbda5e9917e6fd08ef652ca0743758faaa"
+dependencies = [
+ "anyhow",
+ "byteorder",
+ "concordium-contracts-common 9.2.0 (git+https://github.com/concordium/concordium-rust-sdk?rev=c0af25d)",
+ "concordium-wasm 5.0.0",
+ "derive_more",
+ "ed25519-zebra",
+ "futures",
+ "libc",
+ "num_enum",
+ "rand 0.8.5",
+ "secp256k1",
+ "serde 1.0.219",
+ "sha2",
+ "sha3",
+ "slab",
+ "thiserror 1.0.69",
+ "tinyvec",
+]
+
+[[package]]
 name = "concordium-smart-contract-engine"
 version = "6.1.0"
 dependencies = [
@@ -1089,6 +1176,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8879375db69e8b0f9918faef9b349427c5ae8ba45b31870946780d16bcfe7fe7"
 dependencies = [
  "concordium-contracts-common 9.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "concordium-wasm"
+version = "5.0.0"
+source = "git+https://github.com/concordium/concordium-rust-sdk?rev=c0af25d#c0af25dbda5e9917e6fd08ef652ca0743758faaa"
+dependencies = [
+ "anyhow",
+ "concordium-contracts-common 9.2.0 (git+https://github.com/concordium/concordium-rust-sdk?rev=c0af25d)",
+ "derive_more",
+ "leb128",
+ "num_enum",
 ]
 
 [[package]]
@@ -1213,6 +1312,53 @@ dependencies = [
 ]
 
 [[package]]
+name = "concordium_base"
+version = "7.0.0"
+source = "git+https://github.com/concordium/concordium-rust-sdk?rev=c0af25d#c0af25dbda5e9917e6fd08ef652ca0743758faaa"
+dependencies = [
+ "aes",
+ "anyhow",
+ "ark-bls12-381",
+ "ark-ec",
+ "ark-ff",
+ "ark-serialize",
+ "ark-std",
+ "base64 0.21.7",
+ "bs58",
+ "byteorder",
+ "cbc",
+ "chrono",
+ "concordium-contracts-common 9.2.0 (git+https://github.com/concordium/concordium-rust-sdk?rev=c0af25d)",
+ "concordium_base_derive 1.0.0 (git+https://github.com/concordium/concordium-rust-sdk?rev=c0af25d)",
+ "curve25519-dalek",
+ "derive_more",
+ "ed25519-dalek",
+ "either",
+ "ff",
+ "hex",
+ "hmac",
+ "itertools 0.10.5",
+ "leb128",
+ "libc",
+ "nom 7.1.3",
+ "num",
+ "num-bigint",
+ "num-traits 0.2.19",
+ "pbkdf2",
+ "rand 0.8.5",
+ "rayon",
+ "rust_decimal",
+ "serde 1.0.219",
+ "serde_json",
+ "serde_with",
+ "sha2",
+ "sha3",
+ "subtle",
+ "thiserror 1.0.69",
+ "zeroize",
+]
+
+[[package]]
 name = "concordium_base_derive"
 version = "1.0.0"
 dependencies = [
@@ -1230,6 +1376,16 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
+]
+
+[[package]]
+name = "concordium_base_derive"
+version = "1.0.0"
+source = "git+https://github.com/concordium/concordium-rust-sdk?rev=c0af25d#c0af25dbda5e9917e6fd08ef652ca0743758faaa"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.104",
 ]
 
 [[package]]
@@ -4990,6 +5146,20 @@ dependencies = [
  "concordium-std",
  "rand 0.8.5",
  "serde 1.0.219",
+]
+
+[[package]]
+name = "track-and-trace-test"
+version = "0.1.1"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "clap 4.5.41",
+ "concordium-rust-sdk 6.0.0 (git+https://github.com/concordium/concordium-rust-sdk?rev=c0af25d)",
+ "serde_json",
+ "tokio",
+ "tonic 0.10.2",
+ "track-and-trace",
 ]
 
 [[package]]

@@ -10,7 +10,7 @@ members = [
   "gallery/verifier",
   "sponsoredTransactionsAuction/backend",
   "sponsoredTransactions/backend",
-#  "trackAndTrace/test-scripts",
+  "trackAndTrace/test-scripts",
   "trackAndTrace/indexer",
   "trackAndTrace/sponsored-transaction-service"
 ]
@@ -24,7 +24,7 @@ default-members = [
   "gallery/verifier",
   "sponsoredTransactionsAuction/backend",
   "sponsoredTransactions/backend",
-#  "trackAndTrace/test-scripts", # We need to fix clippy failures before including this
+  "trackAndTrace/test-scripts",
   "trackAndTrace/indexer",
   "trackAndTrace/sponsored-transaction-service"
 ]
