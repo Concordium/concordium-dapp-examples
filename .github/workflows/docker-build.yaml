@@ -1,11 +1,10 @@
-name: Docker containers build
+name: "Docker: build images"
 
 on:
   push:
     branches: main
 
   pull_request:
-    branches: main
     paths:
       - 'compliant-reward-distribution/**'
       - 'euroe-demo/**'
@@ -29,7 +28,6 @@ env:
 jobs:
   changes:
     name: detect what files changed
-    if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     # Map the output from the steps below to output for the job as a whole
     outputs:
@@ -75,8 +73,7 @@ jobs:
     name: Building Docker Containers
     # Require the job which generates list of changed files.
     needs: changes
-    # Don't run on draft pull requests.
-    if: ${{ !github.event.pull_request.draft && needs.changes.outputs.docker-changes != '[]' && needs.changes.outputs.docker-changes != '' }}
+    if: ${{ needs.changes.outputs.docker-changes != '[]' && needs.changes.outputs.docker-changes != '' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -117,8 +114,6 @@ jobs:
     name: Building dapps which use Docker Compose
     # Require the job which generates list of changed files.
     needs: changes
-    # Don't run on draft pull requests
-    if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
