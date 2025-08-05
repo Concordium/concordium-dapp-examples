@@ -787,14 +787,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cis2-market"
-version = "0.1.0"
-dependencies = [
- "concordium-cis2 5.1.0",
- "concordium-std 8.1.0",
-]
-
-[[package]]
 name = "clap"
 version = "2.34.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -878,34 +870,12 @@ checksum = "b05b61dc5112cbb17e4b6cd61790d9845d13888356391624cbe7e41efeac1e75"
 
 [[package]]
 name = "concordium-cis2"
-version = "5.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c6c556365e2e5bf2c2669e944a4f235e0039c06bdbd43539e1828de4fa45d8c0"
-dependencies = [
- "concordium-std 8.1.0",
- "primitive-types",
-]
-
-[[package]]
-name = "concordium-cis2"
 version = "6.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bd32b9d8ba4500ea821e25294c543a3cd20872365cdfc40ffec7f6ccd790ee42"
 dependencies = [
- "concordium-std 10.1.0",
+ "concordium-std",
  "primitive-types",
-]
-
-[[package]]
-name = "concordium-contracts-common"
-version = "8.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1943bb4b1738f7f974ee86fb99fde2ce923e22f478f098f057c7bcd92c424e45"
-dependencies = [
- "base64 0.21.7",
- "concordium-contracts-common-derive 4.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "fnv",
- "hashbrown 0.11.2",
 ]
 
 [[package]]
@@ -1110,15 +1080,6 @@ dependencies = [
  "sha2",
  "thiserror 1.0.69",
  "tokio",
-]
-
-[[package]]
-name = "concordium-std"
-version = "8.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "194f22e2a418e367e584fb3e26238298578ccc944fd2355d53a4473eb4b47a51"
-dependencies = [
- "concordium-contracts-common 8.1.1",
 ]
 
 [[package]]
@@ -1336,7 +1297,7 @@ dependencies = [
 
 [[package]]
 name = "crdindexer"
-version = "0.1.3"
+version = "0.1.2"
 dependencies = [
  "anyhow",
  "axum 0.6.20",
@@ -5023,10 +4984,10 @@ dependencies = [
 name = "track-and-trace"
 version = "0.1.0"
 dependencies = [
- "concordium-cis2 6.2.0",
+ "concordium-cis2",
  "concordium-contracts-common 9.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "concordium-smart-contract-testing",
- "concordium-std 10.1.0",
+ "concordium-std",
  "rand 0.8.5",
  "serde 1.0.219",
 ]

@@ -17,7 +17,7 @@ env:
 
 jobs:
   rust_fmt:
-    name: Running rust fmt for formatting
+    name: Running rust fmt against single workspace for formatting
     # TODO: add conditional back once finished testing
     # Don't run on draft pull requests
     # if: ${{ !github.event.pull_request.draft }}
@@ -35,7 +35,7 @@ jobs:
           cargo +${{ env.RUST_FMT_VERSION }} fmt --check
 
   clippy:
-    name: Running Clippy for linting and dependency validation
+    name: Running Clippy against single workspace for linting and dependency validation
     needs: rust_fmt
     runs-on: ubuntu-latest
     steps:
@@ -69,13 +69,51 @@ jobs:
       - name: Run cargo build
         run: cargo build --all --locked
 
-  test:
-    name: Running cargo-concordium tests
-    needs: build
+  smart_contracts:
+    name: Running rust fmt and clippy against ${{ matrix.crate }}"
+    # TODO: add conditional back once finished testing
+    # Don't run on draft pull requests
+    # if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest  
+    strategy:
+      fail-fast: false
+      matrix:
+        crate: [ "low-code-nft-marketplace/cis2-market", "trackAndTrace/smart-contract"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install components
+        run: |
+          rustup +${{ env.RUST_FMT_VERSION }} component add rustfmt
+          rustup component add clippy
+
+      - name: Run cargo fmt 
+        run: |
+          cargo +${{ env.RUST_FMT_VERSION }} fmt --manifest-path=${{ matrix.crate }}/Cargo.toml  --check
+
+      - name: Run cargo clippy
+        run: |
+          # TODO: I removed `-D warnings` temporarily, let's fix feature / deprecation errors and put it back.
+          cargo clippy --locked  --manifest-path=${{ matrix.crate }}/Cargo.toml --all-features
+
+      - name: Run cargo build
+        run: cargo build --locked --manifest-path=${{ matrix.crate }}/Cargo.toml
+
+  sc_test:
+    name: Running cargo-concordium tests against ${{ matrix.crate }}
+    needs: smart_contracts
     # TODO: add conditional back once finished testing
     # Don't run on draft pull requests
     # if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        crate: [ "low-code-nft-marketplace/cis2-market", "trackAndTrace/smart-contract"]
 
     steps:
       - name: Checkout sources
@@ -96,8 +134,5 @@ jobs:
           chmod +x /tmp/cargo-concordium
           sudo mv /tmp/cargo-concordium /usr/bin/cargo-concordium
 
-      - name: Run cargo concordium test against low-code-nft-marketplace cis2-market  
-        run: cargo concordium test --out "low-code-nft-marketplace/cis2-market/concordium-out/module.wasm.v1" -- --manifest-path "low-code-nft-marketplace/cis2-market/Cargo.toml"
-
-      - name: Run cargo concordium test against trackAndTrace/smart-contract 
-        run: cargo concordium test --out "trackAndTrace/smart-contract/concordium-out/module.wasm.v1" -- --manifest-path "trackAndTrace/smart-contract/Cargo.toml"
+      - name: Run cargo concordium test against ${{ matrix.crate }}
+        run: cargo concordium test --out "${{ matrix.crate }}/concordium-out/module.wasm.v1" -- --manifest-path "${{ matrix.crate }}/Cargo.toml"

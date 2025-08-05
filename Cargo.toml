@@ -1,13 +1,15 @@
 [workspace]
 resolver = "2"
 
+
+# Smart contracts currently have to be standalone crates and not part of the repo workspace
+# due to how cargo-concordium verifiable build works. Hence the trackAndTrace and cis2-market
+# smart contract crates in this repo are not members of the workspace.
 members = [
   "compliant-reward-distribution/indexer-and-server",
   "gallery/verifier",
-  "low-code-nft-marketplace/cis2-market",
   "sponsoredTransactionsAuction/backend",
   "sponsoredTransactions/backend",
-  "trackAndTrace/smart-contract",
 #  "trackAndTrace/test-scripts",
   "trackAndTrace/indexer",
   "trackAndTrace/sponsored-transaction-service"
@@ -20,11 +22,9 @@ members = [
 default-members = [
   "compliant-reward-distribution/indexer-and-server",
   "gallery/verifier",
-  "low-code-nft-marketplace/cis2-market",
   "sponsoredTransactionsAuction/backend",
   "sponsoredTransactions/backend",
-  "trackAndTrace/smart-contract",
-#  "trackAndTrace/test-scripts",
+#  "trackAndTrace/test-scripts", # We need to fix clippy failures before including this
   "trackAndTrace/indexer",
   "trackAndTrace/sponsored-transaction-service"
 ]
