@@ -1,4 +1,4 @@
-name: Build, Format and Lint Frontends
+name: TypeScript build and test
 
 on:
   push:
