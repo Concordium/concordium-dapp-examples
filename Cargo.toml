@@ -28,10 +28,3 @@ default-members = [
   "trackAndTrace/indexer",
   "trackAndTrace/sponsored-transaction-service"
 ]
-
-# This is used by trackAndTrace/smart-contract
-[profile.smart-contract]
-inherits = "release"
-panic = "abort"
-opt-level = "s"
-codegen-units = 1
