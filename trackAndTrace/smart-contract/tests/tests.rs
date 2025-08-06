@@ -27,7 +27,7 @@ const DUMMY_SIGNATURE: SignatureEd25519 = SignatureEd25519([
 ]);
 
 struct AccountKeypairs {
-    admin: AccountKeys,
+    admin:    AccountKeys,
     producer: AccountKeys,
 }
 
@@ -38,7 +38,7 @@ fn test_has_role() {
 
     let param = HasRoleParams {
         address: ADMIN_ADDR,
-        role: Roles::Admin,
+        role:    Roles::Admin,
     };
 
     let invoke = chain
@@ -47,12 +47,12 @@ fn test_has_role() {
             ADMIN_ADDR,
             Energy::from(10000),
             UpdateContractPayload {
-                amount: Amount::zero(),
+                amount:       Amount::zero(),
                 receive_name: OwnedReceiveName::new_unchecked(
                     "track_and_trace.hasRole".to_string(),
                 ),
-                address: track_and_trace_contract_address,
-                message: OwnedParameter::from_serial(&param).expect("Serialize parameter"),
+                address:      track_and_trace_contract_address,
+                message:      OwnedParameter::from_serial(&param).expect("Serialize parameter"),
             },
         )
         .expect("Invoke hasRole");
@@ -83,12 +83,12 @@ fn test_add_and_remove_of_state_transition_edges() {
             ADMIN_ADDR,
             Energy::from(10000),
             UpdateContractPayload {
-                amount: Amount::zero(),
+                amount:       Amount::zero(),
                 receive_name: OwnedReceiveName::new_unchecked(
                     "track_and_trace.isTransitionEdge".to_string(),
                 ),
-                address: track_and_trace_contract_address,
-                message: OwnedParameter::from_serial(&param).expect("Serialize parameter"),
+                address:      track_and_trace_contract_address,
+                message:      OwnedParameter::from_serial(&param).expect("Serialize parameter"),
             },
         )
         .expect("Invoke isTransitionEdge");
@@ -115,12 +115,12 @@ fn test_add_and_remove_of_state_transition_edges() {
             ADMIN_ADDR,
             Energy::from(10000),
             UpdateContractPayload {
-                amount: Amount::from_ccd(0),
-                address: track_and_trace_contract_address,
+                amount:       Amount::from_ccd(0),
+                address:      track_and_trace_contract_address,
                 receive_name: OwnedReceiveName::new_unchecked(
                     "track_and_trace.updateStateMachine".to_string(),
                 ),
-                message: OwnedParameter::from_serial(&update_transition_edge)
+                message:      OwnedParameter::from_serial(&update_transition_edge)
                     .expect("Serialize parameter"),
             },
         )
@@ -132,12 +132,12 @@ fn test_add_and_remove_of_state_transition_edges() {
             ADMIN_ADDR,
             Energy::from(10000),
             UpdateContractPayload {
-                amount: Amount::zero(),
+                amount:       Amount::zero(),
                 receive_name: OwnedReceiveName::new_unchecked(
                     "track_and_trace.isTransitionEdge".to_string(),
                 ),
-                address: track_and_trace_contract_address,
-                message: OwnedParameter::from_serial(&param).expect("Serialize parameter"),
+                address:      track_and_trace_contract_address,
+                message:      OwnedParameter::from_serial(&param).expect("Serialize parameter"),
             },
         )
         .expect("Invoke isTransitionEdge");
@@ -159,12 +159,12 @@ fn test_add_and_remove_of_state_transition_edges() {
             ADMIN_ADDR,
             Energy::from(10000),
             UpdateContractPayload {
-                amount: Amount::from_ccd(0),
-                address: track_and_trace_contract_address,
+                amount:       Amount::from_ccd(0),
+                address:      track_and_trace_contract_address,
                 receive_name: OwnedReceiveName::new_unchecked(
                     "track_and_trace.updateStateMachine".to_string(),
                 ),
-                message: OwnedParameter::from_serial(&update_transition_edge)
+                message:      OwnedParameter::from_serial(&update_transition_edge)
                     .expect("Serialize parameter"),
             },
         )
@@ -176,12 +176,12 @@ fn test_add_and_remove_of_state_transition_edges() {
             ADMIN_ADDR,
             Energy::from(10000),
             UpdateContractPayload {
-                amount: Amount::zero(),
+                amount:       Amount::zero(),
                 receive_name: OwnedReceiveName::new_unchecked(
                     "track_and_trace.isTransitionEdge".to_string(),
                 ),
-                address: track_and_trace_contract_address,
-                message: OwnedParameter::from_serial(&param).expect("Serialize parameter"),
+                address:      track_and_trace_contract_address,
+                message:      OwnedParameter::from_serial(&param).expect("Serialize parameter"),
             },
         )
         .expect("Invoke isTransitionEdge");
@@ -204,7 +204,7 @@ fn test_create_item_and_update_item_status() {
 
     // Create the Parameter.
     let metadata_url = Some(MetadataUrl {
-        url: "https://some.example/".to_string(),
+        url:  "https://some.example/".to_string(),
         hash: None,
     });
 
@@ -218,12 +218,13 @@ fn test_create_item_and_update_item_status() {
             ADMIN_ADDR,
             Energy::from(10000),
             UpdateContractPayload {
-                amount: Amount::from_ccd(0),
-                address: track_and_trace_contract_address,
+                amount:       Amount::from_ccd(0),
+                address:      track_and_trace_contract_address,
                 receive_name: OwnedReceiveName::new_unchecked(
                     "track_and_trace.createItem".to_string(),
                 ),
-                message: OwnedParameter::from_serial(&metadata_url).expect("Serialize parameter"),
+                message:      OwnedParameter::from_serial(&metadata_url)
+                    .expect("Serialize parameter"),
             },
         )
         .expect("Should be able to create item");
@@ -234,14 +235,11 @@ fn test_create_item_and_update_item_status() {
         .flat_map(|(_addr, events)| events.iter().map(|e| e.parse().expect("Deserialize event")))
         .collect::<Vec<Event<AdditionalData>>>();
 
-    assert_eq!(
-        events,
-        [Event::ItemCreated(ItemCreatedEvent {
-            item_id,
-            metadata_url: metadata_url.clone(),
-            initial_status: Status::Produced,
-        })]
-    );
+    assert_eq!(events, [Event::ItemCreated(ItemCreatedEvent {
+        item_id,
+        metadata_url: metadata_url.clone(),
+        initial_status: Status::Produced,
+    })]);
 
     // Check contract state.
     check_state(
@@ -265,12 +263,12 @@ fn test_create_item_and_update_item_status() {
             PRODUCER_ADDR,
             Energy::from(10000),
             UpdateContractPayload {
-                amount: Amount::from_ccd(0),
-                address: track_and_trace_contract_address,
+                amount:       Amount::from_ccd(0),
+                address:      track_and_trace_contract_address,
                 receive_name: OwnedReceiveName::new_unchecked(
                     "track_and_trace.changeItemStatus".to_string(),
                 ),
-                message: OwnedParameter::from_serial(&parameter).expect("Serialize parameter"),
+                message:      OwnedParameter::from_serial(&parameter).expect("Serialize parameter"),
             },
         )
         .expect("Should be able update the state of the item");
@@ -281,14 +279,11 @@ fn test_create_item_and_update_item_status() {
         .flat_map(|(_addr, events)| events.iter().map(|e| e.parse().expect("Deserialize event")))
         .collect::<Vec<Event<AdditionalData>>>();
 
-    assert_eq!(
-        events,
-        [Event::ItemStatusChanged(ItemStatusChangedEvent {
-            item_id: parameter.item_id,
-            new_status: Status::InTransit,
-            additional_data: parameter.additional_data,
-        })]
-    );
+    assert_eq!(events, [Event::ItemStatusChanged(ItemStatusChangedEvent {
+        item_id:         parameter.item_id,
+        new_status:      Status::InTransit,
+        additional_data: parameter.additional_data,
+    })]);
 
     // Check contract state.
     check_state(
@@ -313,12 +308,12 @@ fn test_create_item_and_update_item_status() {
             SELLER_ADDR,
             Energy::from(10000),
             UpdateContractPayload {
-                amount: Amount::from_ccd(0),
-                address: track_and_trace_contract_address,
+                amount:       Amount::from_ccd(0),
+                address:      track_and_trace_contract_address,
                 receive_name: OwnedReceiveName::new_unchecked(
                     "track_and_trace.changeItemStatus".to_string(),
                 ),
-                message: OwnedParameter::from_serial(&parameter).expect("Serialize parameter"),
+                message:      OwnedParameter::from_serial(&parameter).expect("Serialize parameter"),
             },
         )
         .expect_err("Should expect error");
@@ -343,12 +338,12 @@ fn test_create_item_and_update_item_status() {
             ADMIN_ADDR,
             Energy::from(10000),
             UpdateContractPayload {
-                amount: Amount::from_ccd(0),
-                address: track_and_trace_contract_address,
+                amount:       Amount::from_ccd(0),
+                address:      track_and_trace_contract_address,
                 receive_name: OwnedReceiveName::new_unchecked(
                     "track_and_trace.changeItemStatus".to_string(),
                 ),
-                message: OwnedParameter::from_serial(&parameter).expect("Serialize parameter"),
+                message:      OwnedParameter::from_serial(&parameter).expect("Serialize parameter"),
             },
         )
         .expect("Should be able to update the state of the item");
@@ -359,14 +354,11 @@ fn test_create_item_and_update_item_status() {
         .flat_map(|(_addr, events)| events.iter().map(|e| e.parse().expect("Deserialize event")))
         .collect::<Vec<Event<AdditionalData>>>();
 
-    assert_eq!(
-        events,
-        [Event::ItemStatusChanged(ItemStatusChangedEvent {
-            item_id: parameter.item_id,
-            new_status: parameter.new_status,
-            additional_data: parameter.additional_data,
-        })]
-    );
+    assert_eq!(events, [Event::ItemStatusChanged(ItemStatusChangedEvent {
+        item_id:         parameter.item_id,
+        new_status:      parameter.new_status,
+        additional_data: parameter.additional_data,
+    })]);
 
     // Check contract state.
     check_state(
@@ -391,12 +383,13 @@ fn check_state(
             ADMIN_ADDR,
             Energy::from(10000),
             UpdateContractPayload {
-                amount: Amount::zero(),
+                amount:       Amount::zero(),
                 receive_name: OwnedReceiveName::new_unchecked(
                     "track_and_trace.getRoles".to_string(),
                 ),
-                address: track_and_trace_contract_address,
-                message: OwnedParameter::from_serial(&ADMIN_ADDR).expect("Serialize parameter"),
+                address:      track_and_trace_contract_address,
+                message:      OwnedParameter::from_serial(&ADMIN_ADDR)
+                    .expect("Serialize parameter"),
             },
         )
         .expect("Invoke view");
@@ -413,25 +406,22 @@ fn check_state(
             ADMIN_ADDR,
             Energy::from(10000),
             UpdateContractPayload {
-                amount: Amount::zero(),
+                amount:       Amount::zero(),
                 receive_name: OwnedReceiveName::new_unchecked(
                     "track_and_trace.getItemState".to_string(),
                 ),
-                address: track_and_trace_contract_address,
-                message: OwnedParameter::from_serial(&item_id).expect("Serialize parameter"),
+                address:      track_and_trace_contract_address,
+                message:      OwnedParameter::from_serial(&item_id).expect("Serialize parameter"),
             },
         )
         .expect("Invoke view");
 
     let return_value: ItemState = invoke.parse_return_value().expect("ViewState return value");
 
-    assert_eq!(
-        return_value,
-        ItemState {
-            status,
-            metadata_url
-        }
-    );
+    assert_eq!(return_value, ItemState {
+        status,
+        metadata_url
+    });
 
     let invoke = chain
         .contract_invoke(
@@ -439,12 +429,12 @@ fn check_state(
             ADMIN_ADDR,
             Energy::from(10000),
             UpdateContractPayload {
-                amount: Amount::zero(),
+                amount:       Amount::zero(),
                 receive_name: OwnedReceiveName::new_unchecked(
                     "track_and_trace.getNextItemId".to_string(),
                 ),
-                address: track_and_trace_contract_address,
-                message: OwnedParameter::empty(),
+                address:      track_and_trace_contract_address,
+                message:      OwnedParameter::empty(),
             },
         )
         .expect("Invoke view");
@@ -463,7 +453,7 @@ fn initialize_chain_and_contract() -> (Chain, AccountKeypairs, ContractAddress) 
 
     let mut rng = rand::thread_rng();
     let balance = AccountBalance {
-        total: ACC_INITIAL_BALANCE,
+        total:  ACC_INITIAL_BALANCE,
         staked: Amount::zero(),
         locked: Amount::zero(),
     };
@@ -491,7 +481,7 @@ fn initialize_chain_and_contract() -> (Chain, AccountKeypairs, ContractAddress) 
         (&seller_keys).into(),
     ));
     let account_keypairs = AccountKeypairs {
-        admin: admin_keys,
+        admin:    admin_keys,
         producer: producer_keys,
     };
 
@@ -503,56 +493,51 @@ fn initialize_chain_and_contract() -> (Chain, AccountKeypairs, ContractAddress) 
 
     let params: Vec<TransitionEdges> = vec![
         TransitionEdges {
-            from: Status::Produced,
-            to: vec![Status::InTransit],
+            from:               Status::Produced,
+            to:                 vec![Status::InTransit],
             authorized_account: PRODUCER,
         },
         TransitionEdges {
-            from: Status::InTransit,
-            to: vec![Status::InStore],
+            from:               Status::InTransit,
+            to:                 vec![Status::InStore],
             authorized_account: TRANSPORTER,
         },
         TransitionEdges {
-            from: Status::InStore,
-            to: vec![Status::Sold],
+            from:               Status::InStore,
+            to:                 vec![Status::Sold],
             authorized_account: SELLER,
         },
         // Admin transitions (The admin can change the status of the item to any value)
         TransitionEdges {
-            from: Status::Produced,
-            to: vec![Status::InTransit, Status::InStore, Status::Sold],
+            from:               Status::Produced,
+            to:                 vec![Status::InTransit, Status::InStore, Status::Sold],
             authorized_account: ADMIN,
         },
         TransitionEdges {
-            from: Status::InTransit,
-            to: vec![Status::Produced, Status::InStore, Status::Sold],
+            from:               Status::InTransit,
+            to:                 vec![Status::Produced, Status::InStore, Status::Sold],
             authorized_account: ADMIN,
         },
         TransitionEdges {
-            from: Status::InStore,
-            to: vec![Status::InTransit, Status::Produced, Status::Sold],
+            from:               Status::InStore,
+            to:                 vec![Status::InTransit, Status::Produced, Status::Sold],
             authorized_account: ADMIN,
         },
         TransitionEdges {
-            from: Status::Sold,
-            to: vec![Status::InTransit, Status::InStore, Status::Produced],
+            from:               Status::Sold,
+            to:                 vec![Status::InTransit, Status::InStore, Status::Produced],
             authorized_account: ADMIN,
         },
     ];
 
     // Initialize the track_and_trace contract.
     let track_and_trace = chain
-        .contract_init(
-            SIGNER,
-            ADMIN,
-            Energy::from(10000),
-            InitContractPayload {
-                amount: Amount::zero(),
-                mod_ref: deployment.module_reference,
-                init_name: OwnedContractName::new_unchecked("init_track_and_trace".to_string()),
-                param: OwnedParameter::from_serial(&params).expect("Init params"),
-            },
-        )
+        .contract_init(SIGNER, ADMIN, Energy::from(10000), InitContractPayload {
+            amount:    Amount::zero(),
+            mod_ref:   deployment.module_reference,
+            init_name: OwnedContractName::new_unchecked("init_track_and_trace".to_string()),
+            param:     OwnedParameter::from_serial(&params).expect("Init params"),
+        })
         .expect("Initialize track_and_trace contract");
 
     (chain, account_keypairs, track_and_trace.contract_address)
@@ -564,7 +549,7 @@ fn test_permit_change_item_status() {
 
     // Create the Parameter.
     let metadata_url = Some(MetadataUrl {
-        url: "https://some.example/".to_string(),
+        url:  "https://some.example/".to_string(),
         hash: None,
     });
 
@@ -576,12 +561,13 @@ fn test_permit_change_item_status() {
             ADMIN_ADDR,
             Energy::from(10000),
             UpdateContractPayload {
-                amount: Amount::from_ccd(0),
-                address: contract_address,
+                amount:       Amount::from_ccd(0),
+                address:      contract_address,
                 receive_name: OwnedReceiveName::new_unchecked(
                     "track_and_trace.createItem".to_string(),
                 ),
-                message: OwnedParameter::from_serial(&metadata_url).expect("Serialize parameter"),
+                message:      OwnedParameter::from_serial(&metadata_url)
+                    .expect("Serialize parameter"),
             },
         )
         .expect("Should be able to create item");
@@ -638,12 +624,12 @@ fn test_permit_change_item_status() {
             Address::Account(ADMIN),
             Energy::from(10000),
             UpdateContractPayload {
-                amount: Amount::zero(),
-                address: contract_address,
+                amount:       Amount::zero(),
+                address:      contract_address,
                 receive_name: OwnedReceiveName::new_unchecked(
                     "track_and_trace.nonceOf".to_string(),
                 ),
-                message: OwnedParameter::from_serial(&nonce_query_vector)
+                message:      OwnedParameter::from_serial(&nonce_query_vector)
                     .expect("Should be a valid inut parameter"),
             },
         )
@@ -693,19 +679,16 @@ fn permit(
     // a `signer`. Because these two values (`signature` and `signer`) are not
     // read in the `viewMessageHash` function, any value can be used and we choose
     // to use `DUMMY_SIGNATURE` and `ADMIN` in the test case below.
-    let signature_map = BTreeMap::from([(
-        0u8,
-        CredentialSignatures {
-            sigs: BTreeMap::from([(0u8, concordium_std::Signature::Ed25519(DUMMY_SIGNATURE))]),
-        },
-    )]);
+    let signature_map = BTreeMap::from([(0u8, CredentialSignatures {
+        sigs: BTreeMap::from([(0u8, concordium_std::Signature::Ed25519(DUMMY_SIGNATURE))]),
+    })]);
 
     let mut param = PermitParam {
         signature: AccountSignatures {
             sigs: signature_map,
         },
-        signer: ADMIN,
-        message: PermitMessage {
+        signer:    ADMIN,
+        message:   PermitMessage {
             timestamp: Timestamp::from_timestamp_millis(10_000_000_000),
             contract_address: ContractAddress::new(0, 0),
             entry_point: OwnedEntrypointName::new_unchecked(entrypoint_name),
@@ -721,12 +704,12 @@ fn permit(
             Address::Account(invoker),
             Energy::from(10000),
             UpdateContractPayload {
-                amount: Amount::zero(),
-                address: contract_address,
+                amount:       Amount::zero(),
+                address:      contract_address,
                 receive_name: OwnedReceiveName::new_unchecked(
                     "track_and_trace.viewMessageHash".to_string(),
                 ),
-                message: OwnedParameter::from_serial(&param)
+                message:      OwnedParameter::from_serial(&param)
                     .expect("Should be a valid inut parameter"),
             },
         )
@@ -744,10 +727,11 @@ fn permit(
         Address::Account(invoker),
         Energy::from(10000),
         UpdateContractPayload {
-            amount: Amount::zero(),
-            address: contract_address,
+            amount:       Amount::zero(),
+            address:      contract_address,
             receive_name: OwnedReceiveName::new_unchecked("track_and_trace.permit".to_string()),
-            message: OwnedParameter::from_serial(&param).expect("Should be a valid inut parameter"),
+            message:      OwnedParameter::from_serial(&param)
+                .expect("Should be a valid inut parameter"),
         },
     )
 }
