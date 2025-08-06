@@ -84,6 +84,9 @@ jobs:
           curl -L https://github.com/Concordium/concordium-smart-contract-tools/releases/download/releases/cargo-concordium/${CARGO_CONCORDIUM_VERSION}/cargo-concordium-linux-amd64 -o /tmp/cargo-concordium
           chmod +x /tmp/cargo-concordium
           sudo mv /tmp/cargo-concordium /usr/bin/cargo-concordium
+      - name: Run cargo concordium build
+        run: |
+          cargo concordium build -- --manifest-path "${{ matrix.crate }}/Cargo.toml"
       - name: Run cargo concordium test
         run: |
           cargo concordium test -- --manifest-path "${{ matrix.crate }}/Cargo.toml"            
