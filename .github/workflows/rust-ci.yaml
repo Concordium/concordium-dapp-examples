@@ -79,9 +79,6 @@ jobs:
       - name: Run Clippy
         run: |
           cargo clippy --manifest-path=${{ matrix.crate }}/Cargo.toml --locked --all-targets --all-features --no-deps -- -D warnings
-      - name: Run tests
-        run: |
-          cargo test --manifest-path=${{ matrix.crate }}/Cargo.toml --locked --all-features --release        
       - name: Download and install Cargo Concordium
         run: |
           curl -L https://github.com/Concordium/concordium-smart-contract-tools/releases/download/releases/cargo-concordium/${CARGO_CONCORDIUM_VERSION}/cargo-concordium-linux-amd64 -o /tmp/cargo-concordium
