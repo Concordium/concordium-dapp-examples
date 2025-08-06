@@ -14,20 +14,6 @@ members = [
   "trackAndTrace/sponsored-transaction-service"
 ]
 
-# The crates in the concordium-rust-sdk submodule are implicitly members
-# of the workspace since they are local path dependencies of the explicit members.
-# Hence, we list the explicit members here as default members such that cargo commands
-# run on these by default.
-default-members = [
-  "compliant-reward-distribution/indexer-and-server",
-  "gallery/verifier",
-  "sponsoredTransactionsAuction/backend",
-  "sponsoredTransactions/backend",
-  "trackAndTrace/test-scripts",
-  "trackAndTrace/indexer",
-  "trackAndTrace/sponsored-transaction-service"
-]
-
 [workspace.dependencies]
 concordium-rust-sdk = "6.0.0"
 
