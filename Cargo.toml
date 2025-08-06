@@ -28,3 +28,18 @@ default-members = [
   "trackAndTrace/indexer",
   "trackAndTrace/sponsored-transaction-service"
 ]
+
+[workspace.dependencies]
+concordium-rust-sdk = "6.0.0"
+concordium-std = { version = "10.0", default-features = false }
+concordium-cis2 = { version = "6.1", default-features = false }
+concordium-contracts-common = "9.2.0"
+concordium-smart-contract-testing = "4.2"
+
+
+#todo ar
+
+[patch.crates-io]
+concordium-rust-sdk = { git = "https://github.com/concordium/concordium-rust-sdk", rev = "e34d81bff9f378840cd0518a9d62b683461d6a62" }
+concordium-contracts-common = { git = "https://github.com/concordium/concordium-rust-sdk", rev = "e34d81bff9f378840cd0518a9d62b683461d6a62" }
+
