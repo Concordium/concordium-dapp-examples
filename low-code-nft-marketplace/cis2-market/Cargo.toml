@@ -1,3 +1,6 @@
+[workspace] 
+resolver = "2"
+
 [package]
 name = "cis2-market"
 version = "0.1.0"
