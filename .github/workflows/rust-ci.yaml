@@ -9,7 +9,7 @@ on:
   workflow_dispatch: # allows manual trigger
 
 env:
-  RUST_FMT_VERSION: nightly-2023-04-01-x86_64-unknown-linux-gnu
+  RUST_FMT_VERSION: nightly-2025-08-01-x86_64-unknown-linux-gnu
   CARGO_CONCORDIUM_VERSION: "4.2.0"
 
 jobs:
