@@ -1,5 +1,5 @@
 [workspace]
-resolver = "3"
+resolver = "2"
 
 # Smart contracts currently have to be standalone crates and not part of the repo workspace
 # due to how cargo-concordium verifiable build works. Hence the trackAndTrace and cis2-market
