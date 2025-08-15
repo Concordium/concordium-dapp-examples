@@ -108,10 +108,10 @@ In order to contribute you should make a pull request and ask a person familiar 
 
 ## Building
 
-The project is a pure Rust project, and can be built by running
+The project is a pure Rust project, and can be built from the repo root directory by running:
 
 ```shell
-cargo build --release --locked
+cargo build --locked -p sponsored-transaction-service --release
 ```
 
 This produces a single binary `target/release/sponsored-transaction-service`.

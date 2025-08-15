@@ -1,0 +1,37 @@
+[workspace]
+resolver = "2"
+
+# Smart contracts currently have to be standalone crates and not part of the repo workspace
+# due to how cargo-concordium verifiable build works. Hence the trackAndTrace and cis2-market
+# smart contract crates in this repo are not members of the workspace.
+members = [
+  "compliant-reward-distribution/indexer-and-server",
+  "gallery/verifier",
+  "sponsoredTransactionsAuction/backend",
+  "sponsoredTransactions/backend",
+  "trackAndTrace/test-scripts",
+  "trackAndTrace/indexer",
+  "trackAndTrace/sponsored-transaction-service"
+]
+
+# The smart contract crates (which are in single crate workspaces) are added implicitly as workspace members if they are used as local path dependencies.
+# Hence, we repeat the explicit members as default members. These are the crates we want to run cargo commands on.
+default-members = [
+  "compliant-reward-distribution/indexer-and-server",
+  "gallery/verifier",
+  "sponsoredTransactionsAuction/backend",
+  "sponsoredTransactions/backend",
+  "trackAndTrace/test-scripts",
+  "trackAndTrace/indexer",
+  "trackAndTrace/sponsored-transaction-service"
+]
+
+[workspace.dependencies]
+concordium-rust-sdk = "6.0.0"
+
+# The patches are here because currently we depend on unreleased changed that are not in 6.0.0.
+# Going forward, we should not do that and the patch section should not be present on the main
+# branch.
+[patch.crates-io]
+concordium-rust-sdk = { git = "https://github.com/concordium/concordium-rust-sdk", rev = "e34d81bff9f378840cd0518a9d62b683461d6a62" }
+concordium-contracts-common = { git = "https://github.com/concordium/concordium-rust-sdk", rev = "e34d81bff9f378840cd0518a9d62b683461d6a62" }
