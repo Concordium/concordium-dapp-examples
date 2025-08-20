@@ -5,5 +5,5 @@ export default function createGRPCNodeClient(): ConcordiumGRPCNodeClient {
     if (!NODE_PORT || !NODE_URL) {
         throw new Error('NDDE_PORT or NODE_URL env vars not defined.');
     }
-    return new ConcordiumGRPCNodeClient(NODE_URL as string, Number(NODE_PORT), credentials.createInsecure());
+    return new ConcordiumGRPCNodeClient(NODE_URL as string, Number(NODE_PORT), credentials.createSsl());
 }
