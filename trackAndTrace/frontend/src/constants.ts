@@ -4,6 +4,7 @@ import { ContractAddress } from '@concordium/web-sdk';
 import { TESTNET, MAINNET } from '@concordium/wallet-connectors';
 
 const { protocol, hostname, port } = new URL(CONFIG.node);
+
 export const NODE_HOST = `${protocol}//${hostname}`;
 export const NODE_PORT = Number(port);
 
@@ -17,7 +18,8 @@ export const CONTRACT_ADDRESS = ContractAddress.fromSerializable(CONFIG.contract
 /** The Concordium network used for the application. */
 export const NETWORK = CONFIG.network === 'mainnet' ? MAINNET : TESTNET;
 
-export const CCD_SCAN_URL = NETWORK === MAINNET ? 'https://ccdscan.io' : 'https://testnet.ccdscan.io';
+export const CCD_EXPLORER_URL =
+    NETWORK === MAINNET ? 'https://ccdexplorer.io/mainnet' : 'https://ccdexplorer.io/testnet';
 
 // Before submitting a transaction we simulate/dry-run the transaction to get an
 // estimate of the energy needed for executing the transaction. In addition, we
@@ -30,3 +32,5 @@ export const BROWSER_WALLET = ephemeralConnectorType(BrowserWalletConnector.crea
 
 export const SERIALIZATION_HELPER_SCHEMA_PERMIT_MESSAGE =
     'FAAFAAAAEAAAAGNvbnRyYWN0X2FkZHJlc3MMBQAAAG5vbmNlBQkAAAB0aW1lc3RhbXANCwAAAGVudHJ5X3BvaW50FgEHAAAAcGF5bG9hZBABAg==';
+
+export const DAPP_NAME = 'Track & Trace';

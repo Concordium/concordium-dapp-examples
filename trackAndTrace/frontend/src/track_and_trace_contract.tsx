@@ -22,7 +22,7 @@ const contract = TrackAndTraceContract.createUnchecked(grpc, constants.CONTRACT_
 /**
  * This function submits a transaction to create an item in the track and trace contract.
  *
- * @param provider - The wallet provider to use for sending the transaction.
+ * @param connection - The active wallet connection  to use for sending the transaction.
  * @param accountAddress - The account address to send from.
  * @param createItemParameter - The parameter for the createItem function.
  * @throws If simulating the contract update fails.
@@ -77,9 +77,9 @@ export async function createItem(
 /**
  * This function submits a transaction to create an item in the track and trace contract.
  *
- * @param provider - The wallet provider to use for sending the transaction.
+ * @param connection - The active wallet connection to use for sending the transaction.
  * @param accountAddress - The account address to send from.
- * @param createItemParameter - The parameter for the createItem function.
+ * @param revokeRoleParameter - The parameter for the createItem function.
  * @throws If simulating the contract update fails.
  * @returns A promise resolving with the corresponding {@linkcode string}
  */
@@ -132,7 +132,7 @@ export async function removeRole(
 /**
  * This function submits a transaction to update the state machine.
  *
- * @param provider - The wallet provider to use for sending the transaction.
+ * @param connection - The active wallet connection to use for sending the transaction.
  * @param accountAddress - The account address to send from.
  * @param updateStateMachineParameter - The parameter for the updateStateMachine function.
  * @throws If simulating the contract update fails.
@@ -191,9 +191,9 @@ export async function updateStateMachine(
 /**
  * This function submits a transaction to create an item in the track and trace contract.
  *
- * @param provider - The wallet provider to use for sending the transaction.
+ * @param connection - The active wallet connection to use for sending the transaction.
  * @param accountAddress - The account address to send from.
- * @param createItemParameter - The parameter for the createItem function.
+ * @param grantRoleParameter - The parameter for the createItem function.
  * @throws If simulating the contract update fails.
  * @returns A promise resolving with the corresponding {@linkcode string}
  */
@@ -272,6 +272,76 @@ export async function nonceOf(
     if (parsedReturnValue === undefined) {
         throw new Error(
             `Deserializing the returnValue from the '${TrackAndTraceContract.contractName.value}.nonceOf' method of contract '${constants.CONTRACT_ADDRESS.index}' failed`,
+        );
+    } else {
+        return parsedReturnValue;
+    }
+}
+
+/**
+ * This function views the addresses given a role in the contract.
+ *
+ * @param getAddressesByRoleParameter - The parameter for the getAddressesByRole function.
+ * @throws If the communicate with the Concordium node fails, the smart contract reverts, or parsing the returnValue fails.
+ * @returns A promise resolving with the corresponding {@linkcode TrackAndTrace.ReturnValueGetAddressesByRole}
+ */
+export async function getAddressesByRole(
+    getAddressesByRoleParameter: TrackAndTraceContract.GetAddressesByRoleParameter,
+): Promise<TrackAndTraceContract.ReturnValueGetAddressesByRole> {
+    const dryRunResult = await TrackAndTraceContract.dryRunGetAddressesByRole(contract, getAddressesByRoleParameter);
+
+    if (!dryRunResult || dryRunResult.tag === 'failure' || !dryRunResult.returnValue) {
+        const parsedErrorCode = TrackAndTraceContract.parseReturnValueGetAddressesByRole(dryRunResult);
+
+        throw new Error(
+            `RPC call 'invokeContract' on method '${TrackAndTraceContract.contractName.value}.getAddressesByRole' of contract '${
+                constants.CONTRACT_ADDRESS.index
+            }' failed. Decoded error code: ${JSONbig.stringify(
+                parsedErrorCode,
+            )}. Original response: ${JSONbig.stringify(dryRunResult)}`,
+        );
+    }
+
+    const parsedReturnValue = TrackAndTraceContract.parseReturnValueGetAddressesByRole(dryRunResult);
+
+    if (parsedReturnValue === undefined) {
+        throw new Error(
+            `Deserializing the returnValue from the '${TrackAndTraceContract.contractName.value}.getAddressesByRole' method of contract '${constants.CONTRACT_ADDRESS.index}' failed`,
+        );
+    } else {
+        return parsedReturnValue;
+    }
+}
+
+/**
+ * This function views the addresses given a role in the contract.
+ *
+ * @param getItemStateParameter - The parameter for the getItemState function.
+ * @throws If the communicate with the Concordium node fails, the smart contract reverts, or parsing the returnValue fails.
+ * @returns A promise resolving with the corresponding {@linkcode TrackAndTrace.ReturnValueGetItemState}
+ */
+export async function getItemState(
+    getItemStateParameter: TrackAndTraceContract.GetItemStateParameter,
+): Promise<TrackAndTraceContract.ReturnValueGetItemState> {
+    const dryRunResult = await TrackAndTraceContract.dryRunGetItemState(contract, getItemStateParameter);
+
+    if (!dryRunResult || dryRunResult.tag === 'failure' || !dryRunResult.returnValue) {
+        const parsedErrorCode = TrackAndTraceContract.parseReturnValueGetItemState(dryRunResult);
+
+        throw new Error(
+            `RPC call 'invokeContract' on method '${TrackAndTraceContract.contractName.value}.getItemState' of contract '${
+                constants.CONTRACT_ADDRESS.index
+            }' failed. Decoded error code: ${JSONbig.stringify(
+                parsedErrorCode,
+            )}. Original response: ${JSONbig.stringify(dryRunResult)}`,
+        );
+    }
+
+    const parsedReturnValue = TrackAndTraceContract.parseReturnValueGetItemState(dryRunResult);
+
+    if (parsedReturnValue === undefined) {
+        throw new Error(
+            `Deserializing the returnValue from the '${TrackAndTraceContract.contractName.value}.getItemState' method of contract '${constants.CONTRACT_ADDRESS.index}' failed`,
         );
     } else {
         return parsedReturnValue;

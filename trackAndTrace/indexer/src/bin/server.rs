@@ -2,10 +2,12 @@ use ::indexer::db::{DatabaseError, DatabasePool, StoredItemStatusChangedEvent};
 use anyhow::Context;
 use axum::{
     extract::{rejection::JsonRejection, State},
-    http,
-    response::Html,
+    http::{self, header::CONTENT_TYPE},
+    response::{Html, Response},
     routing::{get, post},
-    Json, Router,
+    Json,
+    Router,
+    body::{boxed, Full}
 };
 use clap::Parser;
 use concordium_rust_sdk::types::ContractAddress;
@@ -14,6 +16,7 @@ use http::StatusCode;
 use indexer::db::StoredItemCreatedEvent;
 use std::fs;
 use tower_http::services::ServeDir;
+use reqwest::Client;
 
 /// The maximum number of events allowed in a request to the database.
 const MAX_REQUEST_LIMIT: u32 = 30;
@@ -37,6 +40,8 @@ pub enum ServerError {
     JsonRejection(#[from] JsonRejection),
     #[error("The requested events to the database were above the limit {0}")]
     MaxRequestLimit(u32),
+    #[error("Failed to fetch data from Pinata: {0}")]
+    PinataError(String),
 }
 
 /// Mapping DatabaseError to ServerError
@@ -81,6 +86,10 @@ impl axum::response::IntoResponse for ServerError {
             ServerError::MaxRequestLimit(error) => {
                 tracing::debug!("Bad request: {error}.");
                 (StatusCode::BAD_REQUEST, Json(format!("{}", error)))
+            }
+            ServerError::PinataError(error) => {
+                tracing::error!("Pinata error: {error}");
+                (StatusCode::INTERNAL_SERVER_ERROR, Json(error))
             }
         };
         r.into_response()
@@ -150,6 +159,20 @@ struct Args {
         env = "CCD_SERVER_CONTRACT_ADDRESS"
     )]
     contract_address: ContractAddress,
+    /// The JSON Web Token (JWT) for Pinata uploads to IPFS.
+    #[clap(
+        long = "pinata-jwt",
+        help = "The JSON Web Token (JWT) used for authentication with Pinata for uploading to IPFS.",
+        env = "CCD_SERVER_PINATA_JWT"
+    )]
+    pinata_jwt: String,
+    /// The Pinata Gateway URL for accessing files uploaded to IPFS.
+    #[clap(
+        long = "pinata-gateway",
+        help = "The base URL of the Pinata Gateway used for accessing files uploaded to IPFS.",
+        env = "CCD_SERVER_PINATA_GATEWAY"
+    )]
+    pinata_gateway: String,
     /// The sponsored transaction backend (passed to frontend).
     #[arg(
         long = "sponsored-transaction-backend",
@@ -167,6 +190,8 @@ impl Args {
             "node": self.node_endpoint.uri().to_string(),
             "network": self.network,
             "contractAddress": self.contract_address,
+            "pinataJWT": self.pinata_jwt,
+            "pinataGateway": self.pinata_gateway,
             "sponsoredTransactionBackend": self.sponsored_transaction_backend.uri().to_string(),
         });
         let config_string =
@@ -217,6 +242,7 @@ async fn main() -> anyhow::Result<()> {
     let router = Router::new()
         .route("/api/getItemStatusChangedEvents", post(get_item_status_changed_events))
         .route("/api/getItemCreatedEvent", post(get_item_created_event))
+        .route("/api/getPinataData", post(get_pinata_data))
         .route("/health", get(health))
         .nest_service("/assets", serve_dir_service)
         .fallback(get(|| async { Html(index_html) }))
@@ -358,4 +384,47 @@ async fn get_item_created_event(
     Ok(Json(StoredItemCreatedEventReturnValue {
         data: database_result,
     }))
+}
+
+
+#[derive(serde::Deserialize)]
+struct PinataUrlRequest {
+    url: String,
+}
+
+
+async fn get_pinata_data(
+    Json(payload): Json<PinataUrlRequest>,
+) -> Result<Response, ServerError> {
+    let client = Client::new();
+    let response = client
+        .get(&payload.url)
+        .send()
+        .await
+        .map_err(|e| {
+            let msg = format!("Error fetching data from Pinata: {}", e);
+            tracing::error!("{}", msg);
+            ServerError::PinataError(msg)
+        })?;
+
+    let content_type = response
+        .headers()
+        .get(CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or("application/octet-stream")
+        .to_owned();
+
+    let bytes = response.bytes().await.map_err(|e| {
+        let msg = format!("Error reading bytes from Pinata response: {}", e);
+        tracing::error!("{}", msg);
+        ServerError::PinataError(msg)
+    })?;
+
+    let builder = Response::builder()
+        .status(StatusCode::OK)
+        .header(CONTENT_TYPE, content_type);
+
+    Ok(builder
+        .body(boxed(Full::from(bytes)))
+        .unwrap())
 }
