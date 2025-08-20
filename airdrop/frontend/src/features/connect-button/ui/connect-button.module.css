@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.buttonConnect {
+	@apply rounded-lg border border-transparent;
+	@apply px-5 py-4;
+	@apply transition-colors;
+	@apply hover:border-gray-300 hover:bg-gray-100;
+	@apply hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30;
+}
+
+.arrow {
+	@apply inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none;
+}
+
+.title {
+	@apply mb-3 text-2xl font-semibold;
+}
+
+.description {
+	@apply m-0 max-w-[30ch] text-sm opacity-50;
+}
