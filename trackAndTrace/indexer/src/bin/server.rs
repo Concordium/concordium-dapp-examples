@@ -215,7 +215,10 @@ async fn main() -> anyhow::Result<()> {
     let serve_dir_service = ServeDir::new(app.frontend_assets.join("assets"));
 
     let router = Router::new()
-        .route("/api/getItemStatusChangedEvents", post(get_item_status_changed_events))
+        .route(
+            "/api/getItemStatusChangedEvents",
+            post(get_item_status_changed_events),
+        )
         .route("/api/getItemCreatedEvent", post(get_item_created_event))
         .route("/health", get(health))
         .nest_service("/assets", serve_dir_service)
@@ -309,8 +312,8 @@ struct StoredItemStatusChangedEventsReturnValue {
 #[derive(serde::Deserialize)]
 struct GetItemstatusChangedEventsParam {
     item_id: u64,
-    limit:   u32,
-    offset:  u32,
+    limit: u32,
+    offset: u32,
 }
 
 /// Handles the `getItemStatusChangedEvents` endpoint, returning a vector of

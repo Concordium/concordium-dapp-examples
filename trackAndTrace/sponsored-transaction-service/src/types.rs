@@ -128,7 +128,9 @@ impl axum::response::IntoResponse for ServerError {
 // TODO: Use `#[from] RejectReason` instead when [`RejectReason`] implements
 // `std::error::Error`.
 impl From<RejectReason> for ServerError {
-    fn from(value: RejectReason) -> Self { Self::TransactionSimulationError(value) }
+    fn from(value: RejectReason) -> Self {
+        Self::TransactionSimulationError(value)
+    }
 }
 
 #[derive(serde::Serialize)]
@@ -136,7 +138,7 @@ impl From<RejectReason> for ServerError {
 /// with fields 'code' and 'message'.
 pub struct ErrorResponse {
     /// The error code.
-    pub code:    u16,
+    pub code: u16,
     /// The error message.
     pub message: String,
 }
@@ -146,22 +148,22 @@ pub struct ErrorResponse {
 /// The input parameters for the `/api/submitTransaction` endpoint.
 pub struct InputParams {
     /// The signer of the transaction.
-    pub signer:           AccountAddress,
+    pub signer: AccountAddress,
     /// The account nonce.
-    pub nonce:            u64,
+    pub nonce: u64,
     /// The signature for the transaction.
-    pub signature:        String,
+    pub signature: String,
     /// The expiry time.
-    pub expiry_time:      Timestamp,
+    pub expiry_time: Timestamp,
     /// The contract to call.
     pub contract_address: ContractAddress,
     /// The name of the contract to call.
     /// Should be without the "init_" prefix.
-    pub contract_name:    String,
+    pub contract_name: String,
     /// The entrypoint to call.
-    pub entrypoint_name:  String,
+    pub entrypoint_name: String,
     /// The actual parameter forwarded to the entrypoint `entrypoint_name`.
-    pub parameter:        OwnedParameter,
+    pub parameter: OwnedParameter,
 }
 
 #[derive(Debug, Serial)]
@@ -170,9 +172,9 @@ pub struct PermitParam {
     /// The signature.
     pub signature: AccountSignatures,
     /// The signer.
-    pub signer:    AccountAddress,
+    pub signer: AccountAddress,
     /// The message signed.
-    pub message:   PermitMessage,
+    pub message: PermitMessage,
 }
 
 #[derive(serde::Deserialize, Debug, Serial, Clone)]
@@ -181,13 +183,13 @@ pub struct PermitMessage {
     /// The contract address.
     pub contract_address: ContractAddress,
     /// The nonce of the account.
-    pub nonce:            u64,
+    pub nonce: u64,
     /// The expiration time for signature.
-    pub timestamp:        Timestamp,
+    pub timestamp: Timestamp,
     /// The entrypoint to call.
-    pub entry_point:      OwnedEntrypointName,
+    pub entry_point: OwnedEntrypointName,
     /// The parameter to call the entrypoint with.
-    pub parameter:        OwnedParameter,
+    pub parameter: OwnedParameter,
 }
 
 #[derive(Clone)]

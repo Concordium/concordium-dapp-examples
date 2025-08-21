@@ -20,14 +20,14 @@ struct Args {
         help = "The endpoints are expected to point to concordium node grpc v2 API's.",
         global = true
     )]
-    node_endpoint:             concordium_rust_sdk::v2::Endpoint,
+    node_endpoint: concordium_rust_sdk::v2::Endpoint,
     #[arg(
         long = "module",
         short = 'm',
         default_value = "../smart-contract/concordium-out/module.wasm.v1",
         help = "Source module from which to initialize the contract instances."
     )]
-    module:                    std::path::PathBuf,
+    module: std::path::PathBuf,
     #[arg(
         long = "input-parameter-file",
         short = 'p',
@@ -39,13 +39,13 @@ struct Args {
         short = 'i',
         help = "Number of items to be created in the contract."
     )]
-    num_items:                 u64,
+    num_items: u64,
     #[structopt(
         long = "admin-key-file",
         short = 'a',
         help = "Path to the admin key file."
     )]
-    admin_keys_path:           std::path::PathBuf,
+    admin_keys_path: std::path::PathBuf,
 }
 
 #[tokio::main]
@@ -153,8 +153,8 @@ async fn main() -> anyhow::Result<()> {
     // Update items from `Produced` to `InTransit`
     for i in 0..args.num_items {
         let param: ChangeItemStatusParams<AdditionalData> = ChangeItemStatusParams {
-            item_id:         ItemID::from(i),
-            new_status:      Status::InTransit,
+            item_id: ItemID::from(i),
+            new_status: Status::InTransit,
             additional_data: AdditionalData::empty(),
         };
 
@@ -234,8 +234,8 @@ async fn main() -> anyhow::Result<()> {
         );
 
         let param: ChangeItemStatusParams<AdditionalData> = ChangeItemStatusParams {
-            item_id:         ItemID::from(i),
-            new_status:      Status::InStore,
+            item_id: ItemID::from(i),
+            new_status: Status::InStore,
             additional_data: AdditionalData::empty(),
         };
 
@@ -298,8 +298,8 @@ async fn main() -> anyhow::Result<()> {
         );
 
         let param: ChangeItemStatusParams<AdditionalData> = ChangeItemStatusParams {
-            item_id:         ItemID::from(i),
-            new_status:      Status::Sold,
+            item_id: ItemID::from(i),
+            new_status: Status::Sold,
             additional_data: AdditionalData::empty(),
         };
 
