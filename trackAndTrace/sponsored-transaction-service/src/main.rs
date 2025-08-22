@@ -184,10 +184,12 @@ With the following configuration:
     let router = Router::new()
         .route("/api/submitTransaction", post(handle_transaction))
         .with_state(state)
-        .layer(CorsLayer::new()
-               .allow_origin(AllowOrigin::mirror_request())
-               .allow_headers([http::header::CONTENT_TYPE])
-               .allow_methods([http::Method::POST]))
+        .layer(
+            CorsLayer::new()
+                .allow_origin(AllowOrigin::mirror_request())
+                .allow_headers([http::header::CONTENT_TYPE])
+                .allow_methods([http::Method::POST]),
+        )
         .layer(
             tower_http::trace::TraceLayer::new_for_http()
                 .make_span_with(tower_http::trace::DefaultMakeSpan::new())
@@ -233,10 +235,10 @@ pub async fn handle_transaction(
 
     let message: PermitMessage = PermitMessage {
         contract_address: request.contract_address,
-        nonce:            request.nonce,
-        timestamp:        request.expiry_time,
-        entry_point:      OwnedEntrypointName::new_unchecked(request.entrypoint_name),
-        parameter:        request.parameter,
+        nonce: request.nonce,
+        timestamp: request.expiry_time,
+        entry_point: OwnedEntrypointName::new_unchecked(request.entrypoint_name),
+        parameter: request.parameter,
     };
 
     // Create signature map.
@@ -245,9 +247,12 @@ pub async fn handle_transaction(
     let mut inner_signature_map = BTreeMap::new();
     inner_signature_map.insert(0, Signature::Ed25519(SignatureEd25519(signature)));
     let mut signature_map = BTreeMap::new();
-    signature_map.insert(0, CredentialSignatures {
-        sigs: inner_signature_map,
-    });
+    signature_map.insert(
+        0,
+        CredentialSignatures {
+            sigs: inner_signature_map,
+        },
+    );
 
     let param: PermitParam = PermitParam {
         message,

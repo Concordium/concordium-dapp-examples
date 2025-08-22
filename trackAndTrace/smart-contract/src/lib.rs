@@ -103,9 +103,9 @@ pub enum Event<A: Serial> {
 #[derive(Serialize, SchemaType, Debug, PartialEq, Eq, Clone)]
 pub struct ItemCreatedEvent {
     /// The item's id.
-    pub item_id:        ItemID,
+    pub item_id: ItemID,
     /// The item's metadata_url.
-    pub metadata_url:   Option<MetadataUrl>,
+    pub metadata_url: Option<MetadataUrl>,
     /// The item's initial status.
     pub initial_status: Status,
 }
@@ -115,9 +115,9 @@ pub struct ItemCreatedEvent {
 #[derive(Serialize, SchemaType, Debug, PartialEq, Eq, Clone)]
 pub struct ItemStatusChangedEvent<A: Serial> {
     /// The item's id.
-    pub item_id:         ItemID,
+    pub item_id: ItemID,
     /// The item's new status.
-    pub new_status:      Status,
+    pub new_status: Status,
     /// Any additional data encoded as generic bytes. Usecase-specific data can
     /// be included here such as temperature, longitude, latitude, ... .
     pub additional_data: A,
@@ -129,7 +129,7 @@ pub struct GrantRoleEvent {
     /// The address that has been its role granted.
     pub address: Address,
     /// The role that was granted to the above address.
-    pub role:    Roles,
+    pub role: Roles,
 }
 
 /// The [`RevokeRoleEvent`] is logged when a role is revoked from an address.
@@ -138,7 +138,7 @@ pub struct RevokeRoleEvent {
     /// Address that has been its role revoked.
     pub address: Address,
     /// The role that was revoked from the above address.
-    pub role:    Roles,
+    pub role: Roles,
 }
 
 /// The NonceEvent is logged when the `permit` function is invoked. The event
@@ -148,7 +148,7 @@ pub struct NonceEvent {
     /// Account that signed the `PermitMessage`.
     pub account: AccountAddress,
     /// The nonce that was used in the `PermitMessage`.
-    pub nonce:   u64,
+    pub nonce: u64,
 }
 
 /// A struct containing a set of roles granted to an address.
@@ -185,7 +185,7 @@ pub enum Status {
 #[derive(Debug, Serialize, SchemaType, Clone, PartialEq, Eq)]
 pub struct ItemState {
     /// The status of the item.
-    pub status:       Status,
+    pub status: Status,
     /// The metadata_url of the item.
     pub metadata_url: Option<MetadataUrl>,
 }
@@ -198,16 +198,16 @@ pub struct ItemState {
 struct State<S = StateApi> {
     /// The next item id that will be assigned to an item when the admin creates
     /// it. This value is sequentially increased by 1.
-    next_item_id:    u64,
+    next_item_id: u64,
     /// A map containing all roles granted to addresses.
-    roles:           StateMap<Address, AddressRoleState<S>, S>,
+    roles: StateMap<Address, AddressRoleState<S>, S>,
     /// A map containing all items with their states.
-    items:           StateMap<ItemID, ItemState, S>,
+    items: StateMap<ItemID, ItemState, S>,
     /// A map containing all allowed transitions of the state machine.
     /// The first `Status` maps to a map of `AccountAddresses` that are allowed
     /// to update the given `Status`. The last `StateSet` specifies to which
     /// `Statuses` the `AccountAddress` is allowed to update the first `Status.`
-    transitions:     StateMap<Status, StatusTransitions<S>, S>,
+    transitions: StateMap<Status, StatusTransitions<S>, S>,
     /// A registry to link an account to its next nonce. The nonce is used to
     /// prevent replay attacks of sponsored transactions. The nonce is increased
     /// sequentially every time a signed message (corresponding to the
@@ -344,9 +344,9 @@ impl<S: HasStateApi> State<S> {
         address: AccountAddress,
         to: Status,
     ) -> bool {
-        let Some(mut transition) = self
-        .transitions
-        .get_mut(&from) else { return false; };
+        let Some(mut transition) = self.transitions.get_mut(&from) else {
+            return false;
+        };
 
         let mut targets = transition.targets(builder, address);
         targets.remove(&to)
@@ -372,10 +372,10 @@ impl<S: HasStateApi> State<S> {
     /// Create the state and state machine from a vector of transition edges.
     pub fn from_iter(state_builder: &mut StateBuilder<S>, i: Vec<TransitionEdges>) -> Self {
         let mut r = Self {
-            next_item_id:    0u64,
-            roles:           state_builder.new_map(),
-            items:           state_builder.new_map(),
-            transitions:     state_builder.new_map(),
+            next_item_id: 0u64,
+            roles: state_builder.new_map(),
+            items: state_builder.new_map(),
+            transitions: state_builder.new_map(),
             nonces_registry: state_builder.new_map(),
         };
         for transition_edge in i {
@@ -426,9 +426,9 @@ impl<S: HasStateApi> State<S> {
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct TransitionEdges {
     /// The status of the `from` node of the transition edges.
-    pub from:               Status,
+    pub from: Status,
     /// A vector of statuses of the `to` node of the transition edges.
-    pub to:                 Vec<Status>,
+    pub to: Vec<Status>,
     /// The account that is allowed to execute the state transitions described
     /// above.
     pub authorized_account: AccountAddress,
@@ -458,7 +458,7 @@ fn init(
     state.grant_role(&invoker, Roles::Admin, state_builder);
     logger.log(&Event::<AdditionalData>::GrantRole(GrantRoleEvent {
         address: invoker,
-        role:    Roles::Admin,
+        role: Roles::Admin,
     }))?;
 
     Ok(state)
@@ -558,10 +558,13 @@ fn create_item(
     let item_id = ItemID::from(next_item_id);
 
     // Create the item in state.
-    let previous_item = host.state_mut().items.insert(item_id, ItemState {
-        metadata_url: metadata_url.clone(),
-        status:       Status::Produced,
-    });
+    let previous_item = host.state_mut().items.insert(
+        item_id,
+        ItemState {
+            metadata_url: metadata_url.clone(),
+            status: Status::Produced,
+        },
+    );
 
     ensure_eq!(previous_item, None, CustomContractError::ItemAlreadyExists);
 
@@ -586,9 +589,13 @@ pub struct AdditionalData {
 }
 
 impl AdditionalData {
-    pub fn empty() -> Self { AdditionalData { bytes: vec![] } }
+    pub fn empty() -> Self {
+        AdditionalData { bytes: vec![] }
+    }
 
-    pub fn from_bytes(bytes: Vec<u8>) -> Self { AdditionalData { bytes } }
+    pub fn from_bytes(bytes: Vec<u8>) -> Self {
+        AdditionalData { bytes }
+    }
 }
 
 /// The parameter type for the contract function `changeItemStatus` which
@@ -596,9 +603,9 @@ impl AdditionalData {
 #[derive(Serialize, SchemaType)]
 pub struct ChangeItemStatusParams<A> {
     /// The item's id.
-    pub item_id:         ItemID,
+    pub item_id: ItemID,
     /// The item's new status.
-    pub new_status:      Status,
+    pub new_status: Status,
     /// Any additional data encoded as generic bytes. Usecase-specific data can
     /// be included here such as temperature, longitude, latitude, ... .
     pub additional_data: A,
@@ -657,8 +664,8 @@ fn change_item_status(
 
     // Log an ItemStatusChangedEvent.
     logger.log(&Event::ItemStatusChanged(ItemStatusChangedEvent {
-        item_id:         param.item_id,
-        new_status:      param.new_status,
+        item_id: param.item_id,
+        new_status: param.new_status,
         additional_data: param.additional_data,
     }))?;
 
@@ -679,13 +686,13 @@ pub enum Update {
 #[derive(Serialize, SchemaType)]
 pub struct UpdateStateMachineParams {
     /// The address that is involved in the state transition.
-    pub address:     AccountAddress,
+    pub address: AccountAddress,
     /// The from state of the state transition.
     pub from_status: Status,
     /// The to state of the state transition.
-    pub to_status:   Status,
+    pub to_status: Status,
     /// The update (remove or add).
-    pub update:      Update,
+    pub update: Update,
 }
 
 /// Update the state machine by adding or removing a transition.
@@ -750,7 +757,7 @@ pub struct GrantRoleParams {
     /// The address that has been its role granted.
     pub address: Address,
     /// The role that has been granted to the above address.
-    pub role:    Roles,
+    pub role: Roles,
 }
 
 /// Add role to an address.
@@ -790,7 +797,7 @@ fn contract_grant_role(
     // Log a GrantRoleEvent.
     logger.log(&Event::<AdditionalData>::GrantRole(GrantRoleEvent {
         address: params.address,
-        role:    params.role,
+        role: params.role,
     }))?;
     Ok(())
 }
@@ -802,7 +809,7 @@ pub struct RevokeRoleParams {
     /// The address that has been its role revoked.
     pub address: Address,
     /// The role that has been revoked from the above address.
-    pub role:    Roles,
+    pub role: Roles,
 }
 
 /// Revoke role from an address.
@@ -841,7 +848,7 @@ fn contract_revoke_role(
     // Log a RevokeRoleEvent.
     logger.log(&Event::<AdditionalData>::RevokeRole(RevokeRoleEvent {
         address: params.address,
-        role:    params.role,
+        role: params.role,
     }))?;
     Ok(())
 }
@@ -853,15 +860,15 @@ pub struct PermitMessage {
     /// The contract_address that the signature is intended for.
     pub contract_address: ContractAddress,
     /// A nonce to prevent replay attacks.
-    pub nonce:            u64,
+    pub nonce: u64,
     /// A timestamp to make signatures expire.
-    pub timestamp:        Timestamp,
+    pub timestamp: Timestamp,
     /// The entry_point that the signature is intended for.
-    pub entry_point:      OwnedEntrypointName,
+    pub entry_point: OwnedEntrypointName,
     /// The serialized payload that should be forwarded to either the `transfer`
     /// or the `updateOperator` function.
     #[concordium(size_length = 2)]
-    pub payload:          Vec<u8>,
+    pub payload: Vec<u8>,
 }
 
 /// The parameter type for the contract function `permit`.
@@ -871,9 +878,9 @@ pub struct PermitParam {
     /// Signature/s. The function supports multi-sig accounts.
     pub signature: AccountSignatures,
     /// Account that created the above signature.
-    pub signer:    AccountAddress,
+    pub signer: AccountAddress,
     /// Message that was signed.
-    pub message:   PermitMessage,
+    pub message: PermitMessage,
 }
 
 /// Partial version of the `PermitParam` type without the `message` field.
@@ -882,7 +889,7 @@ pub struct PermitParamPartial {
     /// Signature/s. The function supports multi-sig accounts.
     signature: AccountSignatures,
     /// Account that created the above signature.
-    signer:    AccountAddress,
+    signer: AccountAddress,
 }
 
 /// Verify an ed25519 signature and allows calling the `changeItemStatus`
@@ -1121,7 +1128,9 @@ pub struct VecOfAccountAddresses {
 pub struct NonceOfQueryResponse(#[concordium(size_length = 1)] pub Vec<u64>);
 
 impl From<Vec<u64>> for NonceOfQueryResponse {
-    fn from(results: concordium_std::Vec<u64>) -> Self { NonceOfQueryResponse(results) }
+    fn from(results: concordium_std::Vec<u64>) -> Self {
+        NonceOfQueryResponse(results)
+    }
 }
 
 /// Get the nonces of accounts.
@@ -1163,7 +1172,7 @@ pub struct HasRoleParams {
     /// The address to be checked.
     pub address: Address,
     /// The role to check for.
-    pub role:    Roles,
+    pub role: Roles,
 }
 
 /// Check if an address has a specific role.
@@ -1187,11 +1196,11 @@ fn has_role(ctx: &ReceiveContext, host: &Host<State>) -> ContractResult<bool> {
 #[derive(Debug, Serialize, Clone, Copy, SchemaType, PartialEq, Eq)]
 pub struct IsTransitionEdgeParams {
     /// The account to be checked.
-    pub account:     AccountAddress,
+    pub account: AccountAddress,
     /// The from_status to check for.
     pub from_status: Status,
     /// The to_status to check for.
-    pub to_status:   Status,
+    pub to_status: Status,
 }
 
 /// Check if a transition edge exists in the state machine.

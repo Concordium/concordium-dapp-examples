@@ -32,7 +32,7 @@ struct Args {
         global = true,
         env = "CCD_INDEXER_NODE"
     )]
-    node_endpoint:    concordium_rust_sdk::v2::Endpoint,
+    node_endpoint: concordium_rust_sdk::v2::Endpoint,
     #[arg(
         long = "contract",
         short = 'c',
@@ -48,7 +48,7 @@ struct Args {
                 application.",
         env = "CCD_INDEXER_DB_CONNECTION"
     )]
-    db_connection:    tokio_postgres::config::Config,
+    db_connection: tokio_postgres::config::Config,
     /// Maximum log level
     #[clap(
         long = "log-level",
@@ -57,7 +57,7 @@ struct Args {
                 `error`.",
         env = "CCD_INDEXER_LOG_LEVEL"
     )]
-    log_level:        tracing_subscriber::filter::LevelFilter,
+    log_level: tracing_subscriber::filter::LevelFilter,
 }
 
 /// A handler for storing monitored events in the database. This implements
@@ -333,7 +333,7 @@ async fn handle_indexing(
         traverse_config,
         AffectedContractIndexer {
             addresses: contract_set,
-            all:       true,
+            all: true,
         },
         ProcessorConfig::new(),
         events,
