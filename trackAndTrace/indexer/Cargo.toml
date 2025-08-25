@@ -23,7 +23,7 @@ http = "0.2"
 tonic = { version = "0.12", features = ["tls-roots", "tls"] }
 thiserror = "1.0"
 chrono = "0.4"
-concordium-rust-sdk = { version = "6.0"}
+concordium-rust-sdk.workspace = true
 # It is essential that the bump_alloc feature is **not** enabled since it will
 # globally set an inefficient allocator.
 track-and-trace = { path = "../smart-contract", default-features = false, features = ["std", "serde"] } 
