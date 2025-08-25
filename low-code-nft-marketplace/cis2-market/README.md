@@ -14,28 +14,12 @@ Use `yarn fmt` and `yarn lint` before committing to ensure consistent formatting
 
 ## Rust checks
 
-This repository's CI automatically checks formatting and common problems in Rust using version 1.85.
+This repository's CI automatically checks formatting and common problems in Rust.
 
 Changes to any of the Rust packages must be such that:
 
 -   `cargo clippy --all` produces no warnings
 -   `rust fmt` makes no changes.
-
-Note that the fmt tool must be from a nightly release since some of the configuration options are not stable. You can specify the release to use when running the `fmt` tool:
-
-```shell
- cargo +nightly-2023-04-01 fmt
-```
-
-(the exact version used by the CI can be found in the [.github/workflows/ci.yaml](.github/workflows/ci.yaml) file).
-
-You will need to have a recent enough nightly version installed, which can be done via:
-
-```shell
-rustup toolchain install nightly-2023-04-01
-```
-
-or similar, using the [rustup](https://rustup.rs/) tool. See the documentation of the tool for more details.
 
 ## Build
 

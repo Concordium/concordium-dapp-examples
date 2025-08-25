@@ -24,12 +24,6 @@ docker run -p 5432:5432 -e POSTGRES_PASSWORD=password -e POSTGRES_DB="indexer" -
 
 ## Build the `crdindexer` and `server`
 
-To build the tools make sure you have the repository submodules initialized
-
-```console
-git submodule update --init --recursive
-```
-
 The tools can be built from the repo root directory by running:
 
 ```console

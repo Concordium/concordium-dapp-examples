@@ -74,18 +74,6 @@ Changes to any of the packages must be such that
 - ```cargo clippy --all``` produces no warnings
 - ```rust fmt``` makes no changes.
 
-Our CI systems use Rust 1.85, however the `fmt` tool must be from a nightly release since some of the configuration options are not stable. One way to run the `fmt` tool is
-```
-cargo +nightly-2023-04-01 fmt
-```
-
-(the exact version used by the CI can be found in [.github/workflows/rust-fmt-lint.yaml](https://github.com/Concordium/concordium-dapp-examples/blob/main/.github/workflows/rust-fmt-lint.yaml) file).
-You will need to have a recent enough nightly version installed, which can be done via
-
-```
-rustup toolchain install nightly-2023-04-01
-```
-
 ## Building
 
 The project is a pure Rust project, and can be built from the directory root by running

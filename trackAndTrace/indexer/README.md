@@ -26,12 +26,6 @@ docker run -p 5432:5432 -e POSTGRES_PASSWORD=password -e POSTGRES_DB="indexer" -
 
 ## Build the `indexer` and `server`
 
-To build the tools make sure you have the repository submodules initialized
-
-```console
-git submodule update --init --recursive
-```
-
 The tool can be built by running
 
 ```console
