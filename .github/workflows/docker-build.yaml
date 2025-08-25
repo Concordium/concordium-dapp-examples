@@ -11,7 +11,7 @@ on:
       - 'signMessage/**'
       - 'simpleAgeVerification/**'
       - 'gallery/**' 
-      - 'deps/concordium-rust-sdk'
+      - 'Cargo.toml'
       - 'sponsoredTransactions/**'
       - 'sponsoredTransactionsAuction/**'
       - 'trackAndTrace/**'
@@ -46,17 +46,17 @@ jobs:
               - 'euroe-demo/**'
             gallery:
               - 'gallery/**'
-              - 'deps/concordium-rust-sdk'
+              - 'Cargo.toml'
             simpleAgeVerification:
               - 'simpleAgeVerification/**'
             signMessage:
               - 'signMessage/**'
             sponsoredTransactions:
               - 'sponsoredTransactions/**'
-              - 'deps/concordium-rust-sdk'
+              - 'Cargo.toml'
             sponsoredTransactionsAuction:
               - 'sponsoredTransactionsAuction/**'
-              - 'deps'
+              - 'Cargo.toml'
 
       - name: Check for backend file changes for Docker Compose builds
         # Tag 3.0.2, referencing by commit SHA as a security best practice.
@@ -65,9 +65,11 @@ jobs:
         with:
           filters: |
             trackAndTrace:
-              - 'trackAndTrace/**'
+              - 'trackAndTrace/**' 
+              - 'Cargo.toml'
             compliant-reward-distribution:
               - 'compliant-reward-distribution/**'
+              - 'Cargo.toml'            
 
   docker-build:
     name: Building Docker Containers
