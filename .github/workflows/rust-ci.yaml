@@ -9,7 +9,6 @@ on:
   workflow_dispatch: # allows manual trigger
 
 env:
-  RUST_FMT_VERSION: nightly-2023-04-01-x86_64-unknown-linux-gnu
   CARGO_CONCORDIUM_VERSION: "4.2.0"
 
 jobs:
@@ -24,8 +23,8 @@ jobs:
           submodules: recursive
       - name: Run cargo fmt
         run: |
-          rustup +${{ env.RUST_FMT_VERSION }} component add rustfmt
-          cargo +${{ env.RUST_FMT_VERSION }} fmt --check
+          rustup component add rustfmt
+          cargo fmt --check
 
   clippy:
     name: Clippy
@@ -70,12 +69,12 @@ jobs:
           submodules: recursive
       - name: Install rustfmt and Clippy etc.
         run: |
-          rustup +${{ env.RUST_FMT_VERSION }} component add rustfmt          
+          rustup component add rustfmt          
           rustup component add clippy
           rustup target add wasm32-unknown-unknown
       - name: Run cargo fmt
         run: |
-          cargo +${{ env.RUST_FMT_VERSION }} fmt --manifest-path=${{ matrix.crate }}/Cargo.toml --check
+          cargo fmt --manifest-path=${{ matrix.crate }}/Cargo.toml --check
       - name: Run Clippy
         run: |
           cargo clippy --manifest-path=${{ matrix.crate }}/Cargo.toml --locked --all-targets --all-features --no-deps -- -D warnings
