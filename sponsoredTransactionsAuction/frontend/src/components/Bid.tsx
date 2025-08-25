@@ -41,7 +41,7 @@ async function generateTransferPayload(
 
         const data = serializeTypeValue(
             Number(itemIndexAuction),
-            toBuffer(SERIALIZATION_HELPER_SCHEMA_ADDITIONAL_DATA, 'base64'),
+            toBuffer(SERIALIZATION_HELPER_SCHEMA_ADDITIONAL_DATA, 'base64').buffer,
         );
 
         const hexStringData = [...data.buffer].map((b) => b.toString(16).padStart(2, '0')).join('');
@@ -69,7 +69,7 @@ async function generateTransferPayload(
             },
         ];
 
-        const payload = Parameter.toHexString(serializeTypeValue(transfer, toBuffer(TRANSFER_SCHEMA, 'base64')));
+        const payload = Parameter.toHexString(serializeTypeValue(transfer, toBuffer(TRANSFER_SCHEMA, 'base64').buffer));
 
         return payload;
     } catch (error) {

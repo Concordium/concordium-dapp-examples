@@ -38,9 +38,9 @@ type DatabaseResult<T> = Result<T, DatabaseError>;
 #[derive(Debug, Serialize)]
 pub struct StoredConfiguration {
     /// The genesis block hash of the network monitored.
-    pub genesis_block_hash:            BlockHash,
+    pub genesis_block_hash: BlockHash,
     /// The contract address of the track and trace contract monitored.
-    pub contract_address:              ContractAddress,
+    pub contract_address: ContractAddress,
     /// The last block height that was processed.
     pub latest_processed_block_height: Option<AbsoluteBlockHeight>,
 }
@@ -77,19 +77,19 @@ impl TryFrom<tokio_postgres::Row> for StoredConfiguration {
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct StoredItemStatusChangedEvent {
     /// The timestamp of the block the event was included in.
-    pub block_time:       DateTime<Utc>,
+    pub block_time: DateTime<Utc>,
     /// The transaction hash that the event was recorded in.
     pub transaction_hash: TransactionHash,
     /// The index from the array of logged events in a transaction.
-    pub event_index:      u64,
+    pub event_index: u64,
     /// The item's id as logged in the event.
-    pub item_id:          u64,
+    pub item_id: u64,
     /// The item's new status as logged in the event.
-    pub new_status:       Status,
+    pub new_status: Status,
     /// Any additional data encoded as generic bytes as logged in the event.
     /// Usecase-specific data can be included here such as temperature,
     /// longitude, latitude, ... .
-    pub additional_data:  AdditionalData,
+    pub additional_data: AdditionalData,
 }
 
 impl TryFrom<tokio_postgres::Row> for StoredItemStatusChangedEvent {
@@ -121,17 +121,17 @@ impl TryFrom<tokio_postgres::Row> for StoredItemStatusChangedEvent {
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct StoredItemCreatedEvent {
     /// The timestamp of the block the event was included in.
-    pub block_time:       DateTime<Utc>,
+    pub block_time: DateTime<Utc>,
     /// The transaction hash that the event was recorded in.
     pub transaction_hash: TransactionHash,
     /// The index from the array of logged events in a transaction.
-    pub event_index:      u64,
+    pub event_index: u64,
     /// The item's id as logged in the event.
-    pub item_id:          u64,
+    pub item_id: u64,
     /// The item's metadata_url as logged in the event.
-    pub metadata_url:     Option<MetadataUrl>,
+    pub metadata_url: Option<MetadataUrl>,
     /// The item's initial status as logged in the event.
-    pub initial_status:   Status,
+    pub initial_status: Status,
 }
 
 impl TryFrom<tokio_postgres::Row> for StoredItemCreatedEvent {
@@ -166,11 +166,15 @@ pub struct Database {
 }
 
 impl From<Object> for Database {
-    fn from(client: Object) -> Self { Self { client } }
+    fn from(client: Object) -> Self {
+        Self { client }
+    }
 }
 
 impl AsRef<Object> for Database {
-    fn as_ref(&self) -> &Object { &self.client }
+    fn as_ref(&self) -> &Object {
+        &self.client
+    }
 }
 
 impl Database {

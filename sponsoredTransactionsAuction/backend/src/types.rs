@@ -83,27 +83,27 @@ pub struct RevertReason {
 #[derive(serde::Deserialize, serde::Serialize, Debug, Clone)]
 pub struct BidParams {
     /// Wallet account that signed the `permit_message` at the front end.
-    pub signer:             AccountAddress,
+    pub signer: AccountAddress,
     /// Nonce (as stored in the state of the `cis2-token-smart-contract`) of the
     /// above account when it signed the `permit_message` at the front end.
     /// The nonce prevents replay attacks.
-    pub nonce:              u64,
+    pub nonce: u64,
     /// Signature that the above account generated when it signed the
     /// `permit_message` at the front end.
-    pub signature:          String,
+    pub signature: String,
     /// A timestamp to make signatures expire.
-    pub expiry_timestamp:   Timestamp,
+    pub expiry_timestamp: Timestamp,
     /// The token id of the payment token used when bidding for an item in the
     /// auction.
-    pub token_id:           TokenId,
+    pub token_id: TokenId,
     /// The account address that the cis tokens (payment tokens) are deducted
     /// from when bidding for an item in the auction.
-    pub from:               AccountAddress,
+    pub from: AccountAddress,
     /// The item index in the auction that the signer wants to bid for.
     pub item_index_auction: u16,
     /// The amount of tokens that the signer is willing to bid in exchange of
     /// the item index from the auction.
-    pub token_amount:       TokenAmount,
+    pub token_amount: TokenAmount,
 }
 
 /// The parameters for the transfer function of a cis2 token.
@@ -117,9 +117,9 @@ pub struct PermitParam {
     /// `permit_message` at the front end.
     pub signature: AccountSignatures,
     /// Wallet account that signed the `permit_message` at the front end.
-    pub signer:    AccountAddress,
+    pub signer: AccountAddress,
     /// The `permit_message` that the signer signed at the front end.
-    pub message:   PermitMessage,
+    pub message: PermitMessage,
 }
 
 /// Part of the parameters for the permit function of the cis3 standard.
@@ -130,15 +130,15 @@ pub struct PermitMessage {
     /// Nonce (as stored in the state of the `cis2-token-smart-contract`) of the
     /// signer when it signed the `permit_message` at the front end.
     /// The nonce prevents replay attacks.
-    pub nonce:            u64,
+    pub nonce: u64,
     /// A timestamp to make signatures expire.
-    pub timestamp:        Timestamp,
+    pub timestamp: Timestamp,
     /// The entry_point that the signature is intended for.
-    pub entry_point:      OwnedEntrypointName,
+    pub entry_point: OwnedEntrypointName,
     /// The serialized payload that should be forwarded to the `transfer`
     /// function.
     #[concordium(size_length = 2)]
-    pub payload:          Vec<u8>,
+    pub payload: Vec<u8>,
 }
 
 /// Server struct to store the contract addresses, the node client,

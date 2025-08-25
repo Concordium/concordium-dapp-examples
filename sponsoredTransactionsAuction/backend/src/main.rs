@@ -217,14 +217,14 @@ async fn handle_signature_bid(
     let Json(request) = request?;
 
     let transfer = Transfer {
-        from:     Address::Account(request.from),
-        to:       Receiver::Contract(
+        from: Address::Account(request.from),
+        to: Receiver::Contract(
             state.auction_smart_contract,
             OwnedReceiveName::new_unchecked("bid".to_owned()),
         ),
         token_id: request.token_id,
-        amount:   request.token_amount,
-        data:     AdditionalData::new_unchecked(to_bytes(&request.item_index_auction)),
+        amount: request.token_amount,
+        data: AdditionalData::new_unchecked(to_bytes(&request.item_index_auction)),
     };
 
     let payload = TransferParams(vec![transfer]);
@@ -233,10 +233,10 @@ async fn handle_signature_bid(
 
     let message: PermitMessage = PermitMessage {
         contract_address: state.cis2_token_smart_contract,
-        nonce:            request.nonce,
-        timestamp:        request.expiry_timestamp,
-        entry_point:      OwnedEntrypointName::new_unchecked("transfer".into()),
-        payload:          concordium_rust_sdk::smart_contracts::common::to_bytes(&payload),
+        nonce: request.nonce,
+        timestamp: request.expiry_timestamp,
+        entry_point: OwnedEntrypointName::new_unchecked("transfer".into()),
+        payload: concordium_rust_sdk::smart_contracts::common::to_bytes(&payload),
     };
 
     tracing::debug!("Created {:?}", message);
@@ -253,9 +253,12 @@ async fn handle_signature_bid(
     inner_signature_map.insert(0, Signature::Ed25519(SignatureEd25519(signature)));
 
     let mut signature_map = BTreeMap::new();
-    signature_map.insert(0, CredentialSignatures {
-        sigs: inner_signature_map,
-    });
+    signature_map.insert(
+        0,
+        CredentialSignatures {
+            sigs: inner_signature_map,
+        },
+    );
 
     tracing::debug!("Created signature_map {:?}", signature_map);
 
@@ -273,13 +276,13 @@ async fn handle_signature_bid(
     tracing::debug!("Created {:?}", parameter);
 
     let payload = transactions::UpdateContractPayload {
-        amount:       Amount::zero(),
-        address:      state.cis2_token_smart_contract,
+        amount: Amount::zero(),
+        address: state.cis2_token_smart_contract,
         receive_name: smart_contracts::OwnedReceiveName::new_unchecked(format!(
             "{}.permit",
             CONTRACT_NAME
         )),
-        message:      parameter,
+        message: parameter,
     };
 
     let context = ContractContext::new_from_payload(
