@@ -22,7 +22,7 @@ declare global {
 
 const TOKEN_ID = window.runtimeConfig?.TOKEN_ID || 'EUDemo';
 const BACKEND_URL = window.runtimeConfig?.BACKEND_URL || 'http://localhost:3001';
-const VERIFIER_URL = window.runtimeConfig?.VERIFIER_URL || 'http://localhost:8080';
+const VERIFIER_URL = window.runtimeConfig?.VERIFIER_URL || 'https://web3id-verifier.testnet.concordium.com';
 
 export default function AllowListDApp() {
     const [provider, setProvider] = useState<WalletProvider>();
