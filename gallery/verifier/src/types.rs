@@ -1,5 +1,4 @@
 use concordium_rust_sdk::{
-    base as concordium_base,
     common::{SerdeBase16Serialize, Serial, Serialize},
     endpoints::QueryError,
     id::{

@@ -26,16 +26,10 @@ docker run -p 5432:5432 -e POSTGRES_PASSWORD=password -e POSTGRES_DB="indexer" -
 
 ## Build the `indexer` and `server`
 
-To build the tools make sure you have the repository submodules initialized
-
-```console
-git submodule update --init --recursive
-```
-
 The tool can be built by running
 
 ```console
-cargo build --release
+cargo build --locked -p indexer --release
 ```
 
 This will produce two binaries (`indexer` and `server`) in the `target/release` directory.
@@ -77,7 +71,7 @@ You have to build the front end in the folder `../frontend` before running this 
 ## Run the `server`
 
 ```console
-cargo run --bin server
+cargo run -p indexer --bin server
 ```
 
 ## Configure the `server`
@@ -105,11 +99,11 @@ The following option are also available, which are forwarded to the frontend:
 An example of running the service with basic settings and testnet node would be:
 
 ``` console
-cargo run --bin server  -- --contract-address <YOUR_CONTRACT_ADDRESS>
+cargo run -p indexer --bin server  -- --contract-address <YOUR_CONTRACT_ADDRESS>
 ```
 
 An example to run the service with some filled in example settings would be:
 
 ``` console
-cargo run --bin server  -- --contract-address "<8901,0>"
+cargo run -p indexer --bin server  -- --contract-address "<8901,0>"
 ```
