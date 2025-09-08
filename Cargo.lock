@@ -1115,7 +1115,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "crdindexer"
+name = "crd_indexer"
 version = "0.1.2"
 dependencies = [
  "anyhow",

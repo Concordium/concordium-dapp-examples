@@ -15,9 +15,7 @@ RUN yarn build
 FROM ${RUST_IMAGE} AS server
 WORKDIR /server
 COPY ../ ./
-# It seems as if the `crdindexer` package outputs both and indexer and a server binary...
-# Is the name just a little misleading?
-RUN cargo build --locked -p crdindexer --release
+RUN cargo build --locked -p crd_indexer --release
 
 FROM debian:bookworm
 
@@ -25,7 +23,7 @@ FROM debian:bookworm
 RUN apt-get update && apt-get install -y ca-certificates
 
 COPY --from=frontend ./frontend/dist ./frontend/dist
-COPY --from=server ./server/target/release/server ./server
+COPY --from=server ./server/target/release/crd_server ./server
 
 # Run server
 CMD ["./server"]

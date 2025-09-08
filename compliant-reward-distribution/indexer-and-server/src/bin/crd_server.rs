@@ -1,4 +1,3 @@
-use ::crdindexer::{db::DatabasePool, types::Server};
 use anyhow::Context;
 use axum::{
     extract::State,
@@ -24,7 +23,7 @@ use concordium_rust_sdk::{
         Web3IdAttribute,
     },
 };
-use crdindexer::{
+use crd_indexer::{
     constants::{
         CONTEXT_STRING, CURRENT_TWEET_VERIFICATION_VERSION, CURRENT_ZK_PROOF_VERIFICATION_VERSION,
         MAX_REQUEST_LIMIT, SIGNATURE_AND_PROOF_EXPIRY_DURATION_BLOCKS, TESTNET_GENESIS_BLOCK_HASH,
@@ -39,6 +38,7 @@ use crdindexer::{
         ZKProofExtractedData, ZKProofStatementsReturn,
     },
 };
+use crd_indexer::{db::DatabasePool, types::Server};
 use handlebars::{no_escape, Handlebars};
 use regex::Regex;
 use sha2::Digest;
