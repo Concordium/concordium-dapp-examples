@@ -116,6 +116,7 @@ jobs:
     name: Building dapps which use Docker Compose
     # Require the job which generates list of changed files.
     needs: changes
+    if: ${{ needs.changes.outputs.compose-changes != '[]' && needs.changes.outputs.compose-changes != '' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
