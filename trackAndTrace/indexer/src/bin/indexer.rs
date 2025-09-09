@@ -17,8 +17,7 @@ use concordium_rust_sdk::{
 };
 use std::collections::{BTreeMap, BTreeSet};
 use tokio_postgres::types::{Json, ToSql};
-use track_and_trace as contract;
-use track_and_trace::AdditionalData;
+use track_and_trace_common::AdditionalData;
 
 /// Command line configuration of the application.
 #[derive(Debug, clap::Parser)]
@@ -113,9 +112,10 @@ impl indexer::ProcessEvent for StoreEvents {
                 single_contract_update_info.0.execution_tree.events()
             {
                 for (event_index, event) in events.iter().enumerate() {
-                    let parsed_event: contract::Event<AdditionalData> = event.parse()?;
+                    let parsed_event: track_and_trace_common::Event<AdditionalData> =
+                        event.parse()?;
 
-                    if let contract::Event::<AdditionalData>::ItemStatusChanged(
+                    if let track_and_trace_common::Event::<AdditionalData>::ItemStatusChanged(
                         item_status_change_event,
                     ) = parsed_event
                     {
@@ -150,7 +150,7 @@ impl indexer::ProcessEvent for StoreEvents {
                             single_contract_update_info.0.transaction_hash,
                             event_index
                         );
-                    } else if let contract::Event::<AdditionalData>::ItemCreated(
+                    } else if let track_and_trace_common::Event::<AdditionalData>::ItemCreated(
                         item_created_event,
                     ) = parsed_event
                     {

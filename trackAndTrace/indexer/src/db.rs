@@ -14,7 +14,7 @@ use tokio_postgres::{
     types::{Json, ToSql},
     NoTls,
 };
-use track_and_trace::{Status, *};
+use track_and_trace_common::{AdditionalData, Status};
 
 /// Represents possible errors returned from [`Database`] or [`DatabasePool`]
 /// functions
