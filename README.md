@@ -34,9 +34,3 @@ The following examples are available.
 
 - [allowListManagerFaucet](./allowListManagerFaucet/) demonstrates a token allow list management system with EU nationality verification. Users prove their EU citizenship through Concordium ID, and upon successful verification, they are automatically added to a token's allow list and receive an airdrop. The example includes a React frontend, NestJS backend for blockchain operations, and the web3id-verifier-ts service which needs to run against devnet for credential proof verification.
 
-## Setup
-
-Some projects use submodules, to initialize or update those, run:
-```shell
-git submodule update --init --recursive
-```

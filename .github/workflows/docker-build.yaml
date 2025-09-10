@@ -1,18 +1,17 @@
-name: Build Docker Containers
+name: "Docker: build images"
 
 on:
   push:
     branches: main
 
   pull_request:
-    branches: main
     paths:
       - 'compliant-reward-distribution/**'
       - 'euroe-demo/**'
       - 'signMessage/**'
       - 'simpleAgeVerification/**'
       - 'gallery/**' 
-      - 'deps/concordium-rust-sdk'
+      - 'Cargo.toml'
       - 'sponsoredTransactions/**'
       - 'sponsoredTransactionsAuction/**'
       - 'trackAndTrace/**'
@@ -29,7 +28,6 @@ env:
 jobs:
   changes:
     name: detect what files changed
-    if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     # Map the output from the steps below to output for the job as a whole
     outputs:
@@ -48,17 +46,17 @@ jobs:
               - 'euroe-demo/**'
             gallery:
               - 'gallery/**'
-              - 'deps/concordium-rust-sdk'
+              - 'Cargo.toml'
             simpleAgeVerification:
               - 'simpleAgeVerification/**'
             signMessage:
               - 'signMessage/**'
             sponsoredTransactions:
               - 'sponsoredTransactions/**'
-              - 'deps/concordium-rust-sdk'
+              - 'Cargo.toml'
             sponsoredTransactionsAuction:
               - 'sponsoredTransactionsAuction/**'
-              - 'deps'
+              - 'Cargo.toml'
 
       - name: Check for backend file changes for Docker Compose builds
         # Tag 3.0.2, referencing by commit SHA as a security best practice.
@@ -67,16 +65,17 @@ jobs:
         with:
           filters: |
             trackAndTrace:
-              - 'trackAndTrace/**'
+              - 'trackAndTrace/**' 
+              - 'Cargo.toml'
             compliant-reward-distribution:
               - 'compliant-reward-distribution/**'
+              - 'Cargo.toml'            
 
   docker-build:
     name: Building Docker Containers
     # Require the job which generates list of changed files.
     needs: changes
-    # Don't run on draft pull requests.
-    if: ${{ !github.event.pull_request.draft && needs.changes.outputs.docker-changes != '[]' && needs.changes.outputs.docker-changes != '' }}
+    if: ${{ needs.changes.outputs.docker-changes != '[]' && needs.changes.outputs.docker-changes != '' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -117,8 +116,7 @@ jobs:
     name: Building dapps which use Docker Compose
     # Require the job which generates list of changed files.
     needs: changes
-    # Don't run on draft pull requests, or if there are no changes to dapps built with compose:
-    if: ${{ !github.event.pull_request.draft && needs.changes.outputs.compose-changes != '[]' && needs.changes.outputs.compose-changes != '' }}
+    if: ${{ needs.changes.outputs.compose-changes != '[]' && needs.changes.outputs.compose-changes != '' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
