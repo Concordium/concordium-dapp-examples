@@ -1,3 +1,6 @@
+[workspace]
+resolver = "2"
+
 [package]
 name = "track-and-trace"
 version = "0.1.0"

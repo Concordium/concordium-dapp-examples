@@ -55,7 +55,10 @@ use concordium_cis2::{
 use concordium_std::*;
 // Re-export type.
 pub use concordium_std::MetadataUrl;
-use track_and_trace_common::{AdditionalData, Event, GrantRoleEvent, ItemCreatedEvent, ItemID, ItemStatusChangedEvent, NonceEvent, RevokeRoleEvent, Roles, Status, TransitionEdges};
+use track_and_trace_common::{
+    AdditionalData, Event, GrantRoleEvent, ItemCreatedEvent, ItemID, ItemStatusChangedEvent,
+    NonceEvent, RevokeRoleEvent, Roles, Status, TransitionEdges,
+};
 
 /// The standard identifier for the CIS-6 standard.
 pub const CIS6_STANDARD_IDENTIFIER: StandardIdentifier<'static> =
@@ -69,9 +72,6 @@ const SUPPORTS_STANDARDS: [StandardIdentifier<'static>; 2] =
 const SUPPORTS_PERMIT_ENTRYPOINTS: [EntrypointName; 1] =
     [EntrypointName::new_unchecked("changeItemStatus")];
 
-
-
-
 /// A struct containing a set of roles granted to an address.
 #[derive(Serial, DeserialWithState, Deletable)]
 #[concordium(state_parameter = "S")]
@@ -79,10 +79,6 @@ struct AddressRoleState<S> {
     /// Set of roles.
     roles: StateSet<Roles, S>,
 }
-
-
-
-
 
 /// The state of the smart contract.
 /// This state can be viewed by querying the node with the command
@@ -152,7 +148,6 @@ pub enum CustomContractError {
     /// Update of state machine was unsuccessful.
     Unsuccessful, // -16
 }
-
 
 /// Mapping account signature error to CustomContractError
 impl From<CheckAccountSignatureError> for CustomContractError {
@@ -315,7 +310,6 @@ impl<S: HasStateApi> State<S> {
     }
 }
 
-
 /// Init function that creates a new contract.
 #[init(
     contract = "track_and_trace",
@@ -459,8 +453,6 @@ fn create_item(
 
     Ok(())
 }
-
-
 
 /// Receive function to update the item's
 /// status based on the rules of the state machine.
