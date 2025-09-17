@@ -45,16 +45,7 @@ Frontend (React)          Backend (NestJS)              Concordium Blockchain
 - Governance wallet export with PLT minting permissions
 
 ### 1. Verifier Service Setup
-```bash
-cd services/web3id-verifier-ts
-yarn install
-
-# Start the verifier service connected to devnet
-yarn start --endpoint https://[devnet-address]:[devnet-port]
-```
-
-# Service runs on :8080
-Note: The verifier service connects to the Concordium devnet via an https endpoint. This service is required for zero-knowledge proof verification.
+The verifier service connects to the Concordium devnet via an https endpoint. This service is required for zero-knowledge proof verification. With the last update the service used is hosted by concordium on testnet at "https://web3id-verifier.testnet.concordium.com".
 
 ### 2. Backend Setup
 ```bash

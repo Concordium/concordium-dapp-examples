@@ -1,14 +1,4 @@
 services:
-  web3id-verifier:
-    build: 
-      context: ./services/web3id-verifier-ts
-    ports:
-      - "8080:8080"
-    environment:
-      - CONCORDIUM_NODE_ENDPOINT=${CONCORDIUM_NODE_ENDPOINT}
-    networks:
-      - allowlist-network
-
   backend:
     build: 
       context: ./backend
