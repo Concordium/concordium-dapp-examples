@@ -75,8 +75,6 @@ jobs:
           - compliant-reward-distribution/frontend
           - nft-minting
           - piggybank
-          - two-steps-transfer
-          - add-example-Web3Id
 
     steps:
       - name: Checkout
