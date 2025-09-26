@@ -124,7 +124,7 @@ impl indexer::ProcessEvent for StoreEvents {
                         block_info.block_height,
                     );
                 }
-                Upward::Unknown(_) => return Err(anyhow::anyhow!("The type `AccountCreation` is unkown to this SDK. This can happen if the SDK is not fully compatible with the Concordium node. You might want to update the SDK to a newer version.")),
+                Upward::Unknown(_) => return Err(anyhow::anyhow!("The type `BlockItemSummaryDetails` is unkown to this SDK. This can happen if the SDK is not fully compatible with the Concordium node. You might want to update the SDK to a newer version.")),
                 _ => continue,
             }
         }
