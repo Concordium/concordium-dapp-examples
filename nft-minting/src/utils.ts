@@ -1,6 +1,3 @@
-/* eslint-disable no-alert */
-/* eslint-disable no-console */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createContext } from 'react';
 import { detectConcordiumProvider } from '@concordium/browser-wallet-api-helpers';
 import {
@@ -20,7 +17,6 @@ import {
     toBuffer,
     EntrypointName,
     serializeUpdateContractParameters,
-    InvokeContractFailedResult,
     RejectedReceive,
 } from '@concordium/web-sdk';
 import { EPSILON_ENERGY, RAW_SCHEMA } from './constant';
@@ -66,7 +62,7 @@ export const mint = async (account: string, id: string, url: string, index: bigi
         ContractName.fromString('CIS2-NFT'),
         EntrypointName.fromString('mint'),
         parameter,
-        toBuffer(RAW_SCHEMA, 'base64')
+        toBuffer(RAW_SCHEMA, 'base64'),
     );
     const invokeResult = await new ConcordiumGRPCClient(provider.grpcTransport).invokeContract({
         contract: address,
@@ -76,13 +72,11 @@ export const mint = async (account: string, id: string, url: string, index: bigi
     });
 
     if (!invokeResult || invokeResult.tag === 'failure') {
-        const rejectReason = JSON.stringify(
-            ((invokeResult as InvokeContractFailedResult)?.reason as RejectedReceive)?.rejectReason
-        );
+        const rejectReason = JSON.stringify((invokeResult?.reason as RejectedReceive)?.rejectReason);
 
         throw new Error(
-            `RPC call 'invokeContract' on method '${receiveName}' of contract '${index}' failed.
-            ${rejectReason !== undefined ? `Reject reason: ${rejectReason}` : ''}`
+            `RPC call 'invokeContract' on method '${receiveName.toString()}' of contract '${index}' failed.
+            ${rejectReason !== undefined ? `Reject reason: ${rejectReason}` : ''}`,
         );
     }
 
@@ -97,7 +91,7 @@ export const mint = async (account: string, id: string, url: string, index: bigi
             maxContractExecutionEnergy,
         } as UpdateContractPayload,
         parameter,
-        RAW_SCHEMA
+        RAW_SCHEMA,
     );
 
     const grpc = new ConcordiumGRPCClient(provider.grpcTransport);
@@ -130,9 +124,9 @@ export const isOwner = async (account: string, index: bigint, subindex = 0n): Pr
 /**
  * Global application state.
  */
-export type State = {
+export interface State {
     isConnected: boolean;
     account: string | undefined;
-};
+}
 
 export const state = createContext<State>({ isConnected: false, account: undefined });

@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React, { useEffect, useState, useContext, useRef } from 'react';
 import { ConcordiumGRPCClient, ContractAddress, ReceiveName, ReturnValue, toBuffer } from '@concordium/web-sdk';
 import { detectConcordiumProvider } from '@concordium/browser-wallet-api-helpers';
@@ -42,7 +42,7 @@ export default function PiggyBank() {
     useEffect(() => {
         if (isConnected) {
             // Get piggy bank owner.
-            detectConcordiumProvider()
+            void detectConcordiumProvider()
                 .then((provider) => {
                     const grpc = new ConcordiumGRPCClient(provider.grpcTransport);
                     return grpc.getInstanceInfo(ContractAddress.create(CONTRACT_INDEX, CONTRACT_SUB_INDEX));
@@ -61,7 +61,7 @@ export default function PiggyBank() {
     // The internal state of the piggy bank, which is either intact or smashed.
     useEffect(() => {
         if (isConnected) {
-            updateState(setSmashed, setAmount);
+            void updateState(setSmashed, setAmount);
         }
     }, [isConnected]);
 
@@ -89,6 +89,7 @@ export default function PiggyBank() {
             )}
             <br />
             <label>
+                {''}
                 <div className="container">
                     <input className="input" type="number" placeholder="Deposit amount" ref={input} />
                     <button

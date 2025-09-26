@@ -1,5 +1,3 @@
-/* eslint-disable no-console */
-/* eslint-disable import/no-extraneous-dependencies */
 import esbuild, { BuildOptions } from 'esbuild';
 import { htmlPlugin } from '@craftamap/esbuild-plugin-html';
 import svgrPlugin from 'esbuild-plugin-svgr';
@@ -36,6 +34,7 @@ const config: BuildOptions = {
     ],
 };
 
+// eslint-disable-next-line @typescript-eslint/no-floating-promises
 (async () => {
     if (watch) {
         const ctx = await esbuild.context(config);

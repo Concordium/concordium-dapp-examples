@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
     <head>
         <title>Example Web3Id</title>
@@ -44,7 +44,7 @@
                                 .revealAttribute('degreeType')
                                 .revealAttribute('degreeName')
                                 .revealAttribute('graduationDate')
-                                .revealAttribute('test')
+                                .revealAttribute('test'),
                         )
                         .addForVerifiableCredentials([{ index: 6105n, subindex: 0n }], (b) =>
                             b
@@ -53,8 +53,8 @@
                                 .addRange(
                                     'graduationDate',
                                     new Date('1900-08-28T00:00:00.000Z'),
-                                    new Date('2030-08-28T00:00:00.000Z')
-                                )
+                                    new Date('2030-08-28T00:00:00.000Z'),
+                                ),
                         )
 
                         .getStatements();
@@ -69,7 +69,7 @@
                                 .revealAttribute('lastName')
                                 .revealAttribute('countryOfResidence')
                                 .addRange('dob', '19410101', '20050202')
-                                .addMembership('nationality', ['FR', 'ES', 'DK'])
+                                .addMembership('nationality', ['FR', 'ES', 'DK']),
                         )
                         .getStatements();
                     sendStatement(statement);
@@ -77,15 +77,15 @@
                 document.getElementById('web3ProofMixed').addEventListener('click', () => {
                     const statement = new concordiumSDK.Web3StatementBuilder()
                         .addForIdentityCredentials([0, 1, 2], (b) =>
-                            b.revealAttribute('firstName').addRange('dob', '08000101', '20000101')
+                            b.revealAttribute('firstName').addRange('dob', '08000101', '20000101'),
                         )
                         .addForVerifiableCredentials([{ index: 5463n, subindex: 0n }], (b) =>
                             b
                                 .revealAttribute('degreeType')
-                                .addMembership('degreeName', ['Bachelor of Science and Arts', 'Bachelor of Finance'])
+                                .addMembership('degreeName', ['Bachelor of Science and Arts', 'Bachelor of Finance']),
                         )
                         .addForVerifiableCredentials([{ index: 6105n, subindex: 0n }], (b) =>
-                            b.revealAttribute('graduationDate')
+                            b.revealAttribute('graduationDate'),
                         )
 
                         .getStatements();
@@ -146,7 +146,7 @@
                             const { credential } = await response.json();
                             const { proof, randomness } = credential;
                             return { proof, randomness };
-                        }
+                        },
                     );
                 });
                 document.getElementById('graduationDate').valueAsDate = new Date();

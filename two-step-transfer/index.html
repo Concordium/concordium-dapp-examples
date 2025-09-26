@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
     <head>
         <title>My cool dapp</title>
@@ -48,11 +48,11 @@
                         .sendTransaction(currentAccountAddress, concordiumSDK.AccountTransactionType.Transfer, {
                             amount: concordiumSDK.CcdAmount.fromMicroCcd(1n),
                             toAddress: concordiumSDK.AccountAddress.fromBase58(
-                                '3kBx2h5Y2veb4hZgAJWPrr8RyQESKm5TjzF3ti1QQ4VSYLwK1G'
+                                '3kBx2h5Y2veb4hZgAJWPrr8RyQESKm5TjzF3ti1QQ4VSYLwK1G',
                             ),
                         })
                         .then(alert)
-                        .catch(alert)
+                        .catch(alert),
                 );
                 document.getElementById('deployModule').addEventListener('click', () =>
                     provider
@@ -60,13 +60,13 @@
                             source: concordiumSDK.toBuffer(moduleSource.value, 'base64'),
                         })
                         .then(alert)
-                        .catch(alert)
+                        .catch(alert),
                 );
                 document.getElementById('signMessage').addEventListener('click', () =>
                     provider
                         .signMessage(currentAccountAddress, message.value)
                         .then((sig) => alert(JSON.stringify(sig)))
-                        .catch(alert)
+                        .catch(alert),
                 );
                 document.getElementById('signMessageBinary').addEventListener('click', () => {
                     const SERIALIZATION_HELPER_SCHEMA =
@@ -99,7 +99,7 @@
                     };
                     const serializedMessage = concordiumSDK.serializeTypeValue(
                         sponsoredMessage,
-                        concordiumSDK.toBuffer(SERIALIZATION_HELPER_SCHEMA, 'base64')
+                        concordiumSDK.toBuffer(SERIALIZATION_HELPER_SCHEMA, 'base64'),
                     );
                     provider
                         .signMessage(currentAccountAddress, {
@@ -121,7 +121,7 @@
                             maxContractExecutionEnergy: 30000n,
                         })
                         .then(alert)
-                        .catch(alert)
+                        .catch(alert),
                 );
                 document.getElementById('sendReceive').addEventListener('click', () =>
                     provider
@@ -142,11 +142,11 @@
                             },
                             getSchema(
                                 twoStepTransferSchema,
-                                'FQIAAAAPAAAAUmVxdWVzdFRyYW5zZmVyAQMAAAAFCgsPAAAAU3VwcG9ydFRyYW5zZmVyAQMAAAAFCgs='
-                            )
+                                'FQIAAAAPAAAAUmVxdWVzdFRyYW5zZmVyAQMAAAAFCgsPAAAAU3VwcG9ydFRyYW5zZmVyAQMAAAAFCgs=',
+                            ),
                         )
                         .then(alert)
-                        .catch(alert)
+                        .catch(alert),
                 );
                 document.getElementById('sendInit').addEventListener('click', () =>
                     provider
@@ -156,7 +156,7 @@
                             {
                                 amount: concordiumSDK.CcdAmount.fromMicroCcd(1n),
                                 moduleRef: concordiumSDK.ModuleReference.fromHexString(
-                                    '6eab4584bd60b1d82fba3abe16082cde3dbee4c08c9f60b6dc523688bdc421b9'
+                                    '6eab4584bd60b1d82fba3abe16082cde3dbee4c08c9f60b6dc523688bdc421b9',
                                 ),
                                 contractName: 'two-step-transfer',
                                 maxContractExecutionEnergy: 30000n,
@@ -171,11 +171,11 @@
                             },
                             getSchema(
                                 twoStepTransferSchema,
-                                'FAADAAAADwAAAGFjY291bnRfaG9sZGVycxEACxwAAAB0cmFuc2Zlcl9hZ3JlZW1lbnRfdGhyZXNob2xkAhQAAAB0cmFuc2Zlcl9yZXF1ZXN0X3R0bA4='
-                            )
+                                'FAADAAAADwAAAGFjY291bnRfaG9sZGVycxEACxwAAAB0cmFuc2Zlcl9hZ3JlZW1lbnRfdGhyZXNob2xkAhQAAAB0cmFuc2Zlcl9yZXF1ZXN0X3R0bA4=',
+                            ),
                         )
                         .then(alert)
-                        .catch(alert)
+                        .catch(alert),
                 );
                 document.getElementById('registerData').addEventListener('click', () =>
                     provider
@@ -183,7 +183,7 @@
                             data: new concordiumSDK.DataBlob(concordiumSDK.toBuffer(message.value, 'hex')),
                         })
                         .then(alert)
-                        .catch(alert)
+                        .catch(alert),
                 );
                 document.getElementById('registerDataCBOR').addEventListener('click', () =>
                     provider
@@ -191,7 +191,7 @@
                             data: new concordiumSDK.DataBlob(cbor.encode(message.value)),
                         })
                         .then(alert)
-                        .catch(alert)
+                        .catch(alert),
                 );
 
                 provider.on('accountDisconnected', (accountAddress) => (currentAccountAddress = undefined));
@@ -201,7 +201,7 @@
                     // TODO Replace add range with addMinimumAge(18) when SDK is fixed.
                     const statement = new concordiumSDK.Web3StatementBuilder()
                         .addForIdentityCredentials([0, 1, 2, 3, 4, 5], (b) =>
-                            b.addRange('dob', concordiumSDK.MIN_DATE, concordiumSDK.getPastDate(18, 1))
+                            b.addRange('dob', concordiumSDK.MIN_DATE, concordiumSDK.getPastDate(18, 1)),
                         )
                         .getStatements();
                     const challenge = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
@@ -233,10 +233,10 @@
                 document.getElementById('web3Proof').addEventListener('click', () => {
                     const statement = new concordiumSDK.Web3StatementBuilder()
                         .addForIdentityCredentials([0, 1, 2], (b) =>
-                            b.revealAttribute('firstName').addRange('dob', '08000101', '20000101')
+                            b.revealAttribute('firstName').addRange('dob', '08000101', '20000101'),
                         )
                         .addForVerifiableCredentials([{ index: 5463, subindex: 0 }], (b) =>
-                            b.revealAttribute('degreeName').addMembership('graduationDate', ['2010-06-01T00:00:00Z'])
+                            b.revealAttribute('degreeName').addMembership('graduationDate', ['2010-06-01T00:00:00Z']),
                         )
                         .getStatements();
                     const challenge = '94d3e85bbc8ff0091e562ad8ef6c30d57f29b19f17c98ce155df2a30100dAAAA';

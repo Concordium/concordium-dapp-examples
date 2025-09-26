@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { createContext } from 'react';
 import { detectConcordiumProvider } from '@concordium/browser-wallet-api-helpers';
 import {
@@ -34,7 +33,7 @@ export const deposit = (account: string, index: bigint, subindex = 0n, amount = 
                     maxContractExecutionEnergy: Energy.create(30000),
                 } as UpdateContractPayload)
                 .then((txHash) =>
-                    console.log(`https://testnet.ccdscan.io/?dcount=1&dentity=transaction&dhash=${txHash}`)
+                    console.log(`https://testnet.ccdscan.io/?dcount=1&dentity=transaction&dhash=${txHash}`),
                 )
                 .catch(alert);
         })
@@ -58,7 +57,7 @@ export const smash = (account: string, index: bigint, subindex = 0n) => {
                     maxContractExecutionEnergy: Energy.create(30000),
                 })
                 .then((txHash) =>
-                    console.log(`https://testnet.ccdscan.io/?dcount=1&dentity=transaction&dhash=${txHash}`)
+                    console.log(`https://testnet.ccdscan.io/?dcount=1&dentity=transaction&dhash=${txHash}`),
                 )
                 .catch(alert);
         })
@@ -70,9 +69,9 @@ export const smash = (account: string, index: bigint, subindex = 0n) => {
 /**
  * Global application state.
  */
-export type State = {
+export interface State {
     isConnected: boolean;
     account: string | undefined;
-};
+}
 
 export const state = createContext<State>({ isConnected: false, account: undefined });

@@ -1,5 +1,4 @@
-/* eslint-disable no-console */
-/* eslint-disable @typescript-eslint/no-explicit-any */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React, { useEffect, useState, useContext } from 'react';
 import { detectConcordiumProvider } from '@concordium/browser-wallet-api-helpers';
 import {
@@ -17,17 +16,18 @@ import { RAW_SCHEMA } from './constant';
 
 const MINT_HOST = 'http://localhost:8899';
 
-type NFTPRops = {
+interface NFTPRops {
     index: bigint;
     id: string;
-};
+}
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const getTokenUrl = async (id: string, index: bigint, subindex = 0n): Promise<string | undefined> => {
     const param = serializeUpdateContractParameters(
         ContractName.fromString('CIS2-NFT'),
         EntrypointName.fromString('tokenMetadata'),
         [id],
-        toBuffer(RAW_SCHEMA, 'base64')
+        toBuffer(RAW_SCHEMA, 'base64'),
     );
     const provider = await detectConcordiumProvider();
     const grpc = new ConcordiumGRPCClient(provider.grpcTransport);
@@ -48,19 +48,28 @@ export const getTokenUrl = async (id: string, index: bigint, subindex = 0n): Pro
     return undefined;
 };
 
+interface Metadata {
+    description: string;
+    name: string;
+    display: {
+        url: string;
+    };
+}
+
 function NFT({ index, id }: NFTPRops) {
-    const [metadata, setMetadata] = useState<any>();
+    const [metadata, setMetadata] = useState<Metadata>();
 
     useEffect(() => {
-        getTokenUrl(id, index).then((tokenUrl) => {
+        void getTokenUrl(id, index).then((tokenUrl) => {
             if (tokenUrl !== undefined) {
-                fetch(tokenUrl, { headers: new Headers({ 'Access-Control-Allow-Origin': '*' }), mode: 'cors' }).then(
-                    (resp) => {
-                        if (resp.ok) {
-                            resp.json().then(setMetadata);
-                        }
+                void fetch(tokenUrl, {
+                    headers: new Headers({ 'Access-Control-Allow-Origin': '*' }),
+                    mode: 'cors',
+                }).then((resp) => {
+                    if (resp.ok) {
+                        void resp.json().then(setMetadata);
                     }
-                );
+                });
             }
         });
     }, [index, id]);
@@ -77,18 +86,18 @@ function NFT({ index, id }: NFTPRops) {
     );
 }
 
-type CollectionProps = {
+interface CollectionProps {
     index: bigint;
     account: string;
     nfts: string[] | undefined;
     addNft: (nft: string) => void;
-};
+}
 
 function Collection({ index, account, nfts, addNft }: CollectionProps) {
     const [owning, setOwning] = useState(false);
 
     useEffect(() => {
-        isOwner(account, index).then((r) => setOwning(r));
+        void isOwner(account, index).then((r) => setOwning(r));
     }, [account, index]);
 
     return (
@@ -97,22 +106,22 @@ function Collection({ index, account, nfts, addNft }: CollectionProps) {
             {owning ? (
                 <form
                     className="form"
-                    onSubmit={async (event: any) => {
+                    onSubmit={async (event) => {
                         event.preventDefault();
                         const id = Math.round(Math.random() * 100000)
                             .toString()
                             .padEnd(8, '0');
                         const response = await fetch(`${MINT_HOST}/metadata/${id}`, {
                             method: 'POST',
-                            body: new FormData(event.target),
+                            body: new FormData(event.target as HTMLFormElement),
                             headers: new Headers({ 'Access-Control-Allow-Origin': '*' }),
                             mode: 'cors',
                         });
                         console.log(response);
-                        const { url } = await response.json();
+                        const { url } = (await response.json()) as { url: string };
                         // Get values from form + send to backend.
                         if (url) {
-                            mint(account, id, url, index).then(() => {
+                            void mint(account, id, url, index).then(() => {
                                 console.log(id);
                                 addNft(id);
                             });
@@ -127,10 +136,10 @@ function Collection({ index, account, nfts, addNft }: CollectionProps) {
                     <input name="description" type="string" />
                     <button type="submit">mint</button>
                 </form>
-            ) : null}{' '}
+            ) : null}
             <div className="collection-nfts">
-                {(nfts || []).map((nft) => (
-                    <NFT id={nft} index={index} />
+                {(nfts ?? []).map((nft, idx) => (
+                    <NFT id={nft} index={index} key={idx} />
                 ))}
             </div>
         </div>
@@ -142,6 +151,7 @@ async function fetchCollections() {
         headers: new Headers({ 'Access-Control-Allow-Origin': '*' }),
         mode: 'cors',
     });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return response.json();
 }
 
@@ -151,7 +161,7 @@ export default function Minting() {
     const [nfts, setNFTS] = useState<Record<string, string[]>>({});
 
     useEffect(() => {
-        fetchCollections().then((r) => {
+        void fetchCollections().then((r: Record<string, string[]>) => {
             setNFTS(r);
             setCollections(Object.keys(r).map((x) => BigInt(x)));
         });
@@ -175,6 +185,7 @@ export default function Minting() {
             </button>
             {collections.map((index) => (
                 <Collection
+                    key={index.toString()}
                     index={index}
                     account={account}
                     nfts={nfts[index.toString()]}

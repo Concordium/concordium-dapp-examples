@@ -1,4 +1,5 @@
-/* eslint-disable no-console */
+/* eslint-disable react-hooks/exhaustive-deps */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 
 import { detectConcordiumProvider } from '@concordium/browser-wallet-api-helpers';
@@ -24,7 +25,7 @@ export default function Root() {
             detectConcordiumProvider()
                 .then((provider) => provider.connect())
                 .then(handleGetAccount),
-        []
+        [],
     );
 
     useEffect(() => {
@@ -32,12 +33,13 @@ export default function Root() {
             .then((provider) => {
                 // Listen for relevant events from the wallet.
                 provider.on('accountChanged', setAccount);
+                // eslint-disable-next-line @typescript-eslint/no-misused-promises
                 provider.on('accountDisconnected', () =>
-                    provider.getMostRecentlySelectedAccount().then(handleGetAccount)
+                    provider.getMostRecentlySelectedAccount().then(handleGetAccount),
                 );
                 provider.on('chainChanged', (chain) => console.log(chain));
                 // Check if you are already connected
-                provider.getMostRecentlySelectedAccount().then(handleGetAccount);
+                void provider.getMostRecentlySelectedAccount().then(handleGetAccount);
             })
             .catch(() => setIsConnected(false));
     }, []);

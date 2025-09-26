@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React, { useEffect, useState, useMemo, useContext, useRef } from 'react';
 import {
     ConcordiumGRPCClient,
@@ -17,11 +17,17 @@ import HammerIcon from './assets/hammer-solid.svg?react';
 
 const CONTRACT_INDEX = 6n; // V0 instance
 const CONTRACT_SUB_INDEX = 0n;
-const CONTRACT_SCHEMA = new Uint8Array(toBuffer('AQAAAAkAAABQaWdneUJhbmsBFQIAAAAGAAAASW50YWN0AgcAAABTbWFzaGVkAgAAAAAA', 'base64')).buffer;
+const CONTRACT_SCHEMA = new Uint8Array(
+    toBuffer('AQAAAAkAAABQaWdneUJhbmsBFQIAAAAGAAAASW50YWN0AgcAAABTbWFzaGVkAgAAAAAA', 'base64'),
+).buffer;
 
 // Rust enums translated to JSON.
-type PiggyBankStateIntact = { Intact: [] };
-type PiggyBankStateSmashed = { Smashed: [] };
+interface PiggyBankStateIntact {
+    Intact: [];
+}
+interface PiggyBankStateSmashed {
+    Smashed: [];
+}
 
 type PiggyBankState = PiggyBankStateIntact | PiggyBankStateSmashed;
 
@@ -35,7 +41,7 @@ export default function PiggyBankV0() {
 
     useEffect(() => {
         // Get piggy bank data.
-        detectConcordiumProvider()
+        void detectConcordiumProvider()
             .then((provider) => {
                 const grpc = new ConcordiumGRPCClient(provider.grpcTransport);
                 return grpc.getInstanceInfo(ContractAddress.create(CONTRACT_INDEX, CONTRACT_SUB_INDEX));
@@ -55,12 +61,14 @@ export default function PiggyBankV0() {
     }, []);
 
     // The internal state of the piggy bank, which is either intact or smashed.
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const piggyBankState: PiggyBankState | undefined = useMemo(
         () =>
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-return
             piggybank?.model !== undefined
                 ? deserializeContractState(ContractName.fromString(CONTRACT_NAME), CONTRACT_SCHEMA, piggybank.model)
                 : undefined,
-        [piggybank?.model]
+        [piggybank?.model],
     );
 
     // Disable use if we're not connected or if piggy bank has already been smashed.
@@ -79,11 +87,12 @@ export default function PiggyBankV0() {
                         {piggybank?.owner.address}
                     </div>
                     <br />
-                    <div>State: {isPiggybankSmashed(piggyBankState as PiggyBankState) ? 'Smashed' : 'Intact'}</div>
+                    <div>State: {isPiggybankSmashed(piggyBankState!) ? 'Smashed' : 'Intact'}</div>
                 </>
             )}
             <br />
             <label>
+                {''}
                 <div className="container">
                     <input className="input" type="number" placeholder="Deposit amount" ref={input} />
                     <button

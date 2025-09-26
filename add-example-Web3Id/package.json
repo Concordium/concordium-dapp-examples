@@ -2,10 +2,12 @@
     "name": "add-example-web3-id",
     "packageManager": "yarn@3.2.0",
     "devDependencies": {
-        "live-server": "^1.2.2"
+        "live-server": "^1.2.2",
+        "prettier": "^3.2.5"
     },
     "scripts": {
-        "start": "live-server ./index.html --mount=/sdk.js:./node_modules/@concordium/web-sdk/lib/min/concordium.web.min.js --mount=/helpers.js:./node_modules/@concordium/browser-wallet-api-helpers/lib/concordiumHelpers.min.js"
+        "start": "live-server ./index.html --mount=/sdk.js:./node_modules/@concordium/web-sdk/lib/min/concordium.web.min.js --mount=/helpers.js:./node_modules/@concordium/browser-wallet-api-helpers/lib/concordiumHelpers.min.js",
+        "fmt": "prettier -w ."
     },
     "dependencies": {
         "@concordium/browser-wallet-api-helpers": "3.0.1",

@@ -40,6 +40,9 @@
         "build": "tsx ./esbuild.config.ts",
         "watch": "cross-env WATCH=1 yarn build",
         "start": "live-server --cors ./dist",
-        "start-file-server": "node ./file-server/server.js"
+        "start-file-server": "node ./file-server/server.js",
+        "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+        "lint-fix": "yarn lint --fix",
+        "fmt": "prettier -w ."
     }
 }
