@@ -1286,6 +1286,7 @@ dependencies = [
  "chrono",
  "clap",
  "concordium-rust-sdk",
+ "concordium_base",
  "env_logger",
  "log",
  "rand",

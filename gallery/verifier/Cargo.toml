@@ -21,3 +21,4 @@ thiserror = "1"
 rand = "0.8"
 uuid = { version = "1.2.2", features = ["v4", "serde"] }
 concordium-rust-sdk = { path = "../../deps/concordium-rust-sdk" }
+concordium_base = { path = "../../deps/concordium-rust-sdk/concordium-base/rust-src/concordium_base" }
