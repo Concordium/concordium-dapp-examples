@@ -1,5 +1,7 @@
 ## Unreleased changes
 
+- Update `rust-sdk` dependency so that project is forward compatible.
+
 ## 0.2.1
 
 - Update rust-sdk submodule link.

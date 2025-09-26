@@ -1,5 +1,6 @@
 ## Unreleased changes
 
+- Update `rust-sdk` dependency and adjust project to be forward-compatible.
 - Change to use the `contract-client` from the Rust SDK.
 - Add reject reason decoding of reverted transactions during the dry-run.
 - Update submodule link.

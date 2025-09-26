@@ -23,6 +23,7 @@ http = "0.2"
 tonic = { version = "0.10", features = ["tls-roots", "tls"] }
 thiserror = "1.0"
 chrono = "0.4"
+# TODO: have to update once new rust-version is released
 concordium-rust-sdk = { version = "6.0"}
 # It is essential that the bump_alloc feature is **not** enabled since it will
 # globally set an inefficient allocator.

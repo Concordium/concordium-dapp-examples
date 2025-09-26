@@ -16,7 +16,7 @@ use concordium_rust_sdk::{
     },
     signatures::verify_single_account_signature,
     smart_contracts::common::to_bytes,
-    v2::{AccountIdentifier, BlockIdentifier, Client},
+    v2::{AccountIdentifier, BlockIdentifier, Client, Upward},
     web3id::{
         did::Network,
         get_public_data, Challenge, CredentialProof,
@@ -526,7 +526,7 @@ async fn check_zk_proof(
         .ok_or(ServerError::OnlyRegularAccounts)?;
     // `Initial` accounts were created by identity providers in the past
     // without a Pedersen commitment deployed on chain. As such we should not verify proofs on them.
-    if let AccountCredentialWithoutProofs::Initial { .. } = &credential.value {
+    if let Upward::Known(AccountCredentialWithoutProofs::Initial { .. }) = &credential.value {
         return Err(ServerError::NoCredentialCommitment);
     };
 
