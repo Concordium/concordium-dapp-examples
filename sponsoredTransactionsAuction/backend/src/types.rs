@@ -36,6 +36,8 @@ pub enum ServerError {
     SubmitSponsoredTransactionError(#[from] RPCError),
     #[error("Unable to derive alias account of signer.")]
     NoAliasAccount,
+    #[error("The type `${0}` is unkown to this SDK. This can happen if the SDK is not fully compatible with the Concordium node. You might want to update the SDK to a newer version.")]
+    Unknown(String),
 }
 
 impl axum::response::IntoResponse for ServerError {

@@ -49,6 +49,8 @@ pub enum LogError {
     ReceiveNameError(#[from] NewReceiveNameError),
     #[error("The input parameter exceeds the length limit: {0}")]
     ParameterSizeError(#[from] ExceedsParameterSize),
+    #[error("The type `${0}` is unkown to this SDK. This can happen if the SDK is not fully compatible with the Concordium node. You might want to update the SDK to a newer version.")]
+    Unknown(String),
 }
 
 impl warp::reject::Reject for LogError {}

@@ -2,6 +2,6 @@
 
 - Update `rust-sdk` dependency and adjust project to be forward-compatible.
 
-## 1.0.0
+## 0.1.1
 
-- Initial auction sponsored transaction back end.
+- Initial verifier back end.

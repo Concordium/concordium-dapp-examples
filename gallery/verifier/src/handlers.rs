@@ -2,7 +2,7 @@ use crate::crypto_common::base16_encode_string;
 use crate::types::*;
 use concordium_rust_sdk::{
     id::types::{AccountAddress, AccountCredentialWithoutProofs},
-    v2::{AccountIdentifier, BlockIdentifier},
+    v2::{AccountIdentifier, BlockIdentifier, Upward},
     web3id::{
         get_public_data, CredentialProof,
         CredentialStatement::{Account, Web3Id},
@@ -292,7 +292,8 @@ async fn check_proof_worker(
 
             // `Initial` accounts were created by identity providers in the past
             // without a Pedersen commitment deployed on chain. As such we cannot verify proofs on them.
-            if let AccountCredentialWithoutProofs::Initial { .. } = &credential.value {
+            if let Upward::Known(AccountCredentialWithoutProofs::Initial { .. }) = &credential.value
+            {
                 return Err(InjectStatementError::NoCredentialCommitment);
             }
 

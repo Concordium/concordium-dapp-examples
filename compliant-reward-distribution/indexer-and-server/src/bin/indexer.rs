@@ -6,12 +6,12 @@ use ::indexer::db::DatabasePool;
 use anyhow::Context;
 use clap::Parser;
 use concordium_rust_sdk::{
-    indexer::{self, ProcessorConfig, TransactionIndexer},
+    indexer::{self, OnFinalizationError, ProcessorConfig, TransactionIndexer},
     types::{
         queries::BlockInfo, AbsoluteBlockHeight, BlockItemSummary,
         BlockItemSummaryDetails::AccountCreation,
     },
-    v2::{self as sdk, Client, QueryError},
+    v2::{self as sdk, Client, Upward},
 };
 use tokio_postgres::types::ToSql;
 
@@ -94,7 +94,7 @@ impl indexer::ProcessEvent for StoreEvents {
 
         for tx in block_items {
             match &tx.details {
-                AccountCreation(account_creation_details) => {
+                Upward::Known(AccountCreation(account_creation_details)) => {
                     let params: [&(dyn ToSql + Sync); 5] = [
                         &account_creation_details.address.0.as_ref(),
                         &block_info.block_slot_time,
@@ -124,6 +124,7 @@ impl indexer::ProcessEvent for StoreEvents {
                         block_info.block_height,
                     );
                 }
+                Upward::Unknown(_) => return Err(anyhow::anyhow!("The type `AccountCreation` is unkown to this SDK. This can happen if the SDK is not fully compatible with the Concordium node. You might want to update the SDK to a newer version.")),
                 _ => continue,
             }
         }
@@ -246,7 +247,7 @@ async fn handle_indexing(
     endpoint: sdk::Endpoint,
     start_block: AbsoluteBlockHeight,
     db_pool: DatabasePool,
-) -> Result<(), QueryError> {
+) -> Result<(), OnFinalizationError> {
     tracing::info!("Indexing from block height {}.", start_block);
 
     let traverse_config = indexer::TraverseConfig::new_single(endpoint, start_block);

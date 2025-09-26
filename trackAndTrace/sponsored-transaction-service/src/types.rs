@@ -77,6 +77,8 @@ pub enum ServerError {
     /// The contract is not allowed to be used by the service.
     #[error("Contract address is not allowed to be used by the service: {contract}.")]
     ContractNotAllowed { contract: ContractAddress },
+    #[error("The type `${0}` is unkown to this SDK. This can happen if the SDK is not fully compatible with the Concordium node. You might want to update the SDK to a newer version.")]
+    Unknown(String),
 }
 
 impl axum::response::IntoResponse for ServerError {

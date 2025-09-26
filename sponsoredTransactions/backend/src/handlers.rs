@@ -147,14 +147,16 @@ pub async fn submit_transaction(
     let dry_run = match dry_run_result {
         InvokeContractOutcome::Success(dry_run) => Ok(dry_run),
         InvokeContractOutcome::Failure(rejected_transaction) => {
+            let reason = rejected_transaction
+                .reason
+                .known_or_else(|| LogError::Unknown("RejectReason".to_string()))?;
+
             match rejected_transaction.decoded_reason {
                 Some(decoded_reason) => Err(LogError::TransactionSimulationDecodedError(
                     decoded_reason,
-                    rejected_transaction.reason,
+                    reason,
                 )),
-                None => Err(LogError::TransactionSimulationError(
-                    rejected_transaction.reason,
-                )),
+                None => Err(LogError::TransactionSimulationError(reason)),
             }
         }
     }?;
