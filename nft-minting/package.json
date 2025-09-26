@@ -1,0 +1,45 @@
+{
+    "name": "nft-minting",
+    "packageManager": "yarn@3.2.0",
+    "dependencies": {
+        "@concordium/browser-wallet-api-helpers": "3.0.1",
+        "@concordium/web-sdk": "10.0.2",
+        "cors": "^2.8.5",
+        "express": "^4.18.1",
+        "express-fileupload": "^1.4.0",
+        "react": "^18.1.0",
+        "react-dom": "^18.1.0"
+    },
+    "devDependencies": {
+        "@craftamap/esbuild-plugin-html": "^0.4.0",
+        "@types/react": "^18.0.9",
+        "@types/react-dom": "^18.0.5",
+        "@typescript-eslint/eslint-plugin": "^8.44.1",
+        "@typescript-eslint/parser": "^8.44.1",
+        "cross-env": "^7.0.3",
+        "esbuild": "^0.19.5",
+        "esbuild-plugin-svgr": "^1.0.1",
+        "eslint": "^8.57.0",
+        "eslint-config-prettier": "^9.1.0",
+        "eslint-plugin-jsx-a11y": "^6.8.0",
+        "eslint-plugin-react": "^7.34.0",
+        "eslint-plugin-react-hooks": "^4.6.0",
+        "eslint-plugin-react-refresh": "^0.4.5",
+        "live-server": "^1.2.2",
+        "prettier": "^3.2.5",
+        "stylelint": "^14.7.1",
+        "stylelint-config-prettier": "^9.0.3",
+        "stylelint-config-standard-scss": "^3.0.0",
+        "stylelint-prettier": "^2.0.0",
+        "stylelint-scss": "^4.2.0",
+        "ts-node": "^10.8.0",
+        "tsx": "^4.7.0",
+        "typescript": "^4.7.2"
+    },
+    "scripts": {
+        "build": "tsx ./esbuild.config.ts",
+        "watch": "cross-env WATCH=1 yarn build",
+        "start": "live-server --cors ./dist",
+        "start-file-server": "node ./file-server/server.js"
+    }
+}

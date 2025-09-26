@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Example Web3Id</title>
+        <script src="/sdk.js"></script>
+        <script src="/helpers.js"></script>
+        <script src="https://unpkg.com/cbor-web"></script>
+        <meta charset="utf-8" />
+        <script>
+            let currentAccountAddress = '';
+            async function setupPage() {
+                const provider = await concordiumHelpers.detectConcordiumProvider();
+                document.getElementById('requestAccounts').addEventListener('click', () => {
+                    provider.requestAccounts().then((accountAddresses) => {
+                        currentAccountAddress = accountAddresses[0];
+                        document.getElementById('accountAddress').innerHTML = currentAccountAddress;
+                    });
+                });
+
+                function sendStatement(statement) {
+                    // Should be not be hardcoded
+                    console.log(statement);
+                    const challenge = '94d3e85bbc8ff0091e562ad8ef6c30d57f29b19f17c98ce155df2a30100dAAAA';
+                    provider
+                        .requestVerifiablePresentation(challenge, statement)
+                        .then((proof) => {
+                            console.log(proof);
+                            alert('Proof received! (check the console)');
+                        })
+                        .catch((error) => {
+                            console.log(error);
+                            alert(error);
+                        });
+                }
+
+                provider.on('accountDisconnected', (accountAddress) => (currentAccountAddress = undefined));
+                provider.on('accountChanged', (accountAddress) => (currentAccountAddress = accountAddress));
+                provider.on('chainChanged', (chain) => alert(chain));
+                // Request proofs
+                document.getElementById('web3ProofWeb3IdOnly').addEventListener('click', () => {
+                    const statement = new concordiumSDK.Web3StatementBuilder()
+                        .addForVerifiableCredentials([{ index: 6105n, subindex: 0n }], (b) =>
+                            b
+                                .revealAttribute('degreeType')
+                                .revealAttribute('degreeName')
+                                .revealAttribute('graduationDate')
+                                .revealAttribute('test')
+                        )
+                        .addForVerifiableCredentials([{ index: 6105n, subindex: 0n }], (b) =>
+                            b
+                                .addNonMembership('degreeType', ['test', 'test2'])
+                                .addMembership('degreeName', ['Bachelor of Science and Arts', 'Bachelor of Finance'])
+                                .addRange(
+                                    'graduationDate',
+                                    new Date('1900-08-28T00:00:00.000Z'),
+                                    new Date('2030-08-28T00:00:00.000Z')
+                                )
+                        )
+
+                        .getStatements();
+                    sendStatement(statement);
+                });
+                document.getElementById('web3ProofIdOnly').addEventListener('click', () => {
+                    const statement = new concordiumSDK.Web3StatementBuilder()
+                        .addForIdentityCredentials([0, 1, 2], (b) =>
+                            b
+                                .revealAttribute('idDocType')
+                                .revealAttribute('firstName')
+                                .revealAttribute('lastName')
+                                .revealAttribute('countryOfResidence')
+                                .addRange('dob', '19410101', '20050202')
+                                .addMembership('nationality', ['FR', 'ES', 'DK'])
+                        )
+                        .getStatements();
+                    sendStatement(statement);
+                });
+                document.getElementById('web3ProofMixed').addEventListener('click', () => {
+                    const statement = new concordiumSDK.Web3StatementBuilder()
+                        .addForIdentityCredentials([0, 1, 2], (b) =>
+                            b.revealAttribute('firstName').addRange('dob', '08000101', '20000101')
+                        )
+                        .addForVerifiableCredentials([{ index: 5463n, subindex: 0n }], (b) =>
+                            b
+                                .revealAttribute('degreeType')
+                                .addMembership('degreeName', ['Bachelor of Science and Arts', 'Bachelor of Finance'])
+                        )
+                        .addForVerifiableCredentials([{ index: 6105n, subindex: 0n }], (b) =>
+                            b.revealAttribute('graduationDate')
+                        )
+
+                        .getStatements();
+                    sendStatement(statement);
+                });
+                // Add credential
+                document.getElementById('addWeb3Id').addEventListener('click', () => {
+                    const values = {
+                        degreeType: degreeType.value,
+                        degreeName: degreeName.value,
+                        graduationDate: { type: 'date-time', timestamp: graduationDate.valueAsDate.toISOString() },
+                    };
+                    const metadataUrl = {
+                        url: web3metadataUrl.value,
+                    };
+                    provider.addWeb3IdCredential(
+                        {
+                            $schema: './JsonSchema2023-education-certificate.json',
+                            type: [
+                                'VerifiableCredential',
+                                'ConcordiumVerifiableCredential',
+                                'UniversityDegreeCredential',
+                            ],
+                            issuer: 'did:ccd:testnet:sci:' + issuerIndex.value + ':0/issuer',
+                            credentialSubject: {
+                                attributes: values,
+                            },
+                            credentialSchema: {
+                                id: web3Schema.value,
+                                type: 'JsonSchema2023',
+                            },
+                        },
+                        metadataUrl,
+                        async (id) => {
+                            const body = {
+                                credentialSubject: {
+                                    attributes: {
+                                        degreeType: degreeType.value,
+                                        degreeName: degreeName.value,
+                                        graduationDate: {
+                                            timestamp: graduationDate.valueAsDate.toISOString(),
+                                            type: 'date-time',
+                                        },
+                                    },
+                                    id,
+                                },
+                                validFrom: new Date().toISOString(),
+                                holderRevocable: true,
+                                metadataUrl,
+                            };
+                            const response = await fetch(web3IssuerUrl.value, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify(body),
+                            });
+                            const { credential } = await response.json();
+                            const { proof, randomness } = credential;
+                            return { proof, randomness };
+                        }
+                    );
+                });
+                document.getElementById('graduationDate').valueAsDate = new Date();
+            }
+            setupPage();
+        </script>
+    </head>
+    <style>
+        input {
+            width: 80%;
+        }
+    </style>
+    <body>
+        <div>
+            <button id="requestAccounts">Request accounts</button>
+            <h3 id="accountAddress">Account address:</h3>
+        </div>
+        <br />
+        <a href="https://github.com/Concordium/concordium-web3id/tree/web3id-revision/services/web3id-issuer"
+            >Web3IdIssuer Endpoint:</a
+        ><input type="text" id="web3IssuerUrl" value="http://localhost:8082/v0/issue" />
+        <br />
+        Web3Id MetadataUrl:
+        <input
+            type="text"
+            id="web3metadataUrl"
+            value="https://raw.githubusercontent.com/Concordium/concordium-web3id/credential-metadata-example/examples/json-schemas/metadata/credential-metadata.json"
+        />
+        <br />
+        Web3Id Schema:
+        <input
+            type="text"
+            id="web3Schema"
+            value="https://gist.githubusercontent.com/shjortConcordium/a2dc69761d2007c308f6511abaa3eb70/raw/11ad6745dcfa57e7049b08be146858a928a7aa82/gistfile1.txt"
+        />
+        <br />
+        issuer Index: <input type="number" id="issuerIndex" value="6105" />
+        <br />
+        <h3>Attribute values:</h3>
+        degreeType: <input type="text" id="degreeType" value="BachelorDegree" />
+        <br />
+        degreeName: <input type="text" id="degreeName" value="Bachelor of Science and Arts" />
+        <br />
+        graduationDate: <input type="date" id="graduationDate" value="" />
+        <br />
+        <br />
+        <button id="addWeb3Id">Add web3IdCredential Example to wallet</button>
+        <br />
+        <h3>Request Proofs:</h3>
+        <button id="web3ProofWeb3IdOnly">Request a Proof using web3Id</button>
+        <br />
+        <button id="web3ProofIdOnly">Request a Proof using account credentials</button>
+        <br />
+        <button id="web3ProofMixed">Request a Proof using both web3Id and account credentials</button>
+    </body>
+</html>

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>My cool dapp</title>
+        <script src="/sdk.js"></script>
+        <script src="/helpers.js"></script>
+        <script src="https://unpkg.com/cbor-web"></script>
+        <meta charset="utf-8" />
+        <script>
+            let currentAccountAddress = '';
+            function getSchema(moduleSchema, parameterSchema) {
+                switch (schemaType.value) {
+                    case 'parameter':
+                        return {
+                            type: 'parameter',
+                            value: parameterSchema,
+                        };
+                    case 'module':
+                        return {
+                            type: 'module',
+                            value: moduleSchema,
+                        };
+                    default:
+                        return moduleSchema;
+                }
+            }
+
+            async function setupPage() {
+                const twoStepTransferSchema =
+                    'AQAAABEAAAB0d28tc3RlcC10cmFuc2ZlcgEUAAIAAAALAAAAaW5pdF9wYXJhbXMUAAMAAAAPAAAAYWNjb3VudF9ob2xkZXJzEQALHAAAAHRyYW5zZmVyX2FncmVlbWVudF90aHJlc2hvbGQCFAAAAHRyYW5zZmVyX3JlcXVlc3RfdHRsDggAAAByZXF1ZXN0cxIBBRQABAAAAA8AAAB0cmFuc2Zlcl9hbW91bnQKDgAAAHRhcmdldF9hY2NvdW50CwwAAAB0aW1lc19vdXRfYXQNCgAAAHN1cHBvcnRlcnMRAgsBFAADAAAADwAAAGFjY291bnRfaG9sZGVycxEACxwAAAB0cmFuc2Zlcl9hZ3JlZW1lbnRfdGhyZXNob2xkAhQAAAB0cmFuc2Zlcl9yZXF1ZXN0X3R0bA4BAAAABwAAAHJlY2VpdmUVAgAAAA8AAABSZXF1ZXN0VHJhbnNmZXIBAwAAAAUKCw8AAABTdXBwb3J0VHJhbnNmZXIBAwAAAAUKCw==';
+                const provider = await concordiumHelpers.detectConcordiumProvider();
+
+                document.getElementById('connect').addEventListener('click', () => {
+                    provider.connect().then((accountAddress) => {
+                        currentAccountAddress = accountAddress;
+                        document.getElementById('accountAddress').innerHTML = accountAddress;
+                    });
+                });
+
+                document.getElementById('requestAccounts').addEventListener('click', () => {
+                    provider.requestAccounts().then((accountAddresses) => {
+                        currentAccountAddress = accountAddresses[0];
+                        document.getElementById('accountAddress').innerHTML = accountAddress;
+                    });
+                });
+                document.getElementById('sendTransfer').addEventListener('click', () =>
+                    provider
+                        .sendTransaction(currentAccountAddress, concordiumSDK.AccountTransactionType.Transfer, {
+                            amount: concordiumSDK.CcdAmount.fromMicroCcd(1n),
+                            toAddress: concordiumSDK.AccountAddress.fromBase58(
+                                '3kBx2h5Y2veb4hZgAJWPrr8RyQESKm5TjzF3ti1QQ4VSYLwK1G'
+                            ),
+                        })
+                        .then(alert)
+                        .catch(alert)
+                );
+                document.getElementById('deployModule').addEventListener('click', () =>
+                    provider
+                        .sendTransaction(currentAccountAddress, concordiumSDK.AccountTransactionType.DeployModule, {
+                            source: concordiumSDK.toBuffer(moduleSource.value, 'base64'),
+                        })
+                        .then(alert)
+                        .catch(alert)
+                );
+                document.getElementById('signMessage').addEventListener('click', () =>
+                    provider
+                        .signMessage(currentAccountAddress, message.value)
+                        .then((sig) => alert(JSON.stringify(sig)))
+                        .catch(alert)
+                );
+                document.getElementById('signMessageBinary').addEventListener('click', () => {
+                    const SERIALIZATION_HELPER_SCHEMA =
+                        'FAAFAAAAEAAAAGNvbnRyYWN0X2FkZHJlc3MMCwAAAGVudHJ5X3BvaW50FgEFAAAAbm9uY2UFCQAAAHRpbWVzdGFtcA0HAAAAcGF5bG9hZBUCAAAACAAAAFRyYW5zZmVyAQEAAAAQARQABQAAAAgAAAB0b2tlbl9pZB0ABgAAAGFtb3VudBslAAAABAAAAGZyb20VAgAAAAcAAABBY2NvdW50AQEAAAALCAAAAENvbnRyYWN0AQEAAAAMAgAAAHRvFQIAAAAHAAAAQWNjb3VudAEBAAAACwgAAABDb250cmFjdAECAAAADBYBBAAAAGRhdGEdAQ4AAABVcGRhdGVPcGVyYXRvcgEBAAAAEAEUAAIAAAAGAAAAdXBkYXRlFQIAAAAGAAAAUmVtb3ZlAgMAAABBZGQCCAAAAG9wZXJhdG9yFQIAAAAHAAAAQWNjb3VudAEBAAAACwgAAABDb250cmFjdAEBAAAADA';
+                    const sponsoredMessage = {
+                        contract_address: {
+                            index: 0,
+                            subindex: 0,
+                        },
+                        entry_point: 'contract_transfer',
+                        nonce: 1,
+                        payload: {
+                            Transfer: [
+                                [
+                                    {
+                                        amount: '1',
+                                        data: '',
+                                        from: {
+                                            Account: [currentAccountAddress],
+                                        },
+                                        to: {
+                                            Account: [currentAccountAddress],
+                                        },
+                                        token_id: '11111111',
+                                    },
+                                ],
+                            ],
+                        },
+                        timestamp: '2030-08-08T05:15:00Z',
+                    };
+                    const serializedMessage = concordiumSDK.serializeTypeValue(
+                        sponsoredMessage,
+                        concordiumSDK.toBuffer(SERIALIZATION_HELPER_SCHEMA, 'base64')
+                    );
+                    provider
+                        .signMessage(currentAccountAddress, {
+                            data: concordiumSDK.Parameter.toHexString(serializedMessage),
+                            schema: SERIALIZATION_HELPER_SCHEMA,
+                        })
+                        .then((sig) => alert(JSON.stringify(sig)))
+                        .catch(alert);
+                });
+                document.getElementById('sendDeposit').addEventListener('click', () =>
+                    provider
+                        .sendTransaction(currentAccountAddress, concordiumSDK.AccountTransactionType.Update, {
+                            amount: concordiumSDK.CcdAmount.fromMicroCcd(1n),
+                            contractAddress: {
+                                index: 98n,
+                                subindex: 0n,
+                            },
+                            receiveName: 'two-step-transfer.deposit',
+                            maxContractExecutionEnergy: 30000n,
+                        })
+                        .then(alert)
+                        .catch(alert)
+                );
+                document.getElementById('sendReceive').addEventListener('click', () =>
+                    provider
+                        .sendTransaction(
+                            currentAccountAddress,
+                            concordiumSDK.AccountTransactionType.Update,
+                            {
+                                amount: concordiumSDK.CcdAmount.fromMicroCcd(1n),
+                                contractAddress: {
+                                    index: 98n,
+                                    subindex: 0n,
+                                },
+                                receiveName: 'two-step-transfer.receive',
+                                maxContractExecutionEnergy: 30000n,
+                            },
+                            {
+                                RequestTransfer: [1000, '1', '3Y1RLgi5pW3x96xZ7CiDiKsTL9huU92qn6mfxpebwmtkeku8ry'],
+                            },
+                            getSchema(
+                                twoStepTransferSchema,
+                                'FQIAAAAPAAAAUmVxdWVzdFRyYW5zZmVyAQMAAAAFCgsPAAAAU3VwcG9ydFRyYW5zZmVyAQMAAAAFCgs='
+                            )
+                        )
+                        .then(alert)
+                        .catch(alert)
+                );
+                document.getElementById('sendInit').addEventListener('click', () =>
+                    provider
+                        .sendTransaction(
+                            currentAccountAddress,
+                            concordiumSDK.AccountTransactionType.InitContract,
+                            {
+                                amount: concordiumSDK.CcdAmount.fromMicroCcd(1n),
+                                moduleRef: concordiumSDK.ModuleReference.fromHexString(
+                                    '6eab4584bd60b1d82fba3abe16082cde3dbee4c08c9f60b6dc523688bdc421b9'
+                                ),
+                                contractName: 'two-step-transfer',
+                                maxContractExecutionEnergy: 30000n,
+                            },
+                            {
+                                account_holders: [
+                                    '3WsDGXwykn1onhmqVGMknMMVBzvjYYKZ3VGoTczWSnv2MuR7St',
+                                    '3FVMj8WoA13m8Ha5JhZWfChugrCqbSbkjavU47yauu7a5YKNuP',
+                                ],
+                                transfer_agreement_threshold: 2,
+                                transfer_request_ttl: '1h',
+                            },
+                            getSchema(
+                                twoStepTransferSchema,
+                                'FAADAAAADwAAAGFjY291bnRfaG9sZGVycxEACxwAAAB0cmFuc2Zlcl9hZ3JlZW1lbnRfdGhyZXNob2xkAhQAAAB0cmFuc2Zlcl9yZXF1ZXN0X3R0bA4='
+                            )
+                        )
+                        .then(alert)
+                        .catch(alert)
+                );
+                document.getElementById('registerData').addEventListener('click', () =>
+                    provider
+                        .sendTransaction(currentAccountAddress, concordiumSDK.AccountTransactionType.RegisterData, {
+                            data: new concordiumSDK.DataBlob(concordiumSDK.toBuffer(message.value, 'hex')),
+                        })
+                        .then(alert)
+                        .catch(alert)
+                );
+                document.getElementById('registerDataCBOR').addEventListener('click', () =>
+                    provider
+                        .sendTransaction(currentAccountAddress, concordiumSDK.AccountTransactionType.RegisterData, {
+                            data: new concordiumSDK.DataBlob(cbor.encode(message.value)),
+                        })
+                        .then(alert)
+                        .catch(alert)
+                );
+
+                provider.on('accountDisconnected', (accountAddress) => (currentAccountAddress = undefined));
+                provider.on('accountChanged', (accountAddress) => (currentAccountAddress = accountAddress));
+                provider.on('chainChanged', (chain) => alert(chain));
+                document.getElementById('ageProof').addEventListener('click', () => {
+                    // TODO Replace add range with addMinimumAge(18) when SDK is fixed.
+                    const statement = new concordiumSDK.Web3StatementBuilder()
+                        .addForIdentityCredentials([0, 1, 2, 3, 4, 5], (b) =>
+                            b.addRange('dob', concordiumSDK.MIN_DATE, concordiumSDK.getPastDate(18, 1))
+                        )
+                        .getStatements();
+                    const challenge = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+                    provider
+                        .requestVerifiablePresentation(challenge, statement)
+                        .then((proof) => {
+                            console.log(proof);
+                            alert('Proof received! (check the console)');
+                        })
+                        .catch(alert);
+                });
+                document.getElementById('idProof').addEventListener('click', () => {
+                    const statement = new concordiumSDK.IdStatementBuilder()
+                        .revealAttribute(0)
+                        .revealAttribute(1)
+                        .revealAttribute(2)
+                        .addMinimumAge(18)
+                        .addEUResidency()
+                        .getStatement();
+                    const challenge = 'AAAAAAAA';
+                    provider
+                        .requestIdProof(currentAccountAddress, statement, challenge)
+                        .then((proof) => {
+                            console.log(proof);
+                            alert('Proof received! (check the console)');
+                        })
+                        .catch(alert);
+                });
+                document.getElementById('web3Proof').addEventListener('click', () => {
+                    const statement = new concordiumSDK.Web3StatementBuilder()
+                        .addForIdentityCredentials([0, 1, 2], (b) =>
+                            b.revealAttribute('firstName').addRange('dob', '08000101', '20000101')
+                        )
+                        .addForVerifiableCredentials([{ index: 5463, subindex: 0 }], (b) =>
+                            b.revealAttribute('degreeName').addMembership('graduationDate', ['2010-06-01T00:00:00Z'])
+                        )
+                        .getStatements();
+                    const challenge = '94d3e85bbc8ff0091e562ad8ef6c30d57f29b19f17c98ce155df2a30100dAAAA';
+                    provider
+                        .requestVerifiablePresentation(challenge, statement)
+                        .then((proof) => {
+                            console.log(proof);
+                            alert('Proof received! (check the console)');
+                        })
+                        .catch((error) => {
+                            console.log(error);
+                            alert(error);
+                        });
+                });
+                document.getElementById('addWCCD').addEventListener('click', () => {
+                    provider
+                        .addCIS2Tokens(currentAccountAddress, [''], 2059n, 0n)
+                        .then((added) => alert('Added tokens: ' + added.map((id) => '"' + id + '"')))
+                        .catch(alert);
+                });
+            }
+            setupPage();
+        </script>
+    </head>
+
+    <body>
+        <div>
+            <h3 id="accountAddress">Account address:</h3>
+        </div>
+        <button id="connect">Connect</button>
+        <button id="requestAccounts">Request accounts</button>
+        <button id="deployModule">Deploy module</button>
+        ModuleSource (base64): <input type="text" id="moduleSource" value="" />
+        <button id="sendInit">Initiate two step transfer contract</button>
+        <button id="sendTransfer">Send transfer</button>
+        <button id="sendDeposit">deposit in two step transfer</button>
+        <button id="sendReceive">Initiate Receive in two step transfer</button>
+        <select id="schemaType">
+            <option value="legacy">Legacy</option>
+            <option value="module">Module</option>
+            <option value="parameter">Parameter</option>
+        </select>
+        <button id="idProof">Request an ID Proof</button>
+        <button id="web3Proof">Request an ID 3 Proof</button>
+        <button id="ageProof">Request an Age Proof</button>
+        <br />
+        Message: <input type="text" id="message" value="I believe in miracles" />
+        <button id="signMessage">SignMessage</button>
+        <button id="signMessageBinary">SignSponsoredTransactionLikeMessage</button>
+        <button id="registerData">Register message (HEX encoded) (must be a hex string)</button>
+        <button id="registerDataCBOR">Register message (CBOR encoded)</button>
+        <button id="addWCCD">Add WCCD view</button>
+    </body>
+</html>
