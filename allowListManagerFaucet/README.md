@@ -82,7 +82,7 @@ BACKEND_URL - The backend API endpoint
 VERIFIER_URL (default: 'https://web3id-verifier.testnet.concordium.com') - The zero-knowledge proof verification service endpoint. If not set, the default verifier URL is used which runs the following back-end code: 
 https://github.com/Concordium/concordium-web3id/tree/main/services/web3id-verifier
 
-To configure these for local testing, you can modify the variables mentioned above in AllowListDApp.tsx or set them via window.runtimeConfig.
+To configure these for local testing, you can modify the variables mentioned above in `AllowListDApp.tsx` or set them via `window.runtimeConfig`.
 
 ```bash
 cd frontend
