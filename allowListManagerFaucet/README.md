@@ -44,10 +44,7 @@ Frontend (React)          Backend (NestJS)              Concordium Blockchain
 - Concordium Browser Wallet (devnet version)
 - Governance wallet export with PLT minting permissions
 
-### 1. Verifier Service Setup
-The verifier service connects to the Concordium devnet via an https endpoint. This service is required for zero-knowledge proof verification. With the last update the service used is hosted by concordium on testnet at "https://web3id-verifier.testnet.concordium.com".
-
-### 2. Backend Setup
+### 1. Backend Setup
 ```bash
 cd backend
 npm install
@@ -76,8 +73,17 @@ NODE_ENV=development
 npm run start:dev     # Runs on :3001
 ```
 
-### 3. Frontend Setup
-To test locally, change lines `23`, `24` and `25` in `AllowListDApp.tsx` and set appropiate variables, simulating an env file.
+### 2. Frontend Setup
+Environment Variables
+The frontend supports the following optional variables:
+
+TOKEN_ID - The token identifier to use for distribution, only reflects the text in the frontend
+BACKEND_URL - The backend API endpoint
+VERIFIER_URL (default: 'https://web3id-verifier.testnet.concordium.com') - The zero-knowledge proof verification service endpoint. If not set, the default verifier URL is used which runs the following back-end code: 
+https://github.com/Concordium/concordium-web3id/tree/main/services/web3id-verifier
+
+To configure these for local testing, you can modify lines 23-25 in AllowListDApp.tsx or set them via window.runtimeConfig.
+
 ```bash
 cd frontend
 npm install
@@ -85,7 +91,7 @@ npm run build
 npm run start         # Runs on :5173
 ```
 
-### 4. Access Application
+### 3. Access Application
 Open `http://localhost:5173` and connect your Concordium wallet.
 
 ## 🔧 API Endpoints
