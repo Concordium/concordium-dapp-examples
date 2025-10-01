@@ -13,10 +13,9 @@ RUN yarn build
 FROM ${rust_base_image} AS backend
 
 WORKDIR /backend/app
-COPY ./deps/concordium-rust-sdk /deps/concordium-rust-sdk
-COPY ./sponsoredTransactions/backend ./
+COPY ../ ./
 
-RUN cargo build --release
+RUN cargo build --locked -p sponsored-transaction-backend --release
 
 FROM ubuntu:22.04
 WORKDIR /build

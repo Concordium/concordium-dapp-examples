@@ -1,0 +1,18 @@
+[package]
+name = "track-and-trace-common"
+version = "0.1.0"
+authors = ["Concordium <developers@concordium.com>"]
+edition = "2021"
+license = "MPL-2.0"
+description = "Types shared between smart contract and indexer."
+
+[features]
+serde = ["concordium-contracts-common/derive-serde", "dep:serde"]
+
+[dependencies]
+concordium-cis2 = { version = "6.1" }
+concordium-std = { version = "10.0" }
+concordium-contracts-common = "9.2.0"
+serde = { version = "1", optional = true, features = ["derive"] }
+
+

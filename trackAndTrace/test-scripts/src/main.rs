@@ -6,7 +6,10 @@ use concordium_rust_sdk::{
     types::{smart_contracts::WasmModule, WalletAccount},
     v2::{self as sdk, BlockIdentifier},
 };
-use track_and_trace::{ItemState, MetadataUrl, *};
+use concordium_std::MetadataUrl;
+use track_and_trace_common::{
+    AdditionalData, ChangeItemStatusParams, ItemID, ItemState, Status, TransitionEdges,
+};
 
 pub enum TrackAndTraceContract {}
 
