@@ -34,6 +34,14 @@ The following examples are available.
 
 - [allowListManagerFaucet](./allowListManagerFaucet/) demonstrates a token allow list management system with EU nationality verification. Users prove their EU citizenship through Concordium ID, and upon successful verification, they are automatically added to a token's allow list and receive an airdrop. The example includes a React frontend, NestJS backend for blockchain operations, and the web3id-verifier-ts service which needs to run against devnet for credential proof verification.
 
+- [wCCD](./wCCD/) demonstrates how to integrate with smart contracts on the Concordium blockchain. This web app interacts with the wCCD protocol on testnet. The connected account can invoke the wrap/unwrap functions to observe the wCCD balance change of its account.
+
+- [voting](./voting/) demonstrates how to integrate with smart contracts on the Concordium blockchain. You can create and customize your own voting smart contract via the front-end and deploy it to the Concordium chain. The front-end also provides pages to conduct the voting and display the voting results.
+
+- [eSealing](./eSealing/) demonstrates an example of how to integrate with smart contracts on the Concordium blockchain. This web app supports the following two flows with the browser wallet (or wallet connect): 
+  - Compute the file hash of a selected file => register its file hash in the smart contract
+  - Compute the file hash of a selected file => retrieve the time-stamp and witness (sender_account) that registered the file hash
+
 ## Setup
 
 Some projects use submodules, to initialize or update those, run:
