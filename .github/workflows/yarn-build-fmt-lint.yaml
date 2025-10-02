@@ -30,6 +30,9 @@ jobs:
           - trackAndTrace/frontend
           - testnet-faucet
           - compliant-reward-distribution/frontend
+          - eSealing
+          - voting
+          - wCCD
 
     steps:
       - name: Checkout
@@ -71,6 +74,9 @@ jobs:
           - trackAndTrace/frontend
           - testnet-faucet
           - compliant-reward-distribution/frontend
+          - eSealing
+          - voting
+          - wCCD
 
     steps:
       - name: Checkout
@@ -116,6 +122,9 @@ jobs:
           - trackAndTrace/frontend
           - testnet-faucet
           - compliant-reward-distribution/frontend
+          - eSealing
+          - voting
+          - wCCD
 
     steps:
       - name: Checkout

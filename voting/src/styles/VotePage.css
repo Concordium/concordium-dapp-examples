@@ -1,0 +1,20 @@
+.vote-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 1.5rem;
+    background: rgb(255 255 255 / 90%);
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 6px rgb(0 0 0 / 10%);
+    min-height: calc(100vh - 12rem);
+}
+
+.btn-light {
+    background: rgb(255 255 255 / 90%);
+    border: 1px solid var(--primary-dark);
+    margin-bottom: 0.5rem;
+}
+
+.btn-light:hover {
+    background: var(--primary-color);
+    color: #000;
+}
