@@ -28,10 +28,19 @@ To have hot-reload (useful for development), do the following instead:
 
 ## Build and run the Docker image
 
+**NOTE**: If you're using an Apple Silicon (M1/M2) or any ARM-based system.
+You need to include `--platform=linux/amd64`
+
 To build the docker image run the following:
 
 ```
 docker build -t voting_app_image .
+```
+
+Mac.
+
+```
+docker build --platform=linux/amd64 -t voting_app_image .
 ```
 
 To run the docker image run the following:

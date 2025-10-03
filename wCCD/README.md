@@ -19,6 +19,9 @@ The example project included in this repository serves as a working example of h
 
 ## Build and run the Docker image
 
+**NOTE**: If you're using an Apple Silicon (M1/M2) or any ARM-based system.
+You need to include `--platform=linux/amd64`
+
 To build the docker image run the following:
 
 ```
@@ -31,6 +34,12 @@ e.g.
 docker build --build-arg NETWORK=testnet -t wccd_front_end:3.0.0 .
 ```
 
+Mac.
+
+```
+docker build --platform=linux/amd64 --build-arg NETWORK=testnet -t wccd_front_end:3.0.0 .
+```
+
 To run the docker image run the following:
 
 ```
@@ -40,7 +49,7 @@ docker run -it -d -p 8080:80 --name web wccd_front_end:$PROJECT_VERSION
 e.g.
 
 ```
-docker run -it -d -p 8080:80 --name web wccd_front_end:3.0.0
+docker run -it -d -p 8080:80 --name web-wccd wccd_front_end:3.0.0
 ```
 
 Open http://127.0.0.1:8080 in your browser.

@@ -1,0 +1,15 @@
+on:
+  push:
+    tags:
+      - dapp-esealing/*
+
+jobs:
+  release-dapp-esealing-image:
+    uses: concordium/.github/.github/workflows/docker-release-workflow.yaml@v1
+    with:
+      DOCKER_FILE_PATH: ./eSealing/Dockerfile
+      DOCKER_CONTEXT: eSealing
+      BUILD_ARGS: |
+        base_image=node:18-slim
+      SERVICE_NAME: "dapp-esealing"
+    secrets: inherit
