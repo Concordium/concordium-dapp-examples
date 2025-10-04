@@ -1,15 +1,12 @@
 use axum::{extract::rejection::JsonRejection, Json};
 use concordium_rust_sdk::{
     cis2::{TokenAmount, TokenId, Transfer},
-    smart_contracts::{
-        common as concordium_std,
-        common::{
-            AccountAddress, AccountSignatures, ContractAddress, OwnedEntrypointName, Serial,
-            Timestamp,
-        },
+    smart_contracts::common::{
+        self as concordium_std, AccountAddress, AccountSignatures, ContractAddress,
+        OwnedEntrypointName, Serial, Timestamp,
     },
     types::{Nonce, RejectReason, WalletAccount},
-    v2::{self, QueryError, RPCError},
+    v2::{self, upward::UnknownDataError, QueryError, RPCError},
 };
 use hex::FromHexError;
 use http::StatusCode;
@@ -36,8 +33,8 @@ pub enum ServerError {
     SubmitSponsoredTransactionError(#[from] RPCError),
     #[error("Unable to derive alias account of signer.")]
     NoAliasAccount,
-    #[error("The type `${0}` is unkown to this SDK. This can happen if the SDK is not fully compatible with the Concordium node. You might want to update the SDK to a newer version.")]
-    Unknown(String),
+    #[error("Unknown data error occured: {0}")]
+    UnkownDataError(#[from] UnknownDataError),
 }
 
 impl axum::response::IntoResponse for ServerError {

@@ -514,8 +514,6 @@ async fn check_zk_proof(
         .response;
     let prover = account_info.account_address;
 
-    // Exclude `Initial` accounts from the proof verification.
-
     // This backend only supports regular accounts with exactly one credential (no multi-sig account support).
     if account_info.account_credentials.len() != 1 {
         return Err(ServerError::OnlyRegularAccounts);
@@ -524,6 +522,8 @@ async fn check_zk_proof(
         .account_credentials
         .get(&0.into())
         .ok_or(ServerError::OnlyRegularAccounts)?;
+
+    // Exclude `Initial` accounts from the proof verification.
     // `Initial` accounts were created by identity providers in the past
     // without a Pedersen commitment deployed on chain. As such we should not verify proofs on them.
     if let Upward::Known(AccountCredentialWithoutProofs::Initial { .. }) = &credential.value {

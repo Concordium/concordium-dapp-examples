@@ -11,7 +11,7 @@ use concordium_rust_sdk::{
         queries::BlockInfo, AbsoluteBlockHeight, BlockItemSummary,
         BlockItemSummaryDetails::AccountCreation,
     },
-    v2::{self as sdk, Client, Upward},
+    v2::{self as sdk, Client},
 };
 use tokio_postgres::types::ToSql;
 
@@ -93,8 +93,8 @@ impl indexer::ProcessEvent for StoreEvents {
             .context("Failed to execute latest_processed_block_height transaction")?;
 
         for tx in block_items {
-            match &tx.details {
-                Upward::Known(AccountCreation(account_creation_details)) => {
+            match &tx.details.as_ref().known_or_err()? {
+                AccountCreation(account_creation_details) => {
                     let params: [&(dyn ToSql + Sync); 5] = [
                         &account_creation_details.address.0.as_ref(),
                         &block_info.block_slot_time,
@@ -124,7 +124,6 @@ impl indexer::ProcessEvent for StoreEvents {
                         block_info.block_height,
                     );
                 }
-                Upward::Unknown(_) => return Err(anyhow::anyhow!("The type `BlockItemSummaryDetails` is unkown to this SDK. This can happen if the SDK is not fully compatible with the Concordium node. You might want to update the SDK to a newer version.")),
                 _ => continue,
             }
         }
