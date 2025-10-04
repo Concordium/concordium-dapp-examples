@@ -8,12 +8,13 @@ use ::indexer::db::DatabasePool;
 use anyhow::Context;
 use clap::Parser;
 use concordium_rust_sdk::{
+    base::{contracts_common::EntrypointName, smart_contracts::ContractEvent},
     indexer::{self, AffectedContractIndexer, ContractUpdateInfo, ProcessorConfig},
     smart_contracts::common::to_bytes,
     types::{
         queries::BlockInfo, smart_contracts::OwnedReceiveName, AbsoluteBlockHeight, ContractAddress,
     },
-    v2::{self as sdk, Client},
+    v2::{self as sdk, Client, Upward},
 };
 use std::collections::{BTreeMap, BTreeSet};
 use tokio_postgres::types::{Json, ToSql};
@@ -71,11 +72,14 @@ struct StoreEvents {
 impl indexer::ProcessEvent for StoreEvents {
     type Data = (
         BlockInfo,
-        Vec<(
-            ContractUpdateInfo,
-            BTreeMap<ContractAddress, BTreeSet<OwnedReceiveName>>,
-        )>,
+        Vec<
+            Upward<(
+                ContractUpdateInfo,
+                BTreeMap<ContractAddress, BTreeSet<OwnedReceiveName>>,
+            )>,
+        >,
     );
+
     type Description = String;
     type Error = anyhow::Error;
 
@@ -109,9 +113,20 @@ impl indexer::ProcessEvent for StoreEvents {
             .context("Failed to execute latest_processed_block_height transaction")?;
 
         for single_contract_update_info in contract_update_info {
-            for (_contract_invoked, _entry_point_name, events) in
-                single_contract_update_info.0.execution_tree.events()
-            {
+            let contract_info = &single_contract_update_info.as_ref().known_or_err()?.0;
+
+            let tree = contract_info.execution_tree.as_ref().known_or_err()?;
+
+            let smart_contract_events: Vec<(
+                ContractAddress,
+                EntrypointName<'_>,
+                &[ContractEvent],
+            )> = tree
+                .events()
+                .map(|x| x.known_or_err())
+                .collect::<Result<_, _>>()?;
+
+            for (_contract_invoked, _entry_point_name, events) in smart_contract_events {
                 for (event_index, event) in events.iter().enumerate() {
                     let parsed_event: contract::Event<AdditionalData> = event.parse()?;
 
@@ -121,7 +136,7 @@ impl indexer::ProcessEvent for StoreEvents {
                     {
                         let params: [&(dyn ToSql + Sync); 6] = [
                             &(block_info.block_slot_time),
-                            &single_contract_update_info.0.transaction_hash.as_ref(),
+                            &contract_info.transaction_hash.as_ref(),
                             &(event_index as i64),
                             &(item_status_change_event.item_id.0 as i64),
                             &Json(&item_status_change_event.new_status),
@@ -147,7 +162,7 @@ impl indexer::ProcessEvent for StoreEvents {
                             "Preparing item_status_change_event from block {}, transaction hash \
                              {}, and event index {}.",
                             block_info.block_height,
-                            single_contract_update_info.0.transaction_hash,
+                            contract_info.transaction_hash,
                             event_index
                         );
                     } else if let contract::Event::<AdditionalData>::ItemCreated(
@@ -156,7 +171,7 @@ impl indexer::ProcessEvent for StoreEvents {
                     {
                         let params: [&(dyn ToSql + Sync); 6] = [
                             &(block_info.block_slot_time),
-                            &single_contract_update_info.0.transaction_hash.as_ref(),
+                            &contract_info.transaction_hash.as_ref(),
                             &(event_index as i64),
                             &(item_created_event.item_id.0 as i64),
                             &to_bytes(&item_created_event.metadata_url),
@@ -182,7 +197,7 @@ impl indexer::ProcessEvent for StoreEvents {
                             "Preparing event from block {}, transaction hash {}, and event index \
                              {}.",
                             block_info.block_height,
-                            single_contract_update_info.0.transaction_hash,
+                            contract_info.transaction_hash,
                             event_index
                         );
                     }
