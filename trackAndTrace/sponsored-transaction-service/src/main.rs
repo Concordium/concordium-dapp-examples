@@ -278,9 +278,7 @@ pub async fn handle_transaction(
     {
         InvokeContractOutcome::Success(dry_run) => Ok(dry_run),
         InvokeContractOutcome::Failure(rejected_transaction) => {
-            let reason = rejected_transaction
-                .reason
-                .known_or_else(|| ServerError::Unknown("RejectReason".to_string()))?;
+            let reason = rejected_transaction.reason.known_or_err()?;
 
             match rejected_transaction.decoded_reason {
                 Some(decoded_reason) => Err(ServerError::TransactionSimulationRejectedTransaction(

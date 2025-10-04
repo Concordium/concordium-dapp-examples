@@ -1,6 +1,6 @@
 ## Unreleased changes
 
-- Update `rust-sdk` dependency and adjust project to be forward-compatible.
+- Update `concordium-rust-sdk` dependency and adjust project to be forward-compatible.
 - Decode the reject reason of a failed transaction during the dry-run at the `sponsored_transaction_service` backend.
 - Update submodule link.
 

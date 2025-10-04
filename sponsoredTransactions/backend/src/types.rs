@@ -3,17 +3,15 @@ use concordium_rust_sdk::{
     cis2::{TokenId, Transfer, UpdateOperator},
     contract_client::{ContractClient, DecodedReason},
     endpoints::QueryError,
-    smart_contracts::{
-        common as concordium_std,
-        common::{
-            AccountAddress, AccountSignatures, ContractAddress, OwnedEntrypointName, Serial,
-            Timestamp,
-        },
+    smart_contracts::common::{
+        self as concordium_std, AccountAddress, AccountSignatures, ContractAddress,
+        OwnedEntrypointName, Serial, Timestamp,
     },
     types::{
         hashes::{HashBytes, TransactionMarker},
         Nonce, RejectReason,
     },
+    v2::upward::UnknownDataError,
 };
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::Mutex;
@@ -49,8 +47,8 @@ pub enum LogError {
     ReceiveNameError(#[from] NewReceiveNameError),
     #[error("The input parameter exceeds the length limit: {0}")]
     ParameterSizeError(#[from] ExceedsParameterSize),
-    #[error("The type `${0}` is unkown to this SDK. This can happen if the SDK is not fully compatible with the Concordium node. You might want to update the SDK to a newer version.")]
-    Unknown(String),
+    #[error("Unknown data error occured: {0}")]
+    UnknownDataError(#[from] UnknownDataError),
 }
 
 impl warp::reject::Reject for LogError {}

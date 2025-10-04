@@ -149,7 +149,8 @@ pub async fn submit_transaction(
         InvokeContractOutcome::Failure(rejected_transaction) => {
             let reason = rejected_transaction
                 .reason
-                .known_or_else(|| LogError::Unknown("RejectReason".to_string()))?;
+                .known_or_err()
+                .map_err(|e| warp::reject::custom(LogError::UnknownDataError(e)))?;
 
             match rejected_transaction.decoded_reason {
                 Some(decoded_reason) => Err(LogError::TransactionSimulationDecodedError(
