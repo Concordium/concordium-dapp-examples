@@ -13,7 +13,7 @@ RUN yarn build
 # Build server
 FROM ${RUST_IMAGE} AS server
 COPY ./trackAndTrace/smart-contract ./smart-contract
-WORKDIR /server
+COPY ./deps/concordium-rust-sdk /deps/concordium-rust-sdk
 COPY ./trackAndTrace/indexer ./
 RUN cargo build --release
 
@@ -23,7 +23,7 @@ FROM debian:bookworm
 RUN apt-get update && apt-get install -y ca-certificates
 
 COPY --from=frontend ./frontend/dist ./frontend/dist
-COPY --from=server ./server/target/release/server ./server
+COPY --from=server ./target/release/server ./server
 
 # Run server
 CMD ["./server"]
