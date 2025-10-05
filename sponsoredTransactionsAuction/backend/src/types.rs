@@ -25,16 +25,18 @@ pub enum ServerError {
     ParameterError,
     #[error("Unable to invoke the node to simulate the transaction: {0}.")]
     SimulationInvokeError(#[from] QueryError),
+    /// The transaction simulation rejected where the exact
+    /// reject reason is unknown.
+    #[error("Simulation of transaction rejected. The exact reject reason is unknown: {0}")]
+    RejectedTransactionSimulation(#[from] UnknownDataError),
     #[error("Simulation of transaction reverted in smart contract with reason: {0:?}.")]
-    TransactionSimulationError(RevertReason),
+    RejectedTransactionSimulationWithReason(RevertReason),
     #[error("The signer account reached its rate limit.")]
     RateLimitError,
     #[error("Unable to submit transaction on chain successfully: {0}.")]
     SubmitSponsoredTransactionError(#[from] RPCError),
     #[error("Unable to derive alias account of signer.")]
     NoAliasAccount,
-    #[error("Unknown data error occured: {0}")]
-    UnkownDataError(#[from] UnknownDataError),
 }
 
 impl axum::response::IntoResponse for ServerError {
@@ -52,6 +54,13 @@ impl axum::response::IntoResponse for ServerError {
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     Json(format!("{}", error)),
+                )
+            }
+            ServerError::RejectedTransactionSimulation(error) => {
+                tracing::error!("Simulation of transaction rejected. The exact reject reason is unknown: {error}.");
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json("Simulation of transaction rejected.".to_string()),
                 )
             }
             ServerError::SubmitSponsoredTransactionError(error) => {

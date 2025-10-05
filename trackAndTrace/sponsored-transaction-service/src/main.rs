@@ -285,7 +285,7 @@ pub async fn handle_transaction(
                     decoded_reason,
                     reason,
                 )),
-                None => Err(ServerError::TransactionSimulationError(reason)),
+                None => Err(ServerError::RejectedTransactionSimulationWithReason { reason }),
             }
         }
     }?;

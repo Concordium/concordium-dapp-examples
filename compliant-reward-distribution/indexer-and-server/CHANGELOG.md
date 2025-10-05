@@ -1,6 +1,6 @@
 ## Unreleased changes
 
-- Update `concordium-rust-sdk` dependency and adjust project to be forward-compatible.
+- Update `concordium-rust-sdk` dependency and adjust project to be forward-compatible. Block items with unknown details are skipped when indexing.
 
 ## 0.1.2
 

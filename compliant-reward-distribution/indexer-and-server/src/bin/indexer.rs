@@ -93,7 +93,16 @@ impl indexer::ProcessEvent for StoreEvents {
             .context("Failed to execute latest_processed_block_height transaction")?;
 
         for tx in block_items {
-            match &tx.details.as_ref().known_or_err()? {
+            let tx_details = match tx.details.as_ref().known_or_err() {
+                Ok(details) => details,
+                Err(e) => {
+                    // To reduce maintenance we ignore block items with unknown details.
+                    tracing::warn!("Skipping indexing block items with unknown details: {e}");
+                    continue;
+                }
+            };
+
+            match tx_details {
                 AccountCreation(account_creation_details) => {
                     let params: [&(dyn ToSql + Sync); 5] = [
                         &account_creation_details.address.0.as_ref(),
