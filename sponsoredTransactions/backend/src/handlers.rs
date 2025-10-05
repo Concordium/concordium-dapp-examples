@@ -150,14 +150,16 @@ pub async fn submit_transaction(
             let reason = rejected_transaction
                 .reason
                 .known_or_err()
-                .map_err(|e| warp::reject::custom(LogError::UnknownDataError(e)))?;
+                .map_err(|e| warp::reject::custom(LogError::RejectedTransactionSimulation(e)))?;
 
             match rejected_transaction.decoded_reason {
-                Some(decoded_reason) => Err(LogError::TransactionSimulationDecodedError(
-                    decoded_reason,
-                    reason,
-                )),
-                None => Err(LogError::TransactionSimulationError(reason)),
+                Some(decoded_reason) => {
+                    Err(LogError::RejectedTransactionSimulationWithDecodedReason(
+                        decoded_reason,
+                        reason,
+                    ))
+                }
+                None => Err(LogError::RejectedTransactionSimulationWithReason { reason }),
             }
         }
     }?;
@@ -225,12 +227,19 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl warp::Reply, Infall
         let code = StatusCode::INTERNAL_SERVER_ERROR;
         let message = "Cannot access the node.";
         Ok(mk_reply(message.into(), code))
-    } else if let Some(LogError::TransactionSimulationError(e)) = err.find() {
+    } else if let Some(LogError::RejectedTransactionSimulation(e)) = err.find() {
+        log::warn!("Simulation of transaction rejected. The exact reject reason is unknown: {e}.");
         let code = StatusCode::INTERNAL_SERVER_ERROR;
-        let message = format!("Simulation of transaction rejected with reject reason: {e:?}");
+        let message = "Simulation of transaction rejected.".to_string();
         Ok(mk_reply(message, code))
-    } else if let Some(LogError::TransactionSimulationDecodedError(decoded_reason, reject_reason)) =
-        err.find()
+    } else if let Some(LogError::RejectedTransactionSimulationWithReason { reason }) = err.find() {
+        let code = StatusCode::INTERNAL_SERVER_ERROR;
+        let message = format!("Simulation of transaction rejected with reject reason: {reason:?}");
+        Ok(mk_reply(message, code))
+    } else if let Some(LogError::RejectedTransactionSimulationWithDecodedReason(
+        decoded_reason,
+        reject_reason,
+    )) = err.find()
     {
         let code = StatusCode::BAD_REQUEST;
         let message = format!(

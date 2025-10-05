@@ -35,9 +35,13 @@ pub enum ServerError {
     /// The parameter exceeds the length limit.
     #[error("The parameter exceeds the length limit: {0}")]
     ParameterError(#[from] ExceedsParameterSize),
+    /// The transaction simulation rejected where the exact
+    /// reject reason is unknown.
+    #[error("Simulation of transaction rejected. The exact reject reason is unknown: {0}")]
+    RejectedTransactionSimulation(#[from] UnknownDataError),
     /// The transaction simulation returned with a contract rejection.
-    #[error("Simulation of transaction rejected in smart contract with reject reason: {0:?}.")]
-    TransactionSimulationError(RejectReason),
+    #[error("Simulation of transaction rejected in smart contract with reject reason: {reason:?}")]
+    RejectedTransactionSimulationWithReason { reason: RejectReason },
     /// The transaction simulation returned with a contract rejection and a
     /// decoded reject reason.
     #[error(
@@ -78,8 +82,6 @@ pub enum ServerError {
     /// The contract is not allowed to be used by the service.
     #[error("Contract address is not allowed to be used by the service: {contract}.")]
     ContractNotAllowed { contract: ContractAddress },
-    #[error("UnknownDataError occured: {0}")]
-    UnknownDataError(#[from] UnknownDataError),
 }
 
 impl axum::response::IntoResponse for ServerError {
@@ -119,6 +121,13 @@ impl axum::response::IntoResponse for ServerError {
                     ),
                 )
             }
+            ServerError::RejectedTransactionSimulation(error) => {
+                tracing::error!("Simulation of transaction rejected. The exact reject reason is unknown: {error}.");
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json("Simulation of transaction rejected.".to_string()),
+                )
+            }
             error => {
                 tracing::debug!("Bad request: {error}.");
                 (StatusCode::BAD_REQUEST, Json(format!("{}", error)))
@@ -131,8 +140,8 @@ impl axum::response::IntoResponse for ServerError {
 // TODO: Use `#[from] RejectReason` instead when [`RejectReason`] implements
 // `std::error::Error`.
 impl From<RejectReason> for ServerError {
-    fn from(value: RejectReason) -> Self {
-        Self::TransactionSimulationError(value)
+    fn from(reason: RejectReason) -> Self {
+        Self::RejectedTransactionSimulationWithReason { reason }
     }
 }
 
