@@ -3,7 +3,7 @@
 ARG RUST_IMAGE=rust:1.85-bookworm
 
 # Build service
-FROM ${RUST_IMAGE} as build
+FROM ${RUST_IMAGE} AS build
 COPY ./trackAndTrace/sponsored-transaction-service ./
 COPY ./deps/concordium-rust-sdk /deps/concordium-rust-sdk
 RUN cargo build --release
