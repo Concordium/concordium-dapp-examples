@@ -30,6 +30,8 @@ jobs:
           - trackAndTrace/frontend
           - testnet-faucet
           - compliant-reward-distribution/frontend
+          - nft-minting
+          - piggybank
 
     steps:
       - name: Checkout
@@ -71,6 +73,8 @@ jobs:
           - trackAndTrace/frontend
           - testnet-faucet
           - compliant-reward-distribution/frontend
+          - nft-minting
+          - piggybank
 
     steps:
       - name: Checkout
@@ -116,6 +120,8 @@ jobs:
           - trackAndTrace/frontend
           - testnet-faucet
           - compliant-reward-distribution/frontend
+          - nft-minting
+          - piggybank
 
     steps:
       - name: Checkout

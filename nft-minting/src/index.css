@@ -1,0 +1,87 @@
+body {
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.main {
+    height: 100vh;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.stored {
+    margin-top: 0;
+}
+
+.connection-banner {
+    position: absolute;
+    top: 10px;
+    color: red;
+}
+
+.init-collection {
+    position: absolute;
+    top: 60px;
+}
+
+.collection {
+    border: 1px solid;
+    padding: 5px;
+    background-color: #fbfbf9;
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+}
+
+.form {
+    display: contents;
+}
+
+.hidden {
+    display: none;
+}
+
+.collection-nfts {
+    display: flex;
+}
+
+.nft {
+    border: 0.5px solid;
+    padding: 5px;
+    background-color: #e8e8e8;
+    margin-right: 5px;
+}
+
+.connected {
+    color: green;
+}
+
+.container {
+    display: flex;
+    justify-content: center;
+}
+
+.input,
+.deposit {
+    box-sizing: border-box;
+    height: 30px;
+}
+
+.smash {
+    color: white;
+    background-color: red;
+    border: none;
+    padding: 20px 30px;
+    font-size: 20px;
+}
+
+.smash svg path {
+    fill: white;
+}
+
+.smash:disabled {
+    opacity: 0.5;
+}

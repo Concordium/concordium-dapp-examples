@@ -34,6 +34,10 @@ The following examples are available.
 
 - [allowListManagerFaucet](./allowListManagerFaucet/) demonstrates a token allow list management system with EU nationality verification. Users prove their EU citizenship through Concordium ID, and upon successful verification, they are automatically added to a token's allow list and receive an airdrop. The example includes a React frontend, NestJS backend for blockchain operations, and the web3id-verifier-ts service which needs to run against devnet for credential proof verification.
 
+- [nft-minting](./nft-minting/) demonstrates how to make a website that allows no-code minting with smart contracts on the Concordium blockchain.
+
+- [piggybank](./piggybank/) demonstrates how of how to integrate with smart contracts on the Concordium blockchain. It both includes a page for a V0 and a V1 version of the piggy bank smart contract.
+
 ## Setup
 
 Some projects use submodules, to initialize or update those, run:
