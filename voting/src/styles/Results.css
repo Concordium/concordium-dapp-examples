@@ -1,0 +1,15 @@
+.results-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 1.5rem;
+    background: rgb(255 255 255 / 90%);
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 6px rgb(0 0 0 / 10%);
+    min-height: calc(100vh - 12rem);
+}
+
+.badge {
+    background: var(--primary-color) !important;
+    color: #000;
+    font-weight: 600;
+}

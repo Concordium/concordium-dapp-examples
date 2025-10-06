@@ -1,0 +1,15 @@
+on:
+  push:
+    tags:
+      - dapp-voting/*
+
+jobs:
+  release-dapp-voting-image:
+    uses: concordium/.github/.github/workflows/docker-release-workflow.yaml@v1
+    with:
+      SERVICE_NAME: "dapp-voting"
+      DOCKER_CONTEXT: "./voting"
+      BUILD_ARGS: |
+        base_image=node:18-slim
+      DOCKER_FILE_PATH: voting/Dockerfile
+    secrets: inherit

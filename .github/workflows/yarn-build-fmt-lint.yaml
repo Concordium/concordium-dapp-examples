@@ -32,6 +32,9 @@ jobs:
           - compliant-reward-distribution/frontend
           - nft-minting
           - piggybank
+          - eSealing
+          - voting
+          - wCCD
 
     steps:
       - name: Checkout
@@ -75,6 +78,9 @@ jobs:
           - compliant-reward-distribution/frontend
           - nft-minting
           - piggybank
+          - eSealing
+          - voting
+          - wCCD
 
     steps:
       - name: Checkout
@@ -122,6 +128,9 @@ jobs:
           - compliant-reward-distribution/frontend
           - nft-minting
           - piggybank
+          - eSealing
+          - voting
+          - wCCD
 
     steps:
       - name: Checkout

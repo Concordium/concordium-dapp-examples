@@ -1,0 +1,88 @@
+body {
+    font-family: Roboto, Helvetica, sans-serif;
+    font-style: sans-serif;
+    color: white;
+    font-weight: 300;
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: 0;
+    text-align: left;
+}
+
+.eSealing {
+    height: 100vh;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.largeText {
+    font-size: 26px;
+    font-weight: 300;
+    line-height: 21px;
+    letter-spacing: 0;
+}
+
+.centerLargeText {
+    font-size: 26px;
+    font-weight: 300;
+    line-height: 21px;
+    letter-spacing: 0;
+    text-align: center;
+}
+
+.loadingText {
+    color: #979797;
+    overflow-wrap: anywhere;
+}
+
+.text {
+    margin: 6px 0;
+}
+
+button.buttonInvisible {
+    background: transparent;
+    border: none;
+    font-size: 0;
+    cursor: pointer;
+}
+
+.header {
+    color: white;
+}
+
+.input.input {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.switch {
+    background: #308274;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.link {
+    background: none !important;
+    border: none;
+    padding: 0 !important;
+    color: #308274;
+    text-decoration: underline;
+    cursor: pointer;
+    overflow-wrap: anywhere;
+}
+
+.containerSpaceBetween {
+    display: flex;
+    column-gap: 20px;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.containerSwitch {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

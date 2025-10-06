@@ -1,0 +1,13 @@
+.navbar {
+    background-color: rgb(255 255 255 / 95%);
+    box-shadow: 0 2px 4px rgb(0 0 0 / 10%);
+    padding: var(--spacing-unit);
+}
+
+.header-logo {
+    transition: transform var(--transition-speed);
+}
+
+.header-logo:hover {
+    transform: scale(1.05);
+}
