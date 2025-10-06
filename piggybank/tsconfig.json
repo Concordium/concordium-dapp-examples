@@ -1,0 +1,22 @@
+{
+    "compilerOptions": {
+        "target": "ES2020",
+        "lib": ["dom", "dom.iterable", "esnext"],
+        "baseUrl": ".",
+        "allowJs": true,
+        "skipLibCheck": true,
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "strict": true,
+        "noFallthroughCasesInSwitch": true,
+        "module": "ESNext",
+        "moduleResolution": "node",
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "downlevelIteration": true,
+        "jsx": "react-jsx",
+        "noEmit": true,
+        "types": ["vite-plugin-svgr/client"]
+    },
+    "include": [".eslintrc.cjs", "./types/*", "./**/*"]
+}
