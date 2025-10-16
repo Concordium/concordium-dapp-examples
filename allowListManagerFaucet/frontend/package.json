@@ -3,14 +3,11 @@
     "license": "Apache-2.0",
     "version": "0.1.0",
     "dependencies": {
-        "@concordium/browser-wallet-api-helpers": "3.0.1",
-        "@concordium/web-sdk": "10.0.0.alpha.4",
+        "@concordium/react-components": "^0.6.1",
+        "@concordium/wallet-connectors": "^0.6.1",
+        "@concordium/web-sdk": "^11.0.0",
         "@protobuf-ts/grpcweb-transport": "^2.9.1",
-        "@walletconnect/qrcode-modal": "^1.8.0",
-        "@walletconnect/sign-client": "^2.1.5",
-        "@walletconnect/types": "^2.1.5",
         "buffer": "^6.0.3",
-        "json-bigint": "^1.0.0",
         "react": "^18.1.0",
         "react-dom": "^18.1.0",
         "react-select": "^5.7.0"
