@@ -7,7 +7,8 @@ on:
 
   push:
     tags:
-      - 'gallery/*.*.*'
+      # The versioning is of the format: `frontend_version-backend_version`.
+      - 'gallery/*.*.*-*.*.*'
 
 env:
   REGISTRY: docker.io
@@ -30,10 +31,12 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Extract tag from package.json
+      - name: Extract tags from package.json/Cargo.toml
         id: meta
         run: |
-          export VERSION=$(jq -r .version gallery/package.json)
+          export FRONTEND_VERSION=$(jq -r .version gallery/package.json)
+          export BACKEND_VERSION=$(yq .package.version gallery/verifier/Cargo.toml)
+          export VERSION=$FRONTEND_VERSION-$BACKEND_VERSION
           export FULL_IMAGE_TAG="${{ env.REGISTRY }}/concordium/$IMAGE_NAME:$VERSION"
           echo "::notice FULL_IMAGE_TAG=${FULL_IMAGE_TAG}"
           # Make sure the image does not exist. Abort if we can retrieve any metadata.
