@@ -24,6 +24,10 @@ COPY ./gallery/verifier/Cargo.toml ./Cargo.toml
 RUN cargo build --release
 
 FROM ubuntu:22.04
+
+# In order to use TLS when connecting to the node we need certificates.
+RUN apt-get update && apt-get install -y ca-certificates
+
 WORKDIR /build
 
 ENV PORT=8100
