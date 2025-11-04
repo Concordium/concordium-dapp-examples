@@ -11,7 +11,6 @@ import {
     useConnection,
     useConnect,
     WalletConnectionProps,
-    TESTNET,
 } from '@concordium/react-components';
 import { BROWSER_WALLET, WALLET_CONNECT } from '../../constants';
 import { Buffer } from 'buffer';
@@ -198,12 +197,6 @@ export default function AllowListDApp(props: WalletConnectionProps) {
     };
 
     useEffect(() => {
-        console.log('=== DEBUGGING WALLET CONNECT ==='); //DEBUG LINES
-        console.log('Props genesisHashes:', Array.from(props.genesisHashes)); 
-        console.log('Props activeConnectorType:', props.activeConnectorType);
-        console.log('Props activeConnector:', props.activeConnector);
-        console.log('TESTNET from constants:', TESTNET);
-
         // Auto-connect only when the active connector matches what user clicked
         if (
             props.activeConnector &&
