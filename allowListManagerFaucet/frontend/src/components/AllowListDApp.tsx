@@ -1,4 +1,4 @@
-import { useEffect, useState, MouseEventHandler } from 'react';
+import { useEffect, useState } from 'react';
 import {
     CredentialStatements,
     AtomicStatementV2,
@@ -7,7 +7,12 @@ import {
     VerifiablePresentation,
     HexString,
 } from '@concordium/web-sdk';
-import { BrowserWalletProvider, WalletProvider } from '../services/wallet-connection';
+import {
+    useConnection,
+    useConnect,
+    WalletConnectionProps,
+} from '@concordium/react-components';
+import { BROWSER_WALLET, WALLET_CONNECT } from '../../constants';
 import { Buffer } from 'buffer';
 
 declare global {
@@ -24,9 +29,16 @@ const TOKEN_ID = window.runtimeConfig?.TOKEN_ID || 'EUDemo';
 const BACKEND_URL = window.runtimeConfig?.BACKEND_URL || 'http://localhost:3001';
 const VERIFIER_URL = window.runtimeConfig?.VERIFIER_URL || 'https://web3id-verifier.testnet.concordium.com';
 
-export default function AllowListDApp() {
-    const [provider, setProvider] = useState<WalletProvider>();
-    const [selectedAccount, setSelectedAccount] = useState<string>();
+export default function AllowListDApp(props: WalletConnectionProps) {
+
+    const { connection, setConnection, account } = useConnection(
+        props.connectedAccounts,
+        props.genesisHashes
+    );
+    const { connect, isConnecting } = useConnect(
+        props.activeConnector,
+        setConnection
+    );
     const [proofStatus, setProofStatus] = useState<string>('');
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState<string>('');
@@ -37,40 +49,18 @@ export default function AllowListDApp() {
     const [balanceLoading, setBalanceLoading] = useState(false);
     const [isOnAllowList, setIsOnAllowList] = useState<boolean | null>(null);
     const [allowListChecking, setAllowListChecking] = useState(false);
-
+    const [intentedConnectorType, setIntentedConnectorType] = useState<typeof BROWSER_WALLET | typeof WALLET_CONNECT | null>(null);
+    
     useEffect(() => {
-        if (provider !== undefined) {
-            provider.on('accountChanged', (account) => {
-                setSelectedAccount(account);
-                // Fetch balance when account changes
-                if (account) {
-                    fetchTokenBalance(account);
-                    checkAllowListStatus(account);
-                } else {
-                    setTokenBalance('');
-                    setIsOnAllowList(null);
-                }
-            });
-            return () => {
-                provider?.disconnect?.().then(() => provider.removeAllListeners());
-            };
+        if (account) {
+            fetchTokenBalance(account);
+            checkAllowListStatus(account);
+        } else {
+            setTokenBalance('');
+            setIsOnAllowList(null);
         }
-    }, [provider]);
-
-    // Fetch token balance when account is connected
-    useEffect(() => {
-        if (selectedAccount && provider) {
-            fetchTokenBalance(selectedAccount);
-            checkAllowListStatus(selectedAccount);
-        }
-    }, [selectedAccount, provider]);
-
-    const connectProvider = async (provider: WalletProvider) => {
-        const accounts = await provider.connect();
-        setProvider(provider);
-        setSelectedAccount(accounts?.[0]);
-    };
-
+    }, [account]);
+    
     const fetchTokenBalance = async (accountAddress: string) => {
         if (!accountAddress) return;
 
@@ -114,7 +104,7 @@ export default function AllowListDApp() {
     };
 
     const requestCitizenshipProof = async () => {
-        if (!provider || !selectedAccount) {
+        if (!connection || !account) {
             setMessage('Please connect wallet first');
             return;
         }
@@ -150,7 +140,7 @@ export default function AllowListDApp() {
             // Request verifiable presentation from wallet
             let proof: VerifiablePresentation;
             try {
-                proof = await provider.requestVerifiablePresentation(challenge, credentialStatements);
+                proof = await connection.requestVerifiablePresentation(challenge, credentialStatements);
                 setCurrentProof(proof.toString());
             } catch (err: any) {
                 if (err instanceof Error) {
@@ -191,21 +181,11 @@ export default function AllowListDApp() {
         }
     };
 
-    const handleConnectBrowser: MouseEventHandler<HTMLButtonElement> = async () => {
-        try {
-            const browserProvider = await BrowserWalletProvider.getInstance();
-            await connectProvider(browserProvider);
-            setMessage('Connected to browser wallet');
-        } catch (error: any) {
-            setMessage(`Failed to connect: ${error.message}`);
-        }
-    };
-
     const handleDisconnect = async () => {
-        if (provider) {
-            await provider.disconnect?.();
-            setProvider(undefined);
-            setSelectedAccount(undefined);
+        if (connection) {
+            await connection.disconnect();
+            setConnection(undefined);
+            setIntentedConnectorType(null);
             setTokenBalance('');
             setIsOnAllowList(null);
             setMessage('Disconnected from wallet');
@@ -216,8 +196,24 @@ export default function AllowListDApp() {
         }
     };
 
+    useEffect(() => {
+        // Auto-connect only when the active connector matches what user clicked
+        if (
+            props.activeConnector &&
+            !connection &&
+            !isConnecting &&
+            connect &&
+            intentedConnectorType &&
+            props.activeConnectorType === intentedConnectorType
+        ) {
+            console.log('About to connect with connector:', props.activeConnector);
+            connect();
+            setIntentedConnectorType(null); // Reset after connecting
+        }
+    }, [props.activeConnector, props.activeConnectorType, connection, isConnecting, connect, intentedConnectorType]);
+
     const startTokenDistribution = async () => {
-        if (!provider || !selectedAccount) {
+        if (!connection || !account) {
             setMessage('Missing required data for token distribution');
             return;
         }
@@ -232,7 +228,7 @@ export default function AllowListDApp() {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    userAccount: selectedAccount,
+                    userAccount: account,
                     tokenId: TOKEN_ID
                 }),
             });
@@ -280,8 +276,8 @@ export default function AllowListDApp() {
                     }
 
                     setIsOnAllowList(true);
-                    if (selectedAccount) {
-                        setTimeout(() => fetchTokenBalance(selectedAccount), 2000);
+                    if (account) {
+                        setTimeout(() => fetchTokenBalance(account), 2000);
                     }
                     return;
                 } else if (status.status === 'failed') {
@@ -329,7 +325,7 @@ export default function AllowListDApp() {
     };
 
     const getButtonState = () => {
-        if (!provider || isLoading) {
+        if (!connection || isLoading) {
             return { disabled: true, text: isLoading ? 'Processing...' : `Verify EU Nationality & Get ${TOKEN_ID}` };
         }
 
@@ -377,13 +373,35 @@ export default function AllowListDApp() {
                                 <div className="d-grid gap-3">
                                     <button
                                         className="btn btn-outline-dark py-3"
-                                        onClick={handleConnectBrowser}
-                                        disabled={provider !== undefined}
+                                        onClick={() => {
+                                            setIntentedConnectorType(BROWSER_WALLET);
+                                            props.setActiveConnectorType(BROWSER_WALLET);
+                                        }}
+                                        disabled={connection !== undefined}
                                     >
                                         <i className="bi bi-laptop me-2"></i>Browser Wallet
                                     </button>
+                                    <button
+                                        className="btn btn-outline-primary py-3"
+                                        onClick={() => {
+                                            setIntentedConnectorType(WALLET_CONNECT);
+                                            props.setActiveConnectorType(WALLET_CONNECT);
+                                        }}
+                                        disabled={connection !== undefined || isConnecting}
+                                    >
+                                        {isConnecting ? (
+                                            <>
+                                                <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                                                Connecting...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <i className="bi bi-phone me-2"></i>Mobile Wallet (WalletConnect)
+                                            </>
+                                        )}
+                                    </button>
                                 </div>
-                                {provider && selectedAccount && (
+                                {connection && account && (
                                     <div className="mt-4">
                                         <div className="alert alert-success border-0">
                                             <div className="d-flex align-items-center">
@@ -392,7 +410,7 @@ export default function AllowListDApp() {
                                                     <strong>Connected</strong>
                                                     <div className="mt-1">
                                                         <code className="text-success" style={{ fontSize: '0.85rem' }}>
-                                                            {selectedAccount}
+                                                            {account}
                                                         </code>
                                                     </div>
                                                 </div>
@@ -432,8 +450,8 @@ export default function AllowListDApp() {
                                                         </div>
                                                         <button
                                                             className="btn btn-sm btn-outline-secondary"
-                                                            onClick={() => selectedAccount && checkAllowListStatus(selectedAccount)}
-                                                            disabled={allowListChecking || !selectedAccount}
+                                                            onClick={() => account && checkAllowListStatus(account)}
+                                                            disabled={allowListChecking || !account}
                                                         >
                                                             <i className="bi bi-arrow-clockwise"></i>
                                                         </button>
@@ -473,8 +491,8 @@ export default function AllowListDApp() {
                                                         </div>
                                                         <button
                                                             className="btn btn-sm btn-outline-secondary"
-                                                            onClick={() => selectedAccount && fetchTokenBalance(selectedAccount)}
-                                                            disabled={balanceLoading || !selectedAccount}
+                                                            onClick={() => account && fetchTokenBalance(account)}
+                                                            disabled={balanceLoading || !account}
                                                         >
                                                             <i className="bi bi-arrow-clockwise"></i>
                                                         </button>
