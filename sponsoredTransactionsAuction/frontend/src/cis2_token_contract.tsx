@@ -1,5 +1,4 @@
 import * as Cis2MultiContract from '../generated/cis2_multi_cis2_multi'; // Code generated from a smart contract module. The naming convention of the generated file is `moduleName_smartContractName`.
-
 import {
     AccountTransactionType,
     UpdateContractPayload,
@@ -9,22 +8,11 @@ import {
     Energy,
     AccountAddress,
     TransactionHash,
-    ContractAddress,
-    ConcordiumGRPCWebClient,
 } from '@concordium/web-sdk';
-import { CONTRACT_SUB_INDEX, EPSILON_ENERGY, NODE, PORT, SPONSORED_TX_CONTRACT_NAME } from './constants';
+import { EPSILON_ENERGY, SPONSORED_TX_CONTRACT_NAME, CIS2_TOKEN_CONTRACT } from './constants';
 import { WalletConnection } from '@concordium/wallet-connectors';
 
 import JSONbig from 'json-bigint';
-
-const grpc = new ConcordiumGRPCWebClient(NODE, PORT);
-
-const contract = Cis2MultiContract.createUnchecked(
-    grpc,
-    ContractAddress.create(Number(process.env.CIS2_TOKEN_CONTRACT_INDEX), CONTRACT_SUB_INDEX),
-);
-
-export const CIS2_TOKEN_CONTRACT = contract;
 
 /**
  * This function submits a transaction to mint/airdrop cis2_multi tokens to an account.
@@ -40,7 +28,7 @@ export async function mint(
     accountAddress: AccountAddress.Type,
     mintParameter: Cis2MultiContract.MintParameter,
 ): Promise<TransactionHash.Type> {
-    const dryRunResult = await Cis2MultiContract.dryRunMint(contract, mintParameter);
+    const dryRunResult = await Cis2MultiContract.dryRunMint(CIS2_TOKEN_CONTRACT, mintParameter);
 
     if (!dryRunResult || dryRunResult.tag === 'failure' || !dryRunResult.returnValue) {
         const parsedErrorCode = Cis2MultiContract.parseErrorMessageMint(dryRunResult)?.type;
@@ -58,7 +46,7 @@ export async function mint(
 
     const payload: Omit<UpdateContractPayload, 'message'> = {
         amount: CcdAmount.zero(),
-        address: contract.contractAddress,
+        address: CIS2_TOKEN_CONTRACT.contractAddress,
         receiveName: ReceiveName.create(Cis2MultiContract.contractName, EntrypointName.fromString('mint')),
         maxContractExecutionEnergy,
     };
@@ -83,7 +71,7 @@ export async function mint(
 export async function nonceOf(
     nonceOfParameter: Cis2MultiContract.NonceOfParameter,
 ): Promise<Cis2MultiContract.ReturnValueNonceOf> {
-    const dryRunResult = await Cis2MultiContract.dryRunNonceOf(contract, nonceOfParameter);
+    const dryRunResult = await Cis2MultiContract.dryRunNonceOf(CIS2_TOKEN_CONTRACT, nonceOfParameter);
 
     if (!dryRunResult || dryRunResult.tag === 'failure' || !dryRunResult.returnValue) {
         const parsedErrorCode = Cis2MultiContract.parseErrorMessageNonceOf(dryRunResult)?.type;

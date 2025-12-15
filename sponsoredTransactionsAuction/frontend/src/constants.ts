@@ -1,5 +1,7 @@
 import { BrowserWalletConnector, ephemeralConnectorType } from '@concordium/react-components';
-import { ContractName } from '@concordium/web-sdk';
+import { ConcordiumGRPCWebClient, ContractAddress, ContractName } from '@concordium/web-sdk';
+import * as Cis2MultiContract from '../generated/cis2_multi_cis2_multi'; // Code generated from a smart contract module. The naming convention of the generated file is `moduleName_smartContractName`.
+import * as AuctionContract from '../generated/sponsored_tx_enabled_auction_sponsored_tx_enabled_auction'; // Code generated from a smart contract module. The naming convention of the generated file is `moduleName_smartContractName`.
 
 import moment from 'moment';
 
@@ -35,3 +37,18 @@ export const TRANSFER_SCHEMA =
 export const SERIALIZATION_HELPER_SCHEMA_ADDITIONAL_DATA = 'Aw==';
 
 export const BROWSER_WALLET = ephemeralConnectorType(BrowserWalletConnector.create);
+
+const grpc = new ConcordiumGRPCWebClient(NODE, PORT);
+
+const cis2_token_contract = Cis2MultiContract.createUnchecked(
+    grpc,
+    ContractAddress.create(Number(process.env.CIS2_TOKEN_CONTRACT_INDEX), CONTRACT_SUB_INDEX),
+);
+
+const auction_contract = AuctionContract.createUnchecked(
+    grpc,
+    ContractAddress.create(Number(process.env.AUCTION_CONTRACT_INDEX), CONTRACT_SUB_INDEX),
+);
+
+export const AUCTION_CONTRACT = auction_contract;
+export const CIS2_TOKEN_CONTRACT = cis2_token_contract;
