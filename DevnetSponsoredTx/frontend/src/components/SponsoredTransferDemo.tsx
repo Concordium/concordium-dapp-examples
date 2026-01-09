@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { useConnection, useConnect, WalletConnectionProps } from '@concordium/react-components'
 import { detectConcordiumProvider } from '@concordium/browser-wallet-api-helpers'
 import { BROWSER_WALLET, BACKEND_URL, TOKEN_ID, TOKEN_DECIMALS, CCDSCAN_URL } from '../constants'
-import { Transaction } from '@concordium/web-sdk/transactions'
 
 export default function SponsoredTransferDemo(props: WalletConnectionProps) {
   const { connection, setConnection, account } = useConnection(props.connectedAccounts, props.genesisHashes)
@@ -82,6 +81,7 @@ export default function SponsoredTransferDemo(props: WalletConnectionProps) {
       setMessage('Waiting for your signature...')
 
       const provider = await detectConcordiumProvider() as any
+      //TO DO: add const parsedTransaction = Transaction.signableFromJSON(sponsoredTransaction) after BW update
       const txHash = await provider.sendSponsoredTransaction(account, 27, sponsoredTransaction)
 
       setTransactionHash(txHash)
