@@ -40,12 +40,11 @@ export class SponsorService {
         },
       ]
 
-      const transaction = Transaction.tokenUpdate({
+      const builder = Transaction.tokenUpdate({
         tokenId: TokenId.fromString(tokenId),
         operations: Cbor.encode(ops),
       })
-
-      const builder = Transaction.builderFromJSON(Transaction.toJSON(transaction))
+      
       const grpcClient = this.concordiumService.getClient()
       const senderAddress = AccountAddress.fromBase58(sender)
       const nonce = await grpcClient.getNextAccountNonce(senderAddress)

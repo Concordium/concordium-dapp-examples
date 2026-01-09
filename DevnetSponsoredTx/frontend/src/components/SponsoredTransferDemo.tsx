@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useConnection, useConnect, WalletConnectionProps } from '@concordium/react-components'
 import { detectConcordiumProvider } from '@concordium/browser-wallet-api-helpers'
 import { BROWSER_WALLET, BACKEND_URL, TOKEN_ID, TOKEN_DECIMALS, CCDSCAN_URL } from '../constants'
+import { Transaction } from '@concordium/web-sdk/transactions'
 
 export default function SponsoredTransferDemo(props: WalletConnectionProps) {
   const { connection, setConnection, account } = useConnection(props.connectedAccounts, props.genesisHashes)

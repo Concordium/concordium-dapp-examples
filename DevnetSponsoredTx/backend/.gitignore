@@ -5,3 +5,4 @@ wallet/*.export
 wallet/*.json
 *.log
 .DS_Store
+*.tsbuildinfo

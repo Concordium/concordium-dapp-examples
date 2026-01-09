@@ -3,9 +3,8 @@
   "version": "1.0.0",
   "dependencies": {
     "@concordium/browser-wallet-api-helpers": "^3.0.1",
-    "@concordium/react-components": "^0.6.1",
-    "@concordium/wallet-connectors": "^0.6.1",
-    "@concordium/web-sdk": "12.0.0-devnet-p10.0",
+    "@concordium/react-components": "^0.7.0",
+    "@concordium/web-sdk": "12.0.0",
     "@protobuf-ts/grpcweb-transport": "^2.9.1",
     "buffer": "^6.0.3",
     "react": "^18.1.0",
