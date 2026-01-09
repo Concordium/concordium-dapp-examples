@@ -13,7 +13,7 @@ declare global {
 
 export const BROWSER_WALLET = ephemeralConnectorType(BrowserWalletConnector.create)
 
-export const BACKEND_URL ='http://localhost:3002'
-export const TOKEN_ID = 'EURtest'
-export const TOKEN_DECIMALS = parseInt('6')
-export const CCDSCAN_URL = 'https://devnet-p10-1.ccdscan.io/'
+export const BACKEND_URL = window.runtimeConfig?.BACKEND_URL || 'http://localhost:3002'
+export const TOKEN_ID = window.runtimeConfig?.TOKEN_ID || 'EURtest'
+export const TOKEN_DECIMALS = parseInt(window.runtimeConfig?.TOKEN_DECIMALS || '6')
+export const CCDSCAN_URL = window.runtimeConfig?.CCDSCAN_URL || ''
