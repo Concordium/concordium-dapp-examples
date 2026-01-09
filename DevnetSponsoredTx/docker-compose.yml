@@ -1,0 +1,25 @@
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - BACKEND_URL=${BACKEND_URL:-http://localhost:3002}
+      - TOKEN_ID=${TOKEN_ID:-EURtest}
+      - TOKEN_DECIMALS=${TOKEN_DECIMALS:-6}
+      - CCDSCAN_URL=${CCDSCAN_URL}
+    depends_on:
+      - backend
+
+  backend:
+    build: ./backend
+    ports:
+      - "3002:3002"
+    environment:
+      - CONCORDIUM_GRPC_HOST=${CONCORDIUM_GRPC_HOST}
+      - CONCORDIUM_GRPC_PORT=${CONCORDIUM_GRPC_PORT:-20000}
+      - CONCORDIUM_USE_SSL=${CONCORDIUM_USE_SSL:-true}
+      - SPONSOR_WALLET_PATH=/app/wallet/sponsor.export
+      - PORT=3002
+    volumes:
+      - ./backend/wallet:/app/wallet:ro
