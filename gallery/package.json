@@ -46,6 +46,6 @@
 
     "resolutions": {
         "form-data": "4.0.5",
-        "@babel/traverse": "7.23.2"
+        "@babel/traverse": "7.23.2" 
     }
 }
