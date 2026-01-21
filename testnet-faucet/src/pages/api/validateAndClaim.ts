@@ -7,8 +7,10 @@ import checkUsageLimit from '@/lib/checkUsageLimit';
 import createAccountTransaction from '@/lib/createAccountTrasantion';
 import createGRPCNodeClient from '@/lib/createGPRCClient';
 import getSenderAccountSigner from '@/lib/getSenderAccountSigner';
+import validateTurnsiteToken from '@/lib/validateTurnsiteToken';
 
 interface IBody {
+    humanToken: string;
     receiver: string;
     XPostId: string;
 }
@@ -28,14 +30,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         throw new Error('SENDER_ADDRESS env vars undefined.');
     }
 
-    const { XPostId, receiver } = req.body as IBody;
+    const { humanToken, receiver, XPostId } = req.body as IBody;
 
-    if (!XPostId || !receiver) {
+    if (!humanToken || !XPostId || !receiver) {
         return res.status(400).json({
-            error: 'Missing parameters. Please provide XPostId, and receiver params.',
+            error: 'Missing parameters. Please provide humanToken, receiver and XPostId params.',
         });
     }
     try {
+        const isHumanTokenValid = await validateTurnsiteToken(humanToken);
+
+        if (!isHumanTokenValid) {
+            return res.status(403).json({
+                error: `The provided token in the human verification is not valid.`,
+            });
+        }
+
         const isAllowed = await checkUsageLimit(receiver);
         if (!isAllowed) {
             return res.status(401).json({
