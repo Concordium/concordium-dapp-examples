@@ -1,0 +1,2 @@
+# Specifically ignore the local optimization file
+.yarn/install-state.gz
