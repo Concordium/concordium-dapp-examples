@@ -9,7 +9,7 @@
         "@emotion/styled": "^11.10.4",
         "@mui/icons-material": "^5.10.3",
         "@mui/material": "^5.10.4",
-        "axios": "^1.1.3",
+        "axios": "^1.12.0",
         "common-ui": "1.0.0",
         "crypto-js": "^4.1.1",
         "leb128": "^0.0.5",
