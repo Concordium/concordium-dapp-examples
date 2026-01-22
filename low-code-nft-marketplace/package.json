@@ -29,5 +29,10 @@
         "lint": "yarn run build:tsc && eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
         "lint-fix": "yarn run lint --fix",
         "fmt": "yarn run build:tsc && prettier -w ."
+    },
+    "resolutions": {
+        "form-data": "4.0.5",
+        "cipher-base": "1.0.5",
+        "sha.js": "2.4.12"
     }
 }
