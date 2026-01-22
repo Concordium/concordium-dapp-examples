@@ -34,7 +34,7 @@
         "prepare": "yarn run build",
         "prepublishOnly": "yarn test && yarn run prettier && yarn run lint"
     },
-    "resolutions":{
+    "resolutions": {
         "@babel/traverse": "7.23.2",
         "cipher-base": "1.0.6",
         "sha.js": "2.4.12",
