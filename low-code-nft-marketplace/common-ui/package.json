@@ -6,7 +6,7 @@
     "dependencies": {
         "@concordium/browser-wallet-api-helpers": "2.5.0",
         "@concordium/web-sdk": "^3.5.0",
-        "axios": "^1.4.0"
+        "axios": "^1.13.2"
     },
     "devDependencies": {
         "@expo/webpack-config": "^18.0.1",
@@ -33,5 +33,11 @@
         "build:cjs": "tsc --module commonjs --outDir dist/cjs",
         "prepare": "yarn run build",
         "prepublishOnly": "yarn test && yarn run prettier && yarn run lint"
+    },
+    "resolutions":{
+        "@babel/traverse": "7.23.2",
+        "cipher-base": "1.0.6",
+        "sha.js": "2.4.12",
+        "protobufjs": "^7.2.5"
     }
 }
