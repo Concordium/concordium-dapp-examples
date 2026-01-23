@@ -12,8 +12,8 @@ COPY ./gallery/types ./types
 COPY ./gallery/src ./src
 
 RUN corepack enable
-COPY .yarnrc.yml ./
-COPY .yarn ./.yarn
+COPY ./gallery/.yarnrc.yml ./
+COPY ./gallery/.yarn ./.yarn
 
 RUN yarn && yarn cache clean
 RUN yarn build
