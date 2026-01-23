@@ -11,6 +11,7 @@ COPY ./gallery/esbuild.config.ts ./
 COPY ./gallery/types ./types
 COPY ./gallery/src ./src
 
+RUN corepack enable
 RUN yarn && yarn cache clean
 RUN yarn build
 
