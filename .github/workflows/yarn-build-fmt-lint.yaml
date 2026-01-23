@@ -150,7 +150,7 @@ jobs:
       - name: Install Low Code NFT Marketplace Dependencies
         if: ${{ matrix.packages == 'low-code-nft-marketplace' }}
         working-directory: low-code-nft-marketplace
-        run: yarn install && yarn workspace common-ui build
+        run: yarn install && yarn workspace common-ui build && yarn workspace market-ui build && yarn workspace mint-ui build
 
       - name: Run install
         if: ${{ matrix.packages != 'low-code-nft-marketplace/market-ui' && matrix.packages != 'low-code-nft-marketplace/mint-ui' }}
@@ -162,11 +162,4 @@ jobs:
         working-directory: ${{ matrix.packages }}
         run: yarn build
       
-      - name: Build market-ui and mint-ui
-        if: ${{ matrix.packages == 'low-code-nft-marketplace' }}
-        run: | 
-          yarn install --immutable
-          yarn workspace market-ui build 
-          yarn workspace mint-ui build
-
 
