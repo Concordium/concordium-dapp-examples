@@ -157,7 +157,13 @@ jobs:
         working-directory: ${{ matrix.packages }}
         run: yarn install
 
+      - name: Build Low Code NFT Marketplace
+        if: ${{ matrix.packages == 'low-code-nft-marketplace' }}
+        working-directory: ${{ matrix.packages }}
+        run: yarn build:all
+
       - name: Build
+        if: ${{ matrix.packages != 'low-code-nft-marketplace' }}
         working-directory: ${{ matrix.packages }}
         run: yarn build
 
