@@ -153,7 +153,7 @@ jobs:
         run: yarn install && yarn workspace common-ui build && yarn workspace market-ui build && yarn workspace mint-ui build
 
       - name: Run install
-        if: ${{ matrix.packages != 'low-code-nft-marketplace/market-ui' && matrix.packages != 'low-code-nft-marketplace/mint-ui' }}
+        if: ${{ matrix.packages != 'low-code-nft-marketplace' }}
         working-directory: ${{ matrix.packages }}
         run: yarn install
 
