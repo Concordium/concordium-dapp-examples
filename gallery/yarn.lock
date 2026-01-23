@@ -355,15 +355,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@craftamap/esbuild-plugin-html@npm:^0.7.0":
-  version: 0.7.0
-  resolution: "@craftamap/esbuild-plugin-html@npm:0.7.0"
+"@craftamap/esbuild-plugin-html@npm:^0.4.0":
+  version: 0.4.0
+  resolution: "@craftamap/esbuild-plugin-html@npm:0.4.0"
   dependencies:
     jsdom: "npm:^17.0.0"
-    lodash: "npm:^4.17.21"
+    lodash.template: "npm:^4.5.0"
   peerDependencies:
-    esbuild: ">=0.15.10"
-  checksum: 10c0/b475a7f4d0bfcf92972b18f378a9869e0d791adcb70a43b638c214af6d6fb403f4e3fb714fa0d2087ae2fe9bc939eb0c4f9e9143fa2421e0e4f03eb418c7518f
+    esbuild: ">=0.12.28"
+  checksum: 10c0/4fb7b9b67e3b646832a6e45b70f8b3131227330a9040913cf9b2522cdd35243ea6573666fa6d46556a20f9b30d5c1b1d5cb7484485e631f1f4b10a1ee48a36a0
   languageName: node
   linkType: hard
 
@@ -3319,7 +3319,7 @@ __metadata:
   dependencies:
     "@concordium/browser-wallet-api-helpers": "npm:^3.0.1"
     "@concordium/web-sdk": "npm:^7.5.1"
-    "@craftamap/esbuild-plugin-html": "npm:^0.7.0"
+    "@craftamap/esbuild-plugin-html": "npm:^0.4.0"
     "@types/node": "npm:^18.11.14"
     "@types/react": "npm:^18.0.9"
     "@types/react-dom": "npm:^18.0.5"
@@ -4443,6 +4443,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"lodash._reinterpolate@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "lodash._reinterpolate@npm:3.0.0"
+  checksum: 10c0/cdf592374b5e9eb6d6290a9a07c7d90f6e632cca4949da2a26ae9897ab13f138f3294fd5e81de3e5d997717f6e26c06747a9ad3413c043fd36c0d87504d97da6
+  languageName: node
+  linkType: hard
+
 "lodash.camelcase@npm:^4.3.0":
   version: 4.3.0
   resolution: "lodash.camelcase@npm:4.3.0"
@@ -4454,6 +4461,25 @@ __metadata:
   version: 4.6.2
   resolution: "lodash.merge@npm:4.6.2"
   checksum: 10c0/402fa16a1edd7538de5b5903a90228aa48eb5533986ba7fa26606a49db2572bf414ff73a2c9f5d5fd36b31c46a5d5c7e1527749c07cbcf965ccff5fbdf32c506
+  languageName: node
+  linkType: hard
+
+"lodash.template@npm:^4.5.0":
+  version: 4.5.0
+  resolution: "lodash.template@npm:4.5.0"
+  dependencies:
+    lodash._reinterpolate: "npm:^3.0.0"
+    lodash.templatesettings: "npm:^4.0.0"
+  checksum: 10c0/62a02b397f72542fa9a989d9fc1a94fc1cb94ced8009fa5c37956746c0cf460279e844126c2abfbf7e235fe27e8b7ee8e6efbf6eac247a06aa05b05457fda817
+  languageName: node
+  linkType: hard
+
+"lodash.templatesettings@npm:^4.0.0":
+  version: 4.2.0
+  resolution: "lodash.templatesettings@npm:4.2.0"
+  dependencies:
+    lodash._reinterpolate: "npm:^3.0.0"
+  checksum: 10c0/2609fea36ed061114dfed701666540efc978b069b2106cd819b415759ed281419893d40f85825240197f1a38a98e846f2452e2d31c6d5ccee1e006c9de820622
   languageName: node
   linkType: hard
 
