@@ -7,8 +7,6 @@
         "./cis2-market"
     ],
     "devDependencies": {
-        "typescript": "^5.4.3",
-        "prettier": "^3.2.5",
         "@typescript-eslint/eslint-plugin": "^7.1.1",
         "@typescript-eslint/parser": "^7.1.1",
         "eslint": "^8.57.0",
@@ -16,7 +14,9 @@
         "eslint-plugin-jsx-a11y": "^6.8.0",
         "eslint-plugin-react": "^7.34.0",
         "eslint-plugin-react-hooks": "^4.6.0",
-        "eslint-plugin-react-refresh": "^0.4.5"
+        "eslint-plugin-react-refresh": "^0.4.5",
+        "prettier": "^3.2.5",
+        "typescript": "^5.4.3"
     },
     "scripts": {
         "build:all": "yarn run build:tsc && yarn run build:smart-contract",
@@ -29,5 +29,6 @@
         "lint": "yarn run build:tsc && eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
         "lint-fix": "yarn run lint --fix",
         "fmt": "yarn run build:tsc && prettier -w ."
-    }
+    },
+    "packageManager": "yarn@4.12.0"
 }
