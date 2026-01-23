@@ -18,7 +18,7 @@ The backend for this demo can be found in the [verifier](./verifier/) folder:
 
 ## Installing
 
--   Run `yarn`.
+-   Run `corepack enable && yarn`.
 
 ## Running the example
 
