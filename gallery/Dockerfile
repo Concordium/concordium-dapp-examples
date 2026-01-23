@@ -11,7 +11,6 @@ COPY ./gallery/esbuild.config.ts ./
 COPY ./gallery/types ./types
 COPY ./gallery/src ./src
 
-COPY ./gallery/.yarn ./.yarn 
 COPY ./gallery/.yarnrc.yml ./
 RUN corepack enable
 
