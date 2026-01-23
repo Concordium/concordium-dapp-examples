@@ -161,4 +161,10 @@ jobs:
         if: ${{ matrix.packages != 'low-code-nft-marketplace' }}
         working-directory: ${{ matrix.packages }}
         run: yarn build
+      
+      - name: Build market-ui and mint-ui
+        if: ${{ matrix.packages == 'low-code-nft-marketplace' }}
+        working-directory: ${{ matrix.packages }}
+        run: yarn workspace market-ui build && yarn workspace mint-ui build
+
 
