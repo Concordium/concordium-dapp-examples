@@ -117,9 +117,6 @@ jobs:
           - euroe-demo
           - gallery
           - low-code-nft-marketplace
-          #- low-code-nft-marketplace/common-ui
-          #- low-code-nft-marketplace/market-ui
-          #- low-code-nft-marketplace/mint-ui
           - signMessage
           - simpleAgeVerification
           - sponsoredTransactions/frontend
