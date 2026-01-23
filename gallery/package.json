@@ -2,7 +2,7 @@
     "name": "gallery",
     "license": "Apache-2.0",
     "version": "0.2.1",
-    "packageManager": "yarn@1.22.0",
+    "packageManager": "yarn@4.12.0",
     "dependencies": {
         "@concordium/browser-wallet-api-helpers": "^3.0.1",
         "@concordium/web-sdk": "^7.5.1",
