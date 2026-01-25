@@ -12,7 +12,6 @@ RUN yarn build
 
 # Build server
 FROM ${RUST_IMAGE} AS server
-COPY ./deps/concordium-rust-sdk /deps/concordium-rust-sdk
 COPY . .
 RUN cargo build --locked -p indexer --release
 

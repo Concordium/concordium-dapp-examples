@@ -4,7 +4,6 @@ ARG RUST_IMAGE=rust:1.85-bookworm
 
 # Build indexer
 FROM ${RUST_IMAGE} AS build
-COPY ./deps/concordium-rust-sdk /deps/concordium-rust-sdk
 COPY . .
 RUN cargo build --locked -p indexer --release
 
