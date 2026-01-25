@@ -56,8 +56,8 @@ use concordium_std::*;
 // Re-export type.
 pub use concordium_std::MetadataUrl;
 use track_and_trace_common::{
-    AdditionalData, Event, GrantRoleEvent, ItemCreatedEvent, ItemID, ItemStatusChangedEvent,
-    NonceEvent, RevokeRoleEvent, Roles, Status, TransitionEdges,
+    AdditionalData, ChangeItemStatusParams, Event, GrantRoleEvent, ItemCreatedEvent, ItemID,
+    ItemState, ItemStatusChangedEvent, NonceEvent, RevokeRoleEvent, Roles, Status, TransitionEdges,
 };
 
 /// The standard identifier for the CIS-6 standard.
