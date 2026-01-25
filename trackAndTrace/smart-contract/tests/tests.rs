@@ -6,6 +6,10 @@ use concordium_std::{
     AccountSignatures, CredentialSignatures, HashSha2256, MetadataUrl, SignatureEd25519,
 };
 use track_and_trace::*;
+use track_and_trace_common::{
+    AdditionalData, ChangeItemStatusParams, Event, ItemCreatedEvent, ItemID, ItemState,
+    ItemStatusChangedEvent, Roles, Status, TransitionEdges,
+};
 
 /// The test accounts.
 const ADMIN: AccountAddress = AccountAddress([0; 32]);
