@@ -350,6 +350,7 @@ fn calculate_amounts(
     }
 }
 
+#[allow(deprecated)] // should use new testing infrastructure
 #[concordium_cfg_test]
 mod test {
     use crate::{
