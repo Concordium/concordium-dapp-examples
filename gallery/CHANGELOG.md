@@ -1,5 +1,7 @@
 ## Unreleased changes
 
+## 0.2.1
+
 -   Update submodule link.
 
 ## 0.2.0

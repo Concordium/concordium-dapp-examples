@@ -1,6 +1,6 @@
 [package]
 name = "sponsored-transaction-auction-backend"
-version = "1.0.0"
+version = "1.0.1"
 authors = ["Concordium AG <developers@concordium.com>"]
 edition = "2021"
 license-file = "../../LICENSE"

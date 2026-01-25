@@ -5,12 +5,12 @@
 use anyhow::Context;
 use clap::Parser;
 use concordium_rust_sdk::{
-    indexer::{self, ProcessorConfig, TransactionIndexer},
+    indexer::{self, OnFinalizationError, ProcessorConfig, TransactionIndexer},
     types::{
         queries::BlockInfo, AbsoluteBlockHeight, BlockItemSummary,
         BlockItemSummaryDetails::AccountCreation,
     },
-    v2::{self as sdk, Client, QueryError},
+    v2::{self as sdk, Client},
 };
 use crd_indexer::db::DatabasePool;
 use tokio_postgres::types::ToSql;
@@ -93,7 +93,16 @@ impl indexer::ProcessEvent for StoreEvents {
             .context("Failed to execute latest_processed_block_height transaction")?;
 
         for tx in block_items {
-            match &tx.details {
+            let tx_details = match tx.details.as_ref().known_or_err() {
+                Ok(details) => details,
+                Err(e) => {
+                    // To reduce maintenance we ignore block items with unknown details.
+                    tracing::warn!("Skipping indexing block items with unknown details: {e}");
+                    continue;
+                }
+            };
+
+            match tx_details {
                 AccountCreation(account_creation_details) => {
                     let params: [&(dyn ToSql + Sync); 5] = [
                         &account_creation_details.address.0.as_ref(),
@@ -246,7 +255,7 @@ async fn handle_indexing(
     endpoint: sdk::Endpoint,
     start_block: AbsoluteBlockHeight,
     db_pool: DatabasePool,
-) -> Result<(), QueryError> {
+) -> Result<(), OnFinalizationError> {
     tracing::info!("Indexing from block height {}.", start_block);
 
     let traverse_config = indexer::TraverseConfig::new_single(endpoint, start_block);

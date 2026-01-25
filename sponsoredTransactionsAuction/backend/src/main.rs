@@ -322,9 +322,11 @@ async fn handle_signature_bid(
             used_energy: _,
         } => {
             tracing::warn!("TransactionSimulationError with reason: {:#?}.", reason);
-            return Err(ServerError::TransactionSimulationError(RevertReason {
-                reason,
-            }));
+            let reason = reason.known_or_err()?;
+
+            return Err(ServerError::RejectedTransactionSimulationWithReason(
+                RevertReason { reason },
+            ));
         }
     };
 

@@ -1,0 +1,50 @@
+{
+    "name": "voting",
+    "license": "Apache-2.0",
+    "version": "1.1.6",
+    "packageManager": "yarn@3.6.3",
+    "dependencies": {
+        "@concordium/browser-wallet-api-helpers": "3.0.1",
+        "@concordium/web-sdk": "10.0.2",
+        "bootstrap": "^5.2.1",
+        "moment": "^2.29.4",
+        "react": "^18.2.0",
+        "react-bootstrap": "^2.5.0",
+        "react-dom": "^18.2.0",
+        "react-qr-code": "^2.0.8",
+        "react-router-dom": "^6.4.0",
+        "rollup-plugin-node-polyfills": "^0.2.1",
+        "vite-plugin-node-polyfills": "^0.21.0",
+        "web-vitals": "^2.1.4"
+    },
+    "devDependencies": {
+        "@types/node": "^18.7.23",
+        "@types/react": "^18.0.9",
+        "@types/react-dom": "^18.0.5",
+        "@typescript-eslint/eslint-plugin": "^6.0.0",
+        "@typescript-eslint/parser": "^6.0.0",
+        "@vitejs/plugin-react-swc": "^3.4.0",
+        "eslint": "^8.45.0",
+        "eslint-config-prettier": "^9.0.0",
+        "eslint-plugin-jsx-a11y": "^6.7.1",
+        "eslint-plugin-react": "^7.33.2",
+        "eslint-plugin-react-hooks": "^4.6.0",
+        "eslint-plugin-react-refresh": "^0.4.3",
+        "prettier": "^3.0.3",
+        "process": "^0.11.10",
+        "ts-node": "^10.8.0",
+        "typescript": "5.2.2",
+        "vite": "^4.5.0",
+        "vite-plugin-svgr": "^4.1.0",
+        "vite-plugin-top-level-await": "^1.4.2",
+        "vite-plugin-wasm": "^3.2.2"
+    },
+    "scripts": {
+        "build": "vite build",
+        "start": "vite preview",
+        "watch": "vite",
+        "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+        "lint-fix": "yarn lint --fix",
+        "fmt": "prettier -w ."
+    }
+}

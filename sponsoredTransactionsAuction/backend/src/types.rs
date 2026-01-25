@@ -1,15 +1,12 @@
 use axum::{extract::rejection::JsonRejection, Json};
 use concordium_rust_sdk::{
     cis2::{TokenAmount, TokenId, Transfer},
-    smart_contracts::{
-        common as concordium_std,
-        common::{
-            AccountAddress, AccountSignatures, ContractAddress, OwnedEntrypointName, Serial,
-            Timestamp,
-        },
+    smart_contracts::common::{
+        self as concordium_std, AccountAddress, AccountSignatures, ContractAddress,
+        OwnedEntrypointName, Serial, Timestamp,
     },
     types::{Nonce, RejectReason, WalletAccount},
-    v2::{self, QueryError, RPCError},
+    v2::{self, upward::UnknownDataError, QueryError, RPCError},
 };
 use hex::FromHexError;
 use http::StatusCode;
@@ -28,8 +25,12 @@ pub enum ServerError {
     ParameterError,
     #[error("Unable to invoke the node to simulate the transaction: {0}.")]
     SimulationInvokeError(#[from] QueryError),
+    /// The transaction simulation rejected where the exact
+    /// reject reason is unknown.
+    #[error("Simulation of transaction rejected. The exact reject reason is unknown: {0}")]
+    RejectedTransactionSimulation(#[from] UnknownDataError),
     #[error("Simulation of transaction reverted in smart contract with reason: {0:?}.")]
-    TransactionSimulationError(RevertReason),
+    RejectedTransactionSimulationWithReason(RevertReason),
     #[error("The signer account reached its rate limit.")]
     RateLimitError,
     #[error("Unable to submit transaction on chain successfully: {0}.")]
@@ -53,6 +54,13 @@ impl axum::response::IntoResponse for ServerError {
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     Json(format!("{}", error)),
+                )
+            }
+            ServerError::RejectedTransactionSimulation(error) => {
+                tracing::error!("Simulation of transaction rejected. The exact reject reason is unknown: {error}.");
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json("Simulation of transaction rejected.".to_string()),
                 )
             }
             ServerError::SubmitSponsoredTransactionError(error) => {

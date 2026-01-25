@@ -3,17 +3,15 @@ use concordium_rust_sdk::{
     cis2::{TokenId, Transfer, UpdateOperator},
     contract_client::{ContractClient, DecodedReason},
     endpoints::QueryError,
-    smart_contracts::{
-        common as concordium_std,
-        common::{
-            AccountAddress, AccountSignatures, ContractAddress, OwnedEntrypointName, Serial,
-            Timestamp,
-        },
+    smart_contracts::common::{
+        self as concordium_std, AccountAddress, AccountSignatures, ContractAddress,
+        OwnedEntrypointName, Serial, Timestamp,
     },
     types::{
         hashes::{HashBytes, TransactionMarker},
         Nonce, RejectReason,
     },
+    v2::upward::UnknownDataError,
 };
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::Mutex;
@@ -36,13 +34,17 @@ pub enum LogError {
     AdditionalDataError,
     #[error("Node access error: {0}")]
     NodeAccess(#[from] QueryError),
-    #[error("Simulation of transaction rejected with reject reason: {0:?}")]
-    TransactionSimulationError(RejectReason),
+    /// The transaction simulation rejected where the exact
+    /// reject reason is unknown.
+    #[error("Simulation of transaction rejected. The exact reject reason is unknown: {0}")]
+    RejectedTransactionSimulation(#[from] UnknownDataError),
+    #[error("Simulation of transaction rejected with reject reason: {reason:?}")]
+    RejectedTransactionSimulationWithReason { reason: RejectReason },
     #[error(
         "Simulation of transaction rejected in smart contract with decoded reject reason: `{0}` \
          derived from: {1:?}."
     )]
-    TransactionSimulationDecodedError(DecodedReason, RejectReason),
+    RejectedTransactionSimulationWithDecodedReason(DecodedReason, RejectReason),
     #[error("Failed to create contract client: {0:?}")]
     FailedToCreateContractClient(QueryError),
     #[error("Invalid receive name: {0}")]

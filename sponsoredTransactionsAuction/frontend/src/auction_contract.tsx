@@ -9,22 +9,11 @@ import {
     Energy,
     AccountAddress,
     TransactionHash,
-    ContractAddress,
-    ConcordiumGRPCWebClient,
 } from '@concordium/web-sdk';
-import { AUCTION_CONTRACT_NAME, CONTRACT_SUB_INDEX, EPSILON_ENERGY, NODE, PORT } from './constants';
+import { AUCTION_CONTRACT_NAME, EPSILON_ENERGY, AUCTION_CONTRACT } from './constants';
 import { WalletConnection } from '@concordium/wallet-connectors';
 
 import JSONbig from 'json-bigint';
-
-const grpc = new ConcordiumGRPCWebClient(NODE, PORT);
-
-const contract = AuctionContract.createUnchecked(
-    grpc,
-    ContractAddress.create(Number(process.env.AUCTION_CONTRACT_INDEX), CONTRACT_SUB_INDEX),
-);
-
-export const AUCTION_CONTRACT = contract;
 
 /**
  * This function submits a transaction to add an item to the auction contract.
@@ -40,7 +29,7 @@ export async function addItem(
     accountAddress: AccountAddress.Type,
     addItemParameter: AuctionContract.AddItemParameter,
 ): Promise<TransactionHash.Type> {
-    const dryRunResult = await AuctionContract.dryRunAddItem(contract, addItemParameter);
+    const dryRunResult = await AuctionContract.dryRunAddItem(AUCTION_CONTRACT, addItemParameter);
 
     if (!dryRunResult || dryRunResult.tag === 'failure' || !dryRunResult.returnValue) {
         const parsedErrorCode = AuctionContract.parseErrorMessageAddItem(dryRunResult)?.type;
@@ -58,7 +47,7 @@ export async function addItem(
 
     const payload: Omit<UpdateContractPayload, 'message'> = {
         amount: CcdAmount.zero(),
-        address: contract.contractAddress,
+        address: AUCTION_CONTRACT.contractAddress,
         receiveName: ReceiveName.create(AuctionContract.contractName, EntrypointName.fromString('addItem')),
         maxContractExecutionEnergy,
     };
@@ -83,7 +72,7 @@ export async function addItem(
 export async function viewItemState(
     viewItemState: AuctionContract.ViewItemStateParameter,
 ): Promise<AuctionContract.ReturnValueViewItemState> {
-    const dryRunResult = await AuctionContract.dryRunViewItemState(contract, viewItemState);
+    const dryRunResult = await AuctionContract.dryRunViewItemState(AUCTION_CONTRACT, viewItemState);
 
     if (!dryRunResult || dryRunResult.tag === 'failure' || !dryRunResult.returnValue) {
         const parsedErrorCode = AuctionContract.parseErrorMessageViewItemState(dryRunResult)?.type;

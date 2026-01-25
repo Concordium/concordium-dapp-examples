@@ -27,6 +27,11 @@ jobs:
           - trackAndTrace/frontend
           - testnet-faucet
           - compliant-reward-distribution/frontend
+          - nft-minting
+          - piggybank
+          - eSealing
+          - voting
+          - wCCD
 
     steps:
       - name: Checkout
@@ -66,6 +71,11 @@ jobs:
           - trackAndTrace/frontend
           - testnet-faucet
           - compliant-reward-distribution/frontend
+          - nft-minting
+          - piggybank
+          - eSealing
+          - voting
+          - wCCD
 
     steps:
       - name: Checkout
@@ -99,9 +109,7 @@ jobs:
           - dapp-template/frontend
           - euroe-demo
           - gallery
-          - low-code-nft-marketplace/common-ui
-          - low-code-nft-marketplace/market-ui
-          - low-code-nft-marketplace/mint-ui
+          - low-code-nft-marketplace
           - signMessage
           - simpleAgeVerification
           - sponsoredTransactions/frontend
@@ -109,6 +117,11 @@ jobs:
           - trackAndTrace/frontend
           - testnet-faucet
           - compliant-reward-distribution/frontend
+          - nft-minting
+          - piggybank
+          - eSealing
+          - voting
+          - wCCD
 
     steps:
       - name: Checkout
@@ -125,16 +138,18 @@ jobs:
           cache-dependency-path: ${{ matrix.packages }}/yarn.lock
 
       - name: Install Low Code NFT Marketplace Dependencies
-        if: ${{ matrix.packages == 'low-code-nft-marketplace/market-ui' || matrix.packages == 'low-code-nft-marketplace/mint-ui' }}
+        if: ${{ matrix.packages == 'low-code-nft-marketplace' }}
         working-directory: low-code-nft-marketplace
-        run: yarn install && yarn workspace common-ui build
+        run: yarn install && yarn workspace common-ui build && yarn workspace market-ui build && yarn workspace mint-ui build
 
       - name: Run install
-        if: ${{ matrix.packages != 'low-code-nft-marketplace/market-ui' && matrix.packages != 'low-code-nft-marketplace/mint-ui' }}
+        if: ${{ matrix.packages != 'low-code-nft-marketplace' }}
         working-directory: ${{ matrix.packages }}
         run: yarn install
 
       - name: Build
+        if: ${{ matrix.packages != 'low-code-nft-marketplace' }}
         working-directory: ${{ matrix.packages }}
         run: yarn build
+      
 

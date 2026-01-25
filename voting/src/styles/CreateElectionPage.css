@@ -1,0 +1,59 @@
+.create-election-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 1.5rem;
+    background: rgb(255 255 255 / 90%);
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 6px rgb(0 0 0 / 10%);
+    min-height: calc(100vh - 8rem);
+    display: flex;
+    flex-direction: column;
+}
+
+.form-label {
+    color: var(--text-dark);
+    font-weight: 500;
+}
+
+.option-list {
+    background: rgb(255 255 255 / 80%);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+/* Button styles */
+.btn-outline-secondary {
+    background: rgb(255 255 255 / 90%);
+    border-color: var(--primary-dark);
+    color: var(--primary-dark);
+    font-weight: 500;
+}
+
+.btn-outline-secondary:hover {
+    background: var(--primary-dark);
+    color: white;
+}
+
+.create-election-btn {
+    margin-top: 1rem;
+    font-size: 1.2rem;
+    padding: 0.75rem 2rem;
+    background: var(--success-color);
+    border: none;
+    color: #000;
+    font-weight: 600;
+}
+
+.vote-now-btn {
+    margin: 0.5rem 0 1rem;
+    display: block;
+    width: 100%;
+    text-align: center;
+    font-size: 1.1rem;
+    padding: 0.75rem;
+    background: var(--primary-color);
+    color: #000;
+    font-weight: 600;
+    margin-bottom: 0;
+}

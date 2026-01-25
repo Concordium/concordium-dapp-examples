@@ -11,6 +11,9 @@ COPY ./gallery/esbuild.config.ts ./
 COPY ./gallery/types ./types
 COPY ./gallery/src ./src
 
+COPY ./gallery/.yarnrc.yml ./
+RUN corepack enable
+
 RUN yarn && yarn cache clean
 RUN yarn build
 
@@ -21,6 +24,10 @@ COPY ../ ./
 RUN cargo build --locked -p gallery-verifier --release
 
 FROM ubuntu:22.04
+
+# In order to use TLS when connecting to the node we need certificates.
+RUN apt-get update && apt-get install -y ca-certificates
+
 WORKDIR /build
 
 ENV PORT=8100

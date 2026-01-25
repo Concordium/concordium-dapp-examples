@@ -1,5 +1,10 @@
 ## Unreleased changes
 
+## 0.2.2
+
+- Update `rust-sdk` dependency so that project is forward compatible. Unknown contract update infos, 
+unkown smart contract events, and unkown smart contract execution trees are skipped when indexing.
+
 ## 0.2.1
 
 - Update rust-sdk submodule link.
