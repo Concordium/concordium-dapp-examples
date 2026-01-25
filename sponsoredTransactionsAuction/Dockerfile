@@ -11,6 +11,7 @@ COPY ./sponsoredTransactionsAuction/frontend/vite.config.ts ./vite.config.ts
 COPY ./sponsoredTransactionsAuction/frontend/src ./src
 COPY ./sponsoredTransactionsAuction/frontend/index.html ./index.html
 COPY ./sponsoredTransactionsAuction/frontend/generated ./generated
+COPY ./sponsoredTransactionsAuction/frontend/yarn.lock ./yarn.lock
 
 RUN yarn
 RUN yarn build
