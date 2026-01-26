@@ -5,7 +5,6 @@ FROM ${node_base_image} AS frontend
 
 WORKDIR /app
 COPY ./sponsoredTransactions/frontend ./
-COPY ./sponsoredTransactions/frontend/.yarnrc.yml ./
 
 RUN corepack enable
 RUN yarn
