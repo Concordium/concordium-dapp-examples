@@ -61,5 +61,6 @@
         ]
     },
     "main": "index.js",
-    "license": "MIT"
+    "license": "MIT",
+    "packageManager": "yarn@4.12.0"
 }
