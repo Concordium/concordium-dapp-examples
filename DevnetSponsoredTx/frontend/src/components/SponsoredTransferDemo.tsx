@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useConnection, useConnect, WalletConnectionProps } from '@concordium/react-components'
 import { detectConcordiumProvider } from '@concordium/browser-wallet-api-helpers'
-import { BROWSER_WALLET, BACKEND_URL, TOKEN_ID, TOKEN_DECIMALS, CCDSCAN_URL } from '../constants'
+import { BROWSER_WALLET, WALLET_CONNECT, BACKEND_URL, TOKEN_ID, TOKEN_DECIMALS, CCDSCAN_URL } from '../constants'
 import { Transaction } from '@concordium/web-sdk'
 
 export default function SponsoredTransferDemo(props: WalletConnectionProps) {
@@ -13,7 +13,7 @@ export default function SponsoredTransferDemo(props: WalletConnectionProps) {
   const [isTransferring, setIsTransferring] = useState(false)
   const [message, setMessage] = useState('')
   const [transactionHash, setTransactionHash] = useState('')
-  const [intentedConnectorType, setIntentedConnectorType] = useState<typeof BROWSER_WALLET | null>(null)
+  const [intentedConnectorType, setIntentedConnectorType] = useState<typeof BROWSER_WALLET | typeof WALLET_CONNECT | null>(null)
 
   useEffect(() => {
     if (
@@ -29,9 +29,14 @@ export default function SponsoredTransferDemo(props: WalletConnectionProps) {
     }
   }, [props.activeConnector, props.activeConnectorType, connection, isConnecting, connect, intentedConnectorType])
 
-  const handleConnect = () => {
+  const handleBrowserWalletConnect = () => {
     setIntentedConnectorType(BROWSER_WALLET)
     props.setActiveConnectorType(BROWSER_WALLET)
+  }
+
+  const handleMobileWalletConnect = () => {
+    setIntentedConnectorType(WALLET_CONNECT)
+    props.setActiveConnectorType(WALLET_CONNECT)
   }
 
   const handleDisconnect = async () => {
@@ -120,20 +125,27 @@ export default function SponsoredTransferDemo(props: WalletConnectionProps) {
                 <p className="text-muted small mb-4">Connect your Concordium wallet to get started</p>
 
                 {!account ? (
-                  <div className="d-grid">
+                  <div className="d-grid gap-2">
                     <button
                       className="btn btn-outline-dark py-3"
-                      onClick={handleConnect}
+                      onClick={handleBrowserWalletConnect}
                       disabled={isConnecting}
                     >
-                      {isConnecting ? (
+                      <i className="bi bi-laptop me-2"></i>Browser Wallet
+                    </button>
+                    <button
+                      className="btn btn-outline-primary py-3"
+                      onClick={handleMobileWalletConnect}
+                      disabled={isConnecting}
+                    >
+                      {isConnecting && intentedConnectorType === WALLET_CONNECT ? (
                         <>
                           <span className="spinner-border spinner-border-sm me-2"></span>
                           Connecting...
                         </>
                       ) : (
                         <>
-                          <i className="bi bi-laptop me-2"></i>Browser Wallet
+                          <i className="bi bi-phone me-2"></i>Mobile Wallet (WalletConnect)
                         </>
                       )}
                     </button>
