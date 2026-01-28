@@ -9,7 +9,6 @@
         "axios": "^1.4.0"
     },
     "devDependencies": {
-        "@expo/webpack-config": "^18.0.1",
         "@types/react": "^18.2.5",
         "dotenv": "^16.0.3",
         "gh-pages": "^5.0.0",
