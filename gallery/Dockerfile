@@ -19,12 +19,9 @@ RUN yarn build
 
 FROM ${rust_base_image} AS rust_build
 WORKDIR /verifier
-COPY ./deps/concordium-rust-sdk /deps/concordium-rust-sdk
-COPY ./gallery/verifier/src ./src
-COPY ./gallery/verifier/Cargo.lock ./Cargo.lock
-COPY ./gallery/verifier/Cargo.toml ./Cargo.toml
+COPY ../ ./
 
-RUN cargo build --release
+RUN cargo build --locked -p gallery-verifier --release
 
 FROM ubuntu:22.04
 

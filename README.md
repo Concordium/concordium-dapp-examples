@@ -46,9 +46,3 @@ The following examples are available.
   - Compute the file hash of a selected file => register its file hash in the smart contract
   - Compute the file hash of a selected file => retrieve the time-stamp and witness (sender_account) that registered the file hash
 
-## Setup
-
-Some projects use submodules, to initialize or update those, run:
-```shell
-git submodule update --init --recursive
-```

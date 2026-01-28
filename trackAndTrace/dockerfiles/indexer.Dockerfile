@@ -4,10 +4,8 @@ ARG RUST_IMAGE=rust:1.85-bookworm
 
 # Build indexer
 FROM ${RUST_IMAGE} AS build
-COPY ./trackAndTrace/smart-contract ./smart-contract
-COPY ./deps/concordium-rust-sdk /deps/concordium-rust-sdk
-COPY ./trackAndTrace/indexer ./
-RUN cargo build --release
+COPY . .
+RUN cargo build --locked -p indexer --release
 
 FROM debian:bookworm
 

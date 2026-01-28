@@ -6,6 +6,10 @@ use concordium_std::{
     AccountSignatures, CredentialSignatures, HashSha2256, MetadataUrl, SignatureEd25519,
 };
 use track_and_trace::*;
+use track_and_trace_common::{
+    AdditionalData, ChangeItemStatusParams, Event, ItemCreatedEvent, ItemID, ItemState,
+    ItemStatusChangedEvent, Roles, Status, TransitionEdges,
+};
 
 /// The test accounts.
 const ADMIN: AccountAddress = AccountAddress([0; 32]);
@@ -59,7 +63,7 @@ fn test_has_role() {
 
     let has_role: bool = invoke.parse_return_value().expect("hasRole return value");
 
-    assert_eq!(has_role, true, "Admin should have role");
+    assert!(has_role, "Admin should have role");
 }
 
 /// Test adding and removing state transition edges.
@@ -97,10 +101,7 @@ fn test_add_and_remove_of_state_transition_edges() {
         .parse_return_value()
         .expect("isTransitionEdge return value");
 
-    assert_eq!(
-        is_transition_edge, false,
-        "Transition edge should not exist"
-    );
+    assert!(!is_transition_edge, "Transition edge should not exist");
 
     // Add a new transition edge.
     let mut update_transition_edge = UpdateStateMachineParams {
@@ -149,7 +150,7 @@ fn test_add_and_remove_of_state_transition_edges() {
         .parse_return_value()
         .expect("isTransitionEdge return value");
 
-    assert_eq!(is_transition_edge, true, "Transition edge should exist");
+    assert!(is_transition_edge, "Transition edge should exist");
 
     // Remove a transition edge.
     update_transition_edge.update = Update::Remove;
@@ -193,10 +194,7 @@ fn test_add_and_remove_of_state_transition_edges() {
         .parse_return_value()
         .expect("isTransitionEdge return value");
 
-    assert_eq!(
-        is_transition_edge, false,
-        "Transition edge should not exist"
-    );
+    assert!(!is_transition_edge, "Transition edge should not exist");
 }
 
 // 1. Test that the ADMIN can create a new item.

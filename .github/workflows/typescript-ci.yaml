@@ -1,11 +1,10 @@
-name: Build, Format and Lint Frontends
+name: "TypeScript: build and test"
 
 on:
   push:
     branches: main
 
   pull_request:
-    branches: main
 
 env:
   NODE_VERSION: "lts/*"
@@ -13,8 +12,6 @@ env:
 jobs:
   lint:
     name: Running linter
-    # Don't run on draft pull requests
-    if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -58,8 +55,6 @@ jobs:
 
   prettier:
     name: Running Prettier
-    # Don't run on draft pull requests
-    if: ${{ !github.event.pull_request.draft }}
     needs: lint
     runs-on: ubuntu-latest
     strategy:
@@ -106,8 +101,6 @@ jobs:
 
   build:
     name: Building Frontend
-    # Don't run on draft pull requests
-    if: ${{ !github.event.pull_request.draft }}
     needs: prettier
     runs-on: ubuntu-latest
     strategy:

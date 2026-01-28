@@ -1,0 +1,91 @@
+name: "Rust: build and test"
+
+on:
+  push:
+    branches: main
+
+  pull_request:
+
+  workflow_dispatch: # allows manual trigger
+
+env:
+  CARGO_CONCORDIUM_VERSION: "4.2.0"
+
+jobs:
+
+  rustfmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Run cargo fmt
+        run: |
+          rustup component add rustfmt
+          cargo fmt --check
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install Clippy
+        run: |
+          rustup component add clippy
+      - name: Run Clippy
+        run: |
+          cargo clippy --locked --all-targets --all-features --no-deps -- -D warnings
+
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Run tests
+        run: |
+          cargo test --locked --all-features --release
+
+  # Smart contracts currently has to be standalone crates and not part of the repo workspace
+  # due to how cargo-concordium verifiable build works
+  smart_contracts:
+    name: "Smart contract: ${{ matrix.crate }}"
+    runs-on: ubuntu-latest  
+    strategy:
+      fail-fast: false
+      matrix:
+        crate: [ "low-code-nft-marketplace/cis2-market", "trackAndTrace/smart-contract"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install rustfmt and Clippy etc.
+        run: |
+          rustup component add rustfmt          
+          rustup component add clippy
+          rustup target add wasm32-unknown-unknown
+      - name: Run cargo fmt
+        run: |
+          cargo fmt --manifest-path=${{ matrix.crate }}/Cargo.toml --check
+      - name: Run Clippy
+        run: |
+          cargo clippy --manifest-path=${{ matrix.crate }}/Cargo.toml --locked --all-targets --all-features --no-deps -- -D warnings
+      - name: Download and install Cargo Concordium
+        run: |
+          curl -L https://github.com/Concordium/concordium-smart-contract-tools/releases/download/releases/cargo-concordium/${CARGO_CONCORDIUM_VERSION}/cargo-concordium-linux-amd64 -o /tmp/cargo-concordium
+          chmod +x /tmp/cargo-concordium
+          sudo mv /tmp/cargo-concordium /usr/bin/cargo-concordium
+      - name: Run cargo concordium build
+        run: |
+          cargo concordium build -- --manifest-path "${{ matrix.crate }}/Cargo.toml"
+      - name: Run cargo concordium test
+        run: |
+          cargo concordium test -- --manifest-path "${{ matrix.crate }}/Cargo.toml"            
