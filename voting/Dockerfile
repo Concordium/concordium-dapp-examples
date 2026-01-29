@@ -12,6 +12,7 @@ COPY ./.yarn/releases ./.yarn/releases
 COPY ./public ./public
 COPY ./src ./src
 
+RUN corepack enable
 RUN yarn && yarn cache clean
 RUN yarn build
 
