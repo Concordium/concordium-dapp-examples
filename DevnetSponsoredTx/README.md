@@ -36,6 +36,8 @@ Open http://localhost:3000 and connect your Browser Wallet.
 
 ### Environment Variables
 
+In `App.tsx` network is currently set to `STAGENET`. `TESTNET` can be imported from the same library.
+
 Frontend (runtime injection via `build-and-serve.sh`):
 - `BACKEND_URL` - Backend API URL (default: `http://localhost:3002`)
 - `TOKEN_ID` - Token identifier (default: `EURtest`)
