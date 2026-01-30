@@ -34,12 +34,12 @@
     "devDependencies": {
         "@concordium/ccd-js-gen": "^1.2.0",
         "@swc-jotai/react-refresh": "^0.1.0",
+        "@types/json-bigint": "^1.0.4",
         "@types/react": "^18.2.55",
         "@types/react-dom": "^18.2.19",
+        "@types/react-router-dom": "^5.3.3",
         "@typescript-eslint/eslint-plugin": "^6.21.0",
         "@typescript-eslint/parser": "^6.20.0",
-        "@types/json-bigint": "^1.0.4",
-        "@types/react-router-dom": "^5.3.3",
         "@vitejs/plugin-react-swc": "^3.6.0",
         "dotenv": "^16.3.1",
         "eslint": "^8.45.0",
@@ -56,5 +56,6 @@
         "vite-plugin-top-level-await": "^1.3.1",
         "vite-plugin-wasm": "^3.2.2",
         "vite-tsconfig-paths": "^4.2.1"
-    }
+    },
+    "packageManager": "yarn@4.12.0"
 }

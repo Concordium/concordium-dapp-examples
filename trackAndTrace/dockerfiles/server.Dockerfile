@@ -7,6 +7,9 @@ ARG NODE_IMAGE=node:18-slim
 FROM ${NODE_IMAGE} AS frontend
 WORKDIR /frontend
 COPY ./trackAndTrace/frontend ./
+
+RUN corepack enable
+
 RUN yarn
 RUN yarn build
 
