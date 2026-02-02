@@ -1,4 +1,4 @@
-name: Check Node SDK with yarn audit
+name: Check DApp Examples with yarn audit
 
 on:
   push:
