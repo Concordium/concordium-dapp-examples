@@ -485,10 +485,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@next/env@npm:15.0.8":
-  version: 15.0.8
-  resolution: "@next/env@npm:15.0.8"
-  checksum: 10c0/c79e9d037c0f0641762c1e6273bcfc771fefd284be149e868c708c33d3bf60ca2bfe998e35f7d62841bc3c1b023a6082eb0d0ba25c66f53aa78047fef98d1c26
+"@next/env@npm:15.2.9":
+  version: 15.2.9
+  resolution: "@next/env@npm:15.2.9"
+  checksum: 10c0/00c71399a093b13f7a3883faf81782eeaea5541d1d5ca2dc2008d9cb832a00ed00e31caea462217de3f9c28920fc08515300832c9b46d47c9e7e5216a6427722
   languageName: node
   linkType: hard
 
@@ -501,58 +501,58 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@next/swc-darwin-arm64@npm:15.0.5":
-  version: 15.0.5
-  resolution: "@next/swc-darwin-arm64@npm:15.0.5"
+"@next/swc-darwin-arm64@npm:15.2.5":
+  version: 15.2.5
+  resolution: "@next/swc-darwin-arm64@npm:15.2.5"
   conditions: os=darwin & cpu=arm64
   languageName: node
   linkType: hard
 
-"@next/swc-darwin-x64@npm:15.0.5":
-  version: 15.0.5
-  resolution: "@next/swc-darwin-x64@npm:15.0.5"
+"@next/swc-darwin-x64@npm:15.2.5":
+  version: 15.2.5
+  resolution: "@next/swc-darwin-x64@npm:15.2.5"
   conditions: os=darwin & cpu=x64
   languageName: node
   linkType: hard
 
-"@next/swc-linux-arm64-gnu@npm:15.0.5":
-  version: 15.0.5
-  resolution: "@next/swc-linux-arm64-gnu@npm:15.0.5"
+"@next/swc-linux-arm64-gnu@npm:15.2.5":
+  version: 15.2.5
+  resolution: "@next/swc-linux-arm64-gnu@npm:15.2.5"
   conditions: os=linux & cpu=arm64 & libc=glibc
   languageName: node
   linkType: hard
 
-"@next/swc-linux-arm64-musl@npm:15.0.5":
-  version: 15.0.5
-  resolution: "@next/swc-linux-arm64-musl@npm:15.0.5"
+"@next/swc-linux-arm64-musl@npm:15.2.5":
+  version: 15.2.5
+  resolution: "@next/swc-linux-arm64-musl@npm:15.2.5"
   conditions: os=linux & cpu=arm64 & libc=musl
   languageName: node
   linkType: hard
 
-"@next/swc-linux-x64-gnu@npm:15.0.5":
-  version: 15.0.5
-  resolution: "@next/swc-linux-x64-gnu@npm:15.0.5"
+"@next/swc-linux-x64-gnu@npm:15.2.5":
+  version: 15.2.5
+  resolution: "@next/swc-linux-x64-gnu@npm:15.2.5"
   conditions: os=linux & cpu=x64 & libc=glibc
   languageName: node
   linkType: hard
 
-"@next/swc-linux-x64-musl@npm:15.0.5":
-  version: 15.0.5
-  resolution: "@next/swc-linux-x64-musl@npm:15.0.5"
+"@next/swc-linux-x64-musl@npm:15.2.5":
+  version: 15.2.5
+  resolution: "@next/swc-linux-x64-musl@npm:15.2.5"
   conditions: os=linux & cpu=x64 & libc=musl
   languageName: node
   linkType: hard
 
-"@next/swc-win32-arm64-msvc@npm:15.0.5":
-  version: 15.0.5
-  resolution: "@next/swc-win32-arm64-msvc@npm:15.0.5"
+"@next/swc-win32-arm64-msvc@npm:15.2.5":
+  version: 15.2.5
+  resolution: "@next/swc-win32-arm64-msvc@npm:15.2.5"
   conditions: os=win32 & cpu=arm64
   languageName: node
   linkType: hard
 
-"@next/swc-win32-x64-msvc@npm:15.0.5":
-  version: 15.0.5
-  resolution: "@next/swc-win32-x64-msvc@npm:15.0.5"
+"@next/swc-win32-x64-msvc@npm:15.2.5":
+  version: 15.2.5
+  resolution: "@next/swc-win32-x64-msvc@npm:15.2.5"
   conditions: os=win32 & cpu=x64
   languageName: node
   linkType: hard
@@ -844,12 +844,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@swc/helpers@npm:0.5.13":
-  version: 0.5.13
-  resolution: "@swc/helpers@npm:0.5.13"
+"@swc/helpers@npm:0.5.15":
+  version: 0.5.15
+  resolution: "@swc/helpers@npm:0.5.15"
   dependencies:
-    tslib: "npm:^2.4.0"
-  checksum: 10c0/b9df578401fc62405da9a6c31e79e447a2fd90f68b25b1daee12f2caf2821991bb89106f0397bc1acb4c4d84a8ce079d04b60b65f534496952e3bf8c9a52f40f
+    tslib: "npm:^2.8.0"
+  checksum: 10c0/33002f74f6f885f04c132960835fdfc474186983ea567606db62e86acd0680ca82f34647e8e610f4e1e422d1c16fce729dde22cd3b797ab1fd9061a825dabca4
   languageName: node
   linkType: hard
 
@@ -1640,7 +1640,7 @@ __metadata:
     eslint-config-next: "npm:14.2.5"
     eslint-config-prettier: "npm:^9.1.0"
     eslint-plugin-import: "npm:^2.29.1"
-    next: "npm:15.0.8"
+    next: "npm:15.2.9"
     postcss: "npm:^8"
     prettier: "npm:^3.3.3"
     react: "npm:^18"
@@ -3735,21 +3735,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"next@npm:15.0.8":
-  version: 15.0.8
-  resolution: "next@npm:15.0.8"
+"next@npm:15.2.9":
+  version: 15.2.9
+  resolution: "next@npm:15.2.9"
   dependencies:
-    "@next/env": "npm:15.0.8"
-    "@next/swc-darwin-arm64": "npm:15.0.5"
-    "@next/swc-darwin-x64": "npm:15.0.5"
-    "@next/swc-linux-arm64-gnu": "npm:15.0.5"
-    "@next/swc-linux-arm64-musl": "npm:15.0.5"
-    "@next/swc-linux-x64-gnu": "npm:15.0.5"
-    "@next/swc-linux-x64-musl": "npm:15.0.5"
-    "@next/swc-win32-arm64-msvc": "npm:15.0.5"
-    "@next/swc-win32-x64-msvc": "npm:15.0.5"
+    "@next/env": "npm:15.2.9"
+    "@next/swc-darwin-arm64": "npm:15.2.5"
+    "@next/swc-darwin-x64": "npm:15.2.5"
+    "@next/swc-linux-arm64-gnu": "npm:15.2.5"
+    "@next/swc-linux-arm64-musl": "npm:15.2.5"
+    "@next/swc-linux-x64-gnu": "npm:15.2.5"
+    "@next/swc-linux-x64-musl": "npm:15.2.5"
+    "@next/swc-win32-arm64-msvc": "npm:15.2.5"
+    "@next/swc-win32-x64-msvc": "npm:15.2.5"
     "@swc/counter": "npm:0.1.3"
-    "@swc/helpers": "npm:0.5.13"
+    "@swc/helpers": "npm:0.5.15"
     busboy: "npm:1.6.0"
     caniuse-lite: "npm:^1.0.30001579"
     postcss: "npm:8.4.31"
@@ -3759,8 +3759,8 @@ __metadata:
     "@opentelemetry/api": ^1.1.0
     "@playwright/test": ^1.41.2
     babel-plugin-react-compiler: "*"
-    react: ^18.2.0 || 19.0.0-rc-66855b96-20241106 || ^19.0.0
-    react-dom: ^18.2.0 || 19.0.0-rc-66855b96-20241106 || ^19.0.0
+    react: ^18.2.0 || 19.0.0-rc-de68d2f4-20241204 || ^19.0.0
+    react-dom: ^18.2.0 || 19.0.0-rc-de68d2f4-20241204 || ^19.0.0
     sass: ^1.3.0
   dependenciesMeta:
     "@next/swc-darwin-arm64":
@@ -3792,7 +3792,7 @@ __metadata:
       optional: true
   bin:
     next: dist/bin/next
-  checksum: 10c0/57a66314e2c9a3b9f14f9a2db14d9ea32533ac2d264b9b660ca26bc5c1488912c5e3663ce0904c6348b4eecd7adac6da4f3ec738fde3a2cd5c83f0885e50f50c
+  checksum: 10c0/c51c8189a50be55a8729ecb7f8ba1cc01fae4675575e378f1681cab324c3d56a8d1ba37689542cf9a1a5db1dde4de78707f9722dad4a2469604a2ff86a35df3e
   languageName: node
   linkType: hard
 
@@ -5074,6 +5074,13 @@ __metadata:
   version: 2.6.3
   resolution: "tslib@npm:2.6.3"
   checksum: 10c0/2598aef53d9dbe711af75522464b2104724d6467b26a60f2bdac8297d2b5f1f6b86a71f61717384aa8fd897240467aaa7bcc36a0700a0faf751293d1331db39a
+  languageName: node
+  linkType: hard
+
+"tslib@npm:^2.8.0":
+  version: 2.8.1
+  resolution: "tslib@npm:2.8.1"
+  checksum: 10c0/9c4759110a19c53f992d9aae23aac5ced636e99887b51b9e61def52611732872ff7668757d4e4c61f19691e36f4da981cd9485e869b4a7408d689f6bf1f14e62
   languageName: node
   linkType: hard
 
