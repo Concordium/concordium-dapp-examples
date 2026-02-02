@@ -19,6 +19,6 @@ export const shiftDateBackwards = (hours: number) => {
 };
 
 export const formatTxHash = (txHash: string): string => {
-    if(!txHash) return "";
+    if (!txHash) return '';
     return `${txHash.substring(0, 12)}...${txHash.substring(txHash.length - 12)}`;
 };
