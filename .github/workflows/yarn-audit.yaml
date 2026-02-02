@@ -42,12 +42,16 @@ jobs:
         with:
           submodules: 'recursive'
 
+      - name: Enable Corepack
+        run: corepack enable
+
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: yarn
           cache-dependency-path: ${{ matrix.packages }}/yarn.lock
+
       - name: Install Dependencies
         working-directory: ${{ matrix.packages }}
         run: yarn install --immutable
