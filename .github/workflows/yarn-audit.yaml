@@ -47,7 +47,7 @@ jobs:
         with:
           node-version: 22
           cache: yarn
-
+          cache-dependency-path: ${{ matrix.packages }}/yarn.lock
       - name: Install Dependencies
         working-directory: ${{ matrix.packages }}
         run: yarn install --immutable
