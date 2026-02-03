@@ -8,6 +8,8 @@ FROM ${NODE_IMAGE} AS frontend
 
 WORKDIR /frontend
 COPY ./compliant-reward-distribution/frontend ./
+
+RUN corepack enable
 RUN yarn
 RUN yarn build
 
