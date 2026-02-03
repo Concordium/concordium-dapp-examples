@@ -36,5 +36,6 @@
         "prettier": "^3.0.3",
         "typescript": "^5.2.2",
         "vite": "^5.0.8"
-    }
+    },
+    "packageManager": "yarn@4.12.0"
 }
