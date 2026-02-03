@@ -17,8 +17,8 @@ const config: BuildOptions = {
     minify: true,
     metafile: true,
     logLevel: 'info',
-    sourcemap: 'inline',
-    target: ['chrome67'],
+    sourcemap: watch ? 'inline' : 'external',
+    target: ['es2020'],
     outdir: 'dist',
     plugins: [
         htmlPlugin({
