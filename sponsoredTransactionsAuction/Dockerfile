@@ -6,6 +6,9 @@ FROM ${node_base_image} AS front_end
 WORKDIR /app
 COPY ./sponsoredTransactionsAuction/frontend ./
 
+COPY ./sponsoredTransactionsAuction/frontend/.yarnrc.yml ./
+RUN corepack enable
+
 RUN yarn
 RUN yarn build
 

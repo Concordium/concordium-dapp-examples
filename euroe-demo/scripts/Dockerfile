@@ -2,10 +2,11 @@ ARG build_image="node:20-slim"
 FROM ${build_image} AS build
 WORKDIR /app
 COPY package.json yarn.lock .yarnrc.yml ./
-COPY .yarn/releases/*.cjs ./.yarn/releases/
-RUN corepack yarn install
+RUN corepack enable
+
+RUN yarn install --immutable
 COPY . .
-RUN corepack yarn build
+RUN yarn build
 
 FROM nginx
 COPY --from=build ./app/dist ./usr/share/nginx/html
