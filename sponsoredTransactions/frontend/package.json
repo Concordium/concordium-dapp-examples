@@ -48,6 +48,10 @@
         "tsx": "^4.7.0",
         "typescript": "^4.7.2"
     },
+    "resolutions": {
+        "braces": "3.0.3",
+        "lodash.template": "npm:lodash@^4.17.21"
+    },
     "scripts": {
         "lint": "eslint . --cache --max-warnings 0 --ext .ts,.tsx",
         "lint-fix": "yarn lint --fix",
