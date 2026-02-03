@@ -355,7 +355,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@craftamap/esbuild-plugin-html@npm:^0.4.0":
+"@craftamap/esbuild-plugin-html@npm:0.4.0":
   version: 0.4.0
   resolution: "@craftamap/esbuild-plugin-html@npm:0.4.0"
   dependencies:
@@ -3319,7 +3319,7 @@ __metadata:
   dependencies:
     "@concordium/browser-wallet-api-helpers": "npm:^3.0.1"
     "@concordium/web-sdk": "npm:^7.5.1"
-    "@craftamap/esbuild-plugin-html": "npm:^0.4.0"
+    "@craftamap/esbuild-plugin-html": "npm:0.4.0"
     "@types/node": "npm:^18.11.14"
     "@types/react": "npm:^18.0.9"
     "@types/react-dom": "npm:^18.0.5"
