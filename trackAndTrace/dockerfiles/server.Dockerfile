@@ -15,10 +15,8 @@ RUN yarn build
 
 # Build server
 FROM ${RUST_IMAGE} AS server
-COPY ./trackAndTrace/smart-contract ./smart-contract
-COPY ./deps/concordium-rust-sdk /deps/concordium-rust-sdk
-COPY ./trackAndTrace/indexer ./
-RUN cargo build --release
+COPY . .
+RUN cargo build --locked -p indexer --release
 
 FROM debian:bookworm
 

@@ -350,6 +350,7 @@ fn calculate_amounts(
     }
 }
 
+#[allow(deprecated)] // should use new testing infrastructure
 #[concordium_cfg_test]
 mod test {
     use crate::{
@@ -419,7 +420,7 @@ mod test {
             _s: &mut ContractState<TestStateApi>,
         ) -> Result<(bool, OperatorOfQueryResponse), CallContractError<OperatorOfQueryResponse>>
         {
-            Ok((false, OperatorOfQueryResponse { 0: vec![true] }))
+            Ok((false, OperatorOfQueryResponse(vec![true])))
         }
 
         fn mock_balance_of(

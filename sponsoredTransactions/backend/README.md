@@ -16,13 +16,13 @@ All of the above is available by using `--help` to get usage information.
 
 An example to run the backend with basic settings and testnet node would be:
 ```shell
-cargo run -- --node http://node.testnet.concordium.com:20000 --account <YourAccountPathToYourKeys> --smart-contract-index 9586
+cargo run -p sponsored-transaction-backend -- --node http://node.testnet.concordium.com:20000 --account <YourAccountPathToYourKeys> --smart-contract-index 9586  
 ```
 
 An example to run the backend with some filled in example settings would be:
 
 ```shell
-cargo run -- --node http://node.testnet.concordium.com:20000 --port 8080 --account ./4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export --public-folder ../frontend/dist --smart-contract-index 9586
+cargo run -p sponsored-transaction-backend -- --node http://node.testnet.concordium.com:20000 --port 8080 --account ./4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export --public-folder ../frontend/dist --smart-contract-index 9586
 ```
 
 To get your account file (the `4SizPU2ipqQQza9Xa6fUkQBCDjyd1vTNUNDGbBeiRGpaJQc6qX.export` file in the above example), export it from the Concordium Browser wallet for web.
@@ -83,27 +83,14 @@ Changes to any of the packages must be such that
 - `cargo clippy --all` produces no warnings
 - `rust fmt` makes no changes.
 
-Everything in this repository should build with stable rust at the moment (at least version 1.62 and up), however the fmt tool must be from a nightly release since some of the configuration options are not stable. One way to run the `fmt` tool is
-
-```shell
- cargo +nightly-2022-06-09 fmt
-```
-(the exact version used by the CI can be found in [.github/workflows/ci.yaml](https://github.com/Concordium/concordium-misc-tools/blob/main/.github/workflows/ci.yaml) file).
-You will need to have a recent enough nightly version installed, which can be done via
-
-```shell
-rustup toolchain install nightly-2022-06-09
-```
-or similar, using the [rustup](https://rustup.rs/) tool. See the documentation of the tool for more details.
-
 In order to contribute you should make a pull request and ask a person familiar with the codebase for a review.
 
 ## Building
 
-The project is a pure Rust project, and can be built by running
+The project is a pure Rust project, and can be built from the repo base directory by running:
 
 ```shell
-cargo build --release
+cargo build --locked -p sponsored-transaction-backend --release
 ```
 
 This produces a single binary `target/release/sponsored-transaction-backend`.

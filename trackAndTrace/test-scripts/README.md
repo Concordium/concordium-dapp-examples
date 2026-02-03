@@ -22,12 +22,6 @@ There are a few options to configure the script:
 
 ## Build
 
-To build the tool make sure you have the repository submodules initialized as follows:
-
-```console
-git submodule update --init --recursive
-```
-
 The tool can be built by running the following command in this folder:
 
 ```console

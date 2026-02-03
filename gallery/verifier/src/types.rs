@@ -1,6 +1,5 @@
 use concordium_rust_sdk::{
-    base as concordium_base,
-    common::{SerdeBase16Serialize, Serial, Serialize},
+    common::{SerdeBase16Serialize, Serialize},
     endpoints::QueryError,
     id::{
         constants::ArCurve,

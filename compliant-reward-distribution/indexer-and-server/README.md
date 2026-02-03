@@ -1,6 +1,6 @@
 ## Compliant-Reward-Distribution Indexer And Server
 
-There are two binaries in this project. An `indexer` that indexes data into a database and a `server` that provides API endpoints to post/get data to/from the database.
+There are two binaries in this project. An indexer (`crd_indexer`) that indexes data into a database and a `server` that provides API endpoints to post/get data to/from the database.
 
 ## Prerequisites
 
@@ -22,23 +22,17 @@ Alternatively, you can run the Postgres database in a docker container. The comm
 docker run -p 5432:5432 -e POSTGRES_PASSWORD=password -e POSTGRES_DB="indexer" --rm postgres
 ```
 
-## Build the `indexer` and `server`
+## Build the `crd_indexer` and `crd_server`
 
-To build the tools make sure you have the repository submodules initialized
-
-```console
-git submodule update --init --recursive
-```
-
-The tools can be built by running
+The tools can be built from the repo root directory by running:
 
 ```console
-cargo build --release
+cargo build --locked -p crd_indexer --release
 ```
 
-This will produce two binaries (`indexer` and `server`) in the `target/release` directory.
+This will produce two binaries (`crd_indexer` and `crd_server`) in the `target/release` directory.
 
-# The `indexer` binary
+# The `crd_indexer` binary
 
 It is a tool for indexing newly created accounts on Concordium into a postgres database. The database is configured with the tables from the file `../resources/schema.sql`. A table `settings` exists to store global configurations.
 
@@ -48,13 +42,13 @@ When the indexer is started for the first time, it will look up the current bloc
 
 All newly created accounts in a block are atomically added in one database transaction to postgres. This ensures a simple recovery process since we always process the complete block or roll back the database to the beginning of the block. In addition, the indexer has a re-try logic and will try to re-connect to the database pool and re-submit any failed database transaction.
 
-## Run the `indexer`
+## Run the `crd_indexer`
 
 ```console
-cargo run --bin indexer -- --node https://grpc.testnet.concordium.com:20000 --log-level debug
+cargo run --bin crd_indexer -- --node https://grpc.testnet.concordium.com:20000 --log-level debug
 ```
 
-## Configure the `indexer`
+## Configure the `crd_indexer`
 
 There are a few options to configure the indexer:
 
@@ -68,22 +62,22 @@ Note: In production, you should use the environment variable and not pass the da
 You can open the help menu as follows:
 
 ```console
-cargo run --bin indexer -- --help
+cargo run -p crd_indexer --bin crd_indexer -- --help
 ```
 
-# The `server` binary
+# The `crd_server` binary
 
 The server has several endpoints to read/write from/to the database. The authorization to write data to the database is either granted by verifying a signature from an admin/user or by verifying a ZK proof from the user.
 
-## Run the `server`
+## Run the `crd_server`
 
 You have to build the front end in the folder `../frontend` before running this command.
 
 ```console
-cargo run --bin server -- --admin_accounts "4eDtVqZrkmcNEFziEMSs8S2anvkH5KnsYK4MhwedwGWK1pmjZe" --admin_accounts "4dT5vPrnnpwVrXZgmYLtHrDLvBYhtzheaK4fDWbJewqRCGQKWz"
+cargo run -p crd_indexer --bin crd_server -- --admin_accounts "4eDtVqZrkmcNEFziEMSs8S2anvkH5KnsYK4MhwedwGWK1pmjZe" --admin_accounts "4dT5vPrnnpwVrXZgmYLtHrDLvBYhtzheaK4fDWbJewqRCGQKWz"
 ```
 
-## Configure the `server`
+## Configure the `crd_server`
 
 There are a few options to configure the server:
 
@@ -105,10 +99,10 @@ Note: In production, you should use the environment variable and not pass the da
 You can open the help menu as follows:
 
 ```console
-cargo run --bin server -- --help
+cargo run --bin crd_server -- --help
 ```
 
-## API endpoints of the `server`
+## API endpoints of the `crd_server`
 
 - The `/api/getZKProofStatements` endpoint expects no JSON body.
 
