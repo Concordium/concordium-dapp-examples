@@ -36,6 +36,9 @@
         "tsx": "^4.7.0",
         "typescript": "^4.7.2"
     },
+    "resolutions": {
+        "braces": "3.0.3"
+    },
     "scripts": {
         "build": "tsx ./esbuild.config.ts",
         "watch": "cross-env WATCH=1 yarn build",
