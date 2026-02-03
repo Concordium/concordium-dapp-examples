@@ -226,15 +226,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@craftamap/esbuild-plugin-html@npm:^0.7.0":
-  version: 0.7.0
-  resolution: "@craftamap/esbuild-plugin-html@npm:0.7.0"
+"@craftamap/esbuild-plugin-html@npm:^0.4.0":
+  version: 0.4.0
+  resolution: "@craftamap/esbuild-plugin-html@npm:0.4.0"
   dependencies:
     jsdom: "npm:^17.0.0"
-    lodash: "npm:^4.17.21"
+    lodash.template: "npm:^4.5.0"
   peerDependencies:
-    esbuild: ">=0.15.10"
-  checksum: 10c0/b475a7f4d0bfcf92972b18f378a9869e0d791adcb70a43b638c214af6d6fb403f4e3fb714fa0d2087ae2fe9bc939eb0c4f9e9143fa2421e0e4f03eb418c7518f
+    esbuild: ">=0.12.28"
+  checksum: 10c0/4fb7b9b67e3b646832a6e45b70f8b3131227330a9040913cf9b2522cdd35243ea6573666fa6d46556a20f9b30d5c1b1d5cb7484485e631f1f4b10a1ee48a36a0
   languageName: node
   linkType: hard
 
@@ -5041,17 +5041,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"lodash.template@npm:lodash@^4.17.21":
+  version: 4.17.23
+  resolution: "lodash@npm:4.17.23"
+  checksum: 10c0/1264a90469f5bb95d4739c43eb6277d15b6d9e186df4ac68c3620443160fc669e2f14c11e7d8b2ccf078b81d06147c01a8ccced9aab9f9f63d50dcf8cace6bf6
+  languageName: node
+  linkType: hard
+
 "lodash.truncate@npm:^4.4.2":
   version: 4.4.2
   resolution: "lodash.truncate@npm:4.4.2"
   checksum: 10c0/4e870d54e8a6c86c8687e057cec4069d2e941446ccab7f40b4d9555fa5872d917d0b6aa73bece7765500a3123f1723bcdba9ae881b679ef120bba9e1a0b0ed70
-  languageName: node
-  linkType: hard
-
-"lodash@npm:^4.17.21":
-  version: 4.17.23
-  resolution: "lodash@npm:4.17.23"
-  checksum: 10c0/1264a90469f5bb95d4739c43eb6277d15b6d9e186df4ac68c3620443160fc669e2f14c11e7d8b2ccf078b81d06147c01a8ccced9aab9f9f63d50dcf8cace6bf6
   languageName: node
   linkType: hard
 
@@ -5515,7 +5515,7 @@ __metadata:
   dependencies:
     "@concordium/browser-wallet-api-helpers": "npm:3.0.1"
     "@concordium/web-sdk": "npm:10.0.2"
-    "@craftamap/esbuild-plugin-html": "npm:^0.7.0"
+    "@craftamap/esbuild-plugin-html": "npm:^0.4.0"
     "@types/react": "npm:^18.0.9"
     "@types/react-dom": "npm:^18.0.5"
     "@typescript-eslint/eslint-plugin": "npm:^8.44.1"
