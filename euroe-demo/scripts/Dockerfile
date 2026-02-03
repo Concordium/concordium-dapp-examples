@@ -3,6 +3,8 @@ FROM ${build_image} AS build
 WORKDIR /app
 COPY package.json yarn.lock .yarnrc.yml ./
 COPY .yarn/releases/*.cjs ./.yarn/releases/
+
+RUN corepack enable
 RUN corepack yarn install
 COPY . .
 RUN corepack yarn build
