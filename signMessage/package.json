@@ -37,7 +37,8 @@
         "typescript": "^5.4.0"
     },
     "resolutions": {
-        "@concordium/web-sdk": "^6.0.0"
+        "@concordium/web-sdk": "^6.0.0",
+        "nth-check": "2.0.1"
     },
     "scripts": {
         "start": "react-scripts start",
