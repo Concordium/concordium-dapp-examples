@@ -42,11 +42,11 @@ const config: BuildOptions = {
             await ctx.watch();
             console.log('watching for changes...');
         } else {
-                // AWAIT THE BUILD
-                await esbuild.build(config);
-                console.log('Build completed successfully.');
-                // Then the script ends naturally here with exit code 0
-        } 
+            // AWAIT THE BUILD
+            await esbuild.build(config);
+            console.log('Build completed successfully.');
+            // Then the script ends naturally here with exit code 0
+        }
     } catch (error) {
         console.error('Build failed:', error);
         process.exit(1);
