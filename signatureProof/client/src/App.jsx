@@ -8,7 +8,7 @@ export default function App() {
     const [result, setResult] = useState(null);
 
     useEffect(() => {
-        detectConcordiumProvider()
+        detectConcordiumProvider(5000)
             .then(setProvider)
             .catch(() => setStatus({ type: 'error', message: 'Concordium Wallet not found' }));
     }, []);
