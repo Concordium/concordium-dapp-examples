@@ -4,7 +4,7 @@ on:
   push:
     branches: 
       - main
-      - COR-2064/yarn-audit-slack
+      - COR-2064/yarn-audit-slack-clean
 
   schedule:
       - cron: '0 12 * * *' # run every day at 12
