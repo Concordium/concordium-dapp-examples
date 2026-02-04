@@ -42,5 +42,8 @@
         "build-verifier": "cargo build --manifest-path=verifier/Cargo.toml --release",
         "watch": "cross-env WATCH=1 yarn build",
         "start": "./verifier/target/release/gallery-verifier"
+    },
+    "resolutions": {
+        "lodash.template": "npm:lodash@^4.17.21"
     }
 }
