@@ -46,20 +46,11 @@ const config: BuildOptions = {
 };
 
 (async () => {
-    try {
-        if (watch) {
-            // Create a context for watching
-            const ctx = await esbuild.context(config);
-            
-            await ctx.watch();
-            console.log('watching for changes...');
-        } else {
-            // Standard one-time build
-            await esbuild.build(config);
-            console.log('build successful');
-        } 
-    } catch (error) {
-        console.error('Build failed:', error);
-        process.exit(1);
+    if (watch) {
+        const ctx = await esbuild.context(config);
+        await ctx.watch();
+        console.log('watching for changes...');
+    } else {
+        esbuild.build(config).catch(() => process.exit(1));
     }
 })();
