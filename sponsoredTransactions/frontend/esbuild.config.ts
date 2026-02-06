@@ -45,24 +45,23 @@ const config: BuildOptions = {
     },
 };
 
-if (watch) {
-    config.watch = {
-        onRebuild(error) {
-            if (error) {
-                console.error('watch build failed:', error);
-                return;
-            }
-
-            console.log('rebuild successful');
-        },
-    };
-}
-
-esbuild
-    .build(config)
-    .then(() => {
+(async () => {
+    try {
         if (watch) {
+            // Create a context for watching
+            const ctx = await esbuild.context(config);
+            
+            // To mimic your old 'onRebuild' logic, you now use plugins 
+            // OR simply let ctx.watch() handle the logging.
+            await ctx.watch();
             console.log('watching for changes...');
-        }
-    })
-    .catch(() => process.exit(1));
+        } else {
+            // Standard one-time build
+            await esbuild.build(config);
+            console.log('build successful');
+        } 
+    } catch (error) {
+        console.error('Build failed:', error);
+        process.exit(1);
+    }
+})();
