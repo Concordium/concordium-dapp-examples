@@ -45,24 +45,12 @@ const config: BuildOptions = {
     },
 };
 
-if (watch) {
-    config.watch = {
-        onRebuild(error) {
-            if (error) {
-                console.error('watch build failed:', error);
-                return;
-            }
-
-            console.log('rebuild successful');
-        },
-    };
-}
-
-esbuild
-    .build(config)
-    .then(() => {
-        if (watch) {
-            console.log('watching for changes...');
-        }
-    })
-    .catch(() => process.exit(1));
+(async () => {
+    if (watch) {
+        const ctx = await esbuild.context(config);
+        await ctx.watch();
+        console.log('watching for changes...');
+    } else {
+        esbuild.build(config).catch(() => process.exit(1));
+    }
+})();
