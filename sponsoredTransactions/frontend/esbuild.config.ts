@@ -51,8 +51,6 @@ const config: BuildOptions = {
             // Create a context for watching
             const ctx = await esbuild.context(config);
             
-            // To mimic your old 'onRebuild' logic, you now use plugins 
-            // OR simply let ctx.watch() handle the logging.
             await ctx.watch();
             console.log('watching for changes...');
         } else {
