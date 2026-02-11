@@ -1,0 +1,23 @@
+{
+	"semi": true,
+	"trailingComma": "all",
+	"singleQuote": true,
+	"jsxSingleQuote": true,
+	"useTabs": true,
+	"printWidth": 80,
+	"tabWidth": 4,
+	"singleAttributePerLine": true,
+	"arrowParens": "always",
+	"endOfLine": "crlf",
+	"overrides": [
+		{
+			"files": "*.json",
+			"options": {
+				"semi": false,
+				"singleAttributePerLine": false,
+				"trailingComma": "all",
+				"bracketSameLine": true
+			}
+		}
+	]
+}
