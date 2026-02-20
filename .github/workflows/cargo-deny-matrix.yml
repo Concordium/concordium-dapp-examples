@@ -31,8 +31,14 @@ jobs:
         with:
           submodules: recursive
         
+      # TODO - remove later if the workspace and folders are updated to 1.88 after smart contract wasm issues resolved
+      - name: Set up Rust toolchain for cargo-deny
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.88.0"
+
       - name: Install cargo-deny
-        run: cargo install --locked --version 0.18.9 cargo-deny
+        run: cargo install --locked cargo-deny
 
       - name: Run cargo-deny
         run: cargo deny check advisories
