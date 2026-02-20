@@ -17,8 +17,8 @@ jobs:
     runs-on: ubuntu-latest
 
     # TODO - set here due to issues with cargo-deny and smart contract wasm files, remove later when those issues are resolved and the workspace and folders are updated to 1.88
-    env:
-      RUSTUP_TOOLCHAIN: 1.88.0 
+    #env:
+    #  RUSTUP_TOOLCHAIN: 1.88.0 
 
     strategy:
       fail-fast: false
@@ -39,11 +39,11 @@ jobs:
       # TODO - remove later if the workspace and folders are updated to 1.88 after smart contract wasm issues resolved
       - name: Set up Rust toolchain for cargo-deny
         uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: "1.88.0"
+        #with:
+        #  toolchain: "1.88.0"
 
       - name: Install cargo-deny
-        run: cargo-deny --locked --version 0.18.3
+        run: cargo install --locked cargo-deny --version 0.18.3
 
       - name: Run cargo-deny
         run: cargo deny check advisories
