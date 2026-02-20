@@ -44,6 +44,7 @@
         "start": "./verifier/target/release/gallery-verifier"
     },
     "resolutions": {
-        "lodash.template": "npm:lodash@^4.17.21"
+        "lodash.template": "npm:lodash@^4.17.21",
+        "minimatch": "10.2.1"
     }
 }
