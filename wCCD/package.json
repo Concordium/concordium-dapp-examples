@@ -35,6 +35,9 @@
         "vite-plugin-top-level-await": "^1.4.2",
         "vite-plugin-wasm": "^3.2.2"
     },
+    "resolutions": {
+        "minimatch": "10.2.1"
+    },
     "scripts": {
         "build": "tsc && vite build",
         "build-prod": "NETWORK='mainnet' vite build",
