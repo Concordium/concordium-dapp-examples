@@ -60,6 +60,7 @@
         "vite-tsconfig-paths": "^4.2.1"
     },
     "resolutions": {
-        "elliptic": "6.6.1"
+        "elliptic": "6.6.1",
+        "minimatch": "10.2.1"
     }
 }
