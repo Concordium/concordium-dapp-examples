@@ -16,7 +16,13 @@ jobs:
     name: Run cargo-deny-concordium-dapp-examples
     runs-on: ubuntu-latest
 
-    # TODO - set here due to issues with cargo-deny and smart contract wasm files, remove later when those issues are resolved and the workspace and folders are updated to 1.88
+    # TODO - explicitly set the toolchain to be 1.88.0 here because cargo deny has issues.
+    # Issue 1) - workspace specifies rust tool chain of currently 1.85.0 - the cargo deny latest is not compatible with this version and requires a bump to 1.88.0
+    # Issue 2) - we cannot bump the workspace rust tool chain to 1.88.0 because of issues with cargo concordium building: 
+    #            Error: Could not build smart contract. Caused by: 0: Could not build module schema. 1: Could not generate module schema from Wasm module. 2: Unknown section id 12 [toolchain] channel = "1.88"
+    # Therefore the temporary solution is to set the toolchain to be 1.88.0 only for this job, and install and run cargo deny. This is a temporary solution until the project
+    # can be updated to be compatible with Rust 1.88.0, and then the toolchain can be set to 1.88.0 in the rust-toolchain.toml file.
+    # Finally this env toolchain can then be removed after the above update is done.
     env:
       RUSTUP_TOOLCHAIN: 1.88.0 
 
@@ -35,16 +41,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
-        
-      # TODO - remove later if the workspace and folders are updated to 1.88 after smart contract wasm issues resolved
-      - name: Set up Rust toolchain for cargo-deny
-        uses: dtolnay/rust-toolchain@stable
-        #with:
-        #  toolchain: "1.88.0"
 
       - name: Install cargo-deny
         run: cargo install --locked cargo-deny
-        #run: cargo install --locked cargo-deny --version 0.18.3
 
       - name: Run cargo-deny
         run: cargo deny check advisories
