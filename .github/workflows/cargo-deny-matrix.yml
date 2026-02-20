@@ -15,6 +15,11 @@ jobs:
   cargo-deny:
     name: Run cargo-deny-concordium-dapp-examples
     runs-on: ubuntu-latest
+
+    # TODO - set here due to issues with cargo-deny and smart contract wasm files, remove later when those issues are resolved and the workspace and folders are updated to 1.88
+    env:
+      RUSTUP_TOOLCHAIN: 1.88.0 
+
     strategy:
       fail-fast: false
       matrix:
