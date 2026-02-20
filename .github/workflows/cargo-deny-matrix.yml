@@ -1,0 +1,59 @@
+# the purpose of this workflow is to run cargo-deny on a schedule to catch
+# any new license/advisories/sources/bans issues that may arise as dependencies are updated.
+name: Concordium dapp examples cargo deny audit
+
+on:
+  schedule:
+    - cron: '0 12 * * *' # run every day at 12
+  workflow_dispatch: # allows manual trigger
+
+jobs:
+  cargo-deny:
+    name: Run cargo-deny-concordium-dapp-examples
+    runs-on: ubuntu-latest
+
+    # TODO - explicitly set the toolchain to be 1.88.0 here because cargo deny has issues.
+    # Issue 1) - workspace specifies rust tool chain of currently 1.85.0 - the cargo deny latest is not compatible with this version and requires a bump to 1.88.0
+    # Issue 2) - we cannot bump the workspace rust tool chain to 1.88.0 because of issues with cargo concordium building: 
+    #            Error: Could not build smart contract. Caused by: 0: Could not build module schema. 1: Could not generate module schema from Wasm module. 2: Unknown section id 12 [toolchain] channel = "1.88"
+    # Therefore the temporary solution is to set the toolchain to be 1.88.0 only for this job, and install and run cargo deny. This is a temporary solution until the project
+    # can be updated to be compatible with Rust 1.88.0, and then the toolchain can be set to 1.88.0 in the rust-toolchain.toml file.
+    # Finally this env toolchain can then be removed after the above update is done.
+    env:
+      RUSTUP_TOOLCHAIN: 1.88.0 
+
+    strategy:
+      fail-fast: false
+      matrix:
+        directory:
+          - compliant-reward-distribution/indexer-and-server
+          - low-code-nft-marketplace/cis2-market
+          - sponsoredTransactions/backend
+          - sponsoredTransactionsAuction/backend
+          - trackAndTrace/indexer
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install cargo-deny
+        run: cargo install --locked cargo-deny
+
+      - name: Run cargo-deny
+        run: cargo deny check advisories
+        working-directory: ${{ matrix.directory }}
+
+      - name: Report Status to Slack    # This step only runs if a previous step failed
+        if: failure()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.CARGO_DENY_SECURITY_ADVISORIES_SLACK_WEBHOOK_URL }}
+          SLACK_COLOR: ${{ job.status }}
+          SLACK_TITLE: "Cargo Deny Audit Failed for dapp examples: ${{ matrix.directory }}"
+          SLACK_MESSAGE: |
+            The license or security audit for *${{ matrix.directory }}* has failed. 
+            Please check the GitHub Actions logs.
+            *View Logs:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|Click here to open the Summary page>
+          SLACK_USERNAME: CargoDenyBot
