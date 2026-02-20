@@ -43,7 +43,7 @@ jobs:
           toolchain: "1.88.0"
 
       - name: Install cargo-deny
-        run: cargo install --locked cargo-deny
+        run: cargo-deny --locked --version 0.18.3
 
       - name: Run cargo-deny
         run: cargo deny check advisories
