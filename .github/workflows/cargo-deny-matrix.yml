@@ -3,10 +3,6 @@
 name: Concordium dapp examples cargo deny audit
 
 on:
-  push:
-    branches:
-      - fix/COR-2282-cargo-deny-setup
-
   schedule:
     - cron: '0 12 * * *' # run every day at 12
   workflow_dispatch: # allows manual trigger
@@ -49,15 +45,15 @@ jobs:
         run: cargo deny check advisories
         working-directory: ${{ matrix.directory }}
 
-      #- name: Report Status to Slack    # This step only runs if a previous step failed
-      #  if: failure()
-      #  uses: rtCamp/action-slack-notify@v2
-      #  env:
-      #    SLACK_WEBHOOK: ${{ secrets.CARGO_DENY_SECURITY_ADVISORIES_SLACK_WEBHOOK_URL }}
-      #    SLACK_COLOR: ${{ job.status }}
-      #    SLACK_TITLE: "Cargo Deny Audit Failed for dapp examples: ${{ matrix.directory }}"
-      #    SLACK_MESSAGE: |
-      #      The license or security audit for *${{ matrix.directory }}* has failed. 
-      #      Please check the GitHub Actions logs.
-      #      *View Logs:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|Click here to open the Summary page>
-      #    SLACK_USERNAME: CargoDenyBot
+      - name: Report Status to Slack    # This step only runs if a previous step failed
+        if: failure()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.CARGO_DENY_SECURITY_ADVISORIES_SLACK_WEBHOOK_URL }}
+          SLACK_COLOR: ${{ job.status }}
+          SLACK_TITLE: "Cargo Deny Audit Failed for dapp examples: ${{ matrix.directory }}"
+          SLACK_MESSAGE: |
+            The license or security audit for *${{ matrix.directory }}* has failed. 
+            Please check the GitHub Actions logs.
+            *View Logs:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|Click here to open the Summary page>
+          SLACK_USERNAME: CargoDenyBot
