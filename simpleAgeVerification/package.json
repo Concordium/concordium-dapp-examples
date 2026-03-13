@@ -36,10 +36,7 @@
     },
     "resolutions": {
         "nth-check": "2.0.1",
-        "minimatch": "10.2.3",
-        "terser-webpack-plugin@npm:5.3.10/serialize-javascript": "7.0.3",
-        "css-minimizer-webpack-plugin@npm:3.4.1/serialize-javascript": "7.0.3",
-        "rollup-plugin-terser@npm:7.0.2/serialize-javascript": "7.0.3"
+        "minimatch": "10.2.3"
     },
     "scripts": {
         "start": "react-scripts start",
