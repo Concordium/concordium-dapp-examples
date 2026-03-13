@@ -36,7 +36,7 @@
     },
     "resolutions": {
         "nth-check": "2.0.1",
-        "minimatch": "10.2.1"
+        "minimatch": "10.2.3"
     },
     "scripts": {
         "start": "react-scripts start",
