@@ -45,6 +45,6 @@
     },
     "resolutions": {
         "lodash.template": "npm:lodash@^4.17.21",
-        "minimatch": "10.2.1"
+        "minimatch": "10.2.3"
     }
 }
