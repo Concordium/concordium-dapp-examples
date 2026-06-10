@@ -1,6 +1,6 @@
 {
   "name": "allowlist-backend",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "NestJS backend for Concordium Allow List dApp",
   "author": "",
   "private": true,

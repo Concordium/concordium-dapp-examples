@@ -1,0 +1,102 @@
+{
+  "$schema": "./tokens.schema.json",
+  "tokens": [
+    {
+      "id": "nonEuroPLT",
+      "amount": 100,
+      "hasAllowList": true,
+      "proof": {
+        "description": "Non-EU residency",
+        "statements": [
+          {
+            "type": "AttributeNotInSet",
+            "attributeTag": "countryOfResidence",
+            "set": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          }
+        ],
+        "issuers": [
+          0
+        ]
+      }
+    },
+    {
+      "id": "EUROe",
+      "amount": 50,
+      "hasAllowList": true,
+      "proof": {
+        "description": "EU residency",
+        "statements": [
+          {
+            "type": "AttributeInSet",
+            "attributeTag": "countryOfResidence",
+            "set": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          }
+        ],
+        "issuers": [
+          0
+        ]
+      }
+    },
+    {
+      "id": "FreeToken",
+      "amount": 25,
+      "hasAllowList": false
+    }
+  ]
+}

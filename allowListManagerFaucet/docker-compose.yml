@@ -1,20 +1,24 @@
 services:
   backend:
-    build: 
+    build:
       context: ./backend
     ports:
       - "3001:3001"
+    volumes:
+      - ./backend/config:/app/config:ro
     environment:
       - CONCORDIUM_GRPC_HOST=${CONCORDIUM_GRPC_HOST}
       - CONCORDIUM_GRPC_PORT=${CONCORDIUM_GRPC_PORT}
       - DEFAULT_TOKEN_ID=${DEFAULT_TOKEN_ID}
+      - DEFAULT_MINT_AMOUNT=${DEFAULT_MINT_AMOUNT:-100}
+      - TOKEN_CONFIG_PATH=${TOKEN_CONFIG_PATH:-}
     depends_on:
       - web3id-verifier
     networks:
       - allowlist-network
 
   frontend:
-    build: 
+    build:
       context: ./frontend
       args:
         TOKEN_ID: ${DEFAULT_TOKEN_ID}

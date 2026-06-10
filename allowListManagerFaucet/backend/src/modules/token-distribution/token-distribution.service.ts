@@ -1,5 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common'
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import { readFileSync } from 'node:fs'
 import { ConcordiumService } from '../concordium/concordium.service.js'
 import { ProcessTrackingService } from './process-tracking.service.js'
 import { TokenId, TokenAmount, Token, TokenHolder, CborMemo, Cbor } from '@concordium/web-sdk/plt'
@@ -12,39 +13,149 @@ import {
   TransactionEventTag
 } from '@concordium/web-sdk'
 
+export interface ProofStatementConfig {
+  type: 'AttributeInSet' | 'AttributeNotInSet' | 'AttributeInRange'
+  attributeTag: string
+  set?: string[]
+  lower?: string
+  upper?: string
+}
+
+export interface ProofConfig {
+  description: string
+  statements: ProofStatementConfig[]
+  issuers: number[]
+}
+
+export interface TokenConfig {
+  id: string
+  amount: number
+  hasAllowList: boolean
+  proof?: ProofConfig
+  iconUrl?: string
+  description?: string
+}
+
+interface TokenConfigFileEntry {
+  id: string
+  amount?: number
+  hasAllowList?: boolean
+  proof?: ProofConfig
+}
+
+interface TokenConfigFile {
+  tokens: TokenConfigFileEntry[]
+}
+
 @Injectable()
-export class TokenDistributionService {
+export class TokenDistributionService implements OnModuleInit {
   private readonly logger = new Logger(TokenDistributionService.name)
-  private readonly defaultTokenId: string
-  private readonly defaultMintAmount: number
+  private readonly tokenConfigs: TokenConfig[]
 
   constructor(
     private readonly concordiumService: ConcordiumService,
     private readonly processTrackingService: ProcessTrackingService,
     private readonly configService: ConfigService,
   ) {
-    this.defaultTokenId = this.configService.get('DEFAULT_TOKEN_ID', 'TestLists')
-    this.defaultMintAmount = parseInt(this.configService.get('DEFAULT_MINT_AMOUNT', '100'))
-    this.logger.log(`Initialized with default token: ${this.defaultTokenId}, amount: ${this.defaultMintAmount}`)
+    this.tokenConfigs = this.loadTokenConfigs()
+
+    this.logger.log(`Initialized with token configs: ${JSON.stringify(this.tokenConfigs)}`)
+  }
+
+  async onModuleInit() {
+    await this.enrichTokensWithIcons()
+  }
+
+  private async enrichTokensWithIcons() {
+    const client = this.concordiumService.getClient()
+    for (const tokenConfig of this.tokenConfigs) {
+      try {
+        const token = await Token.fromId(client, TokenId.fromString(tokenConfig.id))
+        const metadataUrl = token.moduleState.metadata.url
+        const response = await fetch(metadataUrl)
+        if (response.ok) {
+          const metadata = await response.json() as { thumbnail?: { url: string }; display?: { url: string }; description?: string }
+          tokenConfig.iconUrl = metadata.thumbnail?.url ?? metadata.display?.url
+          tokenConfig.description = metadata.description
+          this.logger.log(`Loaded metadata for ${tokenConfig.id}: icon=${tokenConfig.iconUrl}, description=${tokenConfig.description}`)
+        }
+      } catch (error) {
+        this.logger.warn(`Could not load icon for token ${tokenConfig.id}: ${error.message}`)
+      }
+    }
+  }
+
+  private loadTokenConfigs(): TokenConfig[] {
+    const tokenConfigPath = this.configService.get<string>('TOKEN_CONFIG_PATH', '')
+
+    if (tokenConfigPath) {
+      try {
+        const configFile = readFileSync(tokenConfigPath, 'utf8')
+        const parsed = JSON.parse(configFile) as TokenConfigFile
+
+        if (!Array.isArray(parsed.tokens) || parsed.tokens.length === 0) {
+          throw new Error('token config file must have a non-empty "tokens" array')
+        }
+
+        return parsed.tokens.map((entry, index) => {
+          if (!entry?.id) {
+            throw new Error(`token config entry at index ${index} is missing id`)
+          }
+
+          return {
+            id: entry.id,
+            amount: typeof entry.amount === 'number' ? entry.amount : this.getDefaultMintAmount(),
+            hasAllowList: entry.hasAllowList ?? true,
+            proof: entry.proof,
+          }
+        })
+      } catch (error) {
+        this.logger.error(`Failed to load token config from ${tokenConfigPath}: ${error.message}`)
+        throw new Error(`Token config initialization failed: ${error.message}`)
+      }
+    }
+
+    return [
+      {
+        id: this.configService.get('DEFAULT_TOKEN_ID', 'TestLists'),
+        amount: this.getDefaultMintAmount(),
+        hasAllowList: true,
+      },
+    ]
+  }
+
+  private getDefaultMintAmount(): number {
+    return parseInt(this.configService.get('DEFAULT_MINT_AMOUNT', '100'))
+  }
+
+  getConfiguredTokens(): TokenConfig[] {
+    return this.tokenConfigs
   }
 
   /**
-   * Starts the token distribution process for a verified user
-   * Executes all operations in a single atomic transaction
+   * Starts the token distribution process for a verified user.
+   * Resolves the token ID from the DTO (or first configured token) and its configured mint amount.
    */
   async startTokenDistribution(dto: AddToAllowListDto): Promise<string> {
     const processId = uuidv4()
-    const tokenId = dto.tokenId || this.defaultTokenId
+    const tokenId = dto.tokenId || this.tokenConfigs[0].id
+    const tokenConfig = this.tokenConfigs.find(c => c.id === tokenId) ?? this.tokenConfigs[0]
 
-    this.logger.log(`Starting token distribution process ${processId} for user ${dto.userAccount}`)
+    // Eligible only if the account has no token entry at all (never held this token).
+    // A null balance means no entry; any string value (including '0') means the account
+    // has held the token before, even if the balance is now zero.
+    const currentBalance = await this.getTokenBalance(tokenConfig.id, dto.userAccount)
+    if (currentBalance !== null) {
+      throw new Error(`Account ${dto.userAccount} has previously held token ${tokenConfig.id} and is not eligible for distribution`)
+    }
 
-    // Initialize process tracking with single step
+    this.logger.log(`Starting token distribution process ${processId} for user ${dto.userAccount} on token ${tokenId} (allowList: ${tokenConfig.hasAllowList})`)
+
     this.processTrackingService.initializeProcess(processId, [
       { step: 'Execute Token Distribution', status: 'pending', progress: 0 },
     ])
 
-    // Start async process
-    this.executeTokenDistribution(processId, dto, tokenId).catch(error => {
+    this.executeTokenDistribution(processId, dto, tokenConfig).catch(error => {
       this.logger.error(`Process ${processId} failed: ${error.message}`)
       this.processTrackingService.markProcessFailed(processId, error.message)
     })
@@ -52,26 +163,27 @@ export class TokenDistributionService {
     return processId
   }
 
-  private async executeTokenDistribution(processId: string, dto: AddToAllowListDto, tokenIdStr: string) {
+  private async executeTokenDistribution(processId: string, dto: AddToAllowListDto, tokenConfig: TokenConfig) {
     try {
-      // Update status to processing
       this.processTrackingService.updateStep(processId, 0, 'processing')
 
-      // Execute the combined transaction
       const txHash = await this.executeCombinedTokenOperation(
         dto.userAccount,
-        tokenIdStr,
-        this.defaultMintAmount
+        tokenConfig.id,
+        tokenConfig.amount,
+        tokenConfig.hasAllowList,
       )
 
-      // Update status to completed
       this.processTrackingService.updateStep(processId, 0, 'completed', txHash)
 
-      // Mark process as completed
+      const operations = [
+        ...(tokenConfig.hasAllowList ? ['addToAllowList'] : []),
+        ...(tokenConfig.amount > 0 ? ['mint', 'transfer'] : []),
+      ]
       this.processTrackingService.markProcessCompleted(processId, {
         transactionHash: txHash,
-        operations: ['addToAllowList', 'mint', 'transfer'],
-        tokensTransferred: this.defaultMintAmount,
+        operations,
+        tokensTransferred: tokenConfig.amount,
       })
 
       this.logger.log(`Process ${processId} completed successfully with transaction: ${txHash}`)
@@ -91,29 +203,24 @@ export class TokenDistributionService {
   private async executeCombinedTokenOperation(
     userAccount: string,
     tokenIdStr: string,
-    amount: number
+    amount: number,
+    hasAllowList: boolean,
   ): Promise<string> {
     try {
       const client = this.concordiumService.getClient()
       const userAddress = this.concordiumService.parseAccountAddress(userAccount)
       const { sender, signer } = this.concordiumService.loadGovernanceWallet()
 
-      this.logger.log(`Executing combined operation for ${userAccount} on token ${tokenIdStr}`)
+      this.logger.log(`Executing combined operation for ${userAccount} on token ${tokenIdStr} (allowList: ${hasAllowList})`)
 
-      // Create token instance and prepare parameters
       const tokenId = TokenId.fromString(tokenIdStr)
       const token = await Token.fromId(client, tokenId)
       const tokenAmount = TokenAmount.fromDecimal(amount, token.info.state.decimals)
       const targetHolder = TokenHolder.fromAccountAddress(userAddress)
 
-      // Execute all operations in a single transaction
-      this.logger.log(`Sending combined transaction: add to allowlist + mint ${amount} + transfer to ${userAccount}`)
-
-      const combinedTx = await Token.sendOperations(
-        token,
-        sender,
-        [
-          { addAllowList: { target: targetHolder } },
+      const ops = [
+        ...(hasAllowList ? [{ addAllowList: { target: targetHolder } }] : []),
+        ...(amount > 0 ? [
           { mint: { amount: tokenAmount } },
           {
             transfer: {
@@ -122,9 +229,12 @@ export class TokenDistributionService {
               memo: CborMemo.fromString(`Faucet distribution to ${userAccount}`)
             }
           }
-        ],
-        signer
-      )
+        ] : []),
+      ]
+
+      this.logger.log(`Sending transaction: ${hasAllowList ? 'addAllowList + ' : ''}mint ${amount} + transfer to ${userAccount}`)
+
+      const combinedTx = await Token.sendOperations(token, sender, ops, signer)
 
       this.logger.log(`Combined transaction submitted: ${combinedTx}`)
 
@@ -169,7 +279,7 @@ export class TokenDistributionService {
   async isUserOnAllowList(userAccount: string, tokenId?: string): Promise<boolean> {
     try {
       const userAddress = this.concordiumService.parseAccountAddress(userAccount)
-      const checkTokenId = tokenId || this.defaultTokenId
+      const checkTokenId = tokenId || this.tokenConfigs[0].id
       const client = this.concordiumService.getClient()
 
       this.logger.log(`Checking allowlist status for ${userAccount} on token ${checkTokenId}`)
@@ -225,9 +335,11 @@ export class TokenDistributionService {
   }
 
   /**
-   * Gets token balance for a user
+   * Gets token balance for a user.
+   * Returns null when the account has no entry for this token (never held it) — the caller
+   * can use this to distinguish "never held" (eligible) from "held but spent" (ineligible).
    */
-  async getTokenBalance(tokenId: string, accountAddress: string): Promise<string> {
+  async getTokenBalance(tokenId: string, accountAddress: string): Promise<string | null> {
     try {
       const userAddress = this.concordiumService.parseAccountAddress(accountAddress)
       const client = this.concordiumService.getClient()
@@ -240,8 +352,8 @@ export class TokenDistributionService {
       const tokenInfo = tokenAccountInfo.find(balance => balance.id.value === tokenId)
 
       if (!tokenInfo) {
-        this.logger.log(`Token ${tokenId} not found in account ${accountAddress} - balance is 0`)
-        return "0"
+        this.logger.log(`Token ${tokenId} not found in account ${accountAddress} - never held`)
+        return null
       }
 
       const balance = tokenInfo.state.balance.toString()
