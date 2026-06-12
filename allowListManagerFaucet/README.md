@@ -71,6 +71,9 @@ GOVERNANCE_WALLET_PATH=./wallet/wallet.export
 # Server Configuration
 PORT=3001
 NODE_ENV=development
+
+# CORS (comma-separated list of allowed frontend origins)
+CORS_ORIGIN=http://localhost:5173,http://localhost:3000
 npm run start:dev     # Runs on :3001
 ```
 
