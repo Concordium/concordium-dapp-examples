@@ -11,7 +11,7 @@ export class AddToAllowListDto {
   userAccount: string
 
   @ApiProperty({
-    description: 'Optional token ID to manage (defaults to configured PLT)',
+    description: 'Optional token ID to manage (defaults to first configured PLT)',
     required: false
   })
   @IsString()

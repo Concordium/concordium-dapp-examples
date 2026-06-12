@@ -33,3 +33,6 @@ gallery/public
 
 # Key files exported from the Concordium browser wallet
 */**/*.export
+
+# Config file for allowListManagerFauced backend
+allowListManagerFaucet/backend/config/token-config.json

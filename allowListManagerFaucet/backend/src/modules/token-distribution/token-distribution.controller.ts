@@ -24,8 +24,15 @@ export class TokenDistributionController {
     private readonly processTrackingService: ProcessTrackingService,
   ) {}
 
+  @Get('tokens')
+  @ApiOperation({ summary: 'List configured PLT tokens available for distribution' })
+  @ApiResponse({ status: 200, description: 'Array of configured tokens with their mint amounts' })
+  getConfiguredTokens() {
+    return this.tokenDistributionService.getConfiguredTokens()
+  }
+
   @Post('distribute')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Start token distribution process', 
     description: 'Adds user to allowlist, mints tokens, and transfers them in a single atomic transaction' 
   })

@@ -1,7 +1,7 @@
 {
     "name": "allowlist-dapp-mvp",
     "license": "Apache-2.0",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "dependencies": {
         "@concordium/react-components": "^0.6.1",
         "@concordium/wallet-connectors": "^0.6.1",
