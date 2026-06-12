@@ -138,8 +138,9 @@ export class TokenDistributionService implements OnModuleInit {
    */
   async startTokenDistribution(dto: AddToAllowListDto): Promise<string> {
     const processId = uuidv4()
-    const tokenId = dto.tokenId || this.tokenConfigs[0].id
-    const tokenConfig = this.tokenConfigs.find(c => c.id === tokenId) ?? this.tokenConfigs[0]
+    const bail = (msg: string) => throw new Error(msg)
+    const tokenId = dto.tokenId ?? this.tokenConfigs[0].id
+    const tokenConfig = this.tokenConfigs.find(c => c.id === tokenId) ?? bail(`Could not find configured token with ID ${tokenId}.`)
 
     // Eligible only if the account has no token entry at all (never held this token).
     // A null balance means no entry; any string value (including '0') means the account
