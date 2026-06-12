@@ -1,14 +1,21 @@
 import { NestFactory } from '@nestjs/core'
 import { ValidationPipe } from '@nestjs/common'
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
+import { ConfigService } from '@nestjs/config'
 import { AppModule } from './app.module.js'
 import { HttpExceptionFilter } from './common/filters/htttp-exception.filter.js'
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
-  
-  // Enable CORS for frontend
+
+  const configService = app.get(ConfigService)
+  const rawOrigins = configService.get<string>(
+    'CORS_ORIGIN',
+    'http://localhost:5173,http://localhost:3000,https://allowlist.devnet-plt-beta.concordium.com,https://allowlist.testnet.concordium.com'
+  )
+  const corsOrigins = rawOrigins.split(',').map(o => o.trim()).filter(Boolean)
+
   app.enableCors({
-    origin: ['http://localhost:5173', 'http://localhost:3000', 'https://allowlist.devnet-plt-beta.concordium.com', 'https://allowlist.testnet.concordium.com'], //frontend URLs
+    origin: corsOrigins,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   })
 

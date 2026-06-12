@@ -6,7 +6,7 @@ on:
       - allowlist-backend/*
 
 jobs:
-  release-backend:
+  release-allowlist-manager-backend:
     uses: concordium/.github/.github/workflows/docker-release-workflow.yaml@v1
     with:
       SERVICE_NAME: allowlist-backend
