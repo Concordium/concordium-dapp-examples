@@ -138,7 +138,7 @@ export class TokenDistributionService implements OnModuleInit {
    */
   async startTokenDistribution(dto: AddToAllowListDto): Promise<string> {
     const processId = uuidv4()
-    const bail = (msg: string) => throw new Error(msg)
+    const bail = (msg: string) => { throw new Error(msg) }
     const tokenId = dto.tokenId ?? this.tokenConfigs[0].id
     const tokenConfig = this.tokenConfigs.find(c => c.id === tokenId) ?? bail(`Could not find configured token with ID ${tokenId}.`)
 
