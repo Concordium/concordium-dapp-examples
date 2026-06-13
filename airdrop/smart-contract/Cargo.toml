@@ -1,0 +1,26 @@
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[package]
+name = "airdrop_project"
+version = "0.1.0"
+edition = "2021"
+license = "MPL-2.0"
+authors = [ "NossicaSystems <124845628+NossicaSystems@users.noreply.github.com>" ]
+description = "Airdop system for NFTs"
+
+[features]
+default = ["std"]
+std = ["concordium-std/std"]
+wee_alloc = ["concordium-std/wee_alloc"]
+
+[dependencies]
+concordium-cis2 = "3.1.0"
+concordium-std = {version = "6.2", default-features = false}
+sha256 = "1.1.3"
+
+[lib]
+crate-type=["cdylib", "rlib"]
+
+[profile.release]
+opt-level = "s"
+codegen-units = 1
