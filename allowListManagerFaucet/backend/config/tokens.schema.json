@@ -1,150 +1,127 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://github.com/Concordium/concordium-dapp-examples/allowListManagerFaucet/tokens-config",
-  "title": "PLT Token Distribution Config",
-  "description": "Token configuration for the allowListManagerFaucet distribution service.",
-  "type": "object",
-  "required": [
-    "tokens"
-  ],
-  "additionalProperties": false,
-  "properties": {
-    "$schema": {
-      "type": "string"
-    },
-    "tokens": {
-      "type": "array",
-      "minItems": 1,
-      "items": {
-        "type": "object",
-        "required": [
-          "id"
-        ],
-        "additionalProperties": false,
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Token ID as it appears on-chain."
-          },
-          "amount": {
-            "type": "number",
-            "minimum": 0,
-            "description": "PLTs to mint and transfer per distribution. Set to 0 for allow-list-only mode (adds the user to the allow list without minting or transferring tokens). Defaults to the DEFAULT_MINT_AMOUNT env var if not provided."
-          },
-          "hasAllowList": {
-            "type": "boolean",
-            "description": "Whether this token uses an allow list. When true the user is added to the allow list before receiving tokens. Defaults to true."
-          },
-          "proof": {
-            "$ref": "#/$defs/proofConfig",
-            "description": "ZK proof / verifiable-presentation requirements. Only meaningful when hasAllowList is true. If omitted on an allow-list token the frontend falls back to the built-in EU residency proof."
-          }
-        }
-      }
-    }
-  },
-  "$defs": {
-    "proofConfig": {
-      "type": "object",
-      "required": [
-        "description",
-        "statements",
-        "issuers"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "description": {
-          "type": "string",
-          "minLength": 1,
-          "description": "Human-readable label shown in the UI, e.g. \"EU residency\" or \"Age 18+\"."
-        },
-        "statements": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "$ref": "#/$defs/proofStatement"
-          }
-        },
-        "issuers": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "type": "integer",
-            "minimum": 0,
-            "description": "Concordium identity provider ID."
-          },
-          "description": "Accepted Concordium identity provider IDs."
-        }
-      }
-    },
-    "proofStatement": {
-      "type": "object",
-      "required": [
-        "type",
-        "attributeTag"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "type": {
-          "type": "string",
-          "enum": [
-            "AttributeInSet",
-            "AttributeNotInSet",
-            "AttributeInRange"
-          ],
-          "description": "Statement type."
-        },
-        "attributeTag": {
-          "type": "string",
-          "description": "Identity attribute to check, e.g. \"nationality\", \"countryOfResidence\", \"dob\"."
-        },
-        "set": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://github.com/Concordium/concordium-dapp-examples/allowListManagerFaucet/tokens-config",
+    "title": "PLT Token Distribution Config",
+    "description": "Token configuration for the allowListManagerFaucet distribution service.",
+    "type": "object",
+    "required": ["tokens"],
+    "additionalProperties": false,
+    "properties": {
+        "$schema": {
             "type": "string"
-          },
-          "description": "Required for AttributeInSet and AttributeNotInSet. List of accepted (or rejected) attribute values."
         },
-        "lower": {
-          "type": "string",
-          "description": "Required for AttributeInRange. Inclusive lower bound."
-        },
-        "upper": {
-          "type": "string",
-          "description": "Required for AttributeInRange. Exclusive upper bound."
-        }
-      },
-      "if": {
-        "properties": {
-          "type": {
-            "enum": [
-              "AttributeInSet",
-              "AttributeNotInSet"
-            ]
-          }
-        }
-      },
-      "then": {
-        "required": [
-          "set"
-        ]
-      },
-      "else": {
-        "if": {
-          "properties": {
-            "type": {
-              "const": "AttributeInRange"
+        "tokens": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+                "type": "object",
+                "required": ["id"],
+                "additionalProperties": false,
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "description": "Token ID as it appears on-chain."
+                    },
+                    "amount": {
+                        "type": "number",
+                        "minimum": 0,
+                        "description": "PLTs to mint and transfer per distribution. Set to 0 for allow-list-only mode (adds the user to the allow list without minting or transferring tokens). Defaults to the DEFAULT_MINT_AMOUNT env var if not provided."
+                    },
+                    "hasAllowList": {
+                        "type": "boolean",
+                        "description": "Whether this token uses an allow list. When true the user is added to the allow list before receiving tokens. Defaults to true."
+                    },
+                    "proof": {
+                        "$ref": "#/$defs/proofConfig",
+                        "description": "ZK proof / verifiable-presentation requirements. Only meaningful when hasAllowList is true. If omitted on an allow-list token the frontend falls back to the built-in EU residency proof."
+                    }
+                }
             }
-          }
-        },
-        "then": {
-          "required": [
-            "lower",
-            "upper"
-          ]
         }
-      }
+    },
+    "$defs": {
+        "proofConfig": {
+            "type": "object",
+            "required": ["description", "statements", "issuers"],
+            "additionalProperties": false,
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Human-readable label shown in the UI, e.g. \"EU residency\" or \"Age 18+\"."
+                },
+                "statements": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/$defs/proofStatement"
+                    }
+                },
+                "issuers": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "Concordium identity provider ID."
+                    },
+                    "description": "Accepted Concordium identity provider IDs."
+                }
+            }
+        },
+        "proofStatement": {
+            "type": "object",
+            "required": ["type", "attributeTag"],
+            "additionalProperties": false,
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": ["AttributeInSet", "AttributeNotInSet", "AttributeInRange"],
+                    "description": "Statement type."
+                },
+                "attributeTag": {
+                    "type": "string",
+                    "description": "Identity attribute to check, e.g. \"nationality\", \"countryOfResidence\", \"dob\"."
+                },
+                "set": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Required for AttributeInSet and AttributeNotInSet. List of accepted (or rejected) attribute values."
+                },
+                "lower": {
+                    "type": "string",
+                    "description": "Required for AttributeInRange. Inclusive lower bound."
+                },
+                "upper": {
+                    "type": "string",
+                    "description": "Required for AttributeInRange. Exclusive upper bound."
+                }
+            },
+            "if": {
+                "properties": {
+                    "type": {
+                        "enum": ["AttributeInSet", "AttributeNotInSet"]
+                    }
+                }
+            },
+            "then": {
+                "required": ["set"]
+            },
+            "else": {
+                "if": {
+                    "properties": {
+                        "type": {
+                            "const": "AttributeInRange"
+                        }
+                    }
+                },
+                "then": {
+                    "required": ["lower", "upper"]
+                }
+            }
+        }
     }
-  }
 }

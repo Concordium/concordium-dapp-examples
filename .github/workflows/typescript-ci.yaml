@@ -38,6 +38,7 @@ jobs:
           "eSealing"
           "voting"
           "wCCD"
+          "allowListManagerFaucet/backend"
           "allowListManagerFaucet/frontend"
         )
         if [[ "${{ github.event_name }}" == "pull_request" ]]; then
