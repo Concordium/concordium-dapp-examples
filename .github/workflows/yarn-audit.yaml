@@ -33,6 +33,7 @@ jobs:
           - eSealing
           - voting
           - wCCD
+          - allowListManagerFaucet/frontend
 
     steps:
       - name: Checkout
@@ -90,7 +91,7 @@ jobs:
           SLACK_COLOR: ${{ job.status }}
           SLACK_TITLE: 'Yarn Audit detected vulnerabilities on : ${{ matrix.packages }}'
           SLACK_MESSAGE: |
-            Yarn audit detected Critical or High vulnerabilities for *${{ matrix.packages }}*. 
+            Yarn audit detected Critical or High vulnerabilities for *${{ matrix.packages }}*.
             Please check the GitHub Actions logs.
             *View Logs:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|Click here to open the Summary page>
           SLACK_USERNAME: YarnAuditBot

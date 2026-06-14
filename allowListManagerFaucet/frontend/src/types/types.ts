@@ -1,4 +1,10 @@
-import { ContractAddress, AccountAddress, TransactionExpiry, AccountSigner, AtomicStatementV2 } from '@concordium/web-sdk';
+import {
+    ContractAddress,
+    AccountAddress,
+    TransactionExpiry,
+    AccountSigner,
+    AtomicStatementV2,
+} from '@concordium/web-sdk';
 
 export interface Token {
     contractAddress: ContractAddress.Type;

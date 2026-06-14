@@ -38,6 +38,7 @@ jobs:
           "eSealing"
           "voting"
           "wCCD"
+          "allowListManagerFaucet/frontend"
         )
         if [[ "${{ github.event_name }}" == "pull_request" ]]; then
           BASE=${{ github.event.pull_request.base.sha }}
@@ -83,7 +84,9 @@ jobs:
 
   prettier:
     name: Running Prettier
-    needs: lint
+    needs:
+      - changes
+      - lint
     runs-on: ubuntu-latest
     if : ${{ needs.changes.outputs.packages != '[]' && needs.changes.outputs.packages != '' }}
     strategy:
@@ -113,7 +116,9 @@ jobs:
 
   build:
     name: Building Frontend
-    needs: prettier
+    needs:
+      - changes
+      - prettier
     runs-on: ubuntu-latest
     if : ${{ needs.changes.outputs.packages != '[]' && needs.changes.outputs.packages != '' }}
     strategy:

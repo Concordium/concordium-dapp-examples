@@ -7,11 +7,7 @@ import {
     VerifiablePresentation,
     HexString,
 } from '@concordium/web-sdk';
-import {
-    useConnection,
-    useConnect,
-    WalletConnectionProps,
-} from '@concordium/react-components';
+import { useConnection, useConnect, WalletConnectionProps } from '@concordium/react-components';
 import { BROWSER_WALLET, WALLET_CONNECT } from '../../constants';
 import { Buffer } from 'buffer';
 
@@ -53,7 +49,35 @@ interface TokenConfig {
 const BACKEND_URL = window.runtimeConfig?.BACKEND_URL || 'http://localhost:3001';
 const VERIFIER_URL = window.runtimeConfig?.VERIFIER_URL || 'https://web3id-verifier.testnet.concordium.com';
 
-const EU_COUNTRY_CODES = ["AT", "BE", "BG", "CY", "CZ", "DE", "DK", "EE", "ES", "FI", "FR", "GR", "HR", "HU", "IE", "IT", "LT", "LU", "LV", "MT", "NL", "PL", "PT", "RO", "SE", "SI", "SK"];
+const EU_COUNTRY_CODES = [
+    'AT',
+    'BE',
+    'BG',
+    'CY',
+    'CZ',
+    'DE',
+    'DK',
+    'EE',
+    'ES',
+    'FI',
+    'FR',
+    'GR',
+    'HR',
+    'HU',
+    'IE',
+    'IT',
+    'LT',
+    'LU',
+    'LV',
+    'MT',
+    'NL',
+    'PL',
+    'PT',
+    'RO',
+    'SE',
+    'SI',
+    'SK',
+];
 
 const DEFAULT_EU_PROOF: ProofConfig = {
     description: 'EU nationality',
@@ -62,30 +86,32 @@ const DEFAULT_EU_PROOF: ProofConfig = {
 };
 
 function buildCredentialStatements(proof: ProofConfig): CredentialStatements {
-    const statements: AtomicStatementV2[] = proof.statements.map(s => {
+    const statements: AtomicStatementV2[] = proof.statements.map((s) => {
         switch (s.type) {
             case 'AttributeInSet':
                 return { type: StatementTypes.AttributeInSet, attributeTag: s.attributeTag, set: s.set! };
             case 'AttributeNotInSet':
                 return { type: StatementTypes.AttributeNotInSet, attributeTag: s.attributeTag, set: s.set! };
             case 'AttributeInRange':
-                return { type: StatementTypes.AttributeInRange, attributeTag: s.attributeTag, lower: s.lower!, upper: s.upper! };
+                return {
+                    type: StatementTypes.AttributeInRange,
+                    attributeTag: s.attributeTag,
+                    lower: s.lower!,
+                    upper: s.upper!,
+                };
         }
     });
-    return [{ statement: statements, idQualifier: { type: 'cred' as const, issuers: proof.issuers } } as CredentialStatement];
+    return [
+        {
+            statement: statements,
+            idQualifier: { type: 'cred' as const, issuers: proof.issuers },
+        } as CredentialStatement,
+    ];
 }
 
-
 export default function AllowListDApp(props: WalletConnectionProps) {
-
-    const { connection, setConnection, account } = useConnection(
-        props.connectedAccounts,
-        props.genesisHashes
-    );
-    const { connect, isConnecting } = useConnect(
-        props.activeConnector,
-        setConnection
-    );
+    const { connection, setConnection, account } = useConnection(props.connectedAccounts, props.genesisHashes);
+    const { connect, isConnecting } = useConnect(props.activeConnector, setConnection);
 
     // Process / proof state
     const [proofStatus, setProofStatus] = useState<string>('');
@@ -94,7 +120,9 @@ export default function AllowListDApp(props: WalletConnectionProps) {
     const [transactionHash, setTransactionHash] = useState<string>('');
     const [showProofDetails, setShowProofDetails] = useState(false);
     const [currentProof, setCurrentProof] = useState<string | null>(null);
-    const [intentedConnectorType, setIntentedConnectorType] = useState<typeof BROWSER_WALLET | typeof WALLET_CONNECT | null>(null);
+    const [intentedConnectorType, setIntentedConnectorType] = useState<
+        typeof BROWSER_WALLET | typeof WALLET_CONNECT | null
+    >(null);
 
     // Token config
     const [configuredTokens, setConfiguredTokens] = useState<TokenConfig[]>([]);
@@ -108,7 +136,7 @@ export default function AllowListDApp(props: WalletConnectionProps) {
     const [balancesLoading, setBalancesLoading] = useState(false);
 
     const isMultiToken = configuredTokens.length > 1;
-    const selectedToken = configuredTokens.find(t => t.id === selectedTokenId) ?? null;
+    const selectedToken = configuredTokens.find((t) => t.id === selectedTokenId) ?? null;
 
     // Eligibility is derived purely from whether the account has a token entry:
     // undefined → still loading (unknown), null → no entry (never held) → eligible, string → entry exists → ineligible
@@ -121,7 +149,7 @@ export default function AllowListDApp(props: WalletConnectionProps) {
     // Load token list from backend; fall back to runtimeConfig values
     useEffect(() => {
         fetch(`${BACKEND_URL}/token-distribution/tokens`)
-            .then(r => r.ok ? r.json() : Promise.reject())
+            .then((r) => (r.ok ? r.json() : Promise.reject()))
             .then((tokens: TokenConfig[]) => {
                 setConfiguredTokens(tokens);
                 setSelectedTokenId(tokens[0]?.id ?? '');
@@ -139,7 +167,6 @@ export default function AllowListDApp(props: WalletConnectionProps) {
         setCurrentProof(null);
         setShowProofDetails(false);
     }, [selectedTokenId]);
-
 
     // Clear status and in-progress state when the account changes.
     useEffect(() => {
@@ -163,26 +190,30 @@ export default function AllowListDApp(props: WalletConnectionProps) {
 
     const fetchAllBalances = async (accountAddress: string, tokens: TokenConfig[]) => {
         setBalancesLoading(true);
-        const results = await Promise.all(tokens.map(async (token) => {
-            try {
-                const r = await fetch(`${BACKEND_URL}/token-distribution/balance/${token.id}/${accountAddress}`);
-                if (r.ok) {
-                    const data = await r.json();
-                    // null from backend = no token entry = never held
-                    return [token.id, data.balance] as [string, string | null];
+        const results = await Promise.all(
+            tokens.map(async (token) => {
+                try {
+                    const r = await fetch(`${BACKEND_URL}/token-distribution/balance/${token.id}/${accountAddress}`);
+                    if (r.ok) {
+                        const data = await r.json();
+                        // null from backend = no token entry = never held
+                        return [token.id, data.balance] as [string, string | null];
+                    }
+                } catch {
+                    /* ignore */
                 }
-            } catch { /* ignore */ }
-            // On error, treat as null (never held) so the user can attempt to claim;
-            // the backend will enforce the rule authoritatively.
-            return [token.id, null] as [string, null];
-        }));
+                // On error, treat as null (never held) so the user can attempt to claim;
+                // the backend will enforce the rule authoritatively.
+                return [token.id, null] as [string, null];
+            }),
+        );
         const balances = Object.fromEntries(results) as Record<string, string | null>;
         setTokenBalances(balances);
         setBalancesLoading(false);
 
         // Auto-select first eligible token (null = no entry = eligible)
         if (balances[selectedTokenId] !== null) {
-            const firstEligible = tokens.find(t => balances[t.id] === null);
+            const firstEligible = tokens.find((t) => balances[t.id] === null);
             if (firstEligible) setSelectedTokenId(firstEligible.id);
         }
     };
@@ -298,7 +329,6 @@ export default function AllowListDApp(props: WalletConnectionProps) {
 
             const processStatus = await response.json();
             await pollProcessStatus(processStatus.processId);
-
         } catch (error: any) {
             console.error('Error in token distribution:', error);
             setMessage(`Failed to start token distribution: ${error.message}`);
@@ -323,10 +353,18 @@ export default function AllowListDApp(props: WalletConnectionProps) {
 
                     if (status.status === 'completed') {
                         const isAllowListOnly = (selectedToken?.amount ?? 1) === 0;
-                        setProofStatus(isAllowListOnly ? '✅ Added to allow list successfully!' : '✅ Tokens received successfully!');
+                        setProofStatus(
+                            isAllowListOnly
+                                ? '✅ Added to allow list successfully!'
+                                : '✅ Tokens received successfully!',
+                        );
                         const allowListLine = selectedToken?.hasAllowList ? '✅ Added to allow list\n' : '';
-                        const mintTransferLines = isAllowListOnly ? '' : '✅ Tokens minted\n✅ Tokens transferred to your account\n';
-                        setMessage(`🎉 Process completed successfully!\n${allowListLine}${mintTransferLines}\nAll operations completed in a single transaction!`);
+                        const mintTransferLines = isAllowListOnly
+                            ? ''
+                            : '✅ Tokens minted\n✅ Tokens transferred to your account\n';
+                        setMessage(
+                            `🎉 Process completed successfully!\n${allowListLine}${mintTransferLines}\nAll operations completed in a single transaction!`,
+                        );
 
                         if (status.result?.transactionHash) {
                             setTransactionHash(status.result.transactionHash);
@@ -334,7 +372,7 @@ export default function AllowListDApp(props: WalletConnectionProps) {
 
                         // Optimistically mark balance as non-zero so the button disables immediately,
                         // preventing a second claim in the same visit before the real fetch returns.
-                        setTokenBalances(prev => ({
+                        setTokenBalances((prev) => ({
                             ...prev,
                             [selectedTokenId]: String(selectedToken?.amount ?? 1),
                         }));
@@ -382,15 +420,24 @@ export default function AllowListDApp(props: WalletConnectionProps) {
             setProofStatus(`⏳ Processing... (${progress}%)`);
         }
 
-        const stepDetails = status.steps.map((step: any) => {
-            const icon = step.status === 'completed' ? '✅' :
-                step.status === 'processing' ? '🔄' :
-                    step.status === 'failed' ? '❌' : '⏳';
-            const txInfo = step.transactionHash ? ` (TX: ${step.transactionHash.substring(0, 8)}...)` : '';
-            return `${icon} ${step.step}${txInfo}`;
-        }).join('\n');
+        const stepDetails = status.steps
+            .map((step: any) => {
+                const icon =
+                    step.status === 'completed'
+                        ? '✅'
+                        : step.status === 'processing'
+                          ? '🔄'
+                          : step.status === 'failed'
+                            ? '❌'
+                            : '⏳';
+                const txInfo = step.transactionHash ? ` (TX: ${step.transactionHash.substring(0, 8)}...)` : '';
+                return `${icon} ${step.step}${txInfo}`;
+            })
+            .join('\n');
 
-        setMessage(`Blockchain Transaction Status:\n${stepDetails}\n\nNote: All operations execute in a single atomic transaction using Token.sendOperations()!`);
+        setMessage(
+            `Blockchain Transaction Status:\n${stepDetails}\n\nNote: All operations execute in a single atomic transaction using Token.sendOperations()!`,
+        );
     };
 
     const selectedEligibility = selectedToken ? getTokenEligibility(selectedToken) : null;
@@ -401,16 +448,17 @@ export default function AllowListDApp(props: WalletConnectionProps) {
     const getButtonState = () => {
         const isAllowListOnly = (selectedToken?.amount ?? 1) === 0;
         const action = isAllowListOnly ? 'Join Allow List' : `Get ${selectedTokenId}`;
-        const claimText = effectiveProof
-            ? `Verify ${effectiveProof.description} & ${action}`
-            : action;
+        const claimText = effectiveProof ? `Verify ${effectiveProof.description} & ${action}` : action;
 
         if (!connection || isLoading) {
             return { disabled: true, text: isLoading ? 'Processing...' : claimText };
         }
 
         if (selectedEligibility === false) {
-            return { disabled: true, text: isAllowListOnly ? `Already Added to Allow List ✅` : `Already Received ${selectedTokenId} ✅` };
+            return {
+                disabled: true,
+                text: isAllowListOnly ? `Already Added to Allow List ✅` : `Already Received ${selectedTokenId} ✅`,
+            };
         }
 
         return { disabled: false, text: claimText };
@@ -422,23 +470,40 @@ export default function AllowListDApp(props: WalletConnectionProps) {
         whiteSpace: 'pre-line' as const,
         wordBreak: 'break-word' as const,
         fontFamily: 'monospace',
-        fontSize: '0.9rem'
+        fontSize: '0.9rem',
     };
 
     const EligibilityBadge = ({ token }: { token: TokenConfig }) => {
         const eligibility = getTokenEligibility(token);
         const badgeStyle = { fontSize: '0.7rem', minWidth: '5.5rem', textAlign: 'center' as const };
         if (isLoading && token.id === selectedTokenId) {
-            return <span className="badge rounded-pill text-bg-warning" style={badgeStyle}>Pending</span>;
+            return (
+                <span className="badge rounded-pill text-bg-warning" style={badgeStyle}>
+                    Pending
+                </span>
+            );
         }
         if (balancesLoading && eligibility === null) {
-            return <span className="spinner-border spinner-border-sm text-muted" style={{ width: '0.8rem', height: '0.8rem', borderWidth: '0.15em' }} />;
+            return (
+                <span
+                    className="spinner-border spinner-border-sm text-muted"
+                    style={{ width: '0.8rem', height: '0.8rem', borderWidth: '0.15em' }}
+                />
+            );
         }
         if (eligibility === true) {
-            return <span className="badge rounded-pill text-bg-success" style={badgeStyle}>Unclaimed</span>;
+            return (
+                <span className="badge rounded-pill text-bg-success" style={badgeStyle}>
+                    Unclaimed
+                </span>
+            );
         }
         if (eligibility === false) {
-            return <span className="badge rounded-pill text-bg-secondary" style={badgeStyle}>Received</span>;
+            return (
+                <span className="badge rounded-pill text-bg-secondary" style={badgeStyle}>
+                    Received
+                </span>
+            );
         }
         return null;
     };
@@ -448,12 +513,7 @@ export default function AllowListDApp(props: WalletConnectionProps) {
             <nav className="navbar navbar-dark bg-dark shadow-sm mb-5">
                 <div className="container">
                     <a className="navbar-brand d-flex align-items-center" href="#">
-                        <img
-                            src="/concordium_favicon.svg"
-                            alt="Concordium"
-                            height="30"
-                            className="me-3"
-                        />
+                        <img src="/concordium_favicon.svg" alt="Concordium" height="30" className="me-3" />
                         <span className="fw-light fs-4">Token Distribution dApp</span>
                     </a>
                 </div>
@@ -493,7 +553,10 @@ export default function AllowListDApp(props: WalletConnectionProps) {
                                     >
                                         {isConnecting ? (
                                             <>
-                                                <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                                                <span
+                                                    className="spinner-border spinner-border-sm me-2"
+                                                    role="status"
+                                                ></span>
                                                 Connecting...
                                             </>
                                         ) : (
@@ -538,7 +601,7 @@ export default function AllowListDApp(props: WalletConnectionProps) {
                                                 </div>
 
                                                 <div className="d-flex flex-column gap-1">
-                                                    {configuredTokens.map(token => {
+                                                    {configuredTokens.map((token) => {
                                                         const eligibility = getTokenEligibility(token);
                                                         const isIneligible = eligibility === false;
                                                         const isSelected = selectedTokenId === token.id;
@@ -546,14 +609,19 @@ export default function AllowListDApp(props: WalletConnectionProps) {
                                                         return (
                                                             <div
                                                                 key={token.id}
-                                                                className={`d-flex align-items-center justify-content-between rounded px-2 py-2 ${isSelected ? 'bg-white shadow-sm border' : ''
-                                                                    }`}
+                                                                className={`d-flex align-items-center justify-content-between rounded px-2 py-2 ${
+                                                                    isSelected ? 'bg-white shadow-sm border' : ''
+                                                                }`}
                                                                 style={{
                                                                     opacity: isIneligible ? 0.55 : 1,
-                                                                    cursor: isMultiToken && !isIneligible && !isLoading ? 'pointer' : 'default',
+                                                                    cursor:
+                                                                        isMultiToken && !isIneligible && !isLoading
+                                                                            ? 'pointer'
+                                                                            : 'default',
                                                                 }}
                                                                 onClick={() => {
-                                                                    if (isMultiToken && !isIneligible && !isLoading) setSelectedTokenId(token.id);
+                                                                    if (isMultiToken && !isIneligible && !isLoading)
+                                                                        setSelectedTokenId(token.id);
                                                                 }}
                                                             >
                                                                 <div className="d-flex align-items-center gap-2">
@@ -564,18 +632,26 @@ export default function AllowListDApp(props: WalletConnectionProps) {
                                                                             name="tokenSelector"
                                                                             checked={isSelected}
                                                                             disabled={isIneligible || isLoading}
-                                                                            onChange={() => setSelectedTokenId(token.id)}
+                                                                            onChange={() =>
+                                                                                setSelectedTokenId(token.id)
+                                                                            }
                                                                         />
                                                                     )}
                                                                     <div>
                                                                         <span className="fw-medium">{token.id}</span>
-                                                                        <span className="text-muted ms-1" style={{ fontSize: '0.78rem' }}>
+                                                                        <span
+                                                                            className="text-muted ms-1"
+                                                                            style={{ fontSize: '0.78rem' }}
+                                                                        >
                                                                             ({token.amount})
                                                                         </span>
                                                                     </div>
                                                                 </div>
                                                                 <div className="d-flex align-items-center gap-2">
-                                                                    <span className="text-muted" style={{ fontSize: '0.82rem' }}>
+                                                                    <span
+                                                                        className="text-muted"
+                                                                        style={{ fontSize: '0.82rem' }}
+                                                                    >
                                                                         {balancesLoading
                                                                             ? '…'
                                                                             : `${tokenBalances[token.id] ?? '0'}`}
@@ -614,49 +690,68 @@ export default function AllowListDApp(props: WalletConnectionProps) {
                                     <div className="d-flex flex-column gap-2">
                                         {configuredTokens.length === 0 ? (
                                             <p className="text-muted small">Loading available tokens...</p>
-                                        ) : configuredTokens.map(token => {
-                                            const tokenProof = token.hasAllowList ? (token.proof ?? DEFAULT_EU_PROOF) : null;
-                                            return (
-                                                <div key={token.id} className="card border-0 bg-light">
-                                                    <div className="card-body p-3">
-                                                        <div className="d-flex align-items-center gap-3">
-                                                            <div
-                                                                className="rounded-circle bg-dark d-flex align-items-center justify-content-center flex-shrink-0 overflow-hidden"
-                                                                style={{ width: '2.5rem', height: '2.5rem' }}
-                                                            >
-                                                                {token.iconUrl ? (
-                                                                    <img src={token.iconUrl} alt={token.id} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                                                ) : (
-                                                                    <i className="bi bi-coin text-white fs-6"></i>
-                                                                )}
-                                                            </div>
-                                                            <div className="flex-grow-1">
-                                                                <div className="fw-semibold">{token.id}</div>
-                                                                {token.description && (
-                                                                    <div className="small text-muted">{token.description}</div>
-                                                                )}
-                                                                {token.amount === 0 ? (
-                                                                    <div className="small text-secondary fst-italic">Allow list addition only</div>
-                                                                ) : (
-                                                                    <div className="small">Claim {token.amount} PLTs</div>
-                                                                )}
-                                                                {tokenProof ? (
-                                                                    <div className="small mt-1 text-primary">
-                                                                        <i className="bi bi-shield-lock me-1"></i>
-                                                                        Requires {tokenProof.description} verification
-                                                                    </div>
-                                                                ) : (
-                                                                    <div className="small mt-1 text-success">
-                                                                        <i className="bi bi-check-circle me-1"></i>
-                                                                        No verification required
-                                                                    </div>
-                                                                )}
+                                        ) : (
+                                            configuredTokens.map((token) => {
+                                                const tokenProof = token.hasAllowList
+                                                    ? (token.proof ?? DEFAULT_EU_PROOF)
+                                                    : null;
+                                                return (
+                                                    <div key={token.id} className="card border-0 bg-light">
+                                                        <div className="card-body p-3">
+                                                            <div className="d-flex align-items-center gap-3">
+                                                                <div
+                                                                    className="rounded-circle bg-dark d-flex align-items-center justify-content-center flex-shrink-0 overflow-hidden"
+                                                                    style={{ width: '2.5rem', height: '2.5rem' }}
+                                                                >
+                                                                    {token.iconUrl ? (
+                                                                        <img
+                                                                            src={token.iconUrl}
+                                                                            alt={token.id}
+                                                                            style={{
+                                                                                width: '100%',
+                                                                                height: '100%',
+                                                                                objectFit: 'cover',
+                                                                            }}
+                                                                        />
+                                                                    ) : (
+                                                                        <i className="bi bi-coin text-white fs-6"></i>
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex-grow-1">
+                                                                    <div className="fw-semibold">{token.id}</div>
+                                                                    {token.description && (
+                                                                        <div className="small text-muted">
+                                                                            {token.description}
+                                                                        </div>
+                                                                    )}
+                                                                    {token.amount === 0 ? (
+                                                                        <div className="small text-secondary fst-italic">
+                                                                            Allow list addition only
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="small">
+                                                                            Claim {token.amount} PLTs
+                                                                        </div>
+                                                                    )}
+                                                                    {tokenProof ? (
+                                                                        <div className="small mt-1 text-primary">
+                                                                            <i className="bi bi-shield-lock me-1"></i>
+                                                                            Requires {tokenProof.description}{' '}
+                                                                            verification
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="small mt-1 text-success">
+                                                                            <i className="bi bi-check-circle me-1"></i>
+                                                                            No verification required
+                                                                        </div>
+                                                                    )}
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            );
-                                        })}
+                                                );
+                                            })
+                                        )}
                                     </div>
                                 ) : (
                                     <>
@@ -673,11 +768,20 @@ export default function AllowListDApp(props: WalletConnectionProps) {
                                                 <ol className="mb-0 mt-1 ps-3">
                                                     <li>Verify you're eligible for {selectedTokenId}</li>
                                                     {selectedToken?.hasAllowList && <li>Add to allow list</li>}
-                                                    {(selectedToken?.amount ?? 1) > 0 && <li>Mint {selectedToken?.amount} new {selectedTokenId} PLTs</li>}
-                                                    {(selectedToken?.amount ?? 1) > 0 && <li>Transfer PLTs directly to your wallet</li>}
+                                                    {(selectedToken?.amount ?? 1) > 0 && (
+                                                        <li>
+                                                            Mint {selectedToken?.amount} new {selectedTokenId} PLTs
+                                                        </li>
+                                                    )}
+                                                    {(selectedToken?.amount ?? 1) > 0 && (
+                                                        <li>Transfer PLTs directly to your wallet</li>
+                                                    )}
                                                 </ol>
                                                 <p className="mb-0 mt-2">
-                                                    <em>✨ All operations execute atomically in one transaction - instant and secure!</em>
+                                                    <em>
+                                                        ✨ All operations execute atomically in one transaction -
+                                                        instant and secure!
+                                                    </em>
                                                 </p>
                                             </div>
                                         </div>
@@ -690,7 +794,10 @@ export default function AllowListDApp(props: WalletConnectionProps) {
                                             >
                                                 {isLoading ? (
                                                     <>
-                                                        <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                                                        <span
+                                                            className="spinner-border spinner-border-sm me-2"
+                                                            role="status"
+                                                        ></span>
                                                         Processing...
                                                     </>
                                                 ) : (
@@ -701,8 +808,15 @@ export default function AllowListDApp(props: WalletConnectionProps) {
 
                                         {proofStatus && (
                                             <div className="mt-4">
-                                                <div className={`alert border-0 ${proofStatus.includes('✅') ? 'alert-success' :
-                                                    proofStatus.includes('❌') ? 'alert-danger' : 'alert-info'}`}>
+                                                <div
+                                                    className={`alert border-0 ${
+                                                        proofStatus.includes('✅')
+                                                            ? 'alert-success'
+                                                            : proofStatus.includes('❌')
+                                                              ? 'alert-danger'
+                                                              : 'alert-info'
+                                                    }`}
+                                                >
                                                     {proofStatus}
                                                 </div>
                                             </div>
@@ -728,10 +842,20 @@ export default function AllowListDApp(props: WalletConnectionProps) {
                     <div className="row mt-4">
                         <div className="col-12">
                             {message && (
-                                <div className={`alert border-0 shadow-sm ${message.includes('Failed') || message.includes('Error') ?
-                                    'alert-danger' : 'alert-info'}`}>
-                                    <i className={`bi me-2 ${message.includes('Failed') || message.includes('Error') ?
-                                        'bi-exclamation-triangle' : 'bi-info-circle'}`}></i>
+                                <div
+                                    className={`alert border-0 shadow-sm ${
+                                        message.includes('Failed') || message.includes('Error')
+                                            ? 'alert-danger'
+                                            : 'alert-info'
+                                    }`}
+                                >
+                                    <i
+                                        className={`bi me-2 ${
+                                            message.includes('Failed') || message.includes('Error')
+                                                ? 'bi-exclamation-triangle'
+                                                : 'bi-info-circle'
+                                        }`}
+                                    ></i>
                                     <span style={messageStyle}>{message}</span>
                                 </div>
                             )}
@@ -750,8 +874,8 @@ export default function AllowListDApp(props: WalletConnectionProps) {
                                                 {selectedToken?.hasAllowList && (selectedToken?.amount ?? 1) === 0
                                                     ? 'This single transaction performed all operations: allow list addition only!'
                                                     : selectedToken?.hasAllowList
-                                                        ? 'This single transaction performed all operations: allow list addition, token minting, and transfer!'
-                                                        : 'This single transaction performed all operations: token minting and transfer!'}
+                                                      ? 'This single transaction performed all operations: allow list addition, token minting, and transfer!'
+                                                      : 'This single transaction performed all operations: token minting and transfer!'}
                                             </p>
                                         </div>
                                     </div>
@@ -764,7 +888,10 @@ export default function AllowListDApp(props: WalletConnectionProps) {
                                         <h6 className="card-title fw-light mb-3">
                                             <i className="bi bi-code-square me-2"></i>Proof Details
                                         </h6>
-                                        <pre className="bg-light p-3 rounded small" style={{ maxHeight: '300px', overflow: 'auto' }}>
+                                        <pre
+                                            className="bg-light p-3 rounded small"
+                                            style={{ maxHeight: '300px', overflow: 'auto' }}
+                                        >
                                             {JSON.stringify(JSON.parse(currentProof), null, 2)}
                                         </pre>
                                     </div>

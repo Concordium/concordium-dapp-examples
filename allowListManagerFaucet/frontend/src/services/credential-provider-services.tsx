@@ -1,12 +1,12 @@
-import { 
-    ConcordiumGRPCClient, 
-    ContractAddress, 
-    ContractName, 
-    deserializeTypeValue, 
-    EntrypointName, 
-    ReceiveName, 
-    SmartContractTypeValues, 
-    toBuffer 
+import {
+    ConcordiumGRPCClient,
+    ContractAddress,
+    ContractName,
+    deserializeTypeValue,
+    EntrypointName,
+    ReceiveName,
+    SmartContractTypeValues,
+    toBuffer,
 } from '@concordium/web-sdk';
 import { REGISTRY_CONTRACT_REGISTRY_METADATA_RETURN_VALUE_SCHEMA } from '../../constants';
 import { useEffect, useState, ChangeEvent } from 'react';
@@ -28,7 +28,7 @@ export function parseIssuers(s: string): bigint[] {
 
 export function Issuers(
     indexes: string,
-    client: ConcordiumGRPCClient
+    client: ConcordiumGRPCClient,
 ): [{ value: string; label: string }[], React.JSX.Element] {
     const issuers = parseIssuers(indexes);
 
@@ -55,7 +55,7 @@ export function Issuers(
                         case 'success':
                             const metadata = deserializeTypeValue(
                                 response.returnValue!.buffer,
-                                toBuffer(REGISTRY_CONTRACT_REGISTRY_METADATA_RETURN_VALUE_SCHEMA, 'base64')
+                                toBuffer(REGISTRY_CONTRACT_REGISTRY_METADATA_RETURN_VALUE_SCHEMA, 'base64'),
                             ) as {
                                 [key: string]: SmartContractTypeValues;
                             };
