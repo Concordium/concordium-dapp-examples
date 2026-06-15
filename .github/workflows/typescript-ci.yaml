@@ -10,28 +10,58 @@ env:
   NODE_VERSION: "lts/*"
 
 jobs:
+  changes:
+    name: Detect changed packages
+    runs-on: ubuntu-latest
+    outputs:
+      packages: ${{ steps.detect.outputs.packages }}
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - id: detect
+      run: |
+        PACKAGES=(
+          "dapp-template/frontend"
+          "euroe-demo"
+          "gallery"
+          "low-code-nft-marketplace"
+          "signMessage"
+          "simpleAgeVerification"
+          "sponsoredTransactions/frontend"
+          "sponsoredTransactionsAuction/frontend"
+          "trackAndTrace/frontend"
+          "testnet-faucet"
+          "compliant-reward-distribution/frontend"
+          "nft-minting"
+          "piggybank"
+          "eSealing"
+          "voting"
+          "wCCD"
+          "allowListManagerFaucet/backend"
+          "allowListManagerFaucet/frontend"
+        )
+        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          BASE=${{ github.event.pull_request.base.sha }}
+        else
+          BASE=${{ github.event.before }}
+        fi
+        CHANGED=$(git diff --name-only "$BASE"...HEAD)
+        RESULT=()
+        for pkg in "${PACKAGES[@]}"; do
+          if echo "$CHANGED" | grep -q "^${pkg}/"; then
+            RESULT+=("\"$pkg\"")
+          fi
+        done
+        echo "packages=[$(IFS=,; echo "${RESULT[*]}")]" >> $GITHUB_OUTPUT
   lint:
     name: Running linter
     runs-on: ubuntu-latest
+    needs: changes
+    if : ${{ needs.changes.outputs.packages != '[]' && needs.changes.outputs.packages != '' }}
     strategy:
       matrix:
-        packages:
-          - dapp-template/frontend
-          - euroe-demo
-          - gallery
-          - low-code-nft-marketplace
-          - signMessage
-          - simpleAgeVerification
-          - sponsoredTransactions/frontend
-          - sponsoredTransactionsAuction/frontend
-          - trackAndTrace/frontend
-          - testnet-faucet
-          - compliant-reward-distribution/frontend
-          - nft-minting
-          - piggybank
-          - eSealing
-          - voting
-          - wCCD
+        packages: ${{ fromJson(needs.changes.outputs.packages) }}
 
     steps:
       - name: Checkout
@@ -55,28 +85,14 @@ jobs:
 
   prettier:
     name: Running Prettier
-    needs: lint
+    needs:
+      - changes
+      - lint
     runs-on: ubuntu-latest
+    if : ${{ needs.changes.outputs.packages != '[]' && needs.changes.outputs.packages != '' }}
     strategy:
       matrix:
-        packages:
-          - dapp-template/frontend
-          - euroe-demo
-          - gallery
-          - low-code-nft-marketplace
-          - signMessage
-          - simpleAgeVerification
-          - sponsoredTransactions/frontend
-          - sponsoredTransactionsAuction/frontend
-          - trackAndTrace/frontend
-          - testnet-faucet
-          - compliant-reward-distribution/frontend
-          - nft-minting
-          - piggybank
-          - eSealing
-          - voting
-          - wCCD
-
+        packages: ${{ fromJson(needs.changes.outputs.packages) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -101,28 +117,14 @@ jobs:
 
   build:
     name: Building Frontend
-    needs: prettier
+    needs:
+      - changes
+      - prettier
     runs-on: ubuntu-latest
+    if : ${{ needs.changes.outputs.packages != '[]' && needs.changes.outputs.packages != '' }}
     strategy:
       matrix:
-        packages:
-          - dapp-template/frontend
-          - euroe-demo
-          - gallery
-          - low-code-nft-marketplace
-          - signMessage
-          - simpleAgeVerification
-          - sponsoredTransactions/frontend
-          - sponsoredTransactionsAuction/frontend
-          - trackAndTrace/frontend
-          - testnet-faucet
-          - compliant-reward-distribution/frontend
-          - nft-minting
-          - piggybank
-          - eSealing
-          - voting
-          - wCCD
-
+        packages: ${{ fromJson(needs.changes.outputs.packages) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -151,5 +153,3 @@ jobs:
         if: ${{ matrix.packages != 'low-code-nft-marketplace' }}
         working-directory: ${{ matrix.packages }}
         run: yarn build
-      
-

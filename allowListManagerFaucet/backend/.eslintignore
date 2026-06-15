@@ -1,0 +1,11 @@
+.eslintcache
+.yarn
+node_modules
+
+# OSX
+.DS_Store
+
+dist
+package.json
+
+esbuild.config.ts

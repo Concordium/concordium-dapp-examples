@@ -1,47 +1,51 @@
-import { NestFactory } from '@nestjs/core'
-import { ValidationPipe } from '@nestjs/common'
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
-import { ConfigService } from '@nestjs/config'
-import { AppModule } from './app.module.js'
-import { HttpExceptionFilter } from './common/filters/htttp-exception.filter.js'
+import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
+import { AppModule } from './app.module.js';
+import { HttpExceptionFilter } from './common/filters/htttp-exception.filter.js';
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule)
+    const app = await NestFactory.create(AppModule);
 
-  const configService = app.get(ConfigService)
-  const rawOrigins = configService.get<string>(
-    'CORS_ORIGIN',
-    'http://localhost:5173,http://localhost:3000,https://allowlist.devnet-plt-beta.concordium.com,https://allowlist.testnet.concordium.com'
-  )
-  const corsOrigins = rawOrigins.split(',').map(o => o.trim()).filter(Boolean)
+    const configService = app.get(ConfigService);
+    const rawOrigins = configService.get<string>(
+        'CORS_ORIGIN',
+        'http://localhost:5173,http://localhost:3000,https://allowlist.devnet-plt-beta.concordium.com,https://allowlist.testnet.concordium.com',
+    );
+    const corsOrigins = rawOrigins
+        .split(',')
+        .map((o) => o.trim())
+        .filter(Boolean);
 
-  app.enableCors({
-    origin: corsOrigins,
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  })
+    app.enableCors({
+        origin: corsOrigins,
+        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    });
 
-  // Global validation pipe
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: true,
-    transform: true,
-  }))
+    // Global validation pipe
+    app.useGlobalPipes(
+        new ValidationPipe({
+            whitelist: true,
+            forbidNonWhitelisted: true,
+            transform: true,
+        }),
+    );
 
-  // Global exception filter
-  app.useGlobalFilters(new HttpExceptionFilter())
+    // Global exception filter
+    app.useGlobalFilters(new HttpExceptionFilter());
 
-  // Swagger documentation
-  const config = new DocumentBuilder()
-    .setTitle('Token Distribution dApp API')
-    .setDescription('Backend API for Concordium Token Distribution dApp with atomic operations')
-    .setVersion('2.0')
-    .addTag('token-distribution', 'Single-transaction token distribution operations')
-    .addTag('legacy-compatibility', 'Backward-compatible endpoints')
-    .build()
-  
-  const document = SwaggerModule.createDocument(app, config)
-  SwaggerModule.setup('api', app, document)
+    // Swagger documentation
+    const config = new DocumentBuilder()
+        .setTitle('Token Distribution dApp API')
+        .setDescription('Backend API for Concordium Token Distribution dApp with atomic operations')
+        .setVersion('2.0')
+        .addTag('token-distribution', 'Single-transaction token distribution operations')
+        .addTag('legacy-compatibility', 'Backward-compatible endpoints')
+        .build();
 
-  await app.listen(3001)
-  
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api', app, document);
+
+    await app.listen(3001);
 }
-bootstrap()
+bootstrap();
