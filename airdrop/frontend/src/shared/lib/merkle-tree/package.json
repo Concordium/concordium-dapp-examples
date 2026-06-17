@@ -1,0 +1,16 @@
+{
+	"name": "merkle_tree",
+	"version": "0.1.0",
+	"files": [
+		"merkle_tree_bg.wasm",
+		"merkle_tree.js",
+		"merkle_tree_bg.js",
+		"merkle_tree.d.ts"
+	],
+	"module": "merkle_tree.js",
+	"types": "merkle_tree.d.ts",
+	"sideEffects": [
+		"./merkle_tree.js",
+		"./snippets/*"
+	]
+}
