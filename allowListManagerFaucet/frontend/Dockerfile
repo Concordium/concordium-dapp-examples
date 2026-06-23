@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 ARG build_image="node:18-slim"
-FROM ${build_image} 
+FROM ${build_image}
 ARG build_image
 
 WORKDIR /app
@@ -8,9 +8,11 @@ WORKDIR /app
 # Install serve package globally
 RUN npm install -g serve
 
+RUN corepack enable
+
 # Copy package files first for better caching
-COPY package.json package-lock.json* ./
-RUN npm ci
+COPY package.json yarn.lock .yarnrc.yml ./
+RUN yarn install --immutable
 
 # Copy TypeScript and build config files
 COPY tsconfig.json tsconfig.node.json vite.config.ts ./
@@ -21,8 +23,8 @@ COPY index.html ./
 COPY src/ ./src/
 COPY public/ ./public/
 
-# Build the application 
-RUN npm run build
+# Build the application
+RUN yarn build
 
 # Copy the runtime configuration script
 COPY build-and-serve.sh ./

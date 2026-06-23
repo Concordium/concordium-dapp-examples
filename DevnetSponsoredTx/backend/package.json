@@ -1,6 +1,7 @@
 {
   "name": "sponsored-transactions-backend",
   "version": "1.0.0",
+  "packageManager": "yarn@4.12.0",
   "description": "NestJS backend for Concordium Sponsored Transactions Demo",
   "type": "module",
   "scripts": {
@@ -11,18 +12,21 @@
   },
   "dependencies": {
     "@concordium/web-sdk": "12.0.0",
-    "@grpc/grpc-js": "^1.12.2",
-    "@nestjs/common": "^10.4.5",
-    "@nestjs/config": "^4.0.2",
-    "@nestjs/core": "^10.4.5",
-    "@nestjs/platform-express": "^10.4.5",
-    "@protobuf-ts/grpc-transport": "^2.9.1",
-    "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "@grpc/grpc-js": "1.14.3",
+    "@nestjs/common": "10.4.20",
+    "@nestjs/config": "4.0.2",
+    "@nestjs/core": "10.4.20",
+    "@nestjs/platform-express": "10.4.20",
+    "@protobuf-ts/grpc-transport": "2.11.1",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2"
   },
   "devDependencies": {
-    "@types/node": "^22.10.2",
-    "nodemon": "^3.0.2",
-    "typescript": "^5.7.2"
+    "@types/node": "22.19.3",
+    "nodemon": "3.1.11",
+    "typescript": "5.9.3"
+  },
+  "resolutions": {
+    "@grpc/grpc-js": "1.14.3"
   }
 }

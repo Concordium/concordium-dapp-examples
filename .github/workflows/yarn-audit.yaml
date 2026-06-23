@@ -35,6 +35,7 @@ jobs:
           - wCCD
           - allowListManagerFaucet/backend
           - allowListManagerFaucet/frontend
+          - rbac/frontend
 
     steps:
       - name: Checkout

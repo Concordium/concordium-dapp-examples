@@ -1,0 +1,103 @@
+name: "Docker: build Rust images"
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+
+  workflow_dispatch: # This allows the job to be manually triggered
+
+# Single source of truth for Rust workspace dapp Docker build configuration.
+# Each entry: watch (paths that trigger a rebuild), dockerfile (path from repo root).
+# Build context is always the repo root — required so the Rust build stage can access
+# the workspace Cargo.toml via `COPY ../`.
+# To add a new dapp: add one entry here.
+# Pure frontend dapps are in docker-build.yaml.
+env:
+  DAPP_CONFIG: |
+    {
+      "gallery": {
+        "watch": ["gallery/", "Cargo.toml"],
+        "dockerfile": "gallery/Dockerfile"
+      },
+      "sponsoredTransactions": {
+        "watch": ["sponsoredTransactions/", "Cargo.toml"],
+        "dockerfile": "sponsoredTransactions/Dockerfile"
+      },
+      "sponsoredTransactionsAuction": {
+        "watch": ["sponsoredTransactionsAuction/", "Cargo.toml"],
+        "dockerfile": "sponsoredTransactionsAuction/Dockerfile"
+      }
+    }
+
+jobs:
+  changes:
+    name: detect what files changed
+    runs-on: ubuntu-latest
+    outputs:
+      docker-changes: ${{ steps.docker-changes.outputs.changes }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed dapps
+        id: docker-changes
+        env:
+          CONFIG: ${{ env.DAPP_CONFIG }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            CHANGES=$(echo "$CONFIG" | jq -c '[keys[]]')
+          else
+            if [ "${{ github.event_name }}" = "pull_request" ]; then
+              CHANGED=$(git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }})
+            else
+              CHANGED=$(git diff --name-only HEAD~1 HEAD)
+            fi
+            CHANGED=$(echo "$CHANGED" | grep -v '\.md$' || true)
+            CHANGES='[]'
+            for DAPP in $(echo "$CONFIG" | jq -r 'keys[]'); do
+              for PATTERN in $(echo "$CONFIG" | jq -r --arg d "$DAPP" '.[$d].watch[]'); do
+                if [[ "$PATTERN" == */ ]]; then
+                  MATCH=$(echo "$CHANGED" | grep -E "^${PATTERN}" || true)
+                else
+                  ESCAPED=$(echo "$PATTERN" | sed 's/\./\\./g')
+                  MATCH=$(echo "$CHANGED" | grep -E "^${ESCAPED}$" || true)
+                fi
+                if [ -n "$MATCH" ]; then
+                  CHANGES=$(echo "$CHANGES" | jq -c --arg d "$DAPP" '. + [$d]')
+                  break
+                fi
+              done
+            done
+          fi
+          echo "changes=$CHANGES" >> $GITHUB_OUTPUT
+
+  docker-build:
+    name: Building Rust Docker Containers
+    needs: changes
+    if: ${{ needs.changes.outputs.docker-changes != '[]' && needs.changes.outputs.docker-changes != '' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ${{ fromJSON(needs.changes.outputs.docker-changes) }}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Resolve dockerfile path
+      env:
+        CONFIG: ${{ env.DAPP_CONFIG }}
+      run: |
+        DOCKERFILE=$(echo "$CONFIG" | jq -r --arg d "${{ matrix.image }}" '.[$d].dockerfile')
+        echo "DOCKERFILE=$DOCKERFILE" >> $GITHUB_ENV
+
+    - name: Build image
+      run: |
+        docker build -f "$DOCKERFILE" .
