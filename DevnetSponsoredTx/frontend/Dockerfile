@@ -1,14 +1,24 @@
-FROM node:20-alpine AS build
+# syntax=docker/dockerfile:1
+ARG build_image="node:20-alpine"
+FROM ${build_image} AS build
+ARG build_image
 
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm install --legacy-peer-deps
+RUN corepack enable
 
-COPY . .
-RUN npm run build
+COPY package.json yarn.lock .yarnrc.yml ./
+RUN yarn install --immutable
 
-FROM node:20-alpine
+COPY tsconfig.json tsconfig.node.json vite.config.ts ./
+COPY index.html ./
+COPY src/ ./src/
+COPY public/ ./public/
+
+RUN yarn build
+
+FROM ${build_image}
+ARG build_image
 
 WORKDIR /app
 
@@ -16,9 +26,10 @@ RUN npm install -g serve
 
 COPY --from=build /app/dist ./dist
 COPY build-and-serve.sh ./
-
 RUN chmod +x build-and-serve.sh
 
 EXPOSE 3000
 
 CMD ["./build-and-serve.sh"]
+
+LABEL build_image=${build_image}

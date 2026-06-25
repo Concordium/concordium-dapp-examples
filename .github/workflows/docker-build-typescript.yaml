@@ -1,0 +1,183 @@
+name: "Docker: build TypeScript images"
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+
+  workflow_dispatch: # This allows the job to be manually triggered
+
+# Single source of truth for TypeScript dapp Docker build configuration.
+# Each entry: watch (paths that trigger a rebuild), dockerfile (path from repo root).
+# Build context is always inferred as the directory containing the Dockerfile.
+# To add a new dapp: add one entry here.
+# Rust workspace dapps (which need repo root as build context) are in docker-build-rust.yaml.
+env:
+  DAPP_CONFIG: |
+    {
+      "euroe-demo": {
+        "watch": ["euroe-demo/"],
+        "dockerfile": "euroe-demo/Dockerfile"
+      },
+      "simpleAgeVerification": {
+        "watch": ["simpleAgeVerification/"],
+        "dockerfile": "simpleAgeVerification/Dockerfile"
+      },
+      "signMessage": {
+        "watch": ["signMessage/"],
+        "dockerfile": "signMessage/Dockerfile"
+      },
+      "rbac": {
+        "watch": ["rbac/"],
+        "dockerfile": "rbac/frontend/Dockerfile"
+      },
+      "voting": {
+        "watch": ["voting/"],
+        "dockerfile": "voting/Dockerfile"
+      },
+      "wCCD": {
+        "watch": ["wCCD/"],
+        "dockerfile": "wCCD/Dockerfile"
+      },
+      "eSealing": {
+        "watch": ["eSealing/"],
+        "dockerfile": "eSealing/Dockerfile"
+      },
+      "testnet-faucet": {
+        "watch": ["testnet-faucet/"],
+        "dockerfile": "testnet-faucet/Dockerfile"
+      },
+      "allowListManagerFaucet/frontend": {
+        "watch": ["allowListManagerFaucet/frontend/"],
+        "dockerfile": "allowListManagerFaucet/frontend/Dockerfile"
+      },
+      "allowListManagerFaucet/backend": {
+        "watch": ["allowListManagerFaucet/backend/"],
+        "dockerfile": "allowListManagerFaucet/backend/Dockerfile"
+      },
+      "DevnetSponsoredTx/frontend": {
+        "watch": ["DevnetSponsoredTx/frontend/"],
+        "dockerfile": "DevnetSponsoredTx/frontend/Dockerfile"
+      },
+      "DevnetSponsoredTx/backend": {
+        "watch": ["DevnetSponsoredTx/backend/"],
+        "dockerfile": "DevnetSponsoredTx/backend/Dockerfile"
+      }
+    }
+
+jobs:
+  changes:
+    name: detect what files changed
+    runs-on: ubuntu-latest
+    outputs:
+      docker-changes: ${{ steps.docker-changes.outputs.changes }}
+      compose-changes: ${{ steps.compose-changes.outputs.changes }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed dapps
+        id: docker-changes
+        env:
+          CONFIG: ${{ env.DAPP_CONFIG }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            CHANGES=$(echo "$CONFIG" | jq -c '[keys[]]')
+          else
+            if [ "${{ github.event_name }}" = "pull_request" ]; then
+              CHANGED=$(git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }})
+            else
+              CHANGED=$(git diff --name-only HEAD~1 HEAD)
+            fi
+            CHANGED=$(echo "$CHANGED" | grep -v '\.md$' || true)
+            CHANGES='[]'
+            for DAPP in $(echo "$CONFIG" | jq -r 'keys[]'); do
+              for PATTERN in $(echo "$CONFIG" | jq -r --arg d "$DAPP" '.[$d].watch[]'); do
+                if [[ "$PATTERN" == */ ]]; then
+                  MATCH=$(echo "$CHANGED" | grep -E "^${PATTERN}" || true)
+                else
+                  ESCAPED=$(echo "$PATTERN" | sed 's/\./\\./g')
+                  MATCH=$(echo "$CHANGED" | grep -E "^${ESCAPED}$" || true)
+                fi
+                if [ -n "$MATCH" ]; then
+                  CHANGES=$(echo "$CHANGES" | jq -c --arg d "$DAPP" '. + [$d]')
+                  break
+                fi
+              done
+            done
+          fi
+          echo "changes=$CHANGES" >> $GITHUB_OUTPUT
+
+      - name: Check for backend file changes for Docker Compose builds
+        # Tag 3.0.2, referencing by commit SHA as a security best practice.
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36
+        id: compose-changes
+        with:
+          filters: |
+            trackAndTrace:
+              - 'trackAndTrace/**'
+              - 'Cargo.toml'
+            compliant-reward-distribution:
+              - 'compliant-reward-distribution/**'
+              - 'Cargo.toml'
+
+  docker-build:
+    name: Building Docker Containers
+    needs: changes
+    if: ${{ needs.changes.outputs.docker-changes != '[]' && needs.changes.outputs.docker-changes != '' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ${{ fromJSON(needs.changes.outputs.docker-changes) }}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Resolve dockerfile path
+      env:
+        CONFIG: ${{ env.DAPP_CONFIG }}
+      run: |
+        DOCKERFILE=$(echo "$CONFIG" | jq -r --arg d "${{ matrix.image }}" '.[$d].dockerfile')
+        echo "DOCKERFILE=$DOCKERFILE" >> $GITHUB_ENV
+        echo "BUILD_CONTEXT=$(dirname "$DOCKERFILE")" >> $GITHUB_ENV
+
+    - name: Build image
+      run: |
+        docker build -f "$DOCKERFILE" "$BUILD_CONTEXT"
+
+  compose-build:
+    name: Building dapps which use Docker Compose
+    needs: changes
+    if: ${{ needs.changes.outputs.compose-changes != '[]' && needs.changes.outputs.compose-changes != '' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dapp: ${{ fromJSON(needs.changes.outputs.compose-changes) }}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: If building Track and Trace app, set environment variables.
+      if: ${{ matrix.dapp == 'trackAndTrace' }}
+      # Dummy values are set for the `trackAndTrace` run because `docker compose build`
+      # enforces the presence of environment variables during the build phase,
+      # even though these variables are only needed at runtime.
+      run: |
+        echo "TRACK_AND_TRACE_CONTRACT_ADDRESS=<8351,0>" >> $GITHUB_ENV
+        echo "TRACK_AND_TRACE_PRIVATE_KEY_FILE=./trackAndTrace/README.md" >> $GITHUB_ENV
+
+    - name: Build with docker compose
+      working-directory: ${{ matrix.dapp }}
+      run: |
+        docker compose build

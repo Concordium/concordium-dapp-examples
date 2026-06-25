@@ -4,9 +4,11 @@ FROM ${build_image} AS build
 ARG build_image
 WORKDIR /build
 
+RUN corepack enable
+
 # Copy package files first for better caching
-COPY package.json package-lock.json* ./
-RUN npm ci
+COPY package.json yarn.lock .yarnrc.yml ./
+RUN yarn install --immutable
 
 # Copy TypeScript config files
 COPY tsconfig.json tsconfig.build.json nest-cli.json ./
@@ -15,15 +17,17 @@ COPY tsconfig.json tsconfig.build.json nest-cli.json ./
 COPY src/ ./src/
 
 # Build the application
-RUN npm run build
+RUN yarn build
 LABEL build_image=${build_image}
 
 FROM ${build_image} AS runtime
 WORKDIR /app
 
-# Copy package files and install production dependencies
-COPY package.json package-lock.json* ./
-RUN npm ci --only=production && npm cache clean --force
+RUN corepack enable
+
+# Copy package files and install dependencies
+COPY package.json yarn.lock .yarnrc.yml ./
+RUN yarn install --immutable
 
 # Copy built application
 COPY --from=build /build/dist ./dist

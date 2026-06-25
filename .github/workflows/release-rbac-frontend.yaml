@@ -1,0 +1,17 @@
+name: Release RBAC Frontend
+
+on:
+  push:
+    tags:
+      - rbac-frontend/*
+
+jobs:
+  release-rbac-frontend:
+    uses: concordium/.github/.github/workflows/docker-release-workflow.yaml@v1
+    with:
+      SERVICE_NAME: rbac-frontend
+      BUILD_ARGS: |
+        base_image=node:18-slim
+      DOCKER_FILE_PATH: rbac/frontend/Dockerfile
+      DOCKER_CONTEXT: rbac/frontend
+    secrets: inherit

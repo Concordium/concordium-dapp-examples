@@ -200,9 +200,12 @@ function App() {
     }, []);
 
     useEffect(() => {
-        provider?.getSelectedChain().then((chain) => {
+        if (!provider) return;
+        const detectChain = async () => {
+            const chain = await provider.getSelectedChain();
             setBlockListedChain(BLOCK_LIST.find(({ genesisHash }) => genesisHash === chain));
-        });
+        };
+        void detectChain();
     }, [provider]);
 
     const connect = async () => {

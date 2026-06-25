@@ -6,3 +6,9 @@ wallet/*.json
 *.log
 .DS_Store
 *.tsbuildinfo
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
