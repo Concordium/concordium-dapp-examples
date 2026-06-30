@@ -36,6 +36,7 @@ jobs:
           - allowListManagerFaucet/backend
           - allowListManagerFaucet/frontend
           - rbac/frontend
+          - locks/frontend
 
     steps:
       - name: Checkout
