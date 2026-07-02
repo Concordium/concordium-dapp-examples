@@ -12,15 +12,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@concordium/browser-wallet-api-helpers@npm:^3.1.0":
-  version: 3.3.0
-  resolution: "@concordium/browser-wallet-api-helpers@npm:3.3.0"
+"@concordium/browser-wallet-api-helpers@npm:^3.4.0-alpha.0":
+  version: 3.4.0-alpha.0
+  resolution: "@concordium/browser-wallet-api-helpers@npm:3.4.0-alpha.0"
   dependencies:
     "@protobuf-ts/runtime-rpc": ^2.9.1
   peerDependencies:
-    "@concordium/web-sdk": ^12.0.2
+    "@concordium/web-sdk": ^13.0.0-alpha.1
     "@protobuf-ts/runtime-rpc": ^2.9.1
-  checksum: 5b3a70a8dbb926c760c649ce625e48169aceab7b268dd64b3659612728ef8d5e4af48eb64c01809e79a645c48f25af9ab1ce8000ad22a6a9747917b9d1d54b2f
+  checksum: 22860cf8ac1f1f0f69a03cbef4440973bba402a95c4e21f759bda372569271abb0262c8a51ef5e313621a8a60fbc9db164a3eac9d2ea05cc3ca523224a647ddb
   languageName: node
   linkType: hard
 
@@ -3056,7 +3056,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "locks-dapp@workspace:."
   dependencies:
-    "@concordium/browser-wallet-api-helpers": ^3.1.0
+    "@concordium/browser-wallet-api-helpers": ^3.4.0-alpha.0
     "@concordium/web-sdk": 13.0.0-alpha.1
     "@types/react": ^18.2.15
     "@types/react-dom": ^18.2.7
