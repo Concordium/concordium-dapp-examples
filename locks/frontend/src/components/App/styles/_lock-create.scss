@@ -1,0 +1,91 @@
+.lock-create-card {
+    margin-bottom: 1rem;
+
+    .card-title {
+        font-size: 1.12rem;
+    }
+}
+
+.lock-create-stack {
+    display: grid;
+    gap: 1rem;
+}
+
+.lock-create-subsection {
+    background: rgba($mineral-blue, 0.025);
+    border: 1px solid rgba($ocean-blue, 0.12);
+    border-radius: 0.5rem;
+    padding: 1rem;
+
+    > :last-child {
+        margin-bottom: 0;
+    }
+
+    .checkbox-grid.controller-roles {
+        grid-template-columns: repeat(4, minmax(max-content, 1fr));
+    }
+}
+
+.lock-create-subsection-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.85rem;
+
+    h4 {
+        color: $dark-blue;
+        font-size: 0.98rem;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .btn {
+        min-width: 2.5rem;
+        padding-left: 0;
+        padding-right: 0;
+    }
+}
+
+.recipient-mode-toggle {
+    display: inline-grid;
+    grid-template-columns: repeat(2, minmax(0, max-content));
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+
+    .btn {
+        min-width: 10.75rem;
+    }
+}
+
+.controller-list {
+    display: grid;
+    gap: 1rem;
+}
+
+.controller-row {
+    display: grid;
+    gap: 0.55rem;
+}
+
+.controller-roles {
+    grid-template-columns: repeat(4, minmax(max-content, 1fr));
+    margin-top: 0;
+}
+
+.lock-options-row {
+    align-items: start;
+    display: grid;
+    grid-template-columns: minmax(10rem, 14rem) minmax(8rem, max-content) minmax(16rem, 1fr);
+    gap: 1rem;
+
+    .form-check {
+        padding-top: 2rem;
+    }
+}
+
+.lock-create-actions {
+    display: grid;
+    gap: 0.75rem;
+    justify-items: start;
+}

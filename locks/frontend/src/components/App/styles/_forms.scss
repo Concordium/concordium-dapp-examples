@@ -1,0 +1,68 @@
+.form-grid {
+    align-items: stretch;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+
+    .locks-form-card {
+        height: 100%;
+        margin-bottom: 0;
+    }
+}
+
+.locks-form-card {
+    margin-bottom: 1rem;
+    min-width: 0;
+
+    .card-body {
+        display: block;
+        height: 100%;
+    }
+
+    .card-title {
+        color: $dark-blue;
+        font-size: 1.05rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
+
+    form {
+        display: flex;
+        flex-direction: column;
+        height: calc(100% - 2.55rem);
+
+        > .btn[type='submit'] {
+            align-self: flex-start;
+            margin-top: auto;
+        }
+    }
+}
+
+.repeatable-list {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.repeatable-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 2.5rem 2.5rem;
+    gap: 0.5rem;
+    align-items: center;
+
+    .btn {
+        min-width: 0;
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .form-control {
+        min-width: 0;
+    }
+}
+
+.checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.35rem 1rem;
+    margin-top: 0.75rem;
+}
