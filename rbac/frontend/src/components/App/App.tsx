@@ -200,17 +200,35 @@ function App() {
     }, []);
 
     useEffect(() => {
-        if (!provider) return;
-        const detectChain = async () => {
+        if (!provider) {
+            return;
+        }
+
+        const syncChain = async () => {
             const chain = await provider.getSelectedChain();
             setBlockListedChain(BLOCK_LIST.find(({ genesisHash }) => genesisHash === chain));
         };
-        void detectChain();
+
+        const accountChanged = (account: string) => setConnectedAccount(account);
+        const accountDisconnected = () => setConnectedAccount(undefined);
+        const chainChanged = () => void syncChain();
+
+        void syncChain();
+        provider.on('accountChanged', accountChanged);
+        provider.on('accountDisconnected', accountDisconnected);
+        provider.on('chainChanged', chainChanged);
+
+        return () => {
+            provider.removeListener('accountChanged', accountChanged);
+            provider.removeListener('accountDisconnected', accountDisconnected);
+            provider.removeListener('chainChanged', chainChanged);
+        };
     }, [provider]);
 
     const connect = async () => {
         try {
             setStatus({ type: 'loading', message: 'Connecting wallet...' });
+            await provider?.requestAccounts();
             const acc = await provider?.connect();
             setConnectedAccount(acc);
             setStatus({ type: 'idle', message: '' });
