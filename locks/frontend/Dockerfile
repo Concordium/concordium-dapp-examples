@@ -14,7 +14,7 @@ COPY ./public ./public
 COPY ./src ./src
 
 RUN corepack enable
-RUN yarn && yarn cache clean
+RUN yarn install --immutable && yarn cache clean
 RUN yarn build
 
 FROM nginx
