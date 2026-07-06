@@ -4,6 +4,7 @@ FROM ${base_image} AS build
 
 WORKDIR /app
 COPY ./package.json ./package.json
+COPY ./yarn.lock ./yarn.lock
 COPY ./tsconfig.json ./tsconfig.json
 COPY ./tsconfig.node.json ./tsconfig.node.json
 COPY ./index.html ./
