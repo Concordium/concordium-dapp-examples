@@ -1,0 +1,24 @@
+ARG base_image=node:18-slim
+
+FROM ${base_image} AS build
+
+WORKDIR /app
+COPY ./package.json ./package.json
+COPY ./yarn.lock ./yarn.lock
+COPY ./tsconfig.json ./tsconfig.json
+COPY ./tsconfig.node.json ./tsconfig.node.json
+COPY ./index.html ./
+COPY ./vite.config.ts ./
+COPY ./.yarnrc.yml ./.yarnrc.yml
+COPY ./.yarn/releases ./.yarn/releases
+COPY ./public ./public
+COPY ./src ./src
+
+RUN corepack enable
+RUN yarn install --immutable && yarn cache clean
+RUN yarn build
+
+FROM nginx
+LABEL build_image="${base_image}"
+COPY --from=build /app/dist /usr/share/nginx/html
+COPY ./nginx.conf /etc/nginx/conf.d/default.conf

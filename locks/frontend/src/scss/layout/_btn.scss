@@ -1,0 +1,14 @@
+@import 'bootstrap/scss/buttons';
+
+.btn-primary {
+    background-image: $button-gradient;
+    min-width: rfs-value(150px);
+}
+
+.btn-secondary {
+    @include button-variant($mineral-blue, $mineral-blue, $white);
+}
+
+.btn-danger {
+    @include button-variant($red-600, $red-600);
+}

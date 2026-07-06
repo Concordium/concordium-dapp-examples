@@ -1,0 +1,58 @@
+.operation-queue {
+    display: grid;
+    gap: 1rem;
+    align-content: start;
+    min-width: 0;
+}
+
+.queue-list {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.queue-card {
+    .card-body {
+        display: block;
+    }
+
+    dl {
+        display: grid;
+        gap: 0.5rem;
+        margin: 0;
+    }
+
+    dt {
+        color: rgba($dark-blue, 0.58);
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    dd {
+        color: $dark-blue;
+        font-size: 0.92rem;
+        margin: 0;
+        overflow-wrap: anywhere;
+        white-space: pre-wrap;
+    }
+}
+
+.queue-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+
+    .card-title {
+        color: $dark-blue;
+        font-size: 1rem;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .btn {
+        min-width: 2rem;
+        padding-left: 0;
+        padding-right: 0;
+    }
+}

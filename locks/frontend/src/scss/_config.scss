@@ -1,0 +1,6 @@
+// Bootstrap functions must be defined first, as they are used in project config.
+@import 'bootstrap/scss/functions';
+
+// Project config (with bootstrap overrides) - must be defined before bootstrap config files
+@import 'config/colors';
+@import 'config/typography';
