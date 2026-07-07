@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { detectConcordiumProvider, WalletApi } from '@concordium/browser-wallet-api-helpers';
 import {
     AccountAddress,
+    type AccountInfo,
     AccountTransactionType,
     ConcordiumGRPCClient,
     createMetaUpdatePayload,
@@ -9,7 +10,6 @@ import {
     LockController,
     LockId,
     TokenId,
-    type AccountInfo,
     type TokenInfo,
 } from '@concordium/web-sdk';
 

@@ -1,6 +1,6 @@
 import { LockController, TokenAdminRole, TokenOperationType } from '@concordium/web-sdk';
 
-import type { BlockListedChain, LockOperation, LockCreateState } from './types';
+import type { BlockListedChain, LockCreateState, LockOperation } from './types';
 import { getCurrentDateTimeInputValue } from './utils';
 
 export const BLOCK_LIST: BlockListedChain[] = [

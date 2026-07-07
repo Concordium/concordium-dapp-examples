@@ -92,7 +92,9 @@ export function OperationQueue({
                             disabled={!canSubmit || submitStatus.type === 'loading'}
                             onClick={onSubmit}
                         >
-                            {submitStatus.type === 'loading' && <Spinner animation="border" size="sm" className="me-2" />}
+                            {submitStatus.type === 'loading' && (
+                                <Spinner animation="border" size="sm" className="me-2" />
+                            )}
                             Submit transaction
                         </Button>
                         <p>{canSubmit ? 'Ready when you are' : 'Add operations to enable'}</p>
