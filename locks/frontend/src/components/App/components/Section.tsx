@@ -32,7 +32,7 @@ export function Section({
                         aria-label={expanded ? `Collapse ${title}` : `Expand ${title}`}
                         onClick={() => setExpanded((current) => !current)}
                     >
-                        {expanded ? '^' : '>'}
+                        {expanded ? '∧' : '∨'}
                     </button>
                 )}
             </div>
