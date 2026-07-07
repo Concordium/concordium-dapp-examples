@@ -1,91 +1,104 @@
 .lock-create-card {
-    margin-bottom: 1rem;
+    border-color: rgba($ocean-blue, 0.16);
+    margin-bottom: 0.55rem;
 
     .card-title {
-        font-size: 1.12rem;
+        font-size: 0.98rem;
     }
 }
 
-.lock-create-stack {
+.lock-create-grid {
     display: grid;
-    gap: 1rem;
+    gap: 0.75rem 1rem;
+    grid-template-areas:
+        'recipients timing'
+        'controllers tokens'
+        'footer footer'
+        'actions actions';
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
 }
 
-.lock-create-subsection {
-    background: rgba($mineral-blue, 0.025);
-    border: 1px solid rgba($ocean-blue, 0.12);
-    border-radius: 0.5rem;
-    padding: 1rem;
+.lock-create-column {
+    display: contents;
+    min-width: 0;
 
-    > :last-child {
-        margin-bottom: 0;
+    &:first-child {
+        > .lock-create-group:first-child {
+            grid-area: recipients;
+        }
+
+        > .lock-create-group:nth-child(2) {
+            grid-area: controllers;
+        }
     }
 
-    .checkbox-grid.controller-roles {
-        grid-template-columns: repeat(4, minmax(max-content, 1fr));
+    &:nth-child(2) {
+        > .lock-create-group:first-child {
+            grid-area: timing;
+        }
+
+        > .lock-create-group:nth-child(2) {
+            grid-area: tokens;
+        }
     }
 }
 
-.lock-create-subsection-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 0.85rem;
+.lock-create-group {
+    min-width: 0;
 
     h4 {
         color: $dark-blue;
-        font-size: 0.98rem;
+        font-size: 0.83rem;
         font-weight: 700;
-        margin: 0;
+        margin: 0 0 0.48rem;
     }
 
-    .btn {
-        min-width: 2.5rem;
-        padding-left: 0;
-        padding-right: 0;
+    > .form-check {
+        margin-bottom: 0.45rem;
     }
-}
 
-.recipient-mode-toggle {
-    display: inline-grid;
-    grid-template-columns: repeat(2, minmax(0, max-content));
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-
-    .btn {
-        min-width: 10.75rem;
+    .mb-3:last-child {
+        margin-bottom: 0 !important;
     }
 }
 
 .controller-list {
-    display: grid;
-    gap: 1rem;
-}
-
-.controller-row {
     display: grid;
     gap: 0.55rem;
 }
 
 .controller-roles {
     grid-template-columns: repeat(4, minmax(max-content, 1fr));
-    margin-top: 0;
+    margin-top: 0.05rem;
 }
 
-.lock-options-row {
-    align-items: start;
+.lock-create-footer {
+    border-top: 1px solid rgba($ocean-blue, 0.1);
     display: grid;
-    grid-template-columns: minmax(10rem, 14rem) minmax(8rem, max-content) minmax(16rem, 1fr);
-    gap: 1rem;
+    grid-area: footer;
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(10rem, 0.9fr) minmax(0, 1fr);
+    gap: 0.85rem;
+    padding-top: 0.6rem;
 
     .form-check {
-        padding-top: 2rem;
+        align-self: end;
+        padding-bottom: 0.45rem;
+    }
+
+    .mb-3 {
+        margin-bottom: 0 !important;
     }
 }
 
 .lock-create-actions {
     display: grid;
-    gap: 0.75rem;
+    gap: 0.45rem;
+    grid-area: actions;
+    grid-column: 1 / -1;
     justify-items: start;
+
+    .btn {
+        min-width: 5.2rem;
+    }
 }

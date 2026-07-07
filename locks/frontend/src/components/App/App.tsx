@@ -7,6 +7,7 @@ import { useLocksApp } from './hooks/useLocksApp';
 import { LockConfigSection } from './lock/LockConfigSection';
 import { OperationQueue } from './queue/OperationQueue';
 import { TokenOperationsSection } from './token/TokenOperationsSection';
+import { TokenOperationsAdminSection } from './token/TokenOperationsAdminSection.tsx';
 
 function App() {
     const {
@@ -35,7 +36,7 @@ function App() {
 
     return (
         <Container fluid className="locks-app">
-            <Row className="g-4">
+            <Row className="g-3">
                 <Col xl={8} lg={7}>
                     <ConnectionPanel
                         provider={provider}
@@ -45,11 +46,13 @@ function App() {
                     />
                     <LockConfigSection context={context} />
                     <TokenOperationsSection context={context} />
+                    <TokenOperationsAdminSection context={context} />
                 </Col>
                 <Col xl={4} lg={5}>
                     <OperationQueue
                         operations={operations}
-                        canSubmit={Boolean(connectedAccount && grpcClient && operations.length)}
+                        walletConnected={Boolean(connectedAccount)}
+                        grpcAvailable={Boolean(grpcClient)}
                         submitStatus={submitStatus}
                         transactionHash={transactionHash}
                         onRemove={removeOperation}

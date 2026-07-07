@@ -2,7 +2,7 @@
     align-items: stretch;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1rem;
+    gap: 0.55rem;
 
     .locks-form-card {
         height: 100%;
@@ -11,19 +11,20 @@
 }
 
 .locks-form-card {
-    margin-bottom: 1rem;
+    margin-bottom: 0.55rem;
     min-width: 0;
 
     .card-body {
         display: block;
         height: 100%;
+        padding: 0.75rem 0.9rem;
     }
 
     .card-title {
         color: $dark-blue;
-        font-size: 1.05rem;
+        font-size: 0.96rem;
         font-weight: 700;
-        margin-bottom: 1rem;
+        margin-bottom: 0.7rem;
     }
 
     form {
@@ -34,22 +35,29 @@
         > .btn[type='submit'] {
             align-self: flex-start;
             margin-top: auto;
+            min-width: 5.2rem;
         }
+    }
+
+    .mb-3 {
+        margin-bottom: 0.55rem !important;
     }
 }
 
 .repeatable-list {
     display: grid;
-    gap: 0.5rem;
+    gap: 0.35rem;
 }
 
 .repeatable-row {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 2.5rem 2.5rem;
-    gap: 0.5rem;
+    grid-template-columns: minmax(0, 1fr) 2.1rem 2.1rem;
+    gap: 0.38rem;
     align-items: center;
 
     .btn {
+        font-size: 0.86rem;
+        min-height: 2.1rem;
         min-width: 0;
         padding-left: 0;
         padding-right: 0;
@@ -63,6 +71,44 @@
 .checkbox-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.35rem 1rem;
-    margin-top: 0.75rem;
+    gap: 0.26rem 0.85rem;
+    margin-top: 0.45rem;
+}
+
+.lock-operation-card,
+.token-operation-card {
+    form {
+        align-items: end;
+        display: grid;
+        gap: 0 0.65rem;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        height: auto;
+
+        > .alert,
+        > .text-danger,
+        > .invalid-feedback {
+            grid-column: 1 / -1;
+        }
+
+        > .btn[type='submit'] {
+            align-self: end;
+            grid-column: 1;
+            margin-top: 0;
+        }
+    }
+
+    .card-title {
+        margin-bottom: 0.55rem;
+    }
+}
+
+.token-operation-card {
+    form {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.lock-memo {
+    grid-column: 1;
+    grid-row: 2;
 }

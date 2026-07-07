@@ -1,5 +1,15 @@
 import { TextInput } from './TextInput';
 
-export function MemoInput({ value, onChange }: { value: string; onChange: (value: string) => void }) {
-    return <TextInput label="Memo" value={value} placeholder="Optional memo" onChange={onChange} />;
+export function MemoInput({
+    value,
+    className,
+    onChange,
+}: {
+    value: string;
+    className?: string;
+    onChange: (value: string) => void;
+}) {
+    return (
+        <TextInput className={className} label="Memo (optional)" value={value} placeholder="Memo" onChange={onChange} />
+    );
 }

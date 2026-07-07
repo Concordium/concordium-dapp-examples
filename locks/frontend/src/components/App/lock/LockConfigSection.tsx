@@ -1,18 +1,21 @@
 import { Section } from '../components/Section';
-import { LOCK_OPERATIONS } from '../constants';
 import { LockCreateForm } from './LockCreateForm';
-import { LockOperationForm } from './LockOperationForm';
 
 import type { LookupContext } from '../types';
+import { LockCancelForm } from './LockCancelForm.tsx';
+import { LockFundForm } from './LockFundForm.tsx';
+import { LockSendForm } from './LockSendForm.tsx';
+import { LockReturnForm } from './LockReturnForm.tsx';
 
 export function LockConfigSection({ context }: { context: LookupContext }) {
     return (
-        <Section title="Lock config">
+        <Section title="Lock config" collapsible defaultExpanded>
             <LockCreateForm connectedAccount={context.connectedAccount} addOperation={context.addOperation} />
             <div className="form-grid">
-                {LOCK_OPERATIONS.map((operation) => (
-                    <LockOperationForm key={operation} operation={operation} context={context} />
-                ))}
+                <LockCancelForm context={context} />
+                <LockFundForm context={context} />
+                <LockSendForm context={context} />
+                <LockReturnForm context={context} />
             </div>
         </Section>
     );

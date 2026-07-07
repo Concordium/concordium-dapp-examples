@@ -3,30 +3,43 @@
         padding: 1rem;
     }
 
-    .connection-panel,
-    .connection-details {
+    .connection-panel {
         grid-template-columns: 1fr;
+    }
+
+    .connection-detail {
+        border-left: 0;
+        border-top: 1px solid rgba($ocean-blue, 0.12);
+        padding-left: 0;
+        padding-top: 0.75rem;
     }
 }
 
 @media (max-width: 767.98px) {
     .form-grid,
     .checkbox-grid,
-    .lock-options-row {
+    .lock-create-grid,
+    .lock-create-footer {
         grid-template-columns: 1fr;
+    }
+
+    .lock-create-grid {
+        grid-template-areas:
+            'recipients'
+            'controllers'
+            'timing'
+            'tokens'
+            'footer'
+            'actions';
+    }
+
+    .lock-create-footer,
+    .lock-create-actions {
+        grid-column: auto;
     }
 
     .repeatable-row {
         grid-template-columns: minmax(0, 1fr) auto auto;
-    }
-
-    .lock-options-row {
-        gap: 0;
-
-        .form-check {
-            padding-top: 0;
-            margin-bottom: 1rem;
-        }
     }
 }
 
@@ -93,5 +106,10 @@
 
     .checkbox-grid {
         grid-template-columns: 1fr;
+    }
+
+    .queue-card dl > div {
+        grid-template-columns: 1fr;
+        gap: 0.1rem;
     }
 }

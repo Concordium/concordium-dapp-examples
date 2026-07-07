@@ -40,7 +40,7 @@ export interface ControllerGrantForm {
 export interface LockCreateState {
     anyRecipient: boolean;
     recipients: string[];
-    expiryMinutes: string;
+    expiryDate: string;
     controllerGrants: ControllerGrantForm[];
     supportedTokens: string[];
     keepAlive: boolean;
