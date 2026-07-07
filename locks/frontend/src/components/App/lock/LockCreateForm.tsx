@@ -24,10 +24,8 @@ import {
 
 import type { ControllerGrantForm, LockCreateState, LookupContext } from '../types';
 
-export function LockCreateForm({
-    connectedAccount,
-    addOperation,
-}: Pick<LookupContext, 'connectedAccount' | 'addOperation'>) {
+export function LockCreateForm({ context }: { context: LookupContext }) {
+    const { connectedAccount, addOperation, getEstimatedLockId } = context;
     const [error, setError] = useState('');
     const {
         register,
@@ -81,11 +79,12 @@ export function LockCreateForm({
         );
     };
 
-    const submit = handleSubmit((state) => {
+    const submit = handleSubmit(async (state) => {
         setError('');
 
         try {
             const expiryMinutes = expiryDateTimeToFutureMinutes(state.expiryDate);
+            const estimatedLockId = await getEstimatedLockId();
 
             const recipients = state.anyRecipient
                 ? 'any'
@@ -119,6 +118,7 @@ export function LockCreateForm({
             addOperation({
                 type: 'LockCreate',
                 preview: [
+                    { label: 'Lock ID (estimated)', value: estimatedLockId },
                     { label: 'Recipients', value: previewRecipients },
                     { label: 'Expires at', value: formatDateTimePreview(state.expiryDate) },
                     { label: 'Controller grants', value: previewGrants },

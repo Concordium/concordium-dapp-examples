@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { detectConcordiumProvider, WalletApi } from '@concordium/browser-wallet-api-helpers';
 import {
+    AccountAddress,
     AccountTransactionType,
     ConcordiumGRPCClient,
     createMetaUpdatePayload,
-    Lock,
     LockId,
     Token,
     TokenId,
@@ -27,7 +27,6 @@ export function useLocksApp() {
     const [operations, setOperations] = useState<QueuedOperation[]>([]);
     const [nextOperationId, setNextOperationId] = useState(1);
     const [tokenDecimalsCache, setTokenDecimalsCache] = useState<Record<string, number>>({});
-    const [lockIdCache, setLockIdCache] = useState<Record<string, LockId.Type>>({});
 
     useEffect(() => {
         detectConcordiumProvider(5000)
@@ -81,6 +80,7 @@ export function useLocksApp() {
     const connect = async () => {
         try {
             setStatus({ type: 'loading', message: 'Connecting wallet...' });
+            await provider?.requestAccounts();
             const account = await provider?.connect();
             setConnectedAccount(account);
             setStatus(defaultStatus);
@@ -112,26 +112,30 @@ export function useLocksApp() {
         return decimals;
     };
 
-    const getLockId = async (lockId: string) => {
+    const getLockId = (lockId: string) => {
         const trimmedLockId = requireValue(lockId, 'Lock ID');
-        const cached = lockIdCache[trimmedLockId];
-        if (cached) {
-            return cached;
+        return LockId.fromString(trimmedLockId);
+    };
+
+    const getEstimatedLockId = async () => {
+        if (!connectedAccount) {
+            throw new Error('Connect Browser Wallet before estimating lock ID');
         }
 
         if (!grpcClient) {
             throw new Error('GRPC connection is not available');
         }
 
-        const lock = await Lock.fromId(grpcClient, LockId.fromString(trimmedLockId));
-        setLockIdCache((current) => ({ ...current, [trimmedLockId]: lock.info.lock }));
-        return lock.info.lock;
+        const creationOrder = operations.filter((operation) => operation.type === 'LockCreate').length;
+        const lockId = await LockId.fromAccount(grpcClient, AccountAddress.fromBase58(connectedAccount), creationOrder);
+        return lockId.toString();
     };
 
     const context: LookupContext = {
         grpcClient,
         getTokenDecimals,
         getLockId,
+        getEstimatedLockId,
         addOperation,
         connectedAccount,
     };

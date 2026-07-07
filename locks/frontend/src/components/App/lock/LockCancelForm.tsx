@@ -9,6 +9,7 @@ import { MemoInput } from '../components/MemoInput';
 import { SubmitButton } from '../components/SubmitButton';
 import { TextInput } from '../components/TextInput';
 import { defaultStatus, optionalMemo, parseError } from '../utils';
+import { lockIdValidation } from './validation';
 
 import type { LookupContext, Status } from '../types';
 
@@ -30,11 +31,11 @@ export function LockCancelForm({ context }: { context: LookupContext }) {
         formState: { errors },
     } = useForm<LockCancelState>({ defaultValues: blankLockCancelState });
 
-    const submit = handleSubmit(async (state) => {
+    const submit = handleSubmit((state) => {
         setStatus({ type: 'loading', message: 'Adding operation...' });
 
         try {
-            const lock = await context.getLockId(state.lockId);
+            const lock = context.getLockId(state.lockId);
             const memo = optionalMemo(state.memo);
 
             context.addOperation({
@@ -62,7 +63,7 @@ export function LockCancelForm({ context }: { context: LookupContext }) {
             <Form onSubmit={submit}>
                 <TextInput
                     label="Lock ID"
-                    registration={register('lockId', { required: 'Lock ID is required' })}
+                    registration={register('lockId', lockIdValidation(context))}
                     error={errors.lockId?.message}
                 />
                 <MemoInput className="lock-memo" registration={register('memo')} />

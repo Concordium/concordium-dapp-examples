@@ -17,6 +17,7 @@ import {
     toCborAccount,
     toTokenId,
 } from '../utils';
+import { lockIdValidation } from './validation';
 
 import type { LookupContext, Status } from '../types';
 
@@ -60,7 +61,7 @@ export function LockSendForm({ context }: { context: LookupContext }) {
         setStatus({ type: 'loading', message: 'Adding operation...' });
 
         try {
-            const lock = await context.getLockId(state.lockId);
+            const lock = context.getLockId(state.lockId);
             const tokenId = requireValue(state.tokenId, 'Token ID');
             const amount = requirePositiveAmount(state.amount);
             const source = requireValue(state.source, 'Source account');
@@ -101,7 +102,7 @@ export function LockSendForm({ context }: { context: LookupContext }) {
             <Form onSubmit={submit}>
                 <TextInput
                     label="Lock ID"
-                    registration={register('lockId', { required: 'Lock ID is required' })}
+                    registration={register('lockId', lockIdValidation(context))}
                     error={errors.lockId?.message}
                 />
                 <TextInput

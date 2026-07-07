@@ -22,7 +22,8 @@ export type AddOperation = (operation: Omit<QueuedOperation, 'id'>) => void;
 export interface LookupContext {
     grpcClient?: ConcordiumGRPCClient;
     getTokenDecimals: (tokenId: string) => Promise<number>;
-    getLockId: (lockId: string) => Promise<LockId.Type>;
+    getLockId: (lockId: string) => LockId.Type;
+    getEstimatedLockId: () => Promise<string>;
     addOperation: AddOperation;
     connectedAccount?: string | null;
 }
