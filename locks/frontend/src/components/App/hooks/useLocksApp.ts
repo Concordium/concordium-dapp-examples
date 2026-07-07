@@ -152,6 +152,7 @@ export function useLocksApp() {
             const payload = createMetaUpdatePayload(operations.map((operation) => operation.build()));
             const hash = await provider.sendTransaction(connectedAccount, AccountTransactionType.MetaUpdate, payload);
             setTransactionHash(hash);
+            setOperations([]);
             setSubmitStatus(defaultStatus);
         } catch (caughtError) {
             setSubmitStatus({ type: 'error', message: parseError(caughtError) });
