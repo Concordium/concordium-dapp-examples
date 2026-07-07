@@ -18,6 +18,7 @@ import {
     toCborAccount,
     toTokenId,
 } from '../../utils.ts';
+import { accountExistsValidation, tokenIdExistsValidation } from '../../lock/validation.ts';
 
 import type { Status } from '../../types.ts';
 import type { TokenOperationFormProps } from './tokenOperationForms/TokenOperationFormProps.ts';
@@ -82,7 +83,7 @@ export function TokenTransferForm({ context }: TokenOperationFormProps) {
             <Form onSubmit={submit}>
                 <TextInput
                     label="Token ID"
-                    registration={register('tokenId', { required: 'Token ID is required' })}
+                    registration={register('tokenId', tokenIdExistsValidation(context))}
                     error={errors.tokenId?.message}
                 />
                 <TextInput
@@ -97,7 +98,7 @@ export function TokenTransferForm({ context }: TokenOperationFormProps) {
                 />
                 <TextInput
                     label="Recipient account"
-                    registration={register('recipient', { required: 'Recipient account is required' })}
+                    registration={register('recipient', accountExistsValidation(context, 'Recipient account'))}
                     error={errors.recipient?.message}
                 />
                 <MemoInput registration={register('memo')} />

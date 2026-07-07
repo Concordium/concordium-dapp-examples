@@ -7,6 +7,7 @@ import { ErrorMessage } from '../../../components/ErrorMessage.tsx';
 import { FormCard } from '../../../components/FormCard.tsx';
 import { SubmitButton } from '../../../components/SubmitButton.tsx';
 import { TextInput } from '../../../components/TextInput.tsx';
+import { accountExistsValidation, tokenIdExistsValidation } from '../../../lock/validation.ts';
 import { defaultStatus, operationTitle, parseError, requireValue, toCborAccount, toTokenId } from '../../../utils.ts';
 
 import type { LookupContext, Status } from '../../../types.ts';
@@ -73,12 +74,12 @@ export function TokenTargetAccountOperationForm({ operation, context }: TokenTar
             <Form onSubmit={submit}>
                 <TextInput
                     label="Token ID"
-                    registration={register('tokenId', { required: 'Token ID is required' })}
+                    registration={register('tokenId', tokenIdExistsValidation(context))}
                     error={errors.tokenId?.message}
                 />
                 <TextInput
                     label="Target account"
-                    registration={register('target', { required: 'Target account is required' })}
+                    registration={register('target', accountExistsValidation(context, 'Target account'))}
                     error={errors.target?.message}
                 />
                 <ErrorMessage message={status.type === 'error' ? status.message : undefined} />

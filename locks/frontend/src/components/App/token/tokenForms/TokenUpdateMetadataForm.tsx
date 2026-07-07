@@ -7,6 +7,7 @@ import { ErrorMessage } from '../../components/ErrorMessage.tsx';
 import { FormCard } from '../../components/FormCard.tsx';
 import { SubmitButton } from '../../components/SubmitButton.tsx';
 import { TextInput } from '../../components/TextInput.tsx';
+import { tokenIdExistsValidation } from '../../lock/validation.ts';
 import { defaultStatus, operationTitle, parseError, requireValue, toHexBytes, toTokenId } from '../../utils.ts';
 
 import type { Status } from '../../types.ts';
@@ -70,7 +71,7 @@ export function TokenUpdateMetadataForm({ context }: TokenOperationFormProps) {
             <Form onSubmit={submit}>
                 <TextInput
                     label="Token ID"
-                    registration={register('tokenId', { required: 'Token ID is required' })}
+                    registration={register('tokenId', tokenIdExistsValidation(context))}
                     error={errors.tokenId?.message}
                 />
                 <TextInput

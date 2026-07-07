@@ -7,6 +7,7 @@ import { ErrorMessage } from '../../../components/ErrorMessage.tsx';
 import { FormCard } from '../../../components/FormCard.tsx';
 import { SubmitButton } from '../../../components/SubmitButton.tsx';
 import { TextInput } from '../../../components/TextInput.tsx';
+import { tokenIdExistsValidation } from '../../../lock/validation.ts';
 import {
     defaultStatus,
     operationTitle,
@@ -75,7 +76,7 @@ export function TokenAmountOperationForm({ operation, context }: TokenAmountOper
             <Form onSubmit={submit}>
                 <TextInput
                     label="Token ID"
-                    registration={register('tokenId', { required: 'Token ID is required' })}
+                    registration={register('tokenId', tokenIdExistsValidation(context))}
                     error={errors.tokenId?.message}
                 />
                 <TextInput

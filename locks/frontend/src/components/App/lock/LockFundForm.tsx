@@ -9,7 +9,7 @@ import { MemoInput } from '../components/MemoInput';
 import { SubmitButton } from '../components/SubmitButton';
 import { TextInput } from '../components/TextInput';
 import { defaultStatus, optionalMemo, parseError, requirePositiveAmount, requireValue, toTokenId } from '../utils';
-import { lockIdValidation } from './validation';
+import { lockIdValidation, tokenIdExistsValidation } from './validation';
 
 import type { LookupContext, Status } from '../types';
 
@@ -79,7 +79,7 @@ export function LockFundForm({ context }: { context: LookupContext }) {
                 />
                 <TextInput
                     label="Token ID"
-                    registration={register('tokenId', { required: 'Token ID is required' })}
+                    registration={register('tokenId', tokenIdExistsValidation(context))}
                     error={errors.tokenId?.message}
                 />
                 <TextInput

@@ -6,8 +6,9 @@ import {
     ConcordiumGRPCClient,
     createMetaUpdatePayload,
     LockId,
-    Token,
     TokenId,
+    type AccountInfo,
+    type TokenInfo,
 } from '@concordium/web-sdk';
 
 import { BLOCK_LIST } from '../constants';
@@ -95,6 +96,38 @@ export function useLocksApp() {
         setTransactionHash('');
     };
 
+    const getAccountInfo = async (account: string): Promise<AccountInfo> => {
+        const trimmedAccount = requireValue(account, 'Account');
+
+        let address: AccountAddress.Type;
+        try {
+            address = AccountAddress.fromBase58(trimmedAccount);
+        } catch {
+            throw new Error('Account address is invalid');
+        }
+
+        if (!grpcClient) {
+            throw new Error('GRPC connection is not available');
+        }
+
+        return grpcClient.getAccountInfo(address);
+    };
+
+    const getTokenInfo = async (tokenId: string): Promise<TokenInfo> => {
+        const trimmedTokenId = requireValue(tokenId, 'Token ID');
+
+        if (!grpcClient) {
+            throw new Error('GRPC connection is not available');
+        }
+
+        const tokenInfo = await grpcClient.getTokenInfo(TokenId.fromString(trimmedTokenId));
+        if (!tokenInfo) {
+            throw new Error(`Token ID "${trimmedTokenId}" does not exist`);
+        }
+
+        return tokenInfo;
+    };
+
     const getTokenDecimals = async (tokenId: string) => {
         const trimmedTokenId = requireValue(tokenId, 'Token ID');
         const cached = tokenDecimalsCache[trimmedTokenId];
@@ -102,12 +135,7 @@ export function useLocksApp() {
             return cached;
         }
 
-        if (!grpcClient) {
-            throw new Error('GRPC connection is not available');
-        }
-
-        const token = await Token.fromId(grpcClient, TokenId.fromString(trimmedTokenId));
-        const decimals = token.info.state.decimals;
+        const decimals = (await getTokenInfo(trimmedTokenId)).state.decimals;
         setTokenDecimalsCache((current) => ({ ...current, [trimmedTokenId]: decimals }));
         return decimals;
     };
@@ -133,6 +161,8 @@ export function useLocksApp() {
 
     const context: LookupContext = {
         grpcClient,
+        getAccountInfo,
+        getTokenInfo,
         getTokenDecimals,
         getLockId,
         getEstimatedLockId,

@@ -21,11 +21,16 @@ import {
     toCborAccount,
     toTokenId,
 } from '../utils';
+import {
+    accountListExistsValidation,
+    controllerGrantAccountsExistValidation,
+    supportedTokenIdsExistValidation,
+} from './validation';
 
 import type { ControllerGrantForm, LockCreateState, LookupContext } from '../types';
 
 export function LockCreateForm({ context }: { context: LookupContext }) {
-    const { connectedAccount, addOperation, getEstimatedLockId } = context;
+    const { connectedAccount, addOperation, getAccountInfo, getEstimatedLockId, getTokenInfo } = context;
     const [error, setError] = useState('');
     const {
         register,
@@ -39,6 +44,19 @@ export function LockCreateForm({ context }: { context: LookupContext }) {
     });
 
     const state = watch();
+
+    useEffect(() => {
+        register(
+            'recipients',
+            accountListExistsValidation(
+                { getAccountInfo },
+                'At least one recipient account is required',
+                () => !getValues('anyRecipient'),
+            ),
+        );
+        register('controllerGrants', controllerGrantAccountsExistValidation({ getAccountInfo }));
+        register('supportedTokens', supportedTokenIdsExistValidation({ getTokenInfo }));
+    }, [getAccountInfo, getTokenInfo, getValues, register]);
 
     useEffect(() => {
         const controllerGrants = getValues('controllerGrants');
@@ -86,9 +104,8 @@ export function LockCreateForm({ context }: { context: LookupContext }) {
             const expiryMinutes = expiryDateTimeToFutureMinutes(state.expiryDate);
             const estimatedLockId = await getEstimatedLockId();
 
-            const recipients = state.anyRecipient
-                ? 'any'
-                : state.recipients.map((recipient) => toCborAccount(recipient)).filter(Boolean);
+            const recipientAccounts = state.recipients.map((recipient) => recipient.trim()).filter(Boolean);
+            const recipients = state.anyRecipient ? 'any' : recipientAccounts.map(toCborAccount);
 
             if (!state.anyRecipient && recipients.length === 0) {
                 throw new Error('At least one recipient is required');
@@ -105,12 +122,13 @@ export function LockCreateForm({ context }: { context: LookupContext }) {
                 };
             });
 
-            const supportedTokens = state.supportedTokens.map(toTokenId);
+            const supportedTokenIds = state.supportedTokens.map((tokenId) => tokenId.trim()).filter(Boolean);
+            const supportedTokens = supportedTokenIds.map(toTokenId);
             if (!supportedTokens.length) {
                 throw new Error('At least one supported token is required');
             }
 
-            const previewRecipients = state.anyRecipient ? 'any' : commaList(state.recipients);
+            const previewRecipients = state.anyRecipient ? 'any' : commaList(recipientAccounts);
             const previewGrants = state.controllerGrants
                 .map((grant) => `${grant.account || '-'}\n(${grant.roles.map(operationTitle).join(', ') || '-'})`)
                 .join('\n; ');
@@ -122,7 +140,7 @@ export function LockCreateForm({ context }: { context: LookupContext }) {
                     { label: 'Recipients', value: previewRecipients },
                     { label: 'Expires at', value: formatDateTimePreview(state.expiryDate) },
                     { label: 'Controller grants', value: previewGrants },
-                    { label: 'Supported tokens', value: commaList(state.supportedTokens) },
+                    { label: 'Supported tokens', value: commaList(supportedTokenIds) },
                     { label: 'Keep alive', value: state.keepAlive ? 'Yes' : 'No' },
                     { label: 'Memo', value: state.memo || '-' },
                 ],
@@ -169,6 +187,9 @@ export function LockCreateForm({ context }: { context: LookupContext }) {
                                     setValue('recipients', recipients, { shouldDirty: true, shouldValidate: true })
                                 }
                             />
+                            {errors.recipients?.message && (
+                                <div className="invalid-feedback d-block">{errors.recipients.message}</div>
+                            )}
                         </section>
 
                         <section className="lock-create-group">
@@ -207,6 +228,9 @@ export function LockCreateForm({ context }: { context: LookupContext }) {
                                     </div>
                                 ))}
                             </div>
+                            {errors.controllerGrants?.message && (
+                                <div className="invalid-feedback d-block">{errors.controllerGrants.message}</div>
+                            )}
                         </section>
                     </div>
 
@@ -256,6 +280,9 @@ export function LockCreateForm({ context }: { context: LookupContext }) {
                                     })
                                 }
                             />
+                            {errors.supportedTokens?.message && (
+                                <div className="invalid-feedback d-block">{errors.supportedTokens.message}</div>
+                            )}
                             <MemoInput registration={register('memo')} />
                         </section>
                     </div>

@@ -9,6 +9,7 @@ import { RoleCheckboxes } from '../../../components/RoleCheckboxes.tsx';
 import { SubmitButton } from '../../../components/SubmitButton.tsx';
 import { TextInput } from '../../../components/TextInput.tsx';
 import { TOKEN_ADMIN_ROLES } from '../../../constants.ts';
+import { accountExistsValidation, tokenIdExistsValidation } from '../../../lock/validation.ts';
 import { defaultStatus, operationTitle, parseError, requireValue, toCborAccount, toTokenId } from '../../../utils.ts';
 
 import type { LookupContext, Status } from '../../../types.ts';
@@ -87,12 +88,12 @@ export function TokenAdminRolesOperationForm({ operation, context }: TokenAdminR
             <Form onSubmit={submit}>
                 <TextInput
                     label="Token ID"
-                    registration={register('tokenId', { required: 'Token ID is required' })}
+                    registration={register('tokenId', tokenIdExistsValidation(context))}
                     error={errors.tokenId?.message}
                 />
                 <TextInput
                     label="Account"
-                    registration={register('account', { required: 'Account is required' })}
+                    registration={register('account', accountExistsValidation(context, 'Account'))}
                     error={errors.account?.message}
                 />
                 <Form.Group className="mb-3">

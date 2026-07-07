@@ -4,7 +4,16 @@ import type { Status } from './types';
 
 export const defaultStatus: Status = { type: 'idle', message: '' };
 
-export const parseError = (error: unknown) => (error instanceof Error ? error.message : String(error));
+const decodeErrorMessage = (message: string) => {
+    try {
+        return decodeURIComponent(message);
+    } catch {
+        return message;
+    }
+};
+
+export const parseError = (error: unknown) =>
+    decodeErrorMessage(error instanceof Error ? error.message : String(error));
 
 export const requireValue = (value: string, label: string) => {
     const trimmed = value.trim();

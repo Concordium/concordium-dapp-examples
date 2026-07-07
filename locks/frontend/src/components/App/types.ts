@@ -1,4 +1,11 @@
-import type { ConcordiumGRPCClient, LockController, LockId, MetaUpdateOperation } from '@concordium/web-sdk';
+import type {
+    AccountInfo,
+    ConcordiumGRPCClient,
+    LockController,
+    LockId,
+    MetaUpdateOperation,
+    TokenInfo,
+} from '@concordium/web-sdk';
 
 export interface Status {
     type: 'idle' | 'loading' | 'error' | 'success';
@@ -21,6 +28,8 @@ export type AddOperation = (operation: Omit<QueuedOperation, 'id'>) => void;
 
 export interface LookupContext {
     grpcClient?: ConcordiumGRPCClient;
+    getAccountInfo: (account: string) => Promise<AccountInfo>;
+    getTokenInfo: (tokenId: string) => Promise<TokenInfo>;
     getTokenDecimals: (tokenId: string) => Promise<number>;
     getLockId: (lockId: string) => LockId.Type;
     getEstimatedLockId: () => Promise<string>;
