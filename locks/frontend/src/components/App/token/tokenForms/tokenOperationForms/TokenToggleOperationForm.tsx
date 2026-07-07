@@ -1,6 +1,7 @@
-import { FormEvent, useState } from 'react';
+import { useState } from 'react';
 import { Form } from 'react-bootstrap';
 import { MetaUpdateOperation, TokenOperationType } from '@concordium/web-sdk';
+import { useForm } from 'react-hook-form';
 
 import { ErrorMessage } from '../../../components/ErrorMessage.tsx';
 import { FormCard } from '../../../components/FormCard.tsx';
@@ -15,12 +16,19 @@ interface TokenToggleOperationFormProps {
     context: LookupContext;
 }
 
-export function TokenToggleOperationForm({ operation, context }: TokenToggleOperationFormProps) {
-    const [tokenId, setTokenId] = useState('');
-    const [status, setStatus] = useState<Status>(defaultStatus);
+interface TokenToggleOperationState {
+    tokenId: string;
+}
 
-    const submit = (event: FormEvent) => {
-        event.preventDefault();
+export function TokenToggleOperationForm({ operation, context }: TokenToggleOperationFormProps) {
+    const [status, setStatus] = useState<Status>(defaultStatus);
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm<TokenToggleOperationState>({ defaultValues: { tokenId: '' } });
+
+    const submit = handleSubmit(({ tokenId }) => {
         setStatus({ type: 'loading', message: 'Adding operation...' });
 
         try {
@@ -41,12 +49,16 @@ export function TokenToggleOperationForm({ operation, context }: TokenToggleOper
         } catch (caughtError) {
             setStatus({ type: 'error', message: parseError(caughtError) });
         }
-    };
+    });
 
     return (
         <FormCard title={operationTitle(operation)} className="token-operation-card">
             <Form onSubmit={submit}>
-                <TextInput label="Token ID" value={tokenId} onChange={setTokenId} />
+                <TextInput
+                    label="Token ID"
+                    registration={register('tokenId', { required: 'Token ID is required' })}
+                    error={errors.tokenId?.message}
+                />
                 <ErrorMessage message={status.type === 'error' ? status.message : undefined} />
                 <SubmitButton loading={status.type === 'loading'}>Add</SubmitButton>
             </Form>

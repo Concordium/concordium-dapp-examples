@@ -1,6 +1,7 @@
-import { FormEvent, useState } from 'react';
+import { useState } from 'react';
 import { Form } from 'react-bootstrap';
 import { MetaUpdateOperationType, TokenAmount } from '@concordium/web-sdk';
+import { useForm } from 'react-hook-form';
 
 import { ErrorMessage } from '../components/ErrorMessage';
 import { FormCard } from '../components/FormCard';
@@ -26,15 +27,14 @@ const blankLockFundState: LockFundState = {
 };
 
 export function LockFundForm({ context }: { context: LookupContext }) {
-    const [state, setState] = useState<LockFundState>(blankLockFundState);
     const [status, setStatus] = useState<Status>(defaultStatus);
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm<LockFundState>({ defaultValues: blankLockFundState });
 
-    const setField = (field: keyof LockFundState, value: string) => {
-        setState((current) => ({ ...current, [field]: value }));
-    };
-
-    const submit = async (event: FormEvent) => {
-        event.preventDefault();
+    const submit = handleSubmit(async (state) => {
         setStatus({ type: 'loading', message: 'Adding operation...' });
 
         try {
@@ -66,15 +66,32 @@ export function LockFundForm({ context }: { context: LookupContext }) {
         } catch (caughtError) {
             setStatus({ type: 'error', message: parseError(caughtError) });
         }
-    };
+    });
 
     return (
         <FormCard title="LockFund" className="lock-operation-card">
             <Form onSubmit={submit}>
-                <TextInput label="Lock ID" value={state.lockId} onChange={(value) => setField('lockId', value)} />
-                <TextInput label="Token ID" value={state.tokenId} onChange={(value) => setField('tokenId', value)} />
-                <TextInput label="Amount" value={state.amount} onChange={(value) => setField('amount', value)} />
-                <MemoInput value={state.memo} onChange={(value) => setField('memo', value)} />
+                <TextInput
+                    label="Lock ID"
+                    registration={register('lockId', { required: 'Lock ID is required' })}
+                    error={errors.lockId?.message}
+                />
+                <TextInput
+                    label="Token ID"
+                    registration={register('tokenId', { required: 'Token ID is required' })}
+                    error={errors.tokenId?.message}
+                />
+                <TextInput
+                    label="Amount"
+                    registration={register('amount', {
+                        required: 'Amount is required',
+                        validate: (value) =>
+                            (Number.isFinite(Number(value.trim())) && Number(value.trim()) > 0) ||
+                            'Amount must be a positive decimal value',
+                    })}
+                    error={errors.amount?.message}
+                />
+                <MemoInput registration={register('memo')} />
                 <ErrorMessage message={status.type === 'error' ? status.message : undefined} />
                 <SubmitButton loading={status.type === 'loading'}>Add</SubmitButton>
             </Form>

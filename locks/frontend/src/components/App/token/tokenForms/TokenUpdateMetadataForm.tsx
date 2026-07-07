@@ -1,6 +1,7 @@
-import { FormEvent, useState } from 'react';
+import { useState } from 'react';
 import { Form } from 'react-bootstrap';
 import { TokenMetadataUrl, TokenOperationType } from '@concordium/web-sdk';
+import { useForm } from 'react-hook-form';
 
 import { ErrorMessage } from '../../components/ErrorMessage.tsx';
 import { FormCard } from '../../components/FormCard.tsx';
@@ -24,15 +25,14 @@ const blankTokenUpdateMetadataState: TokenUpdateMetadataState = {
 };
 
 export function TokenUpdateMetadataForm({ context }: TokenOperationFormProps) {
-    const [state, setState] = useState<TokenUpdateMetadataState>(blankTokenUpdateMetadataState);
     const [status, setStatus] = useState<Status>(defaultStatus);
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm<TokenUpdateMetadataState>({ defaultValues: blankTokenUpdateMetadataState });
 
-    const setField = (field: keyof TokenUpdateMetadataState, value: string) => {
-        setState((current) => ({ ...current, [field]: value }));
-    };
-
-    const submit = (event: FormEvent) => {
-        event.preventDefault();
+    const submit = handleSubmit((state) => {
         setStatus({ type: 'loading', message: 'Adding operation...' });
 
         try {
@@ -63,22 +63,35 @@ export function TokenUpdateMetadataForm({ context }: TokenOperationFormProps) {
         } catch (caughtError) {
             setStatus({ type: 'error', message: parseError(caughtError) });
         }
-    };
+    });
 
     return (
         <FormCard title={operationTitle(TokenOperationType.UpdateMetadata)} className="token-operation-card">
             <Form onSubmit={submit}>
-                <TextInput label="Token ID" value={state.tokenId} onChange={(value) => setField('tokenId', value)} />
+                <TextInput
+                    label="Token ID"
+                    registration={register('tokenId', { required: 'Token ID is required' })}
+                    error={errors.tokenId?.message}
+                />
                 <TextInput
                     label="Metadata URL"
-                    value={state.metadataUrl}
-                    onChange={(value) => setField('metadataUrl', value)}
+                    registration={register('metadataUrl', { required: 'Metadata URL is required' })}
+                    error={errors.metadataUrl?.message}
                 />
                 <TextInput
                     label="Metadata checksum"
-                    value={state.metadataChecksum}
                     placeholder="Optional 32-byte hex"
-                    onChange={(value) => setField('metadataChecksum', value)}
+                    registration={register('metadataChecksum', {
+                        validate: (value) => {
+                            try {
+                                toHexBytes(value);
+                                return true;
+                            } catch (caughtError) {
+                                return parseError(caughtError);
+                            }
+                        },
+                    })}
+                    error={errors.metadataChecksum?.message}
                 />
                 <ErrorMessage message={status.type === 'error' ? status.message : undefined} />
                 <SubmitButton loading={status.type === 'loading'}>Add</SubmitButton>

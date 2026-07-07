@@ -1,6 +1,7 @@
-import { FormEvent, useState } from 'react';
+import { useState } from 'react';
 import { Form } from 'react-bootstrap';
 import { MetaUpdateOperation, TokenAmount, TokenOperationType } from '@concordium/web-sdk';
+import { useForm } from 'react-hook-form';
 
 import { ErrorMessage } from '../../../components/ErrorMessage.tsx';
 import { FormCard } from '../../../components/FormCard.tsx';
@@ -33,15 +34,14 @@ const blankTokenAmountOperationState: TokenAmountOperationState = {
 };
 
 export function TokenAmountOperationForm({ operation, context }: TokenAmountOperationFormProps) {
-    const [state, setState] = useState<TokenAmountOperationState>(blankTokenAmountOperationState);
     const [status, setStatus] = useState<Status>(defaultStatus);
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm<TokenAmountOperationState>({ defaultValues: blankTokenAmountOperationState });
 
-    const setField = (field: keyof TokenAmountOperationState, value: string) => {
-        setState((current) => ({ ...current, [field]: value }));
-    };
-
-    const submit = async (event: FormEvent) => {
-        event.preventDefault();
+    const submit = handleSubmit(async (state) => {
         setStatus({ type: 'loading', message: 'Adding operation...' });
 
         try {
@@ -68,13 +68,26 @@ export function TokenAmountOperationForm({ operation, context }: TokenAmountOper
         } catch (caughtError) {
             setStatus({ type: 'error', message: parseError(caughtError) });
         }
-    };
+    });
 
     return (
         <FormCard title={operationTitle(operation)} className="token-operation-card">
             <Form onSubmit={submit}>
-                <TextInput label="Token ID" value={state.tokenId} onChange={(value) => setField('tokenId', value)} />
-                <TextInput label="Amount" value={state.amount} onChange={(value) => setField('amount', value)} />
+                <TextInput
+                    label="Token ID"
+                    registration={register('tokenId', { required: 'Token ID is required' })}
+                    error={errors.tokenId?.message}
+                />
+                <TextInput
+                    label="Amount"
+                    registration={register('amount', {
+                        required: 'Amount is required',
+                        validate: (value) =>
+                            (Number.isFinite(Number(value.trim())) && Number(value.trim()) > 0) ||
+                            'Amount must be a positive decimal value',
+                    })}
+                    error={errors.amount?.message}
+                />
                 <ErrorMessage message={status.type === 'error' ? status.message : undefined} />
                 <SubmitButton loading={status.type === 'loading'}>Add</SubmitButton>
             </Form>

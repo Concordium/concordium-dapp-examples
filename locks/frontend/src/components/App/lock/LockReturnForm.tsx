@@ -1,6 +1,7 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Form } from 'react-bootstrap';
 import { MetaUpdateOperationType, TokenAmount } from '@concordium/web-sdk';
+import { useForm } from 'react-hook-form';
 
 import { ErrorMessage } from '../components/ErrorMessage';
 import { FormCard } from '../components/FormCard';
@@ -36,23 +37,24 @@ const blankLockReturnState: LockReturnState = {
 };
 
 export function LockReturnForm({ context }: { context: LookupContext }) {
-    const [state, setState] = useState<LockReturnState>(blankLockReturnState);
     const [status, setStatus] = useState<Status>(defaultStatus);
+    const {
+        register,
+        handleSubmit,
+        getValues,
+        setValue,
+        formState: { errors },
+    } = useForm<LockReturnState>({ defaultValues: blankLockReturnState });
 
     useEffect(() => {
-        setState((current) =>
-            current.source !== '' || !context.connectedAccount
-                ? current
-                : { ...current, source: context.connectedAccount },
-        );
-    }, [context.connectedAccount]);
+        if (getValues('source') !== '' || !context.connectedAccount) {
+            return;
+        }
 
-    const setField = (field: keyof LockReturnState, value: string) => {
-        setState((current) => ({ ...current, [field]: value }));
-    };
+        setValue('source', context.connectedAccount);
+    }, [context.connectedAccount, getValues, setValue]);
 
-    const submit = async (event: FormEvent) => {
-        event.preventDefault();
+    const submit = handleSubmit(async (state) => {
         setStatus({ type: 'loading', message: 'Adding operation...' });
 
         try {
@@ -87,20 +89,37 @@ export function LockReturnForm({ context }: { context: LookupContext }) {
         } catch (caughtError) {
             setStatus({ type: 'error', message: parseError(caughtError) });
         }
-    };
+    });
 
     return (
         <FormCard title="LockReturn" className="lock-operation-card">
             <Form onSubmit={submit}>
-                <TextInput label="Lock ID" value={state.lockId} onChange={(value) => setField('lockId', value)} />
-                <TextInput label="Token ID" value={state.tokenId} onChange={(value) => setField('tokenId', value)} />
+                <TextInput
+                    label="Lock ID"
+                    registration={register('lockId', { required: 'Lock ID is required' })}
+                    error={errors.lockId?.message}
+                />
+                <TextInput
+                    label="Token ID"
+                    registration={register('tokenId', { required: 'Token ID is required' })}
+                    error={errors.tokenId?.message}
+                />
                 <TextInput
                     label="Source account"
-                    value={state.source}
-                    onChange={(value) => setField('source', value)}
+                    registration={register('source', { required: 'Source account is required' })}
+                    error={errors.source?.message}
                 />
-                <TextInput label="Amount" value={state.amount} onChange={(value) => setField('amount', value)} />
-                <MemoInput value={state.memo} onChange={(value) => setField('memo', value)} />
+                <TextInput
+                    label="Amount"
+                    registration={register('amount', {
+                        required: 'Amount is required',
+                        validate: (value) =>
+                            (Number.isFinite(Number(value.trim())) && Number(value.trim()) > 0) ||
+                            'Amount must be a positive decimal value',
+                    })}
+                    error={errors.amount?.message}
+                />
+                <MemoInput registration={register('memo')} />
                 <ErrorMessage message={status.type === 'error' ? status.message : undefined} />
                 <SubmitButton loading={status.type === 'loading'}>Add</SubmitButton>
             </Form>

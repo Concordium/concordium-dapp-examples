@@ -1,6 +1,7 @@
-import { FormEvent, useState } from 'react';
+import { useState } from 'react';
 import { Form } from 'react-bootstrap';
 import { MetaUpdateOperationType } from '@concordium/web-sdk';
+import { useForm } from 'react-hook-form';
 
 import { ErrorMessage } from '../components/ErrorMessage';
 import { FormCard } from '../components/FormCard';
@@ -22,15 +23,14 @@ const blankLockCancelState: LockCancelState = {
 };
 
 export function LockCancelForm({ context }: { context: LookupContext }) {
-    const [state, setState] = useState<LockCancelState>(blankLockCancelState);
     const [status, setStatus] = useState<Status>(defaultStatus);
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm<LockCancelState>({ defaultValues: blankLockCancelState });
 
-    const setField = (field: keyof LockCancelState, value: string) => {
-        setState((current) => ({ ...current, [field]: value }));
-    };
-
-    const submit = async (event: FormEvent) => {
-        event.preventDefault();
+    const submit = handleSubmit(async (state) => {
         setStatus({ type: 'loading', message: 'Adding operation...' });
 
         try {
@@ -55,13 +55,17 @@ export function LockCancelForm({ context }: { context: LookupContext }) {
         } catch (caughtError) {
             setStatus({ type: 'error', message: parseError(caughtError) });
         }
-    };
+    });
 
     return (
         <FormCard title="LockCancel" className="lock-operation-card">
             <Form onSubmit={submit}>
-                <TextInput label="Lock ID" value={state.lockId} onChange={(value) => setField('lockId', value)} />
-                <MemoInput className="lock-memo" value={state.memo} onChange={(value) => setField('memo', value)} />
+                <TextInput
+                    label="Lock ID"
+                    registration={register('lockId', { required: 'Lock ID is required' })}
+                    error={errors.lockId?.message}
+                />
+                <MemoInput className="lock-memo" registration={register('memo')} />
                 <ErrorMessage message={status.type === 'error' ? status.message : undefined} />
                 <SubmitButton loading={status.type === 'loading'}>Add</SubmitButton>
             </Form>

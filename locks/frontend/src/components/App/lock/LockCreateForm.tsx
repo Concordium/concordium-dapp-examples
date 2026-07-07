@@ -1,6 +1,7 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button, Form } from 'react-bootstrap';
 import { CborEpoch, LockController, MetaUpdateOperationType, TransactionExpiry } from '@concordium/web-sdk';
+import { useForm } from 'react-hook-form';
 
 import { FormCard } from '../components/FormCard';
 import { ErrorMessage } from '../components/ErrorMessage';
@@ -21,60 +22,66 @@ import {
     toTokenId,
 } from '../utils';
 
-import type { ControllerGrantForm, LookupContext } from '../types';
+import type { ControllerGrantForm, LockCreateState, LookupContext } from '../types';
 
 export function LockCreateForm({
     connectedAccount,
     addOperation,
 }: Pick<LookupContext, 'connectedAccount' | 'addOperation'>) {
-    const [state, setState] = useState(() => blankLockCreateState(connectedAccount));
     const [error, setError] = useState('');
+    const {
+        register,
+        handleSubmit,
+        watch,
+        getValues,
+        setValue,
+        formState: { errors },
+    } = useForm<LockCreateState>({
+        defaultValues: blankLockCreateState(connectedAccount),
+    });
+
+    const state = watch();
 
     useEffect(() => {
-        setState((current) => {
-            const firstGrant = current.controllerGrants[0];
-            if (!connectedAccount || firstGrant?.account) {
-                return current;
-            }
+        const controllerGrants = getValues('controllerGrants');
+        const firstGrant = controllerGrants[0];
+        if (!connectedAccount || firstGrant?.account) {
+            return;
+        }
 
-            return {
-                ...current,
-                controllerGrants: [
-                    { account: connectedAccount, roles: [...LOCK_ROLES] },
-                    ...current.controllerGrants.slice(1),
-                ],
-            };
-        });
-    }, [connectedAccount]);
+        setValue(
+            'controllerGrants',
+            [{ account: connectedAccount, roles: [...LOCK_ROLES] }, ...controllerGrants.slice(1)],
+            { shouldDirty: true, shouldValidate: true },
+        );
+    }, [connectedAccount, getValues, setValue]);
 
     const updateGrant = (index: number, grant: ControllerGrantForm) => {
-        setState((current) => ({
-            ...current,
-            controllerGrants: current.controllerGrants.map((item, currentIndex) =>
-                currentIndex === index ? grant : item,
-            ),
-        }));
+        setValue(
+            'controllerGrants',
+            state.controllerGrants.map((item, currentIndex) => (currentIndex === index ? grant : item)),
+            { shouldDirty: true, shouldValidate: true },
+        );
     };
 
     const addGrant = () => {
-        setState((current) => ({
-            ...current,
-            controllerGrants: [...current.controllerGrants, { account: '', roles: [] }],
-        }));
+        setValue('controllerGrants', [...state.controllerGrants, { account: '', roles: [] }], {
+            shouldDirty: true,
+            shouldValidate: true,
+        });
     };
 
     const removeGrant = (index: number) => {
-        setState((current) => ({
-            ...current,
-            controllerGrants:
-                current.controllerGrants.length === 1
-                    ? [{ account: '', roles: [] }]
-                    : current.controllerGrants.filter((_, currentIndex) => currentIndex !== index),
-        }));
+        setValue(
+            'controllerGrants',
+            state.controllerGrants.length === 1
+                ? [{ account: '', roles: [] }]
+                : state.controllerGrants.filter((_, currentIndex) => currentIndex !== index),
+            { shouldDirty: true, shouldValidate: true },
+        );
     };
 
-    const submit = (event: FormEvent) => {
-        event.preventDefault();
+    const submit = handleSubmit((state) => {
         setError('');
 
         try {
@@ -133,7 +140,7 @@ export function LockCreateForm({
         } catch (caughtError) {
             setError(parseError(caughtError));
         }
-    };
+    });
 
     return (
         <FormCard title="Create lock (LockCreate)" className="lock-create-card">
@@ -147,7 +154,10 @@ export function LockCreateForm({
                                 label="Any recipient"
                                 checked={state.anyRecipient}
                                 onChange={(event) =>
-                                    setState((current) => ({ ...current, anyRecipient: event.target.checked }))
+                                    setValue('anyRecipient', event.target.checked, {
+                                        shouldDirty: true,
+                                        shouldValidate: true,
+                                    })
                                 }
                             />
                             <RepeatableTextList
@@ -155,7 +165,9 @@ export function LockCreateForm({
                                 values={state.recipients}
                                 placeholder="Account address"
                                 disabled={state.anyRecipient}
-                                onChange={(recipients) => setState((current) => ({ ...current, recipients }))}
+                                onChange={(recipients) =>
+                                    setValue('recipients', recipients, { shouldDirty: true, shouldValidate: true })
+                                }
                             />
                         </section>
 
@@ -206,15 +218,28 @@ export function LockCreateForm({
                                 label="Keep alive"
                                 checked={state.keepAlive}
                                 onChange={(event) =>
-                                    setState((current) => ({ ...current, keepAlive: event.target.checked }))
+                                    setValue('keepAlive', event.target.checked, {
+                                        shouldDirty: true,
+                                        shouldValidate: true,
+                                    })
                                 }
                             />
                             <TextInput
                                 label="Expiry date and time"
                                 type="datetime-local"
-                                value={state.expiryDate}
                                 min={getCurrentDateTimeInputValue()}
-                                onChange={(expiryDate) => setState((current) => ({ ...current, expiryDate }))}
+                                registration={register('expiryDate', {
+                                    required: 'Expiry date and time is required',
+                                    validate: (value) => {
+                                        try {
+                                            expiryDateTimeToFutureMinutes(value);
+                                            return true;
+                                        } catch (caughtError) {
+                                            return parseError(caughtError);
+                                        }
+                                    },
+                                })}
+                                error={errors.expiryDate?.message}
                             />
                         </section>
 
@@ -224,12 +249,14 @@ export function LockCreateForm({
                                 label="Token IDs"
                                 values={state.supportedTokens}
                                 placeholder="Token ID"
-                                onChange={(supportedTokens) => setState((current) => ({ ...current, supportedTokens }))}
+                                onChange={(supportedTokens) =>
+                                    setValue('supportedTokens', supportedTokens, {
+                                        shouldDirty: true,
+                                        shouldValidate: true,
+                                    })
+                                }
                             />
-                            <MemoInput
-                                value={state.memo}
-                                onChange={(memo) => setState((current) => ({ ...current, memo }))}
-                            />
+                            <MemoInput registration={register('memo')} />
                         </section>
                     </div>
 

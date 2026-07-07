@@ -3074,6 +3074,7 @@ __metadata:
     react: ^18.2.0
     react-bootstrap: ^2.8.0
     react-dom: ^18.2.0
+    react-hook-form: 7.50.1
     sass: ^1.67.0
     typescript: ^5.0.2
     vite: ^4.4.5
@@ -3596,6 +3597,15 @@ __metadata:
   peerDependencies:
     react: ^18.3.1
   checksum: 298954ecd8f78288dcaece05e88b570014d8f6dce5db6f66e6ee91448debeb59dcd31561dddb354eee47e6c1bb234669459060deb238ed0213497146e555a0b9
+  languageName: node
+  linkType: hard
+
+"react-hook-form@npm:7.50.1":
+  version: 7.50.1
+  resolution: "react-hook-form@npm:7.50.1"
+  peerDependencies:
+    react: ^16.8.0 || ^17 || ^18
+  checksum: 40dcb64d2ff631f6da76db2c5788957da3429f07649a6f3aed76545c616fae8eee557a6b06d0d0842be1f80ac8244f44d87f4d8d83fddabec76d7ab9921f8781
   languageName: node
   linkType: hard
 

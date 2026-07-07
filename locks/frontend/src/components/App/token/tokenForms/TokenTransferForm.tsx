@@ -1,6 +1,7 @@
-import { FormEvent, useState } from 'react';
+import { useState } from 'react';
 import { Form } from 'react-bootstrap';
 import { TokenAmount, TokenOperationType } from '@concordium/web-sdk';
+import { useForm } from 'react-hook-form';
 
 import { ErrorMessage } from '../../components/ErrorMessage.tsx';
 import { FormCard } from '../../components/FormCard.tsx';
@@ -36,15 +37,14 @@ const blankTokenTransferState: TokenTransferState = {
 };
 
 export function TokenTransferForm({ context }: TokenOperationFormProps) {
-    const [state, setState] = useState<TokenTransferState>(blankTokenTransferState);
     const [status, setStatus] = useState<Status>(defaultStatus);
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm<TokenTransferState>({ defaultValues: blankTokenTransferState });
 
-    const setField = (field: keyof TokenTransferState, value: string) => {
-        setState((current) => ({ ...current, [field]: value }));
-    };
-
-    const submit = async (event: FormEvent) => {
-        event.preventDefault();
+    const submit = handleSubmit(async (state) => {
         setStatus({ type: 'loading', message: 'Adding operation...' });
 
         try {
@@ -75,19 +75,32 @@ export function TokenTransferForm({ context }: TokenOperationFormProps) {
         } catch (caughtError) {
             setStatus({ type: 'error', message: parseError(caughtError) });
         }
-    };
+    });
 
     return (
         <FormCard title={operationTitle(TokenOperationType.Transfer)} className="token-operation-card">
             <Form onSubmit={submit}>
-                <TextInput label="Token ID" value={state.tokenId} onChange={(value) => setField('tokenId', value)} />
-                <TextInput label="Amount" value={state.amount} onChange={(value) => setField('amount', value)} />
+                <TextInput
+                    label="Token ID"
+                    registration={register('tokenId', { required: 'Token ID is required' })}
+                    error={errors.tokenId?.message}
+                />
+                <TextInput
+                    label="Amount"
+                    registration={register('amount', {
+                        required: 'Amount is required',
+                        validate: (value) =>
+                            (Number.isFinite(Number(value.trim())) && Number(value.trim()) > 0) ||
+                            'Amount must be a positive decimal value',
+                    })}
+                    error={errors.amount?.message}
+                />
                 <TextInput
                     label="Recipient account"
-                    value={state.recipient}
-                    onChange={(value) => setField('recipient', value)}
+                    registration={register('recipient', { required: 'Recipient account is required' })}
+                    error={errors.recipient?.message}
                 />
-                <MemoInput value={state.memo} onChange={(value) => setField('memo', value)} />
+                <MemoInput registration={register('memo')} />
                 <ErrorMessage message={status.type === 'error' ? status.message : undefined} />
                 <SubmitButton loading={status.type === 'loading'}>Add</SubmitButton>
             </Form>

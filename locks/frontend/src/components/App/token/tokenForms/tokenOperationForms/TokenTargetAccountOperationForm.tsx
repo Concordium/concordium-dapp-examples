@@ -1,6 +1,7 @@
-import { FormEvent, useState } from 'react';
+import { useState } from 'react';
 import { Form } from 'react-bootstrap';
 import { MetaUpdateOperation, TokenOperationType } from '@concordium/web-sdk';
+import { useForm } from 'react-hook-form';
 
 import { ErrorMessage } from '../../../components/ErrorMessage.tsx';
 import { FormCard } from '../../../components/FormCard.tsx';
@@ -32,15 +33,14 @@ const blankTokenTargetAccountOperationState: TokenTargetAccountOperationState = 
 };
 
 export function TokenTargetAccountOperationForm({ operation, context }: TokenTargetAccountOperationFormProps) {
-    const [state, setState] = useState<TokenTargetAccountOperationState>(blankTokenTargetAccountOperationState);
     const [status, setStatus] = useState<Status>(defaultStatus);
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm<TokenTargetAccountOperationState>({ defaultValues: blankTokenTargetAccountOperationState });
 
-    const setField = (field: keyof TokenTargetAccountOperationState, value: string) => {
-        setState((current) => ({ ...current, [field]: value }));
-    };
-
-    const submit = (event: FormEvent) => {
-        event.preventDefault();
+    const submit = handleSubmit((state) => {
         setStatus({ type: 'loading', message: 'Adding operation...' });
 
         try {
@@ -66,16 +66,20 @@ export function TokenTargetAccountOperationForm({ operation, context }: TokenTar
         } catch (caughtError) {
             setStatus({ type: 'error', message: parseError(caughtError) });
         }
-    };
+    });
 
     return (
         <FormCard title={operationTitle(operation)} className="token-operation-card">
             <Form onSubmit={submit}>
-                <TextInput label="Token ID" value={state.tokenId} onChange={(value) => setField('tokenId', value)} />
+                <TextInput
+                    label="Token ID"
+                    registration={register('tokenId', { required: 'Token ID is required' })}
+                    error={errors.tokenId?.message}
+                />
                 <TextInput
                     label="Target account"
-                    value={state.target}
-                    onChange={(value) => setField('target', value)}
+                    registration={register('target', { required: 'Target account is required' })}
+                    error={errors.target?.message}
                 />
                 <ErrorMessage message={status.type === 'error' ? status.message : undefined} />
                 <SubmitButton loading={status.type === 'loading'}>Add</SubmitButton>

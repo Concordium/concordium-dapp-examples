@@ -42,6 +42,22 @@
     .mb-3 {
         margin-bottom: 0.55rem !important;
     }
+
+    .form-control + .invalid-feedback {
+        font-size: 0.72rem;
+        line-height: 1.22;
+        margin-top: 0.22rem;
+        visibility: hidden;
+    }
+
+    .form-control.is-invalid + .invalid-feedback {
+        visibility: visible;
+    }
+
+    .invalid-feedback.d-block {
+        font-size: 0.72rem;
+        line-height: 1.22;
+    }
 }
 
 .repeatable-list {
@@ -78,7 +94,7 @@
 .lock-operation-card,
 .token-operation-card {
     form {
-        align-items: end;
+        align-items: start;
         display: grid;
         gap: 0 0.65rem;
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -87,6 +103,8 @@
         > .alert,
         > .text-danger,
         > .invalid-feedback {
+            font-size: 0.82rem;
+            margin-bottom: 0.55rem;
             grid-column: 1 / -1;
         }
 
