@@ -135,6 +135,10 @@ export function LockCreateForm({ context }: { context: LookupContext }) {
 
             addOperation({
                 type: 'LockCreate',
+                lockConfig: {
+                    lockId: estimatedLockId,
+                    supportedTokenIds,
+                },
                 preview: [
                     { label: 'Lock ID (estimated)', value: estimatedLockId },
                     { label: 'Recipients', value: previewRecipients },

@@ -9,7 +9,7 @@ import { MemoInput } from '../components/MemoInput';
 import { SubmitButton } from '../components/SubmitButton';
 import { TextInput } from '../components/TextInput';
 import { defaultStatus, optionalMemo, parseError, requirePositiveAmount, requireValue, toTokenId } from '../utils';
-import { lockIdValidation, tokenIdExistsValidation } from './validation';
+import { lockIdValidation, lockTokenIdValidation } from './validation';
 
 import type { LookupContext, Status } from '../types';
 
@@ -32,6 +32,7 @@ export function LockFundForm({ context }: { context: LookupContext }) {
     const {
         register,
         handleSubmit,
+        getValues,
         formState: { errors },
     } = useForm<LockFundState>({ defaultValues: blankLockFundState });
 
@@ -79,7 +80,7 @@ export function LockFundForm({ context }: { context: LookupContext }) {
                 />
                 <TextInput
                     label="Token ID"
-                    registration={register('tokenId', tokenIdExistsValidation(context))}
+                    registration={register('tokenId', lockTokenIdValidation(context, () => getValues('lockId')))}
                     error={errors.tokenId?.message}
                 />
                 <TextInput

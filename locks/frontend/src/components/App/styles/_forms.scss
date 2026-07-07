@@ -86,8 +86,6 @@
 
 .checkbox-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.26rem 0.85rem;
     margin-top: 0.45rem;
 }
 

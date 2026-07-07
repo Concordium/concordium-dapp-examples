@@ -5,6 +5,8 @@ import {
     AccountTransactionType,
     ConcordiumGRPCClient,
     createMetaUpdatePayload,
+    Lock,
+    LockController,
     LockId,
     TokenId,
     type AccountInfo,
@@ -142,7 +144,71 @@ export function useLocksApp() {
 
     const getLockId = (lockId: string) => {
         const trimmedLockId = requireValue(lockId, 'Lock ID');
-        return LockId.fromString(trimmedLockId);
+
+        try {
+            return LockId.fromString(trimmedLockId);
+        } catch {
+            throw new Error('Lock ID is invalid');
+        }
+    };
+
+    const getQueuedLockCreateConfig = (trimmedLockId: string) =>
+        operations.find(
+            (operation) => operation.type === 'LockCreate' && operation.lockConfig?.lockId === trimmedLockId,
+        )?.lockConfig;
+
+    const validateLockId = async (lockId: string) => {
+        const trimmedLockId = requireValue(lockId, 'Lock ID');
+        const parsedLockId = getLockId(trimmedLockId);
+
+        if (getQueuedLockCreateConfig(trimmedLockId)) {
+            return parsedLockId;
+        }
+
+        if (!grpcClient) {
+            throw new Error('GRPC connection is not available');
+        }
+
+        try {
+            await Lock.fromId(grpcClient, parsedLockId);
+            return parsedLockId;
+        } catch {
+            throw new Error(`Lock ID "${trimmedLockId}" does not exist`);
+        }
+    };
+
+    const validateLockTokenId = async (lockId: string, tokenId: string) => {
+        const trimmedLockId = requireValue(lockId, 'Lock ID');
+        const trimmedTokenId = requireValue(tokenId, 'Token ID');
+        const tokenInfo = await getTokenInfo(trimmedTokenId);
+        const queuedLockConfig = getQueuedLockCreateConfig(trimmedLockId);
+
+        if (queuedLockConfig) {
+            if (queuedLockConfig.supportedTokenIds.includes(trimmedTokenId)) {
+                return tokenInfo.id;
+            }
+
+            throw new Error(`Token ID "${trimmedTokenId}" is not configured for lock ${trimmedLockId}`);
+        }
+
+        const parsedLockId = getLockId(trimmedLockId);
+        if (!grpcClient) {
+            throw new Error('GRPC connection is not available');
+        }
+
+        let lock: Lock.Type;
+        try {
+            lock = await Lock.fromId(grpcClient, parsedLockId);
+        } catch {
+            throw new Error(`Lock ID "${trimmedLockId}" does not exist`);
+        }
+
+        const configuredTokens = lock.info.controller[LockController.Variant.SimpleV0].tokens;
+        if (configuredTokens.some((configuredToken) => configuredToken.value === tokenInfo.id.value)) {
+            return tokenInfo.id;
+        }
+
+        throw new Error(`Token ID "${trimmedTokenId}" is not configured for lock ${trimmedLockId}`);
     };
 
     const getEstimatedLockId = async () => {
@@ -165,6 +231,8 @@ export function useLocksApp() {
         getTokenInfo,
         getTokenDecimals,
         getLockId,
+        validateLockId,
+        validateLockTokenId,
         getEstimatedLockId,
         addOperation,
         connectedAccount,

@@ -4,6 +4,7 @@ import type {
     LockController,
     LockId,
     MetaUpdateOperation,
+    TokenId,
     TokenInfo,
 } from '@concordium/web-sdk';
 
@@ -22,6 +23,10 @@ export interface QueuedOperation {
     type: string;
     preview: PreviewField[];
     build: () => MetaUpdateOperation;
+    lockConfig?: {
+        lockId: string;
+        supportedTokenIds: string[];
+    };
 }
 
 export type AddOperation = (operation: Omit<QueuedOperation, 'id'>) => void;
@@ -32,6 +37,8 @@ export interface LookupContext {
     getTokenInfo: (tokenId: string) => Promise<TokenInfo>;
     getTokenDecimals: (tokenId: string) => Promise<number>;
     getLockId: (lockId: string) => LockId.Type;
+    validateLockId: (lockId: string) => Promise<LockId.Type>;
+    validateLockTokenId: (lockId: string, tokenId: string) => Promise<TokenId.Type>;
     getEstimatedLockId: () => Promise<string>;
     addOperation: AddOperation;
     connectedAccount?: string | null;

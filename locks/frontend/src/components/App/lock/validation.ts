@@ -2,7 +2,7 @@ import { parseError } from '../utils';
 
 import type { ControllerGrantForm, LookupContext } from '../types';
 
-const ASYNC_LOOKUP_VALIDATION_DEBOUNCE_MS = 1000;
+const ASYNC_LOOKUP_VALIDATION_DEBOUNCE_MS = 300;
 
 type ValidationResult = true | string;
 
@@ -43,16 +43,16 @@ const debounceAsyncValidation = <TValue>(
     };
 };
 
-export const lockIdValidation = (context: Pick<LookupContext, 'getLockId'>) => ({
+export const lockIdValidation = (context: Pick<LookupContext, 'validateLockId'>) => ({
     required: 'Lock ID is required',
-    validate: (value: string) => {
+    validate: debounceAsyncValidation(async (value: string) => {
         try {
-            context.getLockId(value);
+            await context.validateLockId(value);
             return true;
         } catch (caughtError) {
             return parseError(caughtError);
         }
-    },
+    }),
 });
 
 export const tokenIdExistsValidation = (context: Pick<LookupContext, 'getTokenInfo'>) => ({
@@ -60,6 +60,28 @@ export const tokenIdExistsValidation = (context: Pick<LookupContext, 'getTokenIn
     validate: debounceAsyncValidation(async (value: string) => {
         try {
             await context.getTokenInfo(value);
+            return true;
+        } catch (caughtError) {
+            return parseError(caughtError);
+        }
+    }),
+});
+
+export const lockTokenIdValidation = (
+    context: Pick<LookupContext, 'getLockId' | 'validateLockTokenId'>,
+    getLockIdValue: () => string,
+) => ({
+    required: 'Token ID is required',
+    validate: debounceAsyncValidation(async (value: string) => {
+        const lockId = getLockIdValue();
+
+        try {
+            if (!lockId.trim()) {
+                return true;
+            }
+
+            context.getLockId(lockId);
+            await context.validateLockTokenId(lockId, value);
             return true;
         } catch (caughtError) {
             return parseError(caughtError);

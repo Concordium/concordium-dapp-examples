@@ -17,7 +17,7 @@ import {
     toCborAccount,
     toTokenId,
 } from '../utils';
-import { accountExistsValidation, lockIdValidation, tokenIdExistsValidation } from './validation';
+import { accountExistsValidation, lockIdValidation, lockTokenIdValidation } from './validation';
 
 import type { LookupContext, Status } from '../types';
 
@@ -102,7 +102,7 @@ export function LockReturnForm({ context }: { context: LookupContext }) {
                 />
                 <TextInput
                     label="Token ID"
-                    registration={register('tokenId', tokenIdExistsValidation(context))}
+                    registration={register('tokenId', lockTokenIdValidation(context, () => getValues('lockId')))}
                     error={errors.tokenId?.message}
                 />
                 <TextInput
