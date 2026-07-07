@@ -9,7 +9,7 @@ jobs:
   release-locks-frontend:
     uses: concordium/.github/.github/workflows/docker-release-workflow.yaml@v1
     with:
-      SERVICE_NAME: rbac-frontend
+      SERVICE_NAME: locks-frontend
       BUILD_ARGS: |
         base_image=node:18-slim
       DOCKER_FILE_PATH: locks/frontend/Dockerfile
