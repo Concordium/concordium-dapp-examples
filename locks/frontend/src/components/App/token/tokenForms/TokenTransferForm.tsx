@@ -42,7 +42,7 @@ export function TokenTransferForm({ context }: TokenOperationFormProps) {
     const {
         register,
         handleSubmit,
-        formState: { errors },
+        formState: { errors, isSubmitting },
     } = useForm<TokenTransferState>({ defaultValues: blankTokenTransferState });
 
     const submit = handleSubmit(async (state) => {
@@ -103,7 +103,9 @@ export function TokenTransferForm({ context }: TokenOperationFormProps) {
                 />
                 <MemoInput registration={register('memo')} />
                 <ErrorMessage message={status.type === 'error' ? status.message : undefined} />
-                <SubmitButton loading={status.type === 'loading'}>Add</SubmitButton>
+                <SubmitButton loading={status.type === 'loading'} isSubmitting={isSubmitting}>
+                    Add
+                </SubmitButton>
             </Form>
         </FormCard>
     );

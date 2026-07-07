@@ -8,10 +8,12 @@ import { ErrorMessage } from '../components/ErrorMessage';
 import { MemoInput } from '../components/MemoInput';
 import { RepeatableTextList } from '../components/RepeatableTextList';
 import { RoleCheckboxes } from '../components/RoleCheckboxes';
+import { SubmitButton } from '../components/SubmitButton';
 import { TextInput } from '../components/TextInput';
 import { blankLockCreateState, LOCK_ROLES } from '../constants';
 import {
     commaList,
+    defaultStatus,
     expiryDateTimeToFutureMinutes,
     formatDateTimePreview,
     getCurrentDateTimeInputValue,
@@ -27,18 +29,18 @@ import {
     supportedTokenIdsExistValidation,
 } from './validation';
 
-import type { ControllerGrantForm, LockCreateState, LookupContext } from '../types';
+import type { ControllerGrantForm, LockCreateState, LookupContext, Status } from '../types';
 
 export function LockCreateForm({ context }: { context: LookupContext }) {
     const { connectedAccount, addOperation, getAccountInfo, getEstimatedLockId, getTokenInfo } = context;
-    const [error, setError] = useState('');
+    const [status, setStatus] = useState<Status>(defaultStatus);
     const {
         register,
         handleSubmit,
         watch,
         getValues,
         setValue,
-        formState: { errors },
+        formState: { errors, isSubmitting },
     } = useForm<LockCreateState>({
         defaultValues: blankLockCreateState(connectedAccount),
     });
@@ -98,7 +100,7 @@ export function LockCreateForm({ context }: { context: LookupContext }) {
     };
 
     const submit = handleSubmit(async (state) => {
-        setError('');
+        setStatus({ type: 'loading', message: 'Adding operation...' });
 
         try {
             const expiryMinutes = expiryDateTimeToFutureMinutes(state.expiryDate);
@@ -159,8 +161,10 @@ export function LockCreateForm({ context }: { context: LookupContext }) {
                     },
                 }),
             });
+
+            setStatus(defaultStatus);
         } catch (caughtError) {
-            setError(parseError(caughtError));
+            setStatus({ type: 'error', message: parseError(caughtError) });
         }
     });
 
@@ -294,8 +298,10 @@ export function LockCreateForm({ context }: { context: LookupContext }) {
                     <div className="lock-create-footer"></div>
 
                     <div className="lock-create-actions">
-                        <ErrorMessage message={error} />
-                        <Button type="submit">Add</Button>
+                        <ErrorMessage message={status.type === 'error' ? status.message : undefined} />
+                        <SubmitButton loading={status.type === 'loading'} isSubmitting={isSubmitting}>
+                            Add
+                        </SubmitButton>
                     </div>
                 </div>
             </Form>

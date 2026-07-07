@@ -39,7 +39,7 @@ export function TokenAmountOperationForm({ operation, context }: TokenAmountOper
     const {
         register,
         handleSubmit,
-        formState: { errors },
+        formState: { errors, isSubmitting },
     } = useForm<TokenAmountOperationState>({ defaultValues: blankTokenAmountOperationState });
 
     const submit = handleSubmit(async (state) => {
@@ -90,7 +90,9 @@ export function TokenAmountOperationForm({ operation, context }: TokenAmountOper
                     error={errors.amount?.message}
                 />
                 <ErrorMessage message={status.type === 'error' ? status.message : undefined} />
-                <SubmitButton loading={status.type === 'loading'}>Add</SubmitButton>
+                <SubmitButton loading={status.type === 'loading'} isSubmitting={isSubmitting}>
+                    Add
+                </SubmitButton>
             </Form>
         </FormCard>
     );

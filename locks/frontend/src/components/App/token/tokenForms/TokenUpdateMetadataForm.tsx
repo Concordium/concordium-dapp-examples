@@ -30,7 +30,7 @@ export function TokenUpdateMetadataForm({ context }: TokenOperationFormProps) {
     const {
         register,
         handleSubmit,
-        formState: { errors },
+        formState: { errors, isSubmitting },
     } = useForm<TokenUpdateMetadataState>({ defaultValues: blankTokenUpdateMetadataState });
 
     const submit = handleSubmit((state) => {
@@ -95,7 +95,9 @@ export function TokenUpdateMetadataForm({ context }: TokenOperationFormProps) {
                     error={errors.metadataChecksum?.message}
                 />
                 <ErrorMessage message={status.type === 'error' ? status.message : undefined} />
-                <SubmitButton loading={status.type === 'loading'}>Add</SubmitButton>
+                <SubmitButton loading={status.type === 'loading'} isSubmitting={isSubmitting}>
+                    Add
+                </SubmitButton>
             </Form>
         </FormCard>
     );

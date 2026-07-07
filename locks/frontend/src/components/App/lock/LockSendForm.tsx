@@ -46,7 +46,7 @@ export function LockSendForm({ context }: { context: LookupContext }) {
         handleSubmit,
         getValues,
         setValue,
-        formState: { errors },
+        formState: { errors, isSubmitting },
     } = useForm<LockSendState>({ defaultValues: blankLockSendState });
 
     useEffect(() => {
@@ -107,7 +107,10 @@ export function LockSendForm({ context }: { context: LookupContext }) {
                 />
                 <TextInput
                     label="Token ID"
-                    registration={register('tokenId', lockTokenIdValidation(context, () => getValues('lockId')))}
+                    registration={register(
+                        'tokenId',
+                        lockTokenIdValidation(context, () => getValues('lockId')),
+                    )}
                     error={errors.tokenId?.message}
                 />
                 <TextInput
@@ -132,7 +135,9 @@ export function LockSendForm({ context }: { context: LookupContext }) {
                 />
                 <MemoInput registration={register('memo')} />
                 <ErrorMessage message={status.type === 'error' ? status.message : undefined} />
-                <SubmitButton loading={status.type === 'loading'}>Add</SubmitButton>
+                <SubmitButton loading={status.type === 'loading'} isSubmitting={isSubmitting}>
+                    Add
+                </SubmitButton>
             </Form>
         </FormCard>
     );

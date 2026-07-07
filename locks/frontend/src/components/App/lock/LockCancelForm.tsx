@@ -28,7 +28,7 @@ export function LockCancelForm({ context }: { context: LookupContext }) {
     const {
         register,
         handleSubmit,
-        formState: { errors },
+        formState: { errors, isSubmitting },
     } = useForm<LockCancelState>({ defaultValues: blankLockCancelState });
 
     const submit = handleSubmit((state) => {
@@ -68,7 +68,9 @@ export function LockCancelForm({ context }: { context: LookupContext }) {
                 />
                 <MemoInput className="lock-memo" registration={register('memo')} />
                 <ErrorMessage message={status.type === 'error' ? status.message : undefined} />
-                <SubmitButton loading={status.type === 'loading'}>Add</SubmitButton>
+                <SubmitButton loading={status.type === 'loading'} isSubmitting={isSubmitting}>
+                    Add
+                </SubmitButton>
             </Form>
         </FormCard>
     );

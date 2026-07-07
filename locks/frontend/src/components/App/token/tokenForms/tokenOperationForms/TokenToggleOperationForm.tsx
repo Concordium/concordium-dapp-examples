@@ -26,7 +26,7 @@ export function TokenToggleOperationForm({ operation, context }: TokenToggleOper
     const {
         register,
         handleSubmit,
-        formState: { errors },
+        formState: { errors, isSubmitting },
     } = useForm<TokenToggleOperationState>({ defaultValues: { tokenId: '' } });
 
     const submit = handleSubmit(({ tokenId }) => {
@@ -61,7 +61,9 @@ export function TokenToggleOperationForm({ operation, context }: TokenToggleOper
                     error={errors.tokenId?.message}
                 />
                 <ErrorMessage message={status.type === 'error' ? status.message : undefined} />
-                <SubmitButton loading={status.type === 'loading'}>Add</SubmitButton>
+                <SubmitButton loading={status.type === 'loading'} isSubmitting={isSubmitting}>
+                    Add
+                </SubmitButton>
             </Form>
         </FormCard>
     );

@@ -38,7 +38,7 @@ export function TokenAdminRolesOperationForm({ operation, context }: TokenAdminR
         handleSubmit,
         setValue,
         watch,
-        formState: { errors },
+        formState: { errors, isSubmitting },
     } = useForm<TokenAdminRolesOperationState>({ defaultValues: blankTokenAdminRolesOperationState });
 
     const roles = watch('roles');
@@ -109,7 +109,9 @@ export function TokenAdminRolesOperationForm({ operation, context }: TokenAdminR
                     {errors.roles?.message && <div className="invalid-feedback d-block">{errors.roles.message}</div>}
                 </Form.Group>
                 <ErrorMessage message={status.type === 'error' ? status.message : undefined} />
-                <SubmitButton loading={status.type === 'loading'}>Add</SubmitButton>
+                <SubmitButton loading={status.type === 'loading'} isSubmitting={isSubmitting}>
+                    Add
+                </SubmitButton>
             </Form>
         </FormCard>
     );

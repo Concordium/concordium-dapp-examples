@@ -38,7 +38,7 @@ export function TokenTargetAccountOperationForm({ operation, context }: TokenTar
     const {
         register,
         handleSubmit,
-        formState: { errors },
+        formState: { errors, isSubmitting },
     } = useForm<TokenTargetAccountOperationState>({ defaultValues: blankTokenTargetAccountOperationState });
 
     const submit = handleSubmit((state) => {
@@ -83,7 +83,9 @@ export function TokenTargetAccountOperationForm({ operation, context }: TokenTar
                     error={errors.target?.message}
                 />
                 <ErrorMessage message={status.type === 'error' ? status.message : undefined} />
-                <SubmitButton loading={status.type === 'loading'}>Add</SubmitButton>
+                <SubmitButton loading={status.type === 'loading'} isSubmitting={isSubmitting}>
+                    Add
+                </SubmitButton>
             </Form>
         </FormCard>
     );

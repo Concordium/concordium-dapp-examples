@@ -132,7 +132,7 @@
 
 .connection-panel {
     display: grid;
-    grid-template-columns: minmax(16rem, 0.9fr) minmax(20rem, 1.65fr) minmax(12rem, 0.8fr);
+    grid-template-columns: 16rem auto;
     gap: 1.1rem;
     align-items: center;
     min-height: 4.15rem;
@@ -175,6 +175,7 @@
         color: $purple;
         font-size: 0.84rem;
         padding: 4px 0;
+        word-break: break-all;
     }
 }
 

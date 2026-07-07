@@ -2,69 +2,28 @@ import { parseError } from '../utils';
 
 import type { ControllerGrantForm, LookupContext } from '../types';
 
-const ASYNC_LOOKUP_VALIDATION_DEBOUNCE_MS = 300;
-
-type ValidationResult = true | string;
-
-const debounceAsyncValidation = <TValue>(
-    validate: (value: TValue) => Promise<ValidationResult>,
-    delay = ASYNC_LOOKUP_VALIDATION_DEBOUNCE_MS,
-) => {
-    let timeout: ReturnType<typeof setTimeout> | undefined;
-    let pendingResolve: ((result: ValidationResult) => void) | undefined;
-    let validationId = 0;
-
-    return (value: TValue) => {
-        validationId += 1;
-        const currentValidationId = validationId;
-
-        if (timeout) {
-            clearTimeout(timeout);
-            timeout = undefined;
-        }
-
-        pendingResolve?.(true);
-
-        return new Promise<ValidationResult>((resolve) => {
-            pendingResolve = resolve;
-            timeout = setTimeout(() => {
-                pendingResolve = undefined;
-                timeout = undefined;
-
-                void validate(value)
-                    .then((result) => {
-                        resolve(currentValidationId === validationId ? result : true);
-                    })
-                    .catch((caughtError) => {
-                        resolve(currentValidationId === validationId ? parseError(caughtError) : true);
-                    });
-            }, delay);
-        });
-    };
-};
-
 export const lockIdValidation = (context: Pick<LookupContext, 'validateLockId'>) => ({
     required: 'Lock ID is required',
-    validate: debounceAsyncValidation(async (value: string) => {
+    validate: async (value: string) => {
         try {
             await context.validateLockId(value);
             return true;
         } catch (caughtError) {
             return parseError(caughtError);
         }
-    }),
+    },
 });
 
 export const tokenIdExistsValidation = (context: Pick<LookupContext, 'getTokenInfo'>) => ({
     required: 'Token ID is required',
-    validate: debounceAsyncValidation(async (value: string) => {
+    validate: async (value: string) => {
         try {
             await context.getTokenInfo(value);
             return true;
         } catch (caughtError) {
             return parseError(caughtError);
         }
-    }),
+    },
 });
 
 export const lockTokenIdValidation = (
@@ -72,7 +31,7 @@ export const lockTokenIdValidation = (
     getLockIdValue: () => string,
 ) => ({
     required: 'Token ID is required',
-    validate: debounceAsyncValidation(async (value: string) => {
+    validate: async (value: string) => {
         const lockId = getLockIdValue();
 
         try {
@@ -86,11 +45,11 @@ export const lockTokenIdValidation = (
         } catch (caughtError) {
             return parseError(caughtError);
         }
-    }),
+    },
 });
 
 export const supportedTokenIdsExistValidation = (context: Pick<LookupContext, 'getTokenInfo'>) => ({
-    validate: debounceAsyncValidation(async (values: string[]) => {
+    validate: async (values: string[]) => {
         const tokenIds = values.map((value) => value.trim()).filter(Boolean);
         if (!tokenIds.length) {
             return 'At least one supported token is required';
@@ -102,7 +61,7 @@ export const supportedTokenIdsExistValidation = (context: Pick<LookupContext, 'g
         } catch (caughtError) {
             return parseError(caughtError);
         }
-    }),
+    },
 });
 
 export const accountExistsValidation = (context: Pick<LookupContext, 'getAccountInfo'>, label: string) => ({
@@ -122,7 +81,7 @@ export const accountListExistsValidation = (
     requiredMessage: string,
     shouldValidate = () => true,
 ) => ({
-    validate: debounceAsyncValidation(async (values: string[]) => {
+    validate: async (values: string[]) => {
         if (!shouldValidate()) {
             return true;
         }
@@ -138,11 +97,11 @@ export const accountListExistsValidation = (
         } catch (caughtError) {
             return parseError(caughtError);
         }
-    }),
+    },
 });
 
 export const controllerGrantAccountsExistValidation = (context: Pick<LookupContext, 'getAccountInfo'>) => ({
-    validate: debounceAsyncValidation(async (grants: ControllerGrantForm[]) => {
+    validate: async (grants: ControllerGrantForm[]) => {
         const accountValues = grants.map((grant) => grant.account.trim());
         const accounts = accountValues.filter(Boolean);
         if (!accounts.length) {
@@ -159,5 +118,5 @@ export const controllerGrantAccountsExistValidation = (context: Pick<LookupConte
         } catch (caughtError) {
             return parseError(caughtError);
         }
-    }),
+    },
 });
