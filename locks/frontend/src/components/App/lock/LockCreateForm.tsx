@@ -169,7 +169,7 @@ export function LockCreateForm({ context }: { context: LookupContext }) {
     });
 
     return (
-        <FormCard title="Create lock (LockCreate)" className="lock-create-card">
+        <FormCard title="LockCreate" className="lock-create-card">
             <Form onSubmit={submit}>
                 <div className="lock-create-grid">
                     <div className="lock-create-column">
