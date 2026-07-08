@@ -50,3 +50,5 @@ export const blankLockCreateState = (account?: string | null): LockCreateState =
     keepAlive: false,
     memo: '',
 });
+
+export const ESTIMATED_LOCK_ID_LABEL = 'Lock ID (estimated)';

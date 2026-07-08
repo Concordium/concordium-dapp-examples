@@ -20,6 +20,7 @@ function App() {
         submitStatus,
         transactionHash,
         operations,
+        showEstimatedLockIdWarning,
         context,
         connect,
         submit,
@@ -55,6 +56,7 @@ function App() {
                         grpcAvailable={Boolean(grpcClient)}
                         submitStatus={submitStatus}
                         transactionHash={transactionHash}
+                        showEstimatedLockIdWarning={showEstimatedLockIdWarning}
                         onRemove={removeOperation}
                         onSubmit={submit}
                     />

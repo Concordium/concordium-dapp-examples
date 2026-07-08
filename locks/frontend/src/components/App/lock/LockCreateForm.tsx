@@ -10,7 +10,7 @@ import { RepeatableTextList } from '../components/RepeatableTextList';
 import { RoleCheckboxes } from '../components/RoleCheckboxes';
 import { SubmitButton } from '../components/SubmitButton';
 import { TextInput } from '../components/TextInput';
-import { blankLockCreateState, LOCK_ROLES } from '../constants';
+import { blankLockCreateState, ESTIMATED_LOCK_ID_LABEL, LOCK_ROLES } from '../constants';
 import {
     commaList,
     defaultStatus,
@@ -142,7 +142,7 @@ export function LockCreateForm({ context }: { context: LookupContext }) {
                     supportedTokenIds,
                 },
                 preview: [
-                    { label: 'Lock ID (estimated)', value: estimatedLockId },
+                    { label: ESTIMATED_LOCK_ID_LABEL, value: estimatedLockId },
                     { label: 'Recipients', value: previewRecipients },
                     { label: 'Expires at', value: formatDateTimePreview(state.expiryDate) },
                     { label: 'Controller grants', value: previewGrants },

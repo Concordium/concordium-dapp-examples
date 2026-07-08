@@ -13,10 +13,13 @@ import {
     type TokenInfo,
 } from '@concordium/web-sdk';
 
-import { BLOCK_LIST } from '../constants';
+import { BLOCK_LIST, ESTIMATED_LOCK_ID_LABEL, LOCK_OPERATIONS } from '../constants';
 import { defaultStatus, parseError, requireValue } from '../utils';
 
 import type { AddOperation, BlockListedChain, LookupContext, QueuedOperation, Status } from '../types';
+
+const hasRelatedLockOperations = (queuedOperations: QueuedOperation[]) =>
+    queuedOperations.some((operation) => LOCK_OPERATIONS.some((lockOperation) => lockOperation === operation.type));
 
 export function useLocksApp() {
     const [provider, setProvider] = useState<WalletApi>();
@@ -28,6 +31,7 @@ export function useLocksApp() {
     const [submitStatus, setSubmitStatus] = useState<Status>(defaultStatus);
     const [transactionHash, setTransactionHash] = useState('');
     const [operations, setOperations] = useState<QueuedOperation[]>([]);
+    const [showEstimatedLockIdWarning, setShowEstimatedLockIdWarning] = useState(false);
     const [nextOperationId, setNextOperationId] = useState(1);
     const [tokenDecimalsCache, setTokenDecimalsCache] = useState<Record<string, number>>({});
 
@@ -211,7 +215,7 @@ export function useLocksApp() {
         throw new Error(`Token ID "${trimmedTokenId}" is not configured for lock ${trimmedLockId}`);
     };
 
-    const getEstimatedLockId = async () => {
+    const estimateLockId = async (creationOrder: number) => {
         if (!connectedAccount) {
             throw new Error('Connect Browser Wallet before estimating lock ID');
         }
@@ -220,9 +224,38 @@ export function useLocksApp() {
             throw new Error('GRPC connection is not available');
         }
 
-        const creationOrder = operations.filter((operation) => operation.type === 'LockCreate').length;
         const lockId = await LockId.fromAccount(grpcClient, AccountAddress.fromBase58(connectedAccount), creationOrder);
         return lockId.toString();
+    };
+
+    const getEstimatedLockId = async () => {
+        const creationOrder = operations.filter((operation) => operation.type === 'LockCreate').length;
+        return estimateLockId(creationOrder);
+    };
+
+    const recalculateEstimatedLockIds = async (queuedOperations: QueuedOperation[]) => {
+        let creationOrder = 0;
+        const recalculatedOperations: QueuedOperation[] = [];
+
+        for (const operation of queuedOperations) {
+            if (operation.type !== 'LockCreate') {
+                recalculatedOperations.push(operation);
+                continue;
+            }
+
+            const lockId = await estimateLockId(creationOrder);
+            creationOrder += 1;
+
+            recalculatedOperations.push({
+                ...operation,
+                lockConfig: operation.lockConfig ? { ...operation.lockConfig, lockId } : operation.lockConfig,
+                preview: operation.preview.map((field) =>
+                    field.label === ESTIMATED_LOCK_ID_LABEL ? { ...field, value: lockId } : field,
+                ),
+            });
+        }
+
+        return recalculatedOperations;
     };
 
     const context: LookupContext = {
@@ -255,14 +288,39 @@ export function useLocksApp() {
             const hash = await provider.sendTransaction(connectedAccount, AccountTransactionType.MetaUpdate, payload);
             setTransactionHash(hash);
             setOperations([]);
+            setShowEstimatedLockIdWarning(false);
             setSubmitStatus(defaultStatus);
         } catch (caughtError) {
             setSubmitStatus({ type: 'error', message: parseError(caughtError) });
         }
     };
 
-    const removeOperation = (id: number) => {
-        setOperations((current) => current.filter((operation) => operation.id !== id));
+    const removeOperation = async (id: number) => {
+        const removedOperation = operations.find((operation) => operation.id === id);
+        const remainingOperations = operations.filter((operation) => operation.id !== id);
+
+        if (
+            removedOperation?.type !== 'LockCreate' ||
+            !remainingOperations.some((operation) => operation.type === 'LockCreate')
+        ) {
+            setOperations(remainingOperations);
+            setShowEstimatedLockIdWarning(
+                (current) => current && remainingOperations.length > 0 && hasRelatedLockOperations(remainingOperations),
+            );
+            return;
+        }
+
+        try {
+            const recalculatedOperations = await recalculateEstimatedLockIds(remainingOperations);
+            setOperations(recalculatedOperations);
+            setShowEstimatedLockIdWarning(
+                recalculatedOperations.length > 0 && hasRelatedLockOperations(recalculatedOperations),
+            );
+        } catch (caughtError) {
+            setOperations(remainingOperations);
+            setShowEstimatedLockIdWarning(false);
+            setStatus({ type: 'error', message: parseError(caughtError) });
+        }
     };
 
     return {
@@ -275,6 +333,7 @@ export function useLocksApp() {
         submitStatus,
         transactionHash,
         operations,
+        showEstimatedLockIdWarning,
         context,
         connect,
         submit,

@@ -192,6 +192,17 @@
     }
 }
 
+.queue-status-warning {
+    background: rgba($yellow, 0.14);
+    border: 1px solid rgba($yellow, 0.36);
+    color: darken($yellow, 36%);
+
+    .queue-status-icon {
+        background: darken($yellow, 8%);
+        color: $dark-blue;
+    }
+}
+
 .queue-status-error {
     background: rgba($red, 0.09);
     border: 1px solid rgba($red, 0.22);
