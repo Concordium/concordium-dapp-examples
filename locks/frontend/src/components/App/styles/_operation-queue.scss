@@ -1,5 +1,17 @@
 .operation-queue {
     min-width: 0;
+
+    .locks-section-body {
+        padding: unset;
+
+        .queue-panel.card {
+            border: unset;
+
+            .card-body {
+                padding-top: 0.65rem;
+            }
+        }
+    }
 }
 
 .queue-panel {
@@ -16,7 +28,8 @@
     text-align: center;
 
     .btn {
-        min-height: 2.65rem;
+        max-width: 16rem;
+        margin: auto;
     }
 
     p {
