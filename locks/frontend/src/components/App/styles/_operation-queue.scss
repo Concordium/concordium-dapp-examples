@@ -1,35 +1,77 @@
 .operation-queue {
-    display: grid;
-    gap: 1rem;
-    align-content: start;
     min-width: 0;
+}
+
+.queue-panel {
+    .card-body {
+        display: grid;
+        gap: 0.8rem;
+        padding: 0.75rem;
+    }
+}
+
+.submit-panel {
+    display: grid;
+    gap: 0.55rem;
+    text-align: center;
+
+    .btn {
+        min-height: 2.65rem;
+    }
+
+    p {
+        color: rgba($dark-blue, 0.62);
+        font-size: 0.84rem;
+        margin: 0;
+    }
+}
+
+.queue-heading {
+    h2 {
+        color: $dark-blue;
+        font-size: 1rem;
+        font-weight: 700;
+        margin: 0;
+    }
 }
 
 .queue-list {
     display: grid;
-    gap: 0.75rem;
+    gap: 0.5rem;
 }
 
 .queue-card {
+    box-shadow: none !important;
+
+    .card-body {
+        padding: 0.62rem 0.7rem;
+    }
+
     .card-body {
         display: block;
     }
 
     dl {
         display: grid;
-        gap: 0.5rem;
+        gap: 0.36rem;
         margin: 0;
+    }
+
+    dl > div {
+        display: grid;
+        grid-template-columns: minmax(7rem, 0.72fr) minmax(0, 1fr);
+        gap: 0.6rem;
     }
 
     dt {
         color: rgba($dark-blue, 0.58);
-        font-size: 0.8rem;
+        font-size: 0.73rem;
         font-weight: 600;
     }
 
     dd {
         color: $dark-blue;
-        font-size: 0.92rem;
+        font-size: 0.8rem;
         margin: 0;
         overflow-wrap: anywhere;
         white-space: pre-wrap;
@@ -38,21 +80,136 @@
 
 .queue-card-header {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 0.75rem;
+    gap: 0.75rem;
+    margin-bottom: 0.55rem;
 
     .card-title {
         color: $dark-blue;
-        font-size: 1rem;
+        font-size: 0.9rem;
         font-weight: 700;
         margin: 0;
     }
 
     .btn {
-        min-width: 2rem;
+        font-size: 0.76rem;
+        min-height: 1.8rem;
+        min-width: 1.8rem;
         padding-left: 0;
         padding-right: 0;
+    }
+}
+
+.queue-title {
+    align-items: center;
+    display: flex;
+    gap: 0.55rem;
+    min-width: 0;
+}
+
+.queue-index {
+    align-items: center;
+    background: rgba($green, 0.12);
+    border: 1px solid rgba($green, 0.24);
+    border-radius: 0.28rem;
+    color: darken($green, 18%);
+    display: inline-flex;
+    flex: 0 0 auto;
+    font-size: 0.78rem;
+    font-weight: 800;
+    height: 1.55rem;
+    justify-content: center;
+    width: 1.55rem;
+}
+
+.queue-card-empty {
+    p {
+        color: rgba($dark-blue, 0.58);
+        font-size: 0.82rem;
+        margin: 0;
+    }
+}
+
+.transaction-hash {
+    span {
+        display: block;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+    }
+}
+
+.queue-status {
+    align-items: center;
+    border-radius: 0.5rem;
+    display: grid;
+    gap: 0.7rem;
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: 0.75rem 0.85rem;
+
+    h3 {
+        font-size: 0.92rem;
+        font-weight: 800;
+        margin: 0 0 0.18rem;
+    }
+
+    p {
+        font-size: 0.82rem;
+        margin: 0;
+    }
+}
+
+.queue-status-icon {
+    align-items: center;
+    border-radius: 50%;
+    display: inline-flex;
+    font-size: 0.82rem;
+    font-weight: 800;
+    height: 1.45rem;
+    justify-content: center;
+    width: 1.45rem;
+}
+
+.queue-status-success {
+    background: rgba($green, 0.1);
+    border: 1px solid rgba($green, 0.26);
+    color: darken($green, 24%);
+
+    .queue-status-icon {
+        background: $green;
+        color: $white;
+    }
+}
+
+.queue-status-muted {
+    background: rgba($dark-blue, 0.045);
+    border: 1px solid rgba($dark-blue, 0.1);
+    color: rgba($dark-blue, 0.78);
+
+    .queue-status-icon {
+        background: rgba($dark-blue, 0.12);
+        color: rgba($dark-blue, 0.65);
+    }
+}
+
+.queue-status-warning {
+    background: rgba($yellow, 0.14);
+    border: 1px solid rgba($yellow, 0.36);
+    color: darken($yellow, 36%);
+
+    .queue-status-icon {
+        background: darken($yellow, 8%);
+        color: $dark-blue;
+    }
+}
+
+.queue-status-error {
+    background: rgba($red, 0.09);
+    border: 1px solid rgba($red, 0.22);
+    color: darken($red, 18%);
+
+    .queue-status-icon {
+        background: $red;
+        color: $white;
     }
 }

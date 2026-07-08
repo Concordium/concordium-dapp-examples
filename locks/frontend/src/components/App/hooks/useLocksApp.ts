@@ -1,19 +1,25 @@
 import { useEffect, useState } from 'react';
 import { detectConcordiumProvider, WalletApi } from '@concordium/browser-wallet-api-helpers';
 import {
+    AccountAddress,
+    type AccountInfo,
     AccountTransactionType,
     ConcordiumGRPCClient,
     createMetaUpdatePayload,
     Lock,
+    LockController,
     LockId,
-    Token,
     TokenId,
+    type TokenInfo,
 } from '@concordium/web-sdk';
 
-import { BLOCK_LIST } from '../constants';
+import { BLOCK_LIST, ESTIMATED_LOCK_ID_LABEL, LOCK_OPERATIONS } from '../constants';
 import { defaultStatus, parseError, requireValue } from '../utils';
 
 import type { AddOperation, BlockListedChain, LookupContext, QueuedOperation, Status } from '../types';
+
+const hasRelatedLockOperations = (queuedOperations: QueuedOperation[]) =>
+    queuedOperations.some((operation) => LOCK_OPERATIONS.some((lockOperation) => lockOperation === operation.type));
 
 export function useLocksApp() {
     const [provider, setProvider] = useState<WalletApi>();
@@ -25,9 +31,9 @@ export function useLocksApp() {
     const [submitStatus, setSubmitStatus] = useState<Status>(defaultStatus);
     const [transactionHash, setTransactionHash] = useState('');
     const [operations, setOperations] = useState<QueuedOperation[]>([]);
+    const [showEstimatedLockIdWarning, setShowEstimatedLockIdWarning] = useState(false);
     const [nextOperationId, setNextOperationId] = useState(1);
     const [tokenDecimalsCache, setTokenDecimalsCache] = useState<Record<string, number>>({});
-    const [lockIdCache, setLockIdCache] = useState<Record<string, LockId.Type>>({});
 
     useEffect(() => {
         detectConcordiumProvider(5000)
@@ -81,6 +87,7 @@ export function useLocksApp() {
     const connect = async () => {
         try {
             setStatus({ type: 'loading', message: 'Connecting wallet...' });
+            await provider?.requestAccounts();
             const account = await provider?.connect();
             setConnectedAccount(account);
             setStatus(defaultStatus);
@@ -95,6 +102,38 @@ export function useLocksApp() {
         setTransactionHash('');
     };
 
+    const getAccountInfo = async (account: string): Promise<AccountInfo> => {
+        const trimmedAccount = requireValue(account, 'Account');
+
+        let address: AccountAddress.Type;
+        try {
+            address = AccountAddress.fromBase58(trimmedAccount);
+        } catch {
+            throw new Error('Account address is invalid');
+        }
+
+        if (!grpcClient) {
+            throw new Error('GRPC connection is not available');
+        }
+
+        return grpcClient.getAccountInfo(address);
+    };
+
+    const getTokenInfo = async (tokenId: string): Promise<TokenInfo> => {
+        const trimmedTokenId = requireValue(tokenId, 'Token ID');
+
+        if (!grpcClient) {
+            throw new Error('GRPC connection is not available');
+        }
+
+        const tokenInfo = await grpcClient.getTokenInfo(TokenId.fromString(trimmedTokenId));
+        if (!tokenInfo) {
+            throw new Error(`Token ID "${trimmedTokenId}" does not exist`);
+        }
+
+        return tokenInfo;
+    };
+
     const getTokenDecimals = async (tokenId: string) => {
         const trimmedTokenId = requireValue(tokenId, 'Token ID');
         const cached = tokenDecimalsCache[trimmedTokenId];
@@ -102,36 +141,132 @@ export function useLocksApp() {
             return cached;
         }
 
-        if (!grpcClient) {
-            throw new Error('GRPC connection is not available');
-        }
-
-        const token = await Token.fromId(grpcClient, TokenId.fromString(trimmedTokenId));
-        const decimals = token.info.state.decimals;
+        const decimals = (await getTokenInfo(trimmedTokenId)).state.decimals;
         setTokenDecimalsCache((current) => ({ ...current, [trimmedTokenId]: decimals }));
         return decimals;
     };
 
-    const getLockId = async (lockId: string) => {
+    const getLockId = (lockId: string) => {
         const trimmedLockId = requireValue(lockId, 'Lock ID');
-        const cached = lockIdCache[trimmedLockId];
-        if (cached) {
-            return cached;
+
+        try {
+            return LockId.fromString(trimmedLockId);
+        } catch {
+            throw new Error('Lock ID is invalid');
+        }
+    };
+
+    const getQueuedLockCreateConfig = (trimmedLockId: string) =>
+        operations.find(
+            (operation) => operation.type === 'LockCreate' && operation.lockConfig?.lockId === trimmedLockId,
+        )?.lockConfig;
+
+    const validateLockId = async (lockId: string) => {
+        const trimmedLockId = requireValue(lockId, 'Lock ID');
+        const parsedLockId = getLockId(trimmedLockId);
+
+        if (getQueuedLockCreateConfig(trimmedLockId)) {
+            return parsedLockId;
         }
 
         if (!grpcClient) {
             throw new Error('GRPC connection is not available');
         }
 
-        const lock = await Lock.fromId(grpcClient, LockId.fromString(trimmedLockId));
-        setLockIdCache((current) => ({ ...current, [trimmedLockId]: lock.info.lock }));
-        return lock.info.lock;
+        try {
+            await Lock.fromId(grpcClient, parsedLockId);
+            return parsedLockId;
+        } catch {
+            throw new Error(`Lock ID "${trimmedLockId}" does not exist`);
+        }
+    };
+
+    const validateLockTokenId = async (lockId: string, tokenId: string) => {
+        const trimmedLockId = requireValue(lockId, 'Lock ID');
+        const trimmedTokenId = requireValue(tokenId, 'Token ID');
+        const tokenInfo = await getTokenInfo(trimmedTokenId);
+        const queuedLockConfig = getQueuedLockCreateConfig(trimmedLockId);
+
+        if (queuedLockConfig) {
+            if (queuedLockConfig.supportedTokenIds.includes(trimmedTokenId)) {
+                return tokenInfo.id;
+            }
+
+            throw new Error(`Token ID "${trimmedTokenId}" is not configured for lock ${trimmedLockId}`);
+        }
+
+        const parsedLockId = getLockId(trimmedLockId);
+        if (!grpcClient) {
+            throw new Error('GRPC connection is not available');
+        }
+
+        let lock: Lock.Type;
+        try {
+            lock = await Lock.fromId(grpcClient, parsedLockId);
+        } catch {
+            throw new Error(`Lock ID "${trimmedLockId}" does not exist`);
+        }
+
+        const configuredTokens = lock.info.controller[LockController.Variant.SimpleV0].tokens;
+        if (configuredTokens.some((configuredToken) => configuredToken.value === tokenInfo.id.value)) {
+            return tokenInfo.id;
+        }
+
+        throw new Error(`Token ID "${trimmedTokenId}" is not configured for lock ${trimmedLockId}`);
+    };
+
+    const estimateLockId = async (creationOrder: number) => {
+        if (!connectedAccount) {
+            throw new Error('Connect Browser Wallet before estimating lock ID');
+        }
+
+        if (!grpcClient) {
+            throw new Error('GRPC connection is not available');
+        }
+
+        const lockId = await LockId.fromAccount(grpcClient, AccountAddress.fromBase58(connectedAccount), creationOrder);
+        return lockId.toString();
+    };
+
+    const getEstimatedLockId = async () => {
+        const creationOrder = operations.filter((operation) => operation.type === 'LockCreate').length;
+        return estimateLockId(creationOrder);
+    };
+
+    const recalculateEstimatedLockIds = async (queuedOperations: QueuedOperation[]) => {
+        let creationOrder = 0;
+        const recalculatedOperations: QueuedOperation[] = [];
+
+        for (const operation of queuedOperations) {
+            if (operation.type !== 'LockCreate') {
+                recalculatedOperations.push(operation);
+                continue;
+            }
+
+            const lockId = await estimateLockId(creationOrder);
+            creationOrder += 1;
+
+            recalculatedOperations.push({
+                ...operation,
+                lockConfig: operation.lockConfig ? { ...operation.lockConfig, lockId } : operation.lockConfig,
+                preview: operation.preview.map((field) =>
+                    field.label === ESTIMATED_LOCK_ID_LABEL ? { ...field, value: lockId } : field,
+                ),
+            });
+        }
+
+        return recalculatedOperations;
     };
 
     const context: LookupContext = {
         grpcClient,
+        getAccountInfo,
+        getTokenInfo,
         getTokenDecimals,
         getLockId,
+        validateLockId,
+        validateLockTokenId,
+        getEstimatedLockId,
         addOperation,
         connectedAccount,
     };
@@ -152,14 +287,40 @@ export function useLocksApp() {
             const payload = createMetaUpdatePayload(operations.map((operation) => operation.build()));
             const hash = await provider.sendTransaction(connectedAccount, AccountTransactionType.MetaUpdate, payload);
             setTransactionHash(hash);
+            setOperations([]);
+            setShowEstimatedLockIdWarning(false);
             setSubmitStatus(defaultStatus);
         } catch (caughtError) {
             setSubmitStatus({ type: 'error', message: parseError(caughtError) });
         }
     };
 
-    const removeOperation = (id: number) => {
-        setOperations((current) => current.filter((operation) => operation.id !== id));
+    const removeOperation = async (id: number) => {
+        const removedOperation = operations.find((operation) => operation.id === id);
+        const remainingOperations = operations.filter((operation) => operation.id !== id);
+
+        if (
+            removedOperation?.type !== 'LockCreate' ||
+            !remainingOperations.some((operation) => operation.type === 'LockCreate')
+        ) {
+            setOperations(remainingOperations);
+            setShowEstimatedLockIdWarning(
+                (current) => current && remainingOperations.length > 0 && hasRelatedLockOperations(remainingOperations),
+            );
+            return;
+        }
+
+        try {
+            const recalculatedOperations = await recalculateEstimatedLockIds(remainingOperations);
+            setOperations(recalculatedOperations);
+            setShowEstimatedLockIdWarning(
+                recalculatedOperations.length > 0 && hasRelatedLockOperations(recalculatedOperations),
+            );
+        } catch (caughtError) {
+            setOperations(remainingOperations);
+            setShowEstimatedLockIdWarning(false);
+            setStatus({ type: 'error', message: parseError(caughtError) });
+        }
     };
 
     return {
@@ -172,6 +333,7 @@ export function useLocksApp() {
         submitStatus,
         transactionHash,
         operations,
+        showEstimatedLockIdWarning,
         context,
         connect,
         submit,

@@ -4,7 +4,16 @@ import type { Status } from './types';
 
 export const defaultStatus: Status = { type: 'idle', message: '' };
 
-export const parseError = (error: unknown) => (error instanceof Error ? error.message : String(error));
+const decodeErrorMessage = (message: string) => {
+    try {
+        return decodeURIComponent(message);
+    } catch {
+        return message;
+    }
+};
+
+export const parseError = (error: unknown) =>
+    decodeErrorMessage(error instanceof Error ? error.message : String(error));
 
 export const requireValue = (value: string, label: string) => {
     const trimmed = value.trim();
@@ -54,3 +63,40 @@ export const operationTitle = (operationType: string) =>
         .split(/(?=[A-Z])/)
         .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
         .join(' ');
+
+const toDateTimeInputValue = (date: Date) => {
+    const pad = (value: number) => value.toString().padStart(2, '0');
+
+    return (
+        [date.getFullYear(), pad(date.getMonth() + 1), pad(date.getDate())].join('-') +
+        `T${pad(date.getHours())}:${pad(date.getMinutes())}`
+    );
+};
+
+export const getCurrentDateTimeInputValue = () => toDateTimeInputValue(new Date());
+
+export const expiryDateTimeToFutureMinutes = (dateTimeValue: string) => {
+    const expiryDateTime = requireValue(dateTimeValue, 'Expiry date and time');
+    const expiryTime = new Date(expiryDateTime).getTime();
+
+    if (Number.isNaN(expiryTime)) {
+        throw new Error('Expiry date and time must be valid');
+    }
+
+    const minutes = Math.ceil((expiryTime - Date.now()) / 60000);
+    if (!Number.isFinite(minutes) || minutes <= 0) {
+        throw new Error('Expiry date and time must be in the future');
+    }
+
+    return minutes;
+};
+
+export const formatDateTimePreview = (dateTimeValue: string) => dateTimeValue.replace('T', ' ');
+
+export const shortenValue = (value: string, head = 10, tail = 6) => {
+    if (value.length <= head + tail + 3) {
+        return value;
+    }
+
+    return `${value.slice(0, head)}...${value.slice(-tail)}`;
+};

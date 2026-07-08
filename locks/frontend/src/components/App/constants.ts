@@ -1,6 +1,7 @@
 import { LockController, TokenAdminRole, TokenOperationType } from '@concordium/web-sdk';
 
-import type { BlockListedChain, LockOperation, LockCreateState } from './types';
+import type { BlockListedChain, LockCreateState, LockOperation } from './types';
+import { getCurrentDateTimeInputValue } from './utils';
 
 export const BLOCK_LIST: BlockListedChain[] = [
     {
@@ -20,7 +21,7 @@ export const LOCK_OPERATIONS: LockOperation[] = ['LockCancel', 'LockFund', 'Lock
 
 export const TOKEN_ADMIN_ROLES = Object.values(TokenAdminRole);
 
-export const TOKEN_OPERATIONS = [
+export const TOKEN_GENERAL_OPERATIONS = [
     TokenOperationType.Transfer,
     TokenOperationType.UpdateMetadata,
     TokenOperationType.Mint,
@@ -31,14 +32,14 @@ export const TOKEN_OPERATIONS = [
     TokenOperationType.RemoveDenyList,
     TokenOperationType.Pause,
     TokenOperationType.Unpause,
-    TokenOperationType.AssignAdminRoles,
-    TokenOperationType.RevokeAdminRoles,
 ];
+
+export const TOKEN_ADMIN_OPERATIONS = [TokenOperationType.AssignAdminRoles, TokenOperationType.RevokeAdminRoles];
 
 export const blankLockCreateState = (account?: string | null): LockCreateState => ({
     anyRecipient: false,
     recipients: [''],
-    expiryMinutes: '15',
+    expiryDate: getCurrentDateTimeInputValue(),
     controllerGrants: [
         {
             account: account ?? '',
@@ -49,3 +50,5 @@ export const blankLockCreateState = (account?: string | null): LockCreateState =
     keepAlive: false,
     memo: '',
 });
+
+export const ESTIMATED_LOCK_ID_LABEL = 'Lock ID (estimated)';

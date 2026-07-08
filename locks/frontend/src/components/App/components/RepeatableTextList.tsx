@@ -22,7 +22,7 @@ export function RepeatableTextList({
     };
 
     return (
-        <Form.Group className="mb-3">
+        <Form.Group className="mb-3 token-row">
             <Form.Label>{label}</Form.Label>
             <div className="repeatable-list">
                 {values.map((value, index) => (

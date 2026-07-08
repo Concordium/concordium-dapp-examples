@@ -1,82 +1,113 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button, Form } from 'react-bootstrap';
 import { CborEpoch, LockController, MetaUpdateOperationType, TransactionExpiry } from '@concordium/web-sdk';
+import { useForm } from 'react-hook-form';
 
 import { FormCard } from '../components/FormCard';
 import { ErrorMessage } from '../components/ErrorMessage';
 import { MemoInput } from '../components/MemoInput';
 import { RepeatableTextList } from '../components/RepeatableTextList';
 import { RoleCheckboxes } from '../components/RoleCheckboxes';
+import { SubmitButton } from '../components/SubmitButton';
 import { TextInput } from '../components/TextInput';
-import { blankLockCreateState, LOCK_ROLES } from '../constants';
-import { commaList, operationTitle, optionalMemo, parseError, requireValue, toCborAccount, toTokenId } from '../utils';
-import { LockCreateSubsection } from './LockCreateSubsection';
+import { blankLockCreateState, ESTIMATED_LOCK_ID_LABEL, LOCK_ROLES } from '../constants';
+import {
+    commaList,
+    defaultStatus,
+    expiryDateTimeToFutureMinutes,
+    formatDateTimePreview,
+    getCurrentDateTimeInputValue,
+    operationTitle,
+    optionalMemo,
+    parseError,
+    toCborAccount,
+    toTokenId,
+} from '../utils';
+import {
+    accountListExistsValidation,
+    controllerGrantAccountsExistValidation,
+    supportedTokenIdsExistValidation,
+} from './validation';
 
-import type { ControllerGrantForm, LookupContext } from '../types';
+import type { ControllerGrantForm, LockCreateState, LookupContext, Status } from '../types';
 
-export function LockCreateForm({
-    connectedAccount,
-    addOperation,
-}: Pick<LookupContext, 'connectedAccount' | 'addOperation'>) {
-    const [state, setState] = useState(() => blankLockCreateState(connectedAccount));
-    const [error, setError] = useState('');
+export function LockCreateForm({ context }: { context: LookupContext }) {
+    const { connectedAccount, addOperation, getAccountInfo, getEstimatedLockId, getTokenInfo } = context;
+    const [status, setStatus] = useState<Status>(defaultStatus);
+    const {
+        register,
+        handleSubmit,
+        watch,
+        getValues,
+        setValue,
+        formState: { errors, isSubmitting },
+    } = useForm<LockCreateState>({
+        defaultValues: blankLockCreateState(connectedAccount),
+    });
+
+    const state = watch();
 
     useEffect(() => {
-        setState((current) => {
-            const firstGrant = current.controllerGrants[0];
-            if (!connectedAccount || firstGrant?.account) {
-                return current;
-            }
+        register(
+            'recipients',
+            accountListExistsValidation(
+                { getAccountInfo },
+                'At least one recipient account is required',
+                () => !getValues('anyRecipient'),
+            ),
+        );
+        register('controllerGrants', controllerGrantAccountsExistValidation({ getAccountInfo }));
+        register('supportedTokens', supportedTokenIdsExistValidation({ getTokenInfo }));
+    }, [getAccountInfo, getTokenInfo, getValues, register]);
 
-            return {
-                ...current,
-                controllerGrants: [
-                    { account: connectedAccount, roles: [...LOCK_ROLES] },
-                    ...current.controllerGrants.slice(1),
-                ],
-            };
-        });
-    }, [connectedAccount]);
+    useEffect(() => {
+        const controllerGrants = getValues('controllerGrants');
+        const firstGrant = controllerGrants[0];
+        if (!connectedAccount || firstGrant?.account) {
+            return;
+        }
+
+        setValue(
+            'controllerGrants',
+            [{ account: connectedAccount, roles: [...LOCK_ROLES] }, ...controllerGrants.slice(1)],
+            { shouldDirty: true, shouldValidate: true },
+        );
+    }, [connectedAccount, getValues, setValue]);
 
     const updateGrant = (index: number, grant: ControllerGrantForm) => {
-        setState((current) => ({
-            ...current,
-            controllerGrants: current.controllerGrants.map((item, currentIndex) =>
-                currentIndex === index ? grant : item,
-            ),
-        }));
+        setValue(
+            'controllerGrants',
+            state.controllerGrants.map((item, currentIndex) => (currentIndex === index ? grant : item)),
+            { shouldDirty: true, shouldValidate: true },
+        );
     };
 
     const addGrant = () => {
-        setState((current) => ({
-            ...current,
-            controllerGrants: [...current.controllerGrants, { account: '', roles: [] }],
-        }));
+        setValue('controllerGrants', [...state.controllerGrants, { account: '', roles: [] }], {
+            shouldDirty: true,
+            shouldValidate: true,
+        });
     };
 
     const removeGrant = (index: number) => {
-        setState((current) => ({
-            ...current,
-            controllerGrants:
-                current.controllerGrants.length === 1
-                    ? [{ account: '', roles: [] }]
-                    : current.controllerGrants.filter((_, currentIndex) => currentIndex !== index),
-        }));
+        setValue(
+            'controllerGrants',
+            state.controllerGrants.length === 1
+                ? [{ account: '', roles: [] }]
+                : state.controllerGrants.filter((_, currentIndex) => currentIndex !== index),
+            { shouldDirty: true, shouldValidate: true },
+        );
     };
 
-    const submit = (event: FormEvent) => {
-        event.preventDefault();
-        setError('');
+    const submit = handleSubmit(async (state) => {
+        setStatus({ type: 'loading', message: 'Adding operation...' });
 
         try {
-            const expiryMinutes = Number(requireValue(state.expiryMinutes, 'Expire in minutes'));
-            if (!Number.isFinite(expiryMinutes) || expiryMinutes <= 0) {
-                throw new Error('Expire in minutes must be a positive number');
-            }
+            const expiryMinutes = expiryDateTimeToFutureMinutes(state.expiryDate);
+            const estimatedLockId = await getEstimatedLockId();
 
-            const recipients = state.anyRecipient
-                ? 'any'
-                : state.recipients.map((recipient) => toCborAccount(recipient)).filter(Boolean);
+            const recipientAccounts = state.recipients.map((recipient) => recipient.trim()).filter(Boolean);
+            const recipients = state.anyRecipient ? 'any' : recipientAccounts.map(toCborAccount);
 
             if (!state.anyRecipient && recipients.length === 0) {
                 throw new Error('At least one recipient is required');
@@ -93,23 +124,29 @@ export function LockCreateForm({
                 };
             });
 
-            const supportedTokens = state.supportedTokens.map(toTokenId);
+            const supportedTokenIds = state.supportedTokens.map((tokenId) => tokenId.trim()).filter(Boolean);
+            const supportedTokens = supportedTokenIds.map(toTokenId);
             if (!supportedTokens.length) {
                 throw new Error('At least one supported token is required');
             }
 
-            const previewRecipients = state.anyRecipient ? 'any' : commaList(state.recipients);
+            const previewRecipients = state.anyRecipient ? 'any' : commaList(recipientAccounts);
             const previewGrants = state.controllerGrants
-                .map((grant) => `${grant.account || '-'}: \n${grant.roles.map(operationTitle).join(', ') || '-'}`)
+                .map((grant) => `${grant.account || '-'}\n(${grant.roles.map(operationTitle).join(', ') || '-'})`)
                 .join('\n; ');
 
             addOperation({
                 type: 'LockCreate',
+                lockConfig: {
+                    lockId: estimatedLockId,
+                    supportedTokenIds,
+                },
                 preview: [
+                    { label: ESTIMATED_LOCK_ID_LABEL, value: estimatedLockId },
                     { label: 'Recipients', value: previewRecipients },
-                    { label: 'Expire in minutes', value: state.expiryMinutes },
+                    { label: 'Expires at', value: formatDateTimePreview(state.expiryDate) },
                     { label: 'Controller grants', value: previewGrants },
-                    { label: 'Supported tokens', value: commaList(state.supportedTokens) },
+                    { label: 'Supported tokens', value: commaList(supportedTokenIds) },
                     { label: 'Keep alive', value: state.keepAlive ? 'Yes' : 'No' },
                     { label: 'Memo', value: state.memo || '-' },
                 ],
@@ -124,113 +161,147 @@ export function LockCreateForm({
                     },
                 }),
             });
+
+            setStatus(defaultStatus);
         } catch (caughtError) {
-            setError(parseError(caughtError));
+            setStatus({ type: 'error', message: parseError(caughtError) });
         }
-    };
+    });
 
     return (
         <FormCard title="LockCreate" className="lock-create-card">
             <Form onSubmit={submit}>
-                <div className="lock-create-stack">
-                    <LockCreateSubsection title="Recipients">
-                        <div className="recipient-mode-toggle" role="group" aria-label="Recipient mode">
-                            <Button
-                                type="button"
-                                variant={state.anyRecipient ? 'outline-secondary' : 'secondary'}
-                                onClick={() => setState((current) => ({ ...current, anyRecipient: false }))}
-                            >
-                                Specific recipients
-                            </Button>
-                            <Button
-                                type="button"
-                                variant={state.anyRecipient ? 'secondary' : 'outline-secondary'}
-                                onClick={() => setState((current) => ({ ...current, anyRecipient: true }))}
-                            >
-                                Any recipient
-                            </Button>
-                        </div>
-                        {!state.anyRecipient && (
+                <div className="lock-create-grid">
+                    <div className="lock-create-column">
+                        <section className="lock-create-group">
+                            <h4>Recipients</h4>
+                            <Form.Check
+                                id="any-recipient"
+                                label="Any recipient"
+                                checked={state.anyRecipient}
+                                onChange={(event) =>
+                                    setValue('anyRecipient', event.target.checked, {
+                                        shouldDirty: true,
+                                        shouldValidate: true,
+                                    })
+                                }
+                            />
                             <RepeatableTextList
                                 label="Recipient accounts"
                                 values={state.recipients}
                                 placeholder="Account address"
-                                onChange={(recipients) => setState((current) => ({ ...current, recipients }))}
+                                disabled={state.anyRecipient}
+                                onChange={(recipients) =>
+                                    setValue('recipients', recipients, { shouldDirty: true, shouldValidate: true })
+                                }
                             />
-                        )}
-                    </LockCreateSubsection>
+                            {errors.recipients?.message && (
+                                <div className="invalid-feedback d-block">{errors.recipients.message}</div>
+                            )}
+                        </section>
 
-                    <LockCreateSubsection title="Controllers">
-                        <div className="controller-list">
-                            {state.controllerGrants.map((grant, index) => (
-                                <div key={index} className="controller-row">
-                                    <div className="repeatable-row">
-                                        <Form.Control
-                                            value={grant.account}
-                                            placeholder="Controller account"
-                                            onChange={(event) =>
-                                                updateGrant(index, { ...grant, account: event.target.value })
-                                            }
+                        <section className="lock-create-group">
+                            <h4>Controllers</h4>
+                            <div className="controller-list">
+                                {state.controllerGrants.map((grant, index) => (
+                                    <div key={index} className="controller-row">
+                                        <Form.Label>Controller account</Form.Label>
+                                        <div className="repeatable-row">
+                                            <Form.Control
+                                                value={grant.account}
+                                                placeholder="Controller account"
+                                                onChange={(event) =>
+                                                    updateGrant(index, { ...grant, account: event.target.value })
+                                                }
+                                            />
+                                            <Button type="button" variant="outline-secondary" onClick={addGrant}>
+                                                +
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                variant="outline-secondary"
+                                                onClick={() => removeGrant(index)}
+                                            >
+                                                -
+                                            </Button>
+                                        </div>
+                                        <Form.Label className="mt-2">Account roles</Form.Label>
+                                        <RoleCheckboxes
+                                            className="controller-roles"
+                                            roles={LOCK_ROLES}
+                                            selected={grant.roles}
+                                            name={`lock-role-${index}`}
+                                            onChange={(roles) => updateGrant(index, { ...grant, roles })}
                                         />
-                                        <Button type="button" variant="outline-secondary" onClick={addGrant}>
-                                            +
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            variant="outline-secondary"
-                                            onClick={() => removeGrant(index)}
-                                        >
-                                            -
-                                        </Button>
                                     </div>
-                                    <RoleCheckboxes
-                                        className="controller-roles"
-                                        roles={LOCK_ROLES}
-                                        selected={grant.roles}
-                                        name={`lock-role-${index}`}
-                                        onChange={(roles) => updateGrant(index, { ...grant, roles })}
-                                    />
-                                </div>
-                            ))}
-                        </div>
-                    </LockCreateSubsection>
+                                ))}
+                            </div>
+                            {errors.controllerGrants?.message && (
+                                <div className="invalid-feedback d-block">{errors.controllerGrants.message}</div>
+                            )}
+                        </section>
+                    </div>
 
-                    <LockCreateSubsection title="Supported tokens">
-                        <RepeatableTextList
-                            label="Token IDs"
-                            values={state.supportedTokens}
-                            placeholder="Token ID"
-                            onChange={(supportedTokens) => setState((current) => ({ ...current, supportedTokens }))}
-                        />
-                    </LockCreateSubsection>
-
-                    <LockCreateSubsection title="Options">
-                        <div className="lock-options-row">
-                            <TextInput
-                                label="Expire in minutes"
-                                type="number"
-                                value={state.expiryMinutes}
-                                onChange={(expiryMinutes) => setState((current) => ({ ...current, expiryMinutes }))}
-                            />
+                    <div className="lock-create-column">
+                        <section className="lock-create-group">
+                            <h4>Date and time</h4>
                             <Form.Check
-                                type="checkbox"
                                 id="keep-alive"
                                 label="Keep alive"
                                 checked={state.keepAlive}
                                 onChange={(event) =>
-                                    setState((current) => ({ ...current, keepAlive: event.target.checked }))
+                                    setValue('keepAlive', event.target.checked, {
+                                        shouldDirty: true,
+                                        shouldValidate: true,
+                                    })
                                 }
                             />
-                            <MemoInput
-                                value={state.memo}
-                                onChange={(memo) => setState((current) => ({ ...current, memo }))}
+                            <TextInput
+                                label="Expiry date and time"
+                                type="datetime-local"
+                                min={getCurrentDateTimeInputValue()}
+                                registration={register('expiryDate', {
+                                    required: 'Expiry date and time is required',
+                                    validate: (value) => {
+                                        try {
+                                            expiryDateTimeToFutureMinutes(value);
+                                            return true;
+                                        } catch (caughtError) {
+                                            return parseError(caughtError);
+                                        }
+                                    },
+                                })}
+                                error={errors.expiryDate?.message}
                             />
-                        </div>
-                    </LockCreateSubsection>
+                        </section>
+
+                        <section className="lock-create-group">
+                            <h4>Supported tokens</h4>
+                            <RepeatableTextList
+                                label="Token IDs"
+                                values={state.supportedTokens}
+                                placeholder="Token ID"
+                                onChange={(supportedTokens) =>
+                                    setValue('supportedTokens', supportedTokens, {
+                                        shouldDirty: true,
+                                        shouldValidate: true,
+                                    })
+                                }
+                            />
+                            {errors.supportedTokens?.message && (
+                                <div className="invalid-feedback d-block">{errors.supportedTokens.message}</div>
+                            )}
+                            <MemoInput registration={register('memo')} />
+                        </section>
+                    </div>
+
+                    <div className="lock-create-footer"></div>
 
                     <div className="lock-create-actions">
-                        <ErrorMessage message={error} />
-                        <Button type="submit">Add</Button>
+                        <ErrorMessage message={status.type === 'error' ? status.message : undefined} />
+                        <SubmitButton loading={status.type === 'loading'} isSubmitting={isSubmitting}>
+                            Add
+                        </SubmitButton>
                     </div>
                 </div>
             </Form>
