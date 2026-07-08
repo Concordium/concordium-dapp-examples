@@ -9,7 +9,7 @@ import { LockReturnForm } from './LockReturnForm.tsx';
 
 export function LockConfigSection({ context }: { context: LookupContext }) {
     return (
-        <Section title="Lock config" collapsible defaultExpanded>
+        <Section title="Lock Config" collapsible defaultExpanded>
             <LockCreateForm context={context} />
             <div className="form-grid">
                 <LockCancelForm context={context} />

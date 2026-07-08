@@ -3,6 +3,7 @@ import { Alert, Button, Card, Spinner } from 'react-bootstrap';
 import { shortenValue } from '../utils';
 
 import type { QueuedOperation, Status } from '../types';
+import { Section } from '../components/Section.tsx';
 
 type OperationQueueStatusTone = 'muted' | 'error' | 'success' | 'warning';
 
@@ -113,81 +114,78 @@ export function OperationQueue({
 
     return (
         <aside className="operation-queue">
-            <Card className="queue-panel">
-                <Card.Body>
-                    <div className="submit-panel">
-                        <Button
-                            className="w-100"
-                            disabled={!canSubmit || submitStatus.type === 'loading'}
-                            onClick={onSubmit}
-                        >
-                            {submitStatus.type === 'loading' && (
-                                <Spinner animation="border" size="sm" className="me-2" />
-                            )}
-                            Submit transaction
-                        </Button>
-                    </div>
-
-                    <div className="queue-heading">
-                        <h2>Queued operations ({operations.length})</h2>
-                    </div>
-
-                    <div className="queue-list">
-                        {operations.length === 0 && (
-                            <Card className="queue-card queue-card-empty">
-                                <Card.Body>
-                                    <p>No operations added.</p>
-                                </Card.Body>
-                            </Card>
-                        )}
-                        {operations.map((operation, index) => (
-                            <Card key={operation.id} className="queue-card">
-                                <Card.Body>
-                                    <div className="queue-card-header">
-                                        <div className="queue-title">
-                                            <span className="queue-index">{index + 1}</span>
-                                            <Card.Title>{operation.type}</Card.Title>
-                                        </div>
-                                        <Button
-                                            variant="outline-secondary"
-                                            size="sm"
-                                            aria-label={`Remove ${operation.type}`}
-                                            onClick={() => onRemove(operation.id)}
-                                        >
-                                            X
-                                        </Button>
-                                    </div>
-                                    <dl>
-                                        {operation.preview.map((field) => (
-                                            <div key={field.label}>
-                                                <dt>{field.label}</dt>
-                                                <dd title={field.value}>{formatPreviewValue(field.value)}</dd>
-                                            </div>
-                                        ))}
-                                    </dl>
-                                </Card.Body>
-                            </Card>
-                        ))}
-                    </div>
-
-                    {transactionHash && (
-                        <Alert variant="success" className="transaction-hash small">
-                            <span>Transaction hash</span>
-                            <code className="d-block text-break">{transactionHash}</code>
-                        </Alert>
-                    )}
-
-                    <div className={`queue-status queue-status-${statusMessage.tone}`}>
-                        <span className="queue-status-icon" aria-hidden="true">
-                            {statusMessage.tone === 'success' ? '✓' : '!'}
-                        </span>
-                        <div>
-                            <h3>{statusMessage.title}</h3>
-                            <p>{statusMessage.message}</p>
+            <Section title={`Queued Operations (${operations.length})`}>
+                <Card className="queue-panel">
+                    <Card.Body>
+                        <div className={`queue-status queue-status-${statusMessage.tone}`}>
+                            <span className="queue-status-icon" aria-hidden="true">
+                                {statusMessage.tone === 'success' ? '✓' : '!'}
+                            </span>
+                            <div>
+                                <h3>{statusMessage.title}</h3>
+                                <p>{statusMessage.message}</p>
+                            </div>
                         </div>
-                    </div>
-                </Card.Body>
-            </Card>
+                        <div className="queue-list">
+                            {operations.length === 0 && (
+                                <Card className="queue-card queue-card-empty">
+                                    <Card.Body>
+                                        <p>No operations added.</p>
+                                    </Card.Body>
+                                </Card>
+                            )}
+                            {operations.map((operation, index) => (
+                                <Card key={operation.id} className="queue-card">
+                                    <Card.Body>
+                                        <div className="queue-card-header">
+                                            <div className="queue-title">
+                                                <span className="queue-index">{index + 1}</span>
+                                                <Card.Title>{operation.type}</Card.Title>
+                                            </div>
+                                            <Button
+                                                variant="outline-secondary"
+                                                size="sm"
+                                                aria-label={`Remove ${operation.type}`}
+                                                onClick={() => onRemove(operation.id)}
+                                            >
+                                                X
+                                            </Button>
+                                        </div>
+                                        <dl>
+                                            {operation.preview.map((field) => (
+                                                <div key={field.label}>
+                                                    <dt>{field.label}</dt>
+                                                    <dd title={field.value}>{formatPreviewValue(field.value)}</dd>
+                                                </div>
+                                            ))}
+                                        </dl>
+                                    </Card.Body>
+                                </Card>
+                            ))}
+                        </div>
+
+                        {transactionHash && (
+                            <Alert variant="success" className="transaction-hash small">
+                                <span>Transaction Hash</span>
+                                <code className="d-block text-break">{transactionHash}</code>
+                            </Alert>
+                        )}
+
+                        <div className="submit-panel">
+                            <Button
+                                className="w-100"
+                                disabled={!canSubmit || submitStatus.type === 'loading'}
+                                onClick={onSubmit}
+                            >
+                                {submitStatus.type === 'loading' && (
+                                    <Spinner animation="border" size="sm" className="me-2" />
+                                )}
+                                Submit Transaction
+                            </Button>
+                        </div>
+                    </Card.Body>
+                </Card>
+            </Section>
         </aside>
     );
 }
