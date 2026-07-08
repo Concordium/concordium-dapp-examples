@@ -126,7 +126,6 @@ export function OperationQueue({
                             )}
                             Submit transaction
                         </Button>
-                        <p>{canSubmit ? 'Ready when you are' : 'Add operations to enable'}</p>
                     </div>
 
                     <div className="queue-heading">
