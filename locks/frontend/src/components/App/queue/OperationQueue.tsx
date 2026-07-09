@@ -117,15 +117,6 @@ export function OperationQueue({
             <Section title={`Queued Operations (${operations.length})`}>
                 <Card className="queue-panel">
                     <Card.Body>
-                        <div className={`queue-status queue-status-${statusMessage.tone}`}>
-                            <span className="queue-status-icon" aria-hidden="true">
-                                {statusMessage.tone === 'success' ? '✓' : '!'}
-                            </span>
-                            <div>
-                                <h3>{statusMessage.title}</h3>
-                                <p>{statusMessage.message}</p>
-                            </div>
-                        </div>
                         <div className="queue-list">
                             {operations.length === 0 && (
                                 <Card className="queue-card queue-card-empty">
@@ -170,6 +161,16 @@ export function OperationQueue({
                                 <code className="d-block text-break">{transactionHash}</code>
                             </Alert>
                         )}
+
+                        <div className={`queue-status queue-status-${statusMessage.tone}`}>
+                            <span className="queue-status-icon" aria-hidden="true">
+                                {statusMessage.tone === 'success' ? '✓' : '!'}
+                            </span>
+                            <div>
+                                <h3>{statusMessage.title}</h3>
+                                <p>{statusMessage.message}</p>
+                            </div>
+                        </div>
 
                         <div className="submit-panel">
                             <Button
