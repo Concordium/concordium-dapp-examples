@@ -1,0 +1,8 @@
+{
+	"rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
+	"git": {
+		"deploymentEnabled": {
+			"coverage-deploy": false
+		}
+	}
+}

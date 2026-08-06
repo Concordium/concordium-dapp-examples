@@ -1,0 +1,6 @@
+.header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	@apply px-24 py-12;
+}
