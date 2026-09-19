@@ -11,12 +11,29 @@ import getSenderAccountSigner from '@/lib/getSenderAccountSigner';
 interface IBody {
     receiver: string;
     XPostId: string;
+    turnstileToken: string;
 }
 
 type Data = {
     transactionHash?: string;
     error?: string;
 };
+
+async function verifyTurnstileToken(token: string): Promise<boolean> {
+    const secretKey = process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY;
+    if (!secretKey) {
+        throw new Error('CLOUDFLARE_TURNSTILE_SECRET_KEY not configured');
+    }
+    const formData = new URLSearchParams();
+    formData.append('secret', secretKey);
+    formData.append('response', token);
+    const resp = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+        method: 'POST',
+        body: formData,
+    });
+    const result = (await resp.json()) as { success: boolean; 'error-codes'?: string[] };
+    return result.success === true;
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
     if (req.method !== 'POST') {
@@ -28,13 +45,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         throw new Error('SENDER_ADDRESS env vars undefined.');
     }
 
-    const { XPostId, receiver } = req.body as IBody;
+    const { XPostId, receiver, turnstileToken } = req.body as IBody;
 
-    if (!XPostId || !receiver) {
+    if (!XPostId || !receiver || !turnstileToken) {
         return res.status(400).json({
-            error: 'Missing parameters. Please provide XPostId, and receiver params.',
+            error: 'Missing parameters. Please provide XPostId, receiver, and turnstileToken params.',
         });
     }
+
+    // Verify CAPTCHA first
+    try {
+        const captchaValid = await verifyTurnstileToken(turnstileToken);
+        if (!captchaValid) {
+            return res.status(400).json({ error: 'CAPTCHA verification failed. Please try again.' });
+        }
+    } catch (e) {
+        return res.status(500).json({ error: 'CAPTCHA verification service unavailable.' });
+    }
+
     try {
         const isAllowed = await checkUsageLimit(receiver);
         if (!isAllowed) {
