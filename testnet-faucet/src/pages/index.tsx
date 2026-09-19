@@ -47,26 +47,31 @@ const getLatestTransactions = async () => {
     }
 };
 
-const validateAndClaim = async (XPostId: string | undefined, receiver: string) => {
-    try {
-        const response = await fetch('/api/validateAndClaim', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                XPostId,
-                receiver,
-            }),
-        });
+const validateAndClaim = async (
+        XPostId: string | undefined,
+        receiver: string,
+        turnstileToken?: string,
+    ) => {
+        try {
+            const response = await fetch('/api/validateAndClaim', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    XPostId,
+                    receiver,
+                    turnstileToken,
+                }),
+            });
 
-        const data = await response.json();
+            const data = await response.json();
 
-        return { ok: response.ok, data };
-    } catch (error) {
-        throw new Error('Network error. Please check your connection.');
-    }
-};
+            return { ok: response.ok, data };
+        } catch (error) {
+            throw new Error('Network error. Please check your connection.');
+        }
+    };
 
 const checkUsageLimit = async (receiver: string) => {
     try {
@@ -128,11 +133,11 @@ export default function Home() {
             'width=500,height=500',
         );
 
-    const handleVerifyTweetAndSendTokens = async () => {
+    const handleVerifyTweetAndSendTokens = async (turnstileToken?: string) => {
         setTurnstileOpen(false);
         setIsVerifyLoading(true);
         try {
-            const response = await validateAndClaim(XPostId, address);
+            const response = await validateAndClaim(XPostId, address, turnstileToken);
 
             if (response.ok && !response.data.error) {
                 setIsValidVerification(true);
@@ -366,7 +371,7 @@ export default function Home() {
                             ref={turnstileRef}
                             siteKey={process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY as string}
                             options={{ theme: 'light', size: 'normal' }}
-                            onSuccess={() => setTimeout(handleVerifyTweetAndSendTokens, 1500)}
+                            onSuccess={(token) => setTimeout(() => handleVerifyTweetAndSendTokens(token), 1500)}
                         />
                     </DialogPanel>
                 </div>
