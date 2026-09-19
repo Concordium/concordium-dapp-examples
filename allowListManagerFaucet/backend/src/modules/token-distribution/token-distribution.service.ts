@@ -6,6 +6,7 @@ import { ProcessTrackingService } from './process-tracking.service.js';
 import { TokenId, TokenAmount, Token, TokenHolder, CborMemo, Cbor } from '@concordium/web-sdk/plt';
 import { v4 as uuidv4 } from 'uuid';
 import { AddToAllowListDto } from './dto/add-to-allow-list.dto.js';
+import { VerifierService, VerificationError } from './verifier.service.js';
 import {
     TransactionSummaryType,
     TransactionKindString,
@@ -51,11 +52,16 @@ interface TokenConfigFile {
 export class TokenDistributionService implements OnModuleInit {
     private readonly logger = new Logger(TokenDistributionService.name);
     private readonly tokenConfigs: TokenConfig[];
+    private readonly inflight = new Set<string>();
+    private readonly ipRateLimit = new Map<string, number[]>();
+    private readonly rateLimitMax = parseInt(this.configService.get('RATE_LIMIT_MAX', '10'));
+    private readonly rateLimitWindowMs = parseInt(this.configService.get('RATE_LIMIT_WINDOW_SECONDS', '3600')) * 1000;
 
     constructor(
         private readonly concordiumService: ConcordiumService,
         private readonly processTrackingService: ProcessTrackingService,
         private readonly configService: ConfigService,
+        private readonly verifierService: VerifierService,
     ) {
         this.tokenConfigs = this.loadTokenConfigs();
 
@@ -142,7 +148,9 @@ export class TokenDistributionService implements OnModuleInit {
      * Starts the token distribution process for a verified user.
      * Resolves the token ID from the DTO (or first configured token) and its configured mint amount.
      */
-    async startTokenDistribution(dto: AddToAllowListDto): Promise<string> {
+    async startTokenDistribution(dto: AddToAllowListDto, clientIp?: string): Promise<string> {
+        this.checkRateLimit(clientIp);
+
         const processId = uuidv4();
         const bail = (msg: string) => {
             throw new Error(msg);
@@ -151,6 +159,19 @@ export class TokenDistributionService implements OnModuleInit {
         const tokenConfig =
             this.tokenConfigs.find((c) => c.id === tokenId) ??
             bail(`Could not find configured token with ID ${tokenId}.`);
+
+        // Require server-side proof verification when the token has a proof config
+        if (tokenConfig.proof) {
+            if (!dto.presentation || !dto.challenge) {
+                throw new VerificationError(400, 'This token requires a verified presentation and challenge');
+            }
+            await this.verifierService.verifyPresentation(dto.presentation, dto.userAccount, tokenConfig.proof);
+        } else if (dto.presentation || dto.challenge) {
+            // Token doesn't require proof but client sent one — ignore with warning
+            this.logger.warn(
+                `Presentation sent for token ${tokenId} which does not require proof; ignoring`,
+            );
+        }
 
         // Eligible only if the account has no token entry at all (never held this token).
         // A null balance means no entry; any string value (including '0') means the account
@@ -162,6 +183,16 @@ export class TokenDistributionService implements OnModuleInit {
             );
         }
 
+        // TOCTOU prevention: prevent concurrent distributions for the same account+token
+        const inflightKey = `${dto.userAccount}:${tokenId}`;
+        if (this.inflight.has(inflightKey)) {
+            throw new VerificationError(
+                409,
+                'A distribution for this account and token is already in progress',
+            );
+        }
+        this.inflight.add(inflightKey);
+
         this.logger.log(
             `Starting token distribution process ${processId} for user ${dto.userAccount} on token ${tokenId} (allowList: ${tokenConfig.hasAllowList})`,
         );
@@ -170,10 +201,14 @@ export class TokenDistributionService implements OnModuleInit {
             { step: 'Execute Token Distribution', status: 'pending', progress: 0 },
         ]);
 
-        this.executeTokenDistribution(processId, dto, tokenConfig).catch((error) => {
-            this.logger.error(`Process ${processId} failed: ${error.message}`);
-            this.processTrackingService.markProcessFailed(processId, error.message);
-        });
+        this.executeTokenDistribution(processId, dto, tokenConfig)
+            .catch((error) => {
+                this.logger.error(`Process ${processId} failed: ${error.message}`);
+                this.processTrackingService.markProcessFailed(processId, error.message);
+            })
+            .finally(() => {
+                this.inflight.delete(inflightKey);
+            });
 
         return processId;
     }
@@ -390,5 +425,28 @@ export class TokenDistributionService implements OnModuleInit {
             this.logger.error(`Failed to get token balance: ${error.message}`);
             return '0';
         }
+    }
+
+    /**
+     * Enforces a simple per-IP sliding-window rate limit on distribution/challenge
+     * requests. Throws a 429 VerificationError when the limit is exceeded.
+     * Called from the controller for challenge issuance and from
+     * startTokenDistribution for distribution requests.
+     */
+    checkRateLimit(ip?: string): void {
+        if (!ip) {
+            return;
+        }
+        const now = Date.now();
+        const windowStart = now - this.rateLimitWindowMs;
+        const requests = (this.ipRateLimit.get(ip) ?? []).filter((ts) => ts > windowStart);
+        if (requests.length >= this.rateLimitMax) {
+            throw new VerificationError(
+                429,
+                `Too many requests from this IP. Try again later.`,
+            );
+        }
+        requests.push(now);
+        this.ipRateLimit.set(ip, requests);
     }
 }

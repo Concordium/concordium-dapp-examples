@@ -236,15 +236,25 @@ export default function AllowListDApp(props: WalletConnectionProps) {
         setTransactionHash('');
 
         try {
-            const credentialStatements = buildCredentialStatements(effectiveProof);
+            // 1) Fetch a server-issued challenge
+            const challengeResp = await fetch(`${BACKEND_URL}/token-distribution/challenge`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userAccount: account }),
+            });
 
-            const challengeBuffer = new Uint8Array(32);
-            crypto.getRandomValues(challengeBuffer);
-            const challenge = Buffer.from(challengeBuffer).toString('hex') as HexString;
+            if (!challengeResp.ok) {
+                const err = await challengeResp.json().catch(() => ({}));
+                throw new Error(err.message ?? `Failed to get challenge: ${challengeResp.statusText}`);
+            }
+
+            const { challenge } = (await challengeResp.json()) as { challenge: string };
+
+            const credentialStatements = buildCredentialStatements(effectiveProof);
 
             let proof: VerifiablePresentation;
             try {
-                proof = await connection.requestVerifiablePresentation(challenge, credentialStatements);
+                proof = await connection.requestVerifiablePresentation(challenge as HexString, credentialStatements);
                 setCurrentProof(proof.toString());
             } catch (err: any) {
                 const message = err instanceof Error ? err.message : String(err);
@@ -254,6 +264,8 @@ export default function AllowListDApp(props: WalletConnectionProps) {
                 return;
             }
 
+            // Optional: client-side verification for immediate UX feedback
+            // Backend will re-verify server-side, which is the source of truth
             setProofStatus('Verifying proof...');
             const resp = await fetch(`${VERIFIER_URL}/v0/verify`, {
                 method: 'POST',
@@ -261,15 +273,19 @@ export default function AllowListDApp(props: WalletConnectionProps) {
                 body: proof.toString(),
             });
 
-            if (resp.ok) {
-                setProofStatus('✅ Proof verified successfully!');
-                setMessage(`${effectiveProof.description} verified. Starting token distribution...`);
-                await startTokenDistribution();
-            } else {
-                const body = await resp.json();
+            if (!resp.ok) {
+                const body = await resp.json().catch(() => ({}));
                 setProofStatus(`❌ Proof verification failed`);
                 setMessage(`Failed to verify ${effectiveProof.description}: ${JSON.stringify(body)}`);
+                setIsLoading(false);
+                return;
             }
+
+            setProofStatus('✅ Proof verified successfully!');
+            setMessage(`${effectiveProof.description} verified. Starting token distribution...`);
+
+            // 2) Start distribution with the proof and challenge
+            await startTokenDistribution(proof.toString(), challenge);
         } catch (error: any) {
             console.error('Error requesting proof:', error);
             setProofStatus(`Error: ${error.message}`);
@@ -307,7 +323,10 @@ export default function AllowListDApp(props: WalletConnectionProps) {
         }
     }, [props.activeConnector, props.activeConnectorType, connection, isConnecting, connect, intentedConnectorType]);
 
-    const startTokenDistribution = async () => {
+    const startTokenDistribution = async (
+        presentation?: string,
+        challenge?: string,
+    ) => {
         if (!connection || !account) {
             setMessage('Missing required data for token distribution');
             return;
@@ -317,14 +336,22 @@ export default function AllowListDApp(props: WalletConnectionProps) {
         setMessage('Initiating token distribution process...');
 
         try {
+            const body: Record<string, string> = {
+                userAccount: account,
+                tokenId: selectedTokenId,
+            };
+            if (presentation) body.presentation = presentation;
+            if (challenge) body.challenge = challenge;
+
             const response = await fetch(`${BACKEND_URL}/token-distribution/distribute`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userAccount: account, tokenId: selectedTokenId }),
+                body: JSON.stringify(body),
             });
 
             if (!response.ok) {
-                throw new Error(`Backend request failed: ${response.statusText}`);
+                const err = await response.json().catch(() => ({}));
+                throw new Error(err.message ?? `Backend request failed: ${response.statusText}`);
             }
 
             const processStatus = await response.json();
