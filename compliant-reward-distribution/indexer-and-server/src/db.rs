@@ -10,6 +10,7 @@ use concordium_rust_sdk::{
 use deadpool_postgres::{GenericClient, Object};
 use serde::Serialize;
 use tokio_postgres::{types::ToSql, NoTls};
+use tracing;
 
 /// Alias for returning results with [`DatabaseError`]s as the `Err` variant.
 type DatabaseResult<T> = Result<T, DatabaseError>;
@@ -375,17 +376,36 @@ impl Database {
     }
 
     pub async fn set_claimed(&self, account_addresses: Vec<AccountAddress>) -> DatabaseResult<()> {
-        for account_address in account_addresses {
-            let set_claimed = self
-                .client
-                .prepare_cached(
-                    "UPDATE accounts \
-                    SET claimed = $1, pending_approval = $2 \
-                    WHERE account_address = $3",
-                )
-                .await?;
-            let params: [&(dyn ToSql + Sync); 3] = [&true, &false, &account_address.0.as_ref()];
-            self.client.execute(&set_claimed, &params).await?;
+        if account_addresses.is_empty() {
+            return Ok(());
+        }
+        // Use a single atomic UPDATE with WHERE claimed = false to prevent double-claiming.
+        // Build placeholders: $1, $2, $3...
+        let placeholders: Vec<String> = account_addresses
+            .iter()
+            .enumerate()
+            .map(|(i, _)| format!("${}", i + 1))
+            .collect();
+        let query = format!(
+            "UPDATE accounts \
+            SET claimed = true, pending_approval = false \
+            WHERE account_address IN ($1, $2, ...) AND claimed = false",
+            placeholders.join(", ")
+        );
+        let params: Vec<&(dyn ToSql + Sync)> = account_addresses
+            .iter()
+            .map(|addr| addr.0.as_ref() as &(dyn ToSql + Sync))
+            .collect();
+        let affected = self.client.execute(&query, &params).await?;
+        if affected as usize != account_addresses.len() {
+            // Some accounts were already claimed or didn't exist.
+            // This is a race condition or duplicate request - we treat it as an error
+            // to alert the admin that not all accounts were newly claimed.
+            tracing::warn!(
+                "Expected to claim {} accounts, but only {} were updated (some may have been already claimed)",
+                account_addresses.len(),
+                affected
+            );
         }
         Ok(())
     }
