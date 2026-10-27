@@ -1,4 +1,4 @@
-import { LockController, TokenAdminRole, TokenOperationType } from '@concordium/web-sdk';
+import { LockConfig, TokenAdminRole, TokenOperationType } from '@concordium/web-sdk';
 
 import type { BlockListedChain, LockCreateState, LockOperation } from './types';
 import { getCurrentDateTimeInputValue } from './utils';
@@ -11,13 +11,13 @@ export const BLOCK_LIST: BlockListedChain[] = [
 ];
 
 export const LOCK_ROLES = [
-    LockController.SimpleV0Capability.Fund,
-    LockController.SimpleV0Capability.Send,
-    LockController.SimpleV0Capability.Return,
-    LockController.SimpleV0Capability.Cancel,
+    LockConfig.SimpleV0Capability.Fund,
+    LockConfig.SimpleV0Capability.Send,
+    LockConfig.SimpleV0Capability.Release,
+    LockConfig.SimpleV0Capability.Cancel,
 ];
 
-export const LOCK_OPERATIONS: LockOperation[] = ['LockCancel', 'LockFund', 'LockSend', 'LockReturn'];
+export const LOCK_OPERATIONS: LockOperation[] = ['LockCancel', 'LockFund', 'LockSend', 'LockRelease'];
 
 export const TOKEN_ADMIN_ROLES = Object.values(TokenAdminRole);
 

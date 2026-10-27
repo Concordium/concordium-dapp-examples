@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Form } from 'react-bootstrap';
-import { MetaUpdateOperationType, TokenAmount } from '@concordium/web-sdk';
+import { OperationType, TokenAmount } from '@concordium/web-sdk';
 import { useForm } from 'react-hook-form';
 
 import { ErrorMessage } from '../components/ErrorMessage';
@@ -21,7 +21,7 @@ import { accountExistsValidation, lockIdValidation, lockTokenIdValidation } from
 
 import type { LookupContext, Status } from '../types';
 
-interface LockReturnState {
+interface LockReleaseState {
     lockId: string;
     tokenId: string;
     source: string;
@@ -29,7 +29,7 @@ interface LockReturnState {
     memo: string;
 }
 
-const blankLockReturnState: LockReturnState = {
+const blankLockReleaseState: LockReleaseState = {
     lockId: '',
     tokenId: '',
     source: '',
@@ -37,7 +37,7 @@ const blankLockReturnState: LockReturnState = {
     memo: '',
 };
 
-export function LockReturnForm({ context }: { context: LookupContext }) {
+export function LockReleaseForm({ context }: { context: LookupContext }) {
     const [status, setStatus] = useState<Status>(defaultStatus);
     const {
         register,
@@ -45,7 +45,7 @@ export function LockReturnForm({ context }: { context: LookupContext }) {
         getValues,
         setValue,
         formState: { errors, isSubmitting },
-    } = useForm<LockReturnState>({ defaultValues: blankLockReturnState });
+    } = useForm<LockReleaseState>({ defaultValues: blankLockReleaseState });
 
     useEffect(() => {
         if (getValues('source') !== '' || !context.connectedAccount) {
@@ -67,7 +67,7 @@ export function LockReturnForm({ context }: { context: LookupContext }) {
             const decimals = await context.getTokenDecimals(tokenId);
 
             context.addOperation({
-                type: 'LockReturn',
+                type: 'LockRelease',
                 preview: [
                     { label: 'Lock ID', value: state.lockId },
                     { label: 'Token ID', value: tokenId },
@@ -76,7 +76,7 @@ export function LockReturnForm({ context }: { context: LookupContext }) {
                     { label: 'Memo', value: state.memo || '-' },
                 ],
                 build: () => ({
-                    [MetaUpdateOperationType.LockReturn]: {
+                    [OperationType.LockRelease]: {
                         token: toTokenId(tokenId),
                         lock,
                         source: toCborAccount(source),
@@ -93,7 +93,7 @@ export function LockReturnForm({ context }: { context: LookupContext }) {
     });
 
     return (
-        <FormCard title="LockReturn" className="lock-operation-card">
+        <FormCard title="LockRelease" className="lock-operation-card">
             <Form onSubmit={submit}>
                 <TextInput
                     label="Lock ID"

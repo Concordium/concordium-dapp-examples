@@ -1,9 +1,9 @@
-import { TokenOperationType } from '@concordium/web-sdk';
+import { OperationType } from '@concordium/web-sdk';
 
 import { TokenAmountOperationForm } from './tokenOperationForms/TokenAmountOperationForm.tsx';
 
-import type { TokenOperationFormProps } from './tokenOperationForms/TokenOperationFormProps.ts';
+import type { LookupContext } from '../../types.ts';
 
-export function TokenBurnForm({ context }: TokenOperationFormProps) {
-    return <TokenAmountOperationForm operation={TokenOperationType.Burn} context={context} />;
+export function TokenBurnForm({ context }: { context: LookupContext }) {
+    return <TokenAmountOperationForm operation={OperationType.TokenBurn} context={context} />;
 }

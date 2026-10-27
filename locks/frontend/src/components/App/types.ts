@@ -1,9 +1,9 @@
 import type {
     AccountInfo,
     ConcordiumGRPCClient,
-    LockController,
+    LockConfig,
     LockId,
-    MetaUpdateOperation,
+    Operation,
     TokenId,
     TokenInfo,
 } from '@concordium/web-sdk';
@@ -22,7 +22,7 @@ export interface QueuedOperation {
     id: number;
     type: string;
     preview: PreviewField[];
-    build: () => MetaUpdateOperation;
+    build: () => Operation;
     lockConfig?: {
         lockId: string;
         supportedTokenIds: string[];
@@ -51,7 +51,7 @@ export interface BlockListedChain {
 
 export interface ControllerGrantForm {
     account: string;
-    roles: LockController.SimpleV0Capability[];
+    roles: LockConfig.SimpleV0Capability[];
 }
 
 export interface LockCreateState {
@@ -64,4 +64,4 @@ export interface LockCreateState {
     memo: string;
 }
 
-export type LockOperation = 'LockCancel' | 'LockFund' | 'LockSend' | 'LockReturn';
+export type LockOperation = 'LockCancel' | 'LockFund' | 'LockSend' | 'LockRelease';

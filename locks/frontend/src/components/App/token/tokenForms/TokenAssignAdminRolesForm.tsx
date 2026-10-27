@@ -1,9 +1,9 @@
-import { TokenOperationType } from '@concordium/web-sdk';
+import { OperationType } from '@concordium/web-sdk';
 
 import { TokenAdminRolesOperationForm } from './tokenOperationForms/TokenAdminRolesOperationForm.tsx';
 
-import type { TokenOperationFormProps } from './tokenOperationForms/TokenOperationFormProps.ts';
+import { LookupContext } from '../../types.ts';
 
-export function TokenAssignAdminRolesForm({ context }: TokenOperationFormProps) {
-    return <TokenAdminRolesOperationForm operation={TokenOperationType.AssignAdminRoles} context={context} />;
+export function TokenAssignAdminRolesForm({ context }: { context: LookupContext }) {
+    return <TokenAdminRolesOperationForm operation={OperationType.TokenAssignAdminRoles} context={context} />;
 }

@@ -1,9 +1,9 @@
-import { TokenOperationType } from '@concordium/web-sdk';
+import { OperationType } from '@concordium/web-sdk';
 
 import { TokenToggleOperationForm } from './tokenOperationForms/TokenToggleOperationForm.tsx';
 
-import type { TokenOperationFormProps } from './tokenOperationForms/TokenOperationFormProps.ts';
+import { LookupContext } from '../../types.ts';
 
-export function TokenUnpauseForm({ context }: TokenOperationFormProps) {
-    return <TokenToggleOperationForm operation={TokenOperationType.Unpause} context={context} />;
+export function TokenUnpauseForm({ context }: { context: LookupContext }) {
+    return <TokenToggleOperationForm operation={OperationType.TokenUnpause} context={context} />;
 }

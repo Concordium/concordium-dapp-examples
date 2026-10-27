@@ -5,7 +5,7 @@ import type { LookupContext } from '../types';
 import { LockCancelForm } from './LockCancelForm.tsx';
 import { LockFundForm } from './LockFundForm.tsx';
 import { LockSendForm } from './LockSendForm.tsx';
-import { LockReturnForm } from './LockReturnForm.tsx';
+import { LockReleaseForm } from './LockReleaseForm.tsx';
 
 export function LockConfigSection({ context }: { context: LookupContext }) {
     return (
@@ -15,7 +15,7 @@ export function LockConfigSection({ context }: { context: LookupContext }) {
                 <LockCancelForm context={context} />
                 <LockFundForm context={context} />
                 <LockSendForm context={context} />
-                <LockReturnForm context={context} />
+                <LockReleaseForm context={context} />
             </div>
         </Section>
     );

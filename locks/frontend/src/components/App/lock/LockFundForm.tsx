@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Form } from 'react-bootstrap';
-import { MetaUpdateOperationType, TokenAmount } from '@concordium/web-sdk';
+import { OperationType, TokenAmount } from '@concordium/web-sdk';
 import { useForm } from 'react-hook-form';
 
 import { ErrorMessage } from '../components/ErrorMessage';
@@ -55,7 +55,7 @@ export function LockFundForm({ context }: { context: LookupContext }) {
                     { label: 'Memo', value: state.memo || '-' },
                 ],
                 build: () => ({
-                    [MetaUpdateOperationType.LockFund]: {
+                    [OperationType.LockFund]: {
                         token: toTokenId(tokenId),
                         lock,
                         amount: TokenAmount.fromDecimal(amount, decimals),

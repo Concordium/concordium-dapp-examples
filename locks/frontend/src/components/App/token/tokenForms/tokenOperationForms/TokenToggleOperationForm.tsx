@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Form } from 'react-bootstrap';
-import { MetaUpdateOperation, TokenOperationType } from '@concordium/web-sdk';
+import { Operation, OperationType } from '@concordium/web-sdk';
 import { useForm } from 'react-hook-form';
 
 import { ErrorMessage } from '../../../components/ErrorMessage.tsx';
@@ -13,7 +13,7 @@ import { defaultStatus, operationTitle, parseError, requireValue, toTokenId } fr
 import type { LookupContext, Status } from '../../../types.ts';
 
 interface TokenToggleOperationFormProps {
-    operation: TokenOperationType.Pause | TokenOperationType.Unpause;
+    operation: OperationType.TokenPause | OperationType.TokenUnpause;
     context: LookupContext;
 }
 
@@ -43,7 +43,7 @@ export function TokenToggleOperationForm({ operation, context }: TokenToggleOper
                         [operation]: {
                             token: toTokenId(token),
                         },
-                    }) as MetaUpdateOperation,
+                    }) as Operation,
             });
 
             setStatus(defaultStatus);

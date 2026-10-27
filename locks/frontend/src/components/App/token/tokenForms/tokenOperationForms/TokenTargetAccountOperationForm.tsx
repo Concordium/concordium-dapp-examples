@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Form } from 'react-bootstrap';
-import { MetaUpdateOperation, TokenOperationType } from '@concordium/web-sdk';
+import { Operation, OperationType } from '@concordium/web-sdk';
 import { useForm } from 'react-hook-form';
 
 import { ErrorMessage } from '../../../components/ErrorMessage.tsx';
@@ -13,10 +13,10 @@ import { defaultStatus, operationTitle, parseError, requireValue, toCborAccount,
 import type { LookupContext, Status } from '../../../types.ts';
 
 type TargetAccountOperation =
-    | TokenOperationType.AddAllowList
-    | TokenOperationType.RemoveAllowList
-    | TokenOperationType.AddDenyList
-    | TokenOperationType.RemoveDenyList;
+    | OperationType.TokenAddAllowList
+    | OperationType.TokenRemoveAllowList
+    | OperationType.TokenAddDenyList
+    | OperationType.TokenRemoveDenyList;
 
 interface TokenTargetAccountOperationFormProps {
     operation: TargetAccountOperation;
@@ -60,7 +60,7 @@ export function TokenTargetAccountOperationForm({ operation, context }: TokenTar
                             token: toTokenId(tokenId),
                             target: toCborAccount(target),
                         },
-                    }) as MetaUpdateOperation,
+                    }) as Operation,
             });
 
             setStatus(defaultStatus);

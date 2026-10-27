@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Form } from 'react-bootstrap';
-import { TokenMetadataUrl, TokenOperationType } from '@concordium/web-sdk';
+import { OperationType, TokenOperationType } from '@concordium/web-sdk';
 import { useForm } from 'react-hook-form';
 
 import { ErrorMessage } from '../../components/ErrorMessage.tsx';
@@ -10,8 +10,7 @@ import { TextInput } from '../../components/TextInput.tsx';
 import { tokenIdExistsValidation } from '../../lock/validation.ts';
 import { defaultStatus, operationTitle, parseError, requireValue, toHexBytes, toTokenId } from '../../utils.ts';
 
-import type { Status } from '../../types.ts';
-import type { TokenOperationFormProps } from './tokenOperationForms/TokenOperationFormProps.ts';
+import type { LookupContext, Status } from '../../types.ts';
 
 interface TokenUpdateMetadataState {
     tokenId: string;
@@ -25,7 +24,7 @@ const blankTokenUpdateMetadataState: TokenUpdateMetadataState = {
     metadataChecksum: '',
 };
 
-export function TokenUpdateMetadataForm({ context }: TokenOperationFormProps) {
+export function TokenUpdateMetadataForm({ context }: { context: LookupContext }) {
     const [status, setStatus] = useState<Status>(defaultStatus);
     const {
         register,
@@ -51,11 +50,12 @@ export function TokenUpdateMetadataForm({ context }: TokenOperationFormProps) {
                     { label: 'Checksum', value: metadataChecksum || '-' },
                 ],
                 build: () => {
-                    const tokenMetadataUrl = TokenMetadataUrl.create(metadataUrl, toHexBytes(metadataChecksum));
                     return {
-                        [TokenOperationType.UpdateMetadata]: Object.assign(tokenMetadataUrl, {
+                        [OperationType.TokenUpdateMetadata]: {
+                            url: metadataUrl,
+                            ...(metadataChecksum ? { checksumSha256: toHexBytes(metadataChecksum) } : {}),
                             token: toTokenId(tokenId),
-                        }),
+                        },
                     };
                 },
             });
