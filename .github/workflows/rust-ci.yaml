@@ -71,7 +71,7 @@ jobs:
         run: |
           rustup component add rustfmt          
           rustup component add clippy
-          rustup target add wasm32-unknown-unknown
+          rustup target add wasm32v1-none
       - name: Run cargo fmt
         run: |
           cargo fmt --manifest-path=${{ matrix.crate }}/Cargo.toml --check
