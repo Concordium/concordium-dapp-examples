@@ -78,6 +78,8 @@ jobs:
       - name: Run Clippy
         run: |
           cargo clippy --manifest-path=${{ matrix.crate }}/Cargo.toml --locked --all-targets --all-features --no-deps -- -D warnings
+      - name: Install cargo binstall
+        uses: cargo-bins/cargo-binstall@main
       - name: Install Cargo Concordium
         run: |
           cargo binstall --version $CARGO_CONCORDIUM_VERSION cargo-concordium
