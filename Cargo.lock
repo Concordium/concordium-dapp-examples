@@ -763,9 +763,9 @@ checksum = "acbf1af155f9b9ef647e42cdc158db4b64a1b61f743629225fde6f3e0be2a7c7"
 
 [[package]]
 name = "concordium-cis2"
-version = "6.1.0"
+version = "7.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f920220277e58c8a097a3f43426196ccd6c6f57ac6780b572e73f0dcffc16379"
+checksum = "0bbf168306e2b2d8832e44ac068a9dfbd6c8aa5bcd49b108bd58822b5936b64e"
 dependencies = [
  "concordium-std",
  "primitive-types",
@@ -773,9 +773,9 @@ dependencies = [
 
 [[package]]
 name = "concordium-contracts-common"
-version = "9.2.0"
+version = "10.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8bacf3a0689d3ac154085e322eb98b0db16caa61436421d991d54ba25aaf0da3"
+checksum = "b1611936908ab3e60c8e08c18a702f259051699919ad59e2aff6d58e2c0425d7"
 dependencies = [
  "base64 0.21.7",
  "bs58",
@@ -795,9 +795,9 @@ dependencies = [
 
 [[package]]
 name = "concordium-contracts-common-derive"
-version = "4.1.0"
+version = "5.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ee3482ffacf3c18133be976c1b874b6e87e018ac0316e9385888b43df07fa39c"
+checksum = "f0f9f29d08ea4f8c57f700d8c550040794ae18192fed53b52de8ebfebc494773"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -806,9 +806,9 @@ dependencies = [
 
 [[package]]
 name = "concordium-rust-sdk"
-version = "9.0.0"
+version = "10.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cc78e00b3fbb46394b063c95322caf7d036f71062ed42e6d978ca4a97bff7e81"
+checksum = "8d3cfbbe632c606cf4f9da382041bea4bec1458982ca46cbbc3fa944d042098f"
 dependencies = [
  "aes-gcm",
  "anyhow",
@@ -840,9 +840,9 @@ dependencies = [
 
 [[package]]
 name = "concordium-smart-contract-engine"
-version = "6.1.0"
+version = "7.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "286534f820438f29a0448c3f5e368a092b84241dbf08ac99fe38ccdb0534da15"
+checksum = "518e066a3a1dd3342224a56e13afebf5dd7f33d425fac59b7258840c09be6141"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -865,18 +865,19 @@ dependencies = [
 
 [[package]]
 name = "concordium-std"
-version = "10.0.0"
+version = "11.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "645eeaa2c81e2daa6289ef1cfcca8170419feecdb7d93d5421113880553361df"
+checksum = "1d9f7263a18d4f46d612224f189ffe8c2118a77ed705badcfd5bb2c4caaa3bb4"
 dependencies = [
  "concordium-contracts-common",
+ "dlmalloc",
 ]
 
 [[package]]
 name = "concordium-wasm"
-version = "5.1.0"
+version = "6.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "16b5e16881ad746a68d1fbd96446d8ca5db399b9a9bcf71504f543af67557261"
+checksum = "31ed154eeb80e49165a07b7ce2e38431e5852c16aa684d05c6cb36cd418479be"
 dependencies = [
  "anyhow",
  "concordium-contracts-common",
@@ -887,9 +888,9 @@ dependencies = [
 
 [[package]]
 name = "concordium_base"
-version = "10.0.0"
+version = "11.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6e3339e2b778eb8c4e61a94627ab2f8a091006a82c9297d38697487c8e5c3ed3"
+checksum = "02e753a369cf5affbe83d056a091341526cd50db8afcfdb5fe0dfd10fa41c771"
 dependencies = [
  "aes",
  "anyhow",
@@ -1273,6 +1274,17 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.104",
+]
+
+[[package]]
+name = "dlmalloc"
+version = "0.2.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ad5208a115eaba24916f7456929832e310a81518c641f93fee4f89aa93aa3675"
+dependencies = [
+ "cfg-if",
+ "libc",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -1916,7 +1928,7 @@ dependencies = [
  "hyper 1.6.0",
  "libc",
  "pin-project-lite",
- "socket2 0.5.10",
+ "socket2 0.6.3",
  "tokio",
  "tower-service",
  "tracing",
@@ -4282,7 +4294,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

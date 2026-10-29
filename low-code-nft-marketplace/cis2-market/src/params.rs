@@ -1,6 +1,7 @@
 //! Defines the parameters for the marketplace contract.
 //! [Read more](https://developer.concordium.software/en/mainnet/smart-contracts/general/develop-contracts.html#working-with-parameters) about working with parameters
 
+use alloc::vec::Vec;
 use concordium_std::{
     AccountAddress, Amount, ContractAddress, Deserial, SchemaType, Serial, Serialize,
 };

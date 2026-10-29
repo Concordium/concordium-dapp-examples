@@ -9,6 +9,10 @@
 //!
 //! This code has not been checked for production readiness. Please use for
 //! reference purposes
+
+#![no_std]
+extern crate alloc;
+
 mod errors;
 mod params;
 mod state;
