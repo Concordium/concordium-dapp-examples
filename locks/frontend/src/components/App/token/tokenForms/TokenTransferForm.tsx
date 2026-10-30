@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Form } from 'react-bootstrap';
-import { TokenAmount, TokenOperationType } from '@concordium/web-sdk';
+import { OperationType, TokenAmount, TokenOperationType } from '@concordium/web-sdk';
 import { useForm } from 'react-hook-form';
 
 import { ErrorMessage } from '../../components/ErrorMessage.tsx';
@@ -20,8 +20,7 @@ import {
 } from '../../utils.ts';
 import { accountExistsValidation, tokenIdExistsValidation } from '../../lock/validation.ts';
 
-import type { Status } from '../../types.ts';
-import type { TokenOperationFormProps } from './tokenOperationForms/TokenOperationFormProps.ts';
+import type { LookupContext, Status } from '../../types.ts';
 
 interface TokenTransferState {
     tokenId: string;
@@ -37,7 +36,7 @@ const blankTokenTransferState: TokenTransferState = {
     memo: '',
 };
 
-export function TokenTransferForm({ context }: TokenOperationFormProps) {
+export function TokenTransferForm({ context }: { context: LookupContext }) {
     const [status, setStatus] = useState<Status>(defaultStatus);
     const {
         register,
@@ -63,7 +62,7 @@ export function TokenTransferForm({ context }: TokenOperationFormProps) {
                     { label: 'Memo', value: state.memo || '-' },
                 ],
                 build: () => ({
-                    [TokenOperationType.Transfer]: {
+                    [OperationType.TokenTransfer]: {
                         token: toTokenId(tokenId),
                         amount: TokenAmount.fromDecimal(amount, decimals),
                         recipient: toCborAccount(recipient),

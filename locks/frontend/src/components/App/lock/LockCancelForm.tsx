@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Form } from 'react-bootstrap';
-import { MetaUpdateOperationType } from '@concordium/web-sdk';
+import { OperationType } from '@concordium/web-sdk';
 import { useForm } from 'react-hook-form';
 
 import { ErrorMessage } from '../components/ErrorMessage';
@@ -45,7 +45,7 @@ export function LockCancelForm({ context }: { context: LookupContext }) {
                     { label: 'Memo', value: state.memo || '-' },
                 ],
                 build: () => ({
-                    [MetaUpdateOperationType.LockCancel]: {
+                    [OperationType.LockCancel]: {
                         lock,
                         memo,
                     },

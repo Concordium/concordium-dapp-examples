@@ -5,9 +5,9 @@ import {
     type AccountInfo,
     AccountTransactionType,
     ConcordiumGRPCClient,
-    createMetaUpdatePayload,
+    createTokenUpdatePayload,
     Lock,
-    LockController,
+    LockConfig,
     LockId,
     TokenId,
     type TokenInfo,
@@ -207,7 +207,7 @@ export function useLocksApp() {
             throw new Error(`Lock ID "${trimmedLockId}" does not exist`);
         }
 
-        const configuredTokens = lock.info.controller[LockController.Variant.SimpleV0].tokens;
+        const configuredTokens = lock.info.config[LockConfig.Variant.SimpleV0].tokens;
         if (configuredTokens.some((configuredToken) => configuredToken.value === tokenInfo.id.value)) {
             return tokenInfo.id;
         }
@@ -284,8 +284,8 @@ export function useLocksApp() {
 
         try {
             setSubmitStatus({ type: 'loading', message: 'Submitting transaction...' });
-            const payload = createMetaUpdatePayload(operations.map((operation) => operation.build()));
-            const hash = await provider.sendTransaction(connectedAccount, AccountTransactionType.MetaUpdate, payload);
+            const payload = createTokenUpdatePayload({ operations: operations.map((operation) => operation.build()) });
+            const hash = await provider.sendTransaction(connectedAccount, AccountTransactionType.TokenUpdate, payload);
             setTransactionHash(hash);
             setOperations([]);
             setShowEstimatedLockIdWarning(false);

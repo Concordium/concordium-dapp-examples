@@ -31,9 +31,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@concordium/web-sdk@npm:13.0.0-alpha.1":
-  version: 13.0.0-alpha.1
-  resolution: "@concordium/web-sdk@npm:13.0.0-alpha.1"
+"@concordium/web-sdk@npm:^13.0.0-alpha.2":
+  version: 13.0.0-alpha.2
+  resolution: "@concordium/web-sdk@npm:13.0.0-alpha.2"
   dependencies:
     "@concordium/rust-bindings": ^4.0.1
     "@grpc/grpc-js": ^1.14.0
@@ -55,7 +55,7 @@ __metadata:
   peerDependencies:
     "@protobuf-ts/runtime-rpc": ^2.8.2
     cbor2: ^1.12.0
-  checksum: 69859fb81535e79b4cbb63bade9ee1869ba062326c9e3be9930ec5d95b98a5a5c25832e6586fbec20cbaf70f101c1ca3815e66137c426c866b0e374baa954962
+  checksum: 66fc02a7aeeb698c75e36f532bae0d2fb27ad16f3775aa714551ec072dd5878ba5203af33135ab4022f6fbc631bbe0b724d98cb5fefb28f50089b6c9b5f56588
   languageName: node
   linkType: hard
 
@@ -3057,7 +3057,7 @@ __metadata:
   resolution: "locks-dapp@workspace:."
   dependencies:
     "@concordium/browser-wallet-api-helpers": ^3.4.0-alpha.0
-    "@concordium/web-sdk": 13.0.0-alpha.1
+    "@concordium/web-sdk": ^13.0.0-alpha.2
     "@types/react": ^18.2.15
     "@types/react-dom": ^18.2.7
     "@typescript-eslint/eslint-plugin": ^6.0.0

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button, Form } from 'react-bootstrap';
-import { CborEpoch, LockController, MetaUpdateOperationType, TransactionExpiry } from '@concordium/web-sdk';
+import { CborEpoch, LockConfig, OperationType, TransactionExpiry } from '@concordium/web-sdk';
 import { useForm } from 'react-hook-form';
 
 import { FormCard } from '../components/FormCard';
@@ -151,14 +151,14 @@ export function LockCreateForm({ context }: { context: LookupContext }) {
                     { label: 'Memo', value: state.memo || '-' },
                 ],
                 build: () => ({
-                    [MetaUpdateOperationType.LockCreate]: {
+                    [OperationType.LockCreate]: LockConfig.simpleV0(
                         recipients,
-                        expiry: CborEpoch.fromTransactionExpiry(TransactionExpiry.futureMinutes(expiryMinutes)),
-                        controller: LockController.simpleV0(grants, supportedTokens, {
-                            keepAlive: state.keepAlive,
-                            memo: optionalMemo(state.memo),
-                        }),
-                    },
+                        CborEpoch.fromTransactionExpiry(TransactionExpiry.futureMinutes(expiryMinutes)),
+                        grants,
+                        supportedTokens,
+                        state.keepAlive,
+                        optionalMemo(state.memo),
+                    ),
                 }),
             });
 

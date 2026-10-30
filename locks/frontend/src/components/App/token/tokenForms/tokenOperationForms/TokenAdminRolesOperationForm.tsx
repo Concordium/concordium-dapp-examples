@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Form } from 'react-bootstrap';
-import { MetaUpdateOperation, TokenAdminRole, TokenOperationType } from '@concordium/web-sdk';
+import { Operation, OperationType, TokenAdminRole } from '@concordium/web-sdk';
 import { useForm } from 'react-hook-form';
 
 import { ErrorMessage } from '../../../components/ErrorMessage.tsx';
@@ -15,7 +15,7 @@ import { defaultStatus, operationTitle, parseError, requireValue, toCborAccount,
 import type { LookupContext, Status } from '../../../types.ts';
 
 interface TokenAdminRolesOperationFormProps {
-    operation: TokenOperationType.AssignAdminRoles | TokenOperationType.RevokeAdminRoles;
+    operation: OperationType.TokenAssignAdminRoles | OperationType.TokenRevokeAdminRoles;
     context: LookupContext;
 }
 
@@ -74,7 +74,7 @@ export function TokenAdminRolesOperationForm({ operation, context }: TokenAdminR
                             account: toCborAccount(account),
                             roles: state.roles,
                         },
-                    }) as MetaUpdateOperation,
+                    }) as Operation,
             });
 
             setStatus(defaultStatus);

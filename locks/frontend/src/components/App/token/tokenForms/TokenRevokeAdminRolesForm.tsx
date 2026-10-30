@@ -1,9 +1,9 @@
-import { TokenOperationType } from '@concordium/web-sdk';
+import { OperationType } from '@concordium/web-sdk';
 
 import { TokenAdminRolesOperationForm } from './tokenOperationForms/TokenAdminRolesOperationForm.tsx';
 
-import type { TokenOperationFormProps } from './tokenOperationForms/TokenOperationFormProps.ts';
+import { LookupContext } from '../../types.ts';
 
-export function TokenRevokeAdminRolesForm({ context }: TokenOperationFormProps) {
-    return <TokenAdminRolesOperationForm operation={TokenOperationType.RevokeAdminRoles} context={context} />;
+export function TokenRevokeAdminRolesForm({ context }: { context: LookupContext }) {
+    return <TokenAdminRolesOperationForm operation={OperationType.TokenRevokeAdminRoles} context={context} />;
 }

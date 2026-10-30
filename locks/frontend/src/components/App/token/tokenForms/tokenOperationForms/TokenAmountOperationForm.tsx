@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Form } from 'react-bootstrap';
-import { MetaUpdateOperation, TokenAmount, TokenOperationType } from '@concordium/web-sdk';
+import { Operation, OperationType, TokenAmount } from '@concordium/web-sdk';
 import { useForm } from 'react-hook-form';
 
 import { ErrorMessage } from '../../../components/ErrorMessage.tsx';
@@ -20,7 +20,7 @@ import {
 import type { LookupContext, Status } from '../../../types.ts';
 
 interface TokenAmountOperationFormProps {
-    operation: TokenOperationType.Mint | TokenOperationType.Burn;
+    operation: OperationType.TokenMint | OperationType.TokenBurn;
     context: LookupContext;
 }
 
@@ -62,7 +62,7 @@ export function TokenAmountOperationForm({ operation, context }: TokenAmountOper
                             token: toTokenId(tokenId),
                             amount: TokenAmount.fromDecimal(amount, decimals),
                         },
-                    }) as MetaUpdateOperation,
+                    }) as Operation,
             });
 
             setStatus(defaultStatus);

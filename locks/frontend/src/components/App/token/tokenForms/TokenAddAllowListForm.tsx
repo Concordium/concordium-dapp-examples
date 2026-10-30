@@ -1,9 +1,9 @@
-import { TokenOperationType } from '@concordium/web-sdk';
+import { OperationType } from '@concordium/web-sdk';
 
 import { TokenTargetAccountOperationForm } from './tokenOperationForms/TokenTargetAccountOperationForm.tsx';
 
-import type { TokenOperationFormProps } from './tokenOperationForms/TokenOperationFormProps.ts';
+import { LookupContext } from '../../types.ts';
 
-export function TokenAddAllowListForm({ context }: TokenOperationFormProps) {
-    return <TokenTargetAccountOperationForm operation={TokenOperationType.AddAllowList} context={context} />;
+export function TokenAddAllowListForm({ context }: { context: LookupContext }) {
+    return <TokenTargetAccountOperationForm operation={OperationType.TokenAddAllowList} context={context} />;
 }

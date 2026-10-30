@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Form } from 'react-bootstrap';
-import { MetaUpdateOperationType, TokenAmount } from '@concordium/web-sdk';
+import { OperationType, TokenAmount } from '@concordium/web-sdk';
 import { useForm } from 'react-hook-form';
 
 import { ErrorMessage } from '../components/ErrorMessage';
@@ -80,7 +80,7 @@ export function LockSendForm({ context }: { context: LookupContext }) {
                     { label: 'Memo', value: state.memo || '-' },
                 ],
                 build: () => ({
-                    [MetaUpdateOperationType.LockSend]: {
+                    [OperationType.LockSend]: {
                         token: toTokenId(tokenId),
                         lock,
                         source: toCborAccount(source),
