@@ -47,7 +47,9 @@
 //! is assigned the next available item id. Up to `u64::MAX`
 //! (18_446_744_073_709_551_615u64) items can be created in the contract until
 //! the contract runs out of item ids.
-#![cfg_attr(not(feature = "std"), no_std)]
+
+#![no_std]
+
 use concordium_cis2::{
     StandardIdentifier, SupportResult, SupportsQueryParams, SupportsQueryResponse,
     CIS0_STANDARD_IDENTIFIER,

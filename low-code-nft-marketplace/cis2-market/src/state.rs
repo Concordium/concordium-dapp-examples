@@ -1,7 +1,5 @@
 //! Defines the State (persisted data) for the contract.
 
-#![cfg_attr(not(feature = "std"), no_std)]
-
 use concordium_cis2::{IsTokenAmount, IsTokenId};
 use concordium_std::*;
 
@@ -110,7 +108,7 @@ impl<S: HasStateApi, T: IsTokenId + Copy, A: IsTokenAmount + Copy + ops::Sub<Out
 
         // Add the token to the buyable token list.
         // If the token is already listed, update the price.
-        self.token_prices.insert(
+        _ = self.token_prices.insert(
             TokenOwnerInfo::from(token_info.clone(), owner),
             TokenPriceState { price, quantity },
         );

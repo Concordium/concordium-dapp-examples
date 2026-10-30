@@ -1,3 +1,5 @@
+#![no_std]
+
 use concordium_cis2::TokenIdU64;
 use concordium_std::*;
 

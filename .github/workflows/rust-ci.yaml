@@ -9,7 +9,7 @@ on:
   workflow_dispatch: # allows manual trigger
 
 env:
-  CARGO_CONCORDIUM_VERSION: "4.2.0"
+  CARGO_CONCORDIUM_VERSION: "5.0.0"
 
 jobs:
 
@@ -71,18 +71,18 @@ jobs:
         run: |
           rustup component add rustfmt          
           rustup component add clippy
-          rustup target add wasm32-unknown-unknown
+          rustup target add wasm32v1-none
       - name: Run cargo fmt
         run: |
           cargo fmt --manifest-path=${{ matrix.crate }}/Cargo.toml --check
       - name: Run Clippy
         run: |
           cargo clippy --manifest-path=${{ matrix.crate }}/Cargo.toml --locked --all-targets --all-features --no-deps -- -D warnings
-      - name: Download and install Cargo Concordium
+      - name: Install cargo binstall
+        uses: cargo-bins/cargo-binstall@main
+      - name: Install Cargo Concordium
         run: |
-          curl -L https://github.com/Concordium/concordium-smart-contract-tools/releases/download/releases/cargo-concordium/${CARGO_CONCORDIUM_VERSION}/cargo-concordium-linux-amd64 -o /tmp/cargo-concordium
-          chmod +x /tmp/cargo-concordium
-          sudo mv /tmp/cargo-concordium /usr/bin/cargo-concordium
+          cargo binstall --version $CARGO_CONCORDIUM_VERSION cargo-concordium
       - name: Run cargo concordium build
         run: |
           cargo concordium build -- --manifest-path "${{ matrix.crate }}/Cargo.toml"
